@@ -8,9 +8,7 @@
   [["-p" "--profile URI" "xAPI Profile Location"
     :id :profile
     :desc "The location of an xAPI profile, can be used multiple times."
-    :parse-fn (fn [x]
-                (println x)
-                x)
+
     :assoc-fn (fn [omap id v]
                 (update omap
                         id
