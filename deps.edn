@@ -1,10 +1,12 @@
 {:paths ["resources" "src/main"]
- :deps {org.clojure/clojure {:mvn/version "RELEASE"}}
+ :deps {org.clojure/clojure {:mvn/version "RELEASE"}
+        com.yetanalytics/xapi-schema
+        {:git/url "https://github.com/"}}
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:mvn/version "0.4.2"}}
         :main-opts ["-m" "com.yetanalytics.datasim.main"]}
-  :dev {:extra-paths ["src/dev"]
+  :dev {:extra-paths ["dev-resources" "src/dev"]
         :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
   :test {:extra-paths ["src/test"]
          :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
