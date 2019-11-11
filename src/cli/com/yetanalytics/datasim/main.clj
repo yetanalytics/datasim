@@ -1,14 +1,20 @@
 (ns com.yetanalytics.datasim.main
   (:require [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as cs]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            [clojure.spec.alpha :as s]
+            [com.yetanalytics.datasim.input :as input]
+            [com.yetanalytics.datasim.protocols :as p])
   (:gen-class))
 
 (def cli-options
   [["-p" "--profile URI" "xAPI Profile Location"
-    :id :profile
+    :id :profiles
     :desc "The location of an xAPI profile, can be used multiple times."
-
+    :parse-fn (partial input/from-location :profile)
+    :validate-fn (fn [x]
+                   (when (nil? (p/validate x))
+                     x))
     :assoc-fn (fn [omap id v]
                 (update omap
                         id
@@ -32,4 +38,8 @@
           (print summary)
 
           :else
-          (pprint parsed-opts))))
+          (let [input (input/map->Input options)]
+            (if-let [spec-error (s/explain-data :com.yetanalytics.datasim/input input)]
+              (do (println "spec error!")
+                  (s/explain :com.yetanalytics.datasim/input input))
+              (println "options look good!"))))))
