@@ -1,7 +1,10 @@
 {:paths ["resources" "src/main"]
  :deps {org.clojure/clojure {:mvn/version "RELEASE"}}
  :aliases
- {:dev {:extra-paths ["src/dev"]
+ {:cli {:extra-paths ["src/cli"]
+        :extra-deps {org.clojure/tools.cli {:mvn/version "0.4.2"}}
+        :main-opts ["-m" "com.yetanalytics.datasim.main"]}
+  :dev {:extra-paths ["src/dev"]
         :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
   :test {:extra-paths ["src/test"]
          :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
@@ -14,5 +17,5 @@
   :build
   {:extra-deps {yetanalytics/yeti-bundler
                 {:git/url "git@github.com:yetanalytics/yeti-bundler.git"
-                 :sha "fa7a45a7e4b312d5c0fc016c7aaad6f06229b96f"}}
+                 :sha "f7ac2667c06a7da66598697f63b1b1fa7a43a572"}}
    :main-opts ["-m" "com.yetanalytics.yeti-bundler"]}}}
