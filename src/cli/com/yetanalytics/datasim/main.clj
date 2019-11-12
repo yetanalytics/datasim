@@ -3,8 +3,7 @@
             [clojure.string :as cs]
             [clojure.pprint :refer [pprint]]
             [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.protocols :as p])
+            [com.yetanalytics.datasim.input :as input])
   (:gen-class))
 
 (def cli-options
@@ -12,9 +11,7 @@
     :id :profiles
     :desc "The location of an xAPI profile, can be used multiple times."
     :parse-fn (partial input/from-location :profile)
-    :validate-fn (fn [x]
-                   (when (nil? (p/validate x))
-                     x))
+    :validate-fn input/validate
     :assoc-fn (fn [omap id v]
                 (update omap
                         id

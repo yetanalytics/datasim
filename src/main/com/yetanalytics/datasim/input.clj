@@ -29,3 +29,14 @@
   [_ location]
   (p/read-in (profile/map->Profile {})
              location))
+
+(defn validate
+  "Validate input using the FromInput protocol. Throw an exception if the input
+   isn't valid."
+  [input]
+  (if-let [spec-error (p/validate input)]
+    (throw (ex-info (pr-str spec-error)
+                    {:type ::invalid-input
+                     :input input
+                     :spec-error spec-error}))
+    input))
