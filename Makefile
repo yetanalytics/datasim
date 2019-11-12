@@ -16,4 +16,4 @@ target/bundle:
 bundle: target/bundle
 
 ci:
-	clojure -A:test:runner
+	clojure -Adev:cli:test:runner
