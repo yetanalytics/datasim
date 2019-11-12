@@ -1,7 +1,5 @@
 (ns com.yetanalytics.datasim.main
   (:require [clojure.tools.cli :refer [parse-opts]]
-            [clojure.string :as cs]
-            [clojure.pprint :refer [pprint]]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input :as input]
             [expound.alpha :as expound])
@@ -66,6 +64,7 @@
                   ;; Where the CLI will actually perform generation
                   "generate" (println "{}")
                   ;; If they just want to validate and we're this far, we're done.
+                  ;; Just return the input spec as JSON
                   "validate-input" (println "Input is valid."))
                 (do (println "No command entered.")
                     (println summary))))))))
