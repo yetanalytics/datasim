@@ -3,7 +3,9 @@
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]
-            [com.yetanalytics.pan.objects.profile :as profile]))
+            [com.yetanalytics.pan.objects.profile :as profile]
+            [clojure.data.json :as json])
+  (:import [java.io Reader Writer]))
 
 (defrecord Profile [id
                     ;; type ;; that would conflict and be annoying, it's static anyhow
@@ -18,12 +20,13 @@
                     templates
                     patterns]
   p/FromInput
-  (read-in [this location]
-    (map->Profile (dio/read-location
-                   location
-                   :fmt :json
-                   :parser-opts [:key-fn (fn [^String k]
-                                           (keyword nil
-                                                    (cs/replace k \@ \_)))])))
   (validate [this]
-    (s/explain-data ::profile/profile this)))
+    (s/explain-data ::profile/profile this))
+
+  p/Serializable
+  (deserialize [this r]
+    (map->Profile
+     (json/read r :key-fn (fn [^String k]
+                            (keyword nil
+                                     (cs/replace k \@ \_))))))
+  (serialize [this w]))

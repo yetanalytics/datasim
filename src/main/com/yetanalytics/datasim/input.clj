@@ -4,7 +4,7 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as ps]
             [com.yetanalytics.datasim.profile :as profile]
-            ))
+            [com.yetanalytics.datasim.io :as dio]))
 
 (s/def ::profiles
   (s/every ::ps/profile :min-count 1
@@ -27,8 +27,7 @@
 
 (defmethod from-location :profile
   [_ location]
-  (p/read-in (profile/map->Profile {})
-             location))
+  (dio/read-loc (profile/map->Profile {}) location))
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result"
