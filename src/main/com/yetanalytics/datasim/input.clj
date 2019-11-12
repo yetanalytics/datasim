@@ -16,7 +16,6 @@
 
 (defrecord Input [profiles]
   p/FromInput
-  ;; TODO: impliment read-in for comprehensive spec
   (validate [this]
     (s/explain-data :com.yetanalytics.datasim/input this)))
 

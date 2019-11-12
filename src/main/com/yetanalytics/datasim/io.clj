@@ -1,6 +1,5 @@
 (ns com.yetanalytics.datasim.io
   (:require [clojure.java.io :as io]
-            [clojure.data.json :as json]
             [clojure.edn :as edn]
             [com.yetanalytics.datasim.protocols :as p]))
 
