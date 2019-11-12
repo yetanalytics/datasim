@@ -31,6 +31,11 @@
              location))
 
 (defn validate
+  "Validate input using the FromInput protocol. Does no handling on result"
+  [input]
+  (p/validate input))
+
+(defn validate-throw
   "Validate input using the FromInput protocol. Throw an exception if the input
    isn't valid."
   [input]
