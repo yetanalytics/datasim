@@ -5,15 +5,16 @@
          :sha "e2c517e7adcedc7f3012b90bce274e2c33cdbcc1"}
         com.yetanalytics/project-pan
         {:git/url "git@github.com:yetanalytics/project-pan.git"
-         :sha "811571d52e376a7eb727efaaf1fd4dc08ffb50fc"}}
+         :sha "811571d52e376a7eb727efaaf1fd4dc08ffb50fc"}
+        incanter/incanter-core {:mvn/version "1.9.3"}}
  :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
-        :extra-deps {org.clojure/tools.cli {:mvn/version "0.4.2"}}
-        }
+        :extra-deps {org.clojure/tools.cli {:mvn/version "0.4.2"}}}
   :run {:main-opts ["-m" "com.yetanalytics.datasim.main"]}
   :dev {:extra-paths ["dev-resources" "src/dev"]
-        :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
+        :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}
+                     incanter/incanter-charts {:mvn/version "1.9.3"}}}
   :test {:extra-paths ["src/test"]
          :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}}
   :runner
