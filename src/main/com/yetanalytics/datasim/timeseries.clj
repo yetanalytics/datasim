@@ -1,7 +1,8 @@
 (ns com.yetanalytics.datasim.timeseries
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
-            [incanter.interpolation :as interp])
+            [incanter.interpolation :as interp]
+            [com.yetanalytics.datasim.clock :as clock])
   (:import [java.util Random]))
 
 ;; Primitive seqs, just lazy seqs of numerics
@@ -108,6 +109,9 @@
   [constant]
   (repeat constant))
 
+
+
+
 (defn rand-seq
   [& {:keys [seed
              rng
@@ -120,7 +124,8 @@
                          (Random.))]
      (cons (case val-type
              :long (.nextLong rng)
-             :gauss (.nextGaussian rng))
+             :gauss (.nextGaussian rng)
+             :double (.nextDouble rng))
            (rand-seq :rng rng
                      :val-type val-type)))))
 
@@ -178,6 +183,16 @@
          (count xs'))))
    (partition n 1 xs)))
 
+(defn interval-seq
+  "Return a seq representing the intervals of the input seq"
+  [xs]
+  (map (fn [[a b]]
+         (- b a))
+       (partition 2 1 xs)))
+
+
+#_(interval-seq (range 10)) ;; => (1 1 1 1 1 1 1 1 1)
+#_(interval-seq [1 5 7 9]) ;; => (4 2 2)
 
 ;; Primitive seq ops that yield other seqs
 (defn op-seq
@@ -254,99 +269,32 @@
   (require '[incanter.charts :as c])
   (use 'incanter.core
        )
-
-
-  ;; a little sim, trying hourly
   (let [sim-seed 42
-        sample-n (* 24 7 3) ;; 3 weeks
+        sample-n (* 60 24 7) ;; 1 week
         ;; Build sequences
-        ;; Day-night is a 24 hour cycle from -1 to 1
+
+        ;; in our model, a timeseries for a given actor is measured against
+        ;; a composite timeseries representing abstract challenge/diversity.
+        ;; This is a combination of a stochastic series representing
+        ;; unpredictable factors that apply to the group, higher is harder.
+        ;; this series is max'd with a day night cycle (day is easier, night is
+        ;; harder). Think of this combined series as a mask.
+
+        ;; When an actor's series is greater than the challenge, the difference
+        ;; between the two is the probability (from 0.0 to 1.0) that an event
+        ;; will happen at that time.
+
+        ;; Day-night is a 24 hour cycle from 1.0 (midnight) to -1.0 (midday)
         day-night (-> (interpolate-seq
-                       :points (into []
-                                     (take 6)
-                                     (iterate
-                                      (fn [[x y]]
-                                        [(+ x
-                                            12)
-                                         (- y)])
-                                      [0 -1.0])))
-                      (cycle-seq
-                       ;; drop a day so we get a nice loop
-                       :length 24
-                       :offset 24))
-        ;; random stochastic for the group
-        group-arma (arma-seq {:phi [0.5]
-                              :theta []
-                              :std 0.25
-                              :c 0.0
-                              :seed sim-seed})
-
-        ;; form a mask for the group, fitted to day-night and floored at 0.0
-        group-mask (op-seq max
-                           [(sum-seq group-arma
-                                     day-night)
-                            (constant-seq 0.0)])
-
-
-        bob-arma (arma-seq {:phi [0.5]
-                            :theta []
-                            :std 0.25
-                            :c 0.0
-                            :seed (+ sim-seed 1)})
-
-        bob-seq (sum-seq bob-arma
-                         day-night)
-
-
-        bob-events (overlap-seq bob-seq
-                                group-mask
-                                :extra-stats true)]
-
-    (view
-     (reduce
-      (fn [c {:keys [t length
-                     a-seq b-seq]
-              [a0 a1] :a-edges
-              [b0 b1] :b-edges
-              mmax :max
-              mmin :min}]
-        (c/add-polygon c
-                       [[t mmax] [(+ t length) mmax]
-                        [(+ t length) mmin] [t mmin]
-
-                        ]
-                       :color "blue"
-                       ))
-      (-> (c/xy-plot [] []
-                     :legend true)
-          (c/add-lines (range sample-n)
-                       (take sample-n group-mask)
-                       :series-label "group mask")
-          (c/add-lines (range sample-n)
-                       (take sample-n bob-seq)
-                       :series-label "bob"))
-      (take sample-n bob-events)))
-
-    )
-
-  ;; minutes
-  #_(let [sim-seed 42
-        sample-n (* 60 24 7) ;; 3 weeks
-        ;; Build sequences
-        ;; Day-night is a 24 hour cycle from -1 to 1
-        day-night (-> (interpolate-seq
-                       :points (into []
-                                     (take 6)
-                                     (iterate
-                                      (fn [[x y]]
-                                        [(+ x
-                                            (* 12 60))
-                                         (- y)])
-                                      [0 -1.0])))
+                       :points
+                       (take 5
+                             (map vector
+                                  (iterate (partial + 720) 0)
+                                  (cycle [-1.0 1.0]))))
                       (cycle-seq
                        ;; drop a day so we get a nice loop
                        :length (* 24 60)
-                       :offset (* 24 60)))
+                       :offset (* 12 60)))
         ;; random stochastic for the group
         group-arma (arma-seq {:phi [0.5]
                               :theta []
@@ -354,11 +302,10 @@
                               :c 0.0
                               :seed sim-seed})
 
-        ;; form a mask for the group, fitted to day-night and floored at 0.0
-        group-mask (op-seq max
-                           [(sum-seq group-arma
-                                     day-night)
-                            (constant-seq 0.0)])
+        ;; ;; form a mask for the group + day-night
+        mask (op-seq max
+                     [group-arma
+                      day-night])
 
 
         bob-arma (arma-seq {:phi [0.5]
@@ -367,42 +314,46 @@
                             :c 0.0
                             :seed (+ sim-seed 1)})
 
-        bob-seq (sum-seq bob-arma
-                         day-night)
+        bob-prob (op-seq (fn [a b]
+                           (double
+                            (/ (max
+                                (- a b)
+                                0.0)
+                               2)))
+                         [bob-arma mask])
+        ;; we check at pseudorandom intervals, so generate those
+        ;; let's say lambda is 10 minutes
+        bob-triggers (distinct
+                      (reductions
+                       (fn [t r]
+                         (+ t
+                            (long (* r 10))))
+                       0
+                       (rand-seq :val-type :double
+                                 :seed (+ sim-seed 2))))
 
+        bob-events (for [[t r] (map vector
+                                    bob-triggers
+                                    (rand-seq :val-type :double
+                                              :seed (+ sim-seed 3)))
+                         :while (< t sample-n)
+                         :let [prob (nth bob-prob t)]
+                         :when (< r prob)]
+                     [t 1.0])
+        t-fn #(clock/sim-instant
+               %
+               :step :minutes
+               :as :long)
 
-        bob-events (overlap-seq (smooth-seq bob-seq :n 5)
-                                (smooth-seq group-mask :n 5)
-                                )]
-    #_(count (take sample-n bob-events))
+        xs (map t-fn
+                (range sample-n))
+        ]
 
-    (view
-     (reduce
-      (fn [c {:keys [t length
-                     a-seq b-seq]
-              [a0 a1] :a-edges
-              [b0 b1] :b-edges
-              mmax :max
-              mmin :min}]
-        (c/add-polygon c
-                       [[t mmax] [(+ t length) mmax]
-                        [(+ t length) mmin] [t mmin]
-
-                        ]
-                       :color "blue"
-                       ))
-      (-> (c/xy-plot [] []
-                     :legend true)
-          (c/add-lines (range sample-n)
-                       (take sample-n group-mask)
-                       :series-label "group mask")
-          (c/add-lines (range sample-n)
-                       (take sample-n bob-seq)
-                       :series-label "bob"))
-      (take sample-n bob-events)))
+    (view (c/add-points
+           (c/time-series-plot xs (take sample-n bob-prob))
+           (map (comp t-fn first) bob-events)
+           (map second bob-events)))
 
     )
-
-
 
   )

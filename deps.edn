@@ -6,7 +6,8 @@
         com.yetanalytics/project-pan
         {:git/url "git@github.com:yetanalytics/project-pan.git"
          :sha "811571d52e376a7eb727efaaf1fd4dc08ffb50fc"}
-        incanter/incanter-core {:mvn/version "1.9.3"}}
+        incanter/incanter-core {:mvn/version "1.9.3"}
+        clojure.java-time {:mvn/version "0.3.2"}}
  :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
