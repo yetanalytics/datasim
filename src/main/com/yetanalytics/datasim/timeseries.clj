@@ -391,7 +391,13 @@
 (defn probs->events
   "Given probabilities at a given time regular interval in ms, a mean duration
   and a mean cooldown, generate events with a time + duration"
-  [probs & {:keys [duration-seed
+  [probs & {:keys [delay-seed
+                   delay-mean
+                   delay-sd
+                   delay-min
+                   delay-seq
+
+                   duration-seed
                    duration-mean
                    duration-sd
                    duration-min
@@ -406,7 +412,10 @@
                    seed
                    rng
                    t]
-            :or {interval 60000 ;; 1 minute
+            :or {;; interval 60000 ;; 1 minute
+                 delay-mean 30000 ;; 30 sec
+                 delay-sd 25000
+                 delay-min 0
                  duration-mean 3600000 ;; 1 hour
                  duration-sd 900000
                  duration-min 60000
@@ -420,10 +429,22 @@
                          (and seed
                               (Random. seed))
                          (Random.))
+         delay-seed    (or delay-seed
+                           (.nextLong rng))
          duration-seed (or duration-seed
                            (.nextLong rng))
          cooldown-seed (or cooldown-seed
                            (.nextLong rng))
+         ;; lag time
+         delay-seq     (or delay-seq
+                           (map (partial max
+                                         delay-min)
+                                (rand-seq :val-type :gauss
+                                          :gauss-sd delay-sd
+                                          :gauss-mean delay-mean
+                                          :seed delay-seed
+                                          )))
+         ;; hang time
          duration-seq (or duration-seq
                           (map (partial max
                                         duration-min)
@@ -432,6 +453,7 @@
                                          :gauss-mean duration-mean
                                          :seed duration-seed
                                          )))
+         ;; chill time
          cooldown-seq (or cooldown-seq
                           (map (partial max
                                         cooldown-min)
@@ -451,25 +473,42 @@
                                 (range)
                                 (range t Long/MAX_VALUE 60000)
                                 probs))]
-       (let [duration (long (first duration-seq))
+       (let [start-delay (long (first delay-seq))
+             duration (long (first duration-seq))
              cooldown (long (first cooldown-seq))
              drop-n (+ (inc idx)
-                       (quot (+ duration cooldown)
+                       (quot (+ start-delay duration cooldown)
                              60000)
-                       (if (rem (+ duration cooldown)
+                       (if (rem (+ start-delay duration cooldown)
                                 60000)
                          1
                          0))
-             end-t (+ start-t duration)
-             next-t (+ end-t cooldown)]
-         (cons [start-t
-                duration]
+             ]
+         ;; TODO: figure out how to work the tail of the probability
+         ;; spike to end the activity?
+         (cons [(+ start-t start-delay) ;; x
+                duration ;; y
+                {:start-min start-t
+                 :delay start-delay
+                 :duration duration
+                 :cooldown cooldown
+                 ;; TODO: see if it's safe to use the same RNG
+                 :seed (.nextLong rng) ;; unique seed
+
+                 } ;; useful for evt. gen
+                ]
                (when-let [rest-probs (seq
                                       (drop drop-n
                                             probs))]
                  (probs->events
                   rest-probs
                   :t (+ t (* drop-n 60000))
+                  :delay-seed delay-seed
+                  :delay-mean delay-mean
+                  :delay-sd delay-sd
+                  :delay-min delay-min
+                  :delay-seq (rest delay-seq)
+
                   :duration-seed duration-seed
                   :duration-mean duration-mean
                   :duration-sd duration-sd
@@ -494,9 +533,9 @@
 (comment
   (use '(incanter core stats charts io))
 
-  (let [t-zero 0
+  (let [t-zero (System/currentTimeMillis)
         sim-seed 42
-        sample-n (* 1000 60 60 24 3) ;; 1 week in ms ;; => 604800000
+        sample-n  (* 1000 60 60 24 14) ;; 1 week in ms ;; => 604800000
         ;; Build sequences
         {:keys [week-seq
                 min-seq
@@ -537,10 +576,20 @@
                     sample-n
                     :in :minutes)
 
-        ;; ;; form a mask for the group + day-night
+        lunch-hour-seq (take-sample
+                        (map
+                         (fn [x]
+                           (if (<= 720 x 780)
+                             1.0
+                             -1.0))
+                         mod-seq)
+                        sample-n
+                        :in :minutes)
+        ;; ;; form a mask for the group + day-night + lunch
         mask (op-seq max
                      [group-arma
-                      day-night-seq])
+                      day-night-seq
+                      lunch-hour-seq])
 
 
         bob-arma (take-sample
@@ -560,12 +609,14 @@
                                2)))
                          [bob-arma mask])
         bob-events (probs->events bob-prob
-                                  :seed (+ sim-seed 2))
+                                  :seed (+ sim-seed 2)
+                                  :t t-zero)
         ]
     ;; inspect
-    #_(map (fn [[x y]]
+    #_(map (fn [[x y z]]
            [(java.util.Date. x)
-            (t/convert-amount y :millis :minutes)])
+            (t/convert-amount y :millis :minutes)
+            ])
            bob-events)
     ;; make sure we can't overlap
     #_(some (fn [[[idx0 [x0 y0]] [idx1 [x1 y1]] :as hit]]
