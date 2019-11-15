@@ -1,6 +1,6 @@
 (ns com.yetanalytics.datasim.clock
   (:require [java-time :as t])
-  (:import [java.time Clock Instant]))
+  (:import [java.time Clock Instant Period]))
 
 (defn sim-instant
   "Given a numeric t value, return an instant in time."
