@@ -21,6 +21,6 @@ test-unit:
 	clojure -Adev:cli:test:runner
 
 test-cli:
-	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -l dev-resources/alignments/simple.json validate-input
+	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -l dev-resources/alignments/simple.json -o dev-resources/parameters/simple.json validate-input
 
 ci: test-unit test-cli

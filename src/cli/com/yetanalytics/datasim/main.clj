@@ -35,6 +35,13 @@
     :validate (if validate?
                 [input/validate-throw "Failed to validate Alignments."]
                 [])]
+   ["-o" "--parameters URI" "Sim Parameters Location"
+    :id :parameters
+    :desc "The location of a Sim Parameters Document."
+    :parse-fn (partial input/from-location :parameters)
+    :validate (if validate?
+                [input/validate-throw "Failed to validate Parameters."]
+                [])]
    ["-h" "--help"]])
 
 (defn bail!
