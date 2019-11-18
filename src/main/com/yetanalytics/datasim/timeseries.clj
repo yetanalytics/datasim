@@ -535,16 +535,13 @@
                       min-seq
                       bob-prob
                       (rand-seq :val-type :long
-                                :rng bob-rng))
-         ]
+                                :rng bob-rng))]
      (view (time-series-plot
             (map :t bob-seq)
             (map :prob bob-seq)))
      (view (time-series-plot
             (map :t bob-seq)
-            (map :r bob-seq)))
-
-     ))
+            (map :r bob-seq)))))
 
 
   )
