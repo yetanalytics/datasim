@@ -6,6 +6,7 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.profile :as profile]
             [com.yetanalytics.datasim.personae :as personae]
+            [com.yetanalytics.datasim.alignments :as alignments]
             [com.yetanalytics.datasim.io :as dio]))
 
 (s/def ::profiles
@@ -13,12 +14,16 @@
            :into []))
 
 (s/def ::personae
-  ::personae/group)
+  ::personae/personae)
+
+(s/def ::alignments
+  ::alignments/alignments)
 
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
-                   ::personae]))
+                   ::personae
+                   ::alignments]))
 
 (defrecord Input [profiles]
   p/FromInput
@@ -37,6 +42,10 @@
 (defmethod from-location :personae
   [_ location]
   (dio/read-loc (personae/map->Personae {}) location))
+
+(defmethod from-location :alignments
+  [_ location]
+  (dio/read-loc (alignments/map->Alignments {}) location))
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result"
