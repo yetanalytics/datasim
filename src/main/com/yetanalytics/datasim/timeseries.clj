@@ -5,7 +5,8 @@
             [incanter.stats :as stats]
             [incanter.core :as incanter]
             [com.yetanalytics.datasim.clock :as clock]
-            [java-time :as t])
+            [java-time :as t]
+            [com.yetanalytics.datasim.util.maths :as maths])
   (:import [java.util Random]))
 
 ;; Primitive seqs, just lazy seqs of numerics
@@ -72,6 +73,41 @@
                                    :rng ::rng)))
   :ret (s/every ::safe-double))
 
+(defn arma-seq-const
+  "Find the value of a stochastic sequence after n runs with the given model."
+  [{:keys [std phi theta c
+           seed rng
+
+           value
+           epsilon] :as arma-model
+    :or {phi []
+         theta []
+         value 0.0
+         epsilon 0.0}}
+   n]
+  (let [^Random rng (or rng
+                        (and seed
+                             (Random. seed))
+                        (Random.))]
+    (loop [^Double v value
+           ^Double e epsilon
+           n' 0]
+      (let [new-epsilon (* (.nextGaussian rng) std)
+            sum-phi (reduce (fn [old nxt]
+                              (+ old
+                                 (* nxt
+                                    v)))
+                            0.0 phi)
+            sum-theta (reduce (fn [old nxt]
+                                (+ old
+                                   (* nxt e)))
+                              0.0
+                              theta)
+            ret (+ c new-epsilon sum-phi sum-theta)]
+        (if (= n' (inc n))
+          v
+          (recur ret new-epsilon (inc n')))))))
+
 (defn arma-seq
   "Given arma params, return an infinite lazy seq of values"
   ([{:keys [seed] :as arma-model}]
@@ -107,13 +143,21 @@
                       new-epsilon
                       rng))))))
 
+#_(let [model {:phi [0.5 0.2]
+             :theta []
+             :std 0.25
+             :c 0.0
+             :seed 42}]
+  (= (arma-seq-const
+      model
+      1000)
+     (nth (arma-seq model)
+          1000)))
+
 (defn constant-seq
   "Return an infinite sequence of the given constant value"
   [constant]
   (repeat constant))
-
-
-
 
 (defn rand-seq
   [& {:keys [seed
@@ -268,7 +312,8 @@
 ;; Complex (composite) seqs
 
 (defn overlap-seq
-  "Given two seqs a and b, for each period where a > b return
+  "NOT USED, but instructive...
+  Given two seqs a and b, for each period where a > b return
   the T (index) and length of the overlap."
   [a b & {:keys [comp-fn
                  extra-stats]
@@ -305,10 +350,12 @@
    [6 5 4 3 2 1 2 3 4 5 6]) ;; => ({:t 3, :length 5})
 
 (defn take-sample
-  [xs sample-n & {:keys [in]
-                  :or {in :ms}}]
-  (take (quot sample-n
-              (case in
+  "Take a sample of sample-millis from a time series.
+  :from denotes the period of xs"
+  [xs sample-millis & {:keys [from]
+                  :or {from :millis}}]
+  (take (quot sample-millis
+              (case from
                 :millis 1
                 :seconds 1000
                 :minutes 60000
@@ -324,6 +371,8 @@
        xs))
 
 (defn time-seqs
+  "Given a t-zero (simulation start), an upper bound of sample-n milliseconds
+  and an optional local timezone, return a map of useful lazy time sequences."
   [& {:keys [t-zero
              sample-n
              ^java.time.ZoneRegion zone]
@@ -338,9 +387,14 @@
                                   step)
                             (range t-zero Long/MAX_VALUE step)))
                     (partial range t-zero Long/MAX_VALUE))
+        ;; Primary
         sec-seq (r-partial 1000)
         min-seq (r-partial 60000)
+        hour-seq (r-partial 3600000)
+        week-seq (r-partial 604800000)
+        day-seq (r-partial 86400000)
 
+        ;; secondary/local
         moh-seq (local-seq-as min-seq
                               zone
                               :minute-of-hour)
@@ -352,16 +406,16 @@
                             #(*  2 Math/PI (/ % 86400000))
                             (partial * 60000))
                            mod-seq)
-        hour-seq (r-partial 3600000)
+
         hod-seq (local-seq-as hour-seq
                               zone
                               :hour-of-day)
 
-        day-seq (r-partial 86400000)
+
         dow-seq (local-seq-as day-seq
                               zone
                               :day-of-week)
-        week-seq (r-partial 604800000)
+
         dom-seq (local-seq-as day-seq
                               zone
                               :day-of-month)
@@ -371,275 +425,135 @@
     {:t-seq t-seq
      :sec-seq sec-seq
      :min-seq min-seq
+     :hour-seq hour-seq
+     :day-seq day-seq
+     :week-seq week-seq
      :moh-seq moh-seq
      :mod-seq mod-seq
      :day-night-seq day-night-seq
-     :hour-seq hour-seq
      :hod-seq hod-seq
-
-     :day-seq day-seq
      :dow-seq dow-seq
      :dom-seq dom-seq
      :doy-seq doy-seq
-     :week-seq week-seq}))
-
-
-
-
-
-
-;; not figuring out how to pass in mean + sd for duration and cooldown yet.
-
-(defn probs->events
-  "Given probabilities at a given time regular interval in ms, a mean duration
-  and a mean cooldown, generate events with a time + duration"
-  [probs & {:keys [delay-seed
-                   delay-mean
-                   delay-sd
-                   delay-min
-                   delay-seq
-
-                   duration-seed
-                   duration-mean
-                   duration-sd
-                   duration-min
-                   duration-seq
-
-                   cooldown-seed
-                   cooldown-mean
-                   cooldown-sd
-                   cooldown-min
-                   cooldown-seq
-
-                   seed
-                   rng
-                   t]
-            :or {;; interval 60000 ;; 1 minute
-                 delay-mean 30000 ;; 30 sec
-                 delay-sd 25000
-                 delay-min 0
-                 duration-mean 3600000 ;; 1 hour
-                 duration-sd 900000
-                 duration-min 60000
-                 cooldown-mean 900000 ;; 15 minues
-                 cooldown-sd 600000
-                 cooldown-min 60000
-                 t 0}
-            :as opts}]
-  (lazy-seq
-   (let [^Random rng (or rng
-                         (and seed
-                              (Random. seed))
-                         (Random.))
-         delay-seed    (or delay-seed
-                           (.nextLong rng))
-         duration-seed (or duration-seed
-                           (.nextLong rng))
-         cooldown-seed (or cooldown-seed
-                           (.nextLong rng))
-         ;; lag time
-         delay-seq     (or delay-seq
-                           (map (partial max
-                                         delay-min)
-                                (rand-seq :val-type :gauss
-                                          :gauss-sd delay-sd
-                                          :gauss-mean delay-mean
-                                          :seed delay-seed
-                                          )))
-         ;; hang time
-         duration-seq (or duration-seq
-                          (map (partial max
-                                        duration-min)
-                               (rand-seq :val-type :gauss
-                                         :gauss-sd duration-sd
-                                         :gauss-mean duration-mean
-                                         :seed duration-seed
-                                         )))
-         ;; chill time
-         cooldown-seq (or cooldown-seq
-                          (map (partial max
-                                        cooldown-min)
-                               (rand-seq :val-type :gauss
-                                         :gauss-sd cooldown-sd
-                                         :gauss-mean cooldown-mean
-                                         :seed cooldown-seed
-                                         )))
-         ]
-     (when-let [[idx start-t] (some
-                               (fn [[idx t prob]]
-                                 (when (and (< 0.0 prob)
-                                            (< (.nextDouble rng) prob))
-                                   [idx t]))
-                               (map
-                                vector
-                                (range)
-                                (range t Long/MAX_VALUE 60000)
-                                probs))]
-       (let [start-delay (long (first delay-seq))
-             duration (long (first duration-seq))
-             cooldown (long (first cooldown-seq))
-             drop-n (+ (inc idx)
-                       (quot (+ start-delay duration cooldown)
-                             60000)
-                       (if (rem (+ start-delay duration cooldown)
-                                60000)
-                         1
-                         0))
-             ]
-         ;; TODO: figure out how to work the tail of the probability
-         ;; spike to end the activity?
-         (cons [(+ start-t start-delay) ;; x
-                duration ;; y
-                {:start-min start-t
-                 :delay start-delay
-                 :duration duration
-                 :cooldown cooldown
-                 ;; TODO: see if it's safe to use the same RNG
-                 :seed (.nextLong rng) ;; unique seed
-
-                 } ;; useful for evt. gen
-                ]
-               (when-let [rest-probs (seq
-                                      (drop drop-n
-                                            probs))]
-                 (probs->events
-                  rest-probs
-                  :t (+ t (* drop-n 60000))
-                  :delay-seed delay-seed
-                  :delay-mean delay-mean
-                  :delay-sd delay-sd
-                  :delay-min delay-min
-                  :delay-seq (rest delay-seq)
-
-                  :duration-seed duration-seed
-                  :duration-mean duration-mean
-                  :duration-sd duration-sd
-                  :duration-min duration-min
-                  :duration-seq (rest duration-seq)
-
-                  :cooldown-seed cooldown-seed
-                  :cooldown-mean cooldown-mean
-                  :cooldown-sd cooldown-sd
-                  :cooldown-min cooldown-min
-                  :cooldown-seq (rest cooldown-seq)
-                  :rng rng
-                  ))
-
-               ))))))
-
-
-#_(probs->events [0.0 0.7 0.0 0.0])
-
-
+     }))
 
 (comment
   (use '(incanter core stats charts io))
 
-  (let [t-zero (System/currentTimeMillis)
-        sim-seed 42
-        sample-n  (* 1000 60 60 24 14) ;; 1 week in ms ;; => 604800000
-        ;; Build sequences
-        {:keys [week-seq
-                min-seq
-                t-seq
-                doy-seq
-                moh-seq
-                day-seq
-                sec-seq
-                dom-seq
-                hod-seq
-                hour-seq
-                dow-seq
-                mod-seq
-                day-night-seq]} (time-seqs :t-zero t-zero
-                                           :sample-n sample-n
-                                           :zone (t/zone-id))
+  (time
+   (let [sim-seed 42
+         ;; Create a master RNG for the sim. This is used only to generate other seeds
+         ^Random sim-rng (Random. sim-seed)
 
-        ;; in our model, a timeseries for a given actor is measured against
-        ;; a composite timeseries representing abstract challenge/diversity.
-        ;; This is a combination of a stochastic series representing
-        ;; unpredictable factors that apply to the group, higher is harder.
-        ;; this series is max'd with a day night cycle (day is easier, night is
-        ;; harder). Think of this combined series as a mask.
+         ;; the start of the sim, in ms since epoch
+         t-zero 0;; (System/currentTimeMillis)
+         ;; the amount of time, in MS, this sim covers
+         sample-n (:whole (t/convert-amount 7 :days
+                                            :millis))
 
-        ;; When an actor's series is greater than the challenge, the difference
-        ;; between the two is the probability (from 0.0 to 1.0) that an event
-        ;; will happen at that time.
+         ;; a local timezone
+         timezone (t/zone-id "America/New_York")
 
-        ;; a sequence representing every tick of our simulation (that's 1 ms)
+         ;; Build useful time seqs, only get eval'd if used!
+         {:keys [week-seq
+                 min-seq
+                 t-seq
+                 doy-seq
+                 moh-seq
+                 day-seq
+                 sec-seq
+                 dom-seq
+                 hod-seq
+                 hour-seq
+                 dow-seq
+                 mod-seq
+                 day-night-seq]} (time-seqs :t-zero t-zero
+                                            :sample-n sample-n
+                                            :zone timezone)
 
-        ;; random stochastic for the group
-        group-arma (take-sample
-                    (arma-seq {:phi [0.5]
-                               :theta []
-                               :std 0.25
-                               :c 0.0
-                               :seed sim-seed})
-                    sample-n
-                    :in :minutes)
+         ;; in our model, a timeseries for a given actor is measured against
+         ;; a composite timeseries representing abstract challenge/diversity.
+         ;; This is a combination of a stochastic series representing
+         ;; unpredictable factors that apply to the group, higher is harder.
+         ;; this series is max'd with a day night cycle (day is easier, night is
+         ;; harder). Think of this combined series as a mask.
 
-        lunch-hour-seq (take-sample
-                        (map
-                         (fn [x]
-                           (if (<= 720 x 780)
-                             1.0
-                             -1.0))
-                         mod-seq)
-                        sample-n
-                        :in :minutes)
-        ;; ;; form a mask for the group + day-night + lunch
-        mask (op-seq max
-                     [group-arma
-                      day-night-seq
-                      lunch-hour-seq])
+         ;; When an actor's series is greater than the challenge, the difference
+         ;; between the two is the probability (from 0.0 to 1.0) that an event
+         ;; will happen at that time.
 
+         ;; random stochastic settings can (and probably should) be shared.
+         common-arma {:phi [0.5 0.2]
+                      :theta []
+                      :std 0.25
+                      :c 0.0}
 
-        bob-arma (take-sample
-                  (arma-seq {:phi [0.5]
-                             :theta []
-                             :std 0.25
-                             :c 0.0
-                             :seed (+ sim-seed 1)})
-                  sample-n
-                  :in :minutes)
+         ;; Generate a seed for the group
+         group-seed (.nextLong sim-rng)
 
-        bob-prob (op-seq (fn [a b]
-                           (double
-                            (/ (max
-                                (- a b)
-                                0.0)
-                               2)))
-                         [bob-arma mask])
-        bob-events (probs->events bob-prob
-                                  :seed (+ sim-seed 2)
-                                  :t t-zero)
-        ]
-    ;; inspect
-    #_(map (fn [[x y z]]
-           [(java.util.Date. x)
-            (t/convert-amount y :millis :minutes)
-            ])
-           bob-events)
-    ;; make sure we can't overlap
-    #_(some (fn [[[idx0 [x0 y0]] [idx1 [x1 y1]] :as hit]]
-            (when (t/before? (java.time.Instant/ofEpochMilli x1)
-                             (java.time.Instant/ofEpochMilli (+ x0 y0)))
-              [hit (t/convert-amount (- (+ x0 y0)
-                                        x1)
-                                     :millis :seconds)]))
+         ;; create a stochastic seq for the group
+         group-arma (take-sample
+                     (arma-seq (merge common-arma
+                                      {:seed group-seed}))
+                     sample-n
+                     :from :minutes)
 
-            (partition 2 1 (map-indexed vector bob-events)))
-    ;; graph it
-    (view (reduce
-           (fn [c [t dur]]
-             (add-polygon c
-                          [[t 0.5] [(+ t dur) 0.5]
-                           [(+ t dur) 0.0] [t 0.0]]))
-           (time-series-plot
-            min-seq
-            bob-prob)
-           bob-events))
+         ;; Create a periodic seq for the lunch hour break
+         lunch-hour-seq (take-sample
+                         (map
+                          (fn [x]
+                            (if (<= 720 x 780)
+                              1.0
+                              -1.0))
+                          mod-seq)
+                         sample-n
+                         :from :minutes)
+         ;; form a mask for the group + day-night + lunch
+         mask (op-seq max
+                      [group-arma
+                       day-night-seq
+                       lunch-hour-seq])
 
-    )
+         ;; create a seed for Bob's seq
+         bob-arma-seed (.nextLong sim-rng)
+
+         ;; create a stochastic seq for bob
+         bob-arma (take-sample
+                   (arma-seq
+                    (merge common-arma
+                           {:seed bob-arma-seed}))
+                   sample-n
+                   :from :minutes)
+
+         ;; Bob's activity probability
+         bob-prob (op-seq (fn [a b]
+                            (double
+                             (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
+                          [bob-arma mask])
+         ;; to keep it deterministic, give bob another seeded RNG to take with him.
+         ^Random bob-rng (Random. (.nextLong sim-rng))
+
+         ;; Compose the time (in minute increments), bob's probability
+         ;; and his RNG and you have everything you need to generate events for
+         ;; bob. Here the RNG is used to generate a sequence for demonstration,
+         ;; in practice it would get handed off to a thread or some such.
+         bob-seq (map (fn [t prob rand-long]
+                        {:t t
+                         :prob prob
+                         :r rand-long})
+                      min-seq
+                      bob-prob
+                      (rand-seq :val-type :long
+                                :rng bob-rng))
+         ]
+     (view (time-series-plot
+            (map :t bob-seq)
+            (map :prob bob-seq)))
+     (view (time-series-plot
+            (map :t bob-seq)
+            (map :r bob-seq)))
+
+     ))
+
 
   )
