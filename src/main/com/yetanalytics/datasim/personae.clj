@@ -10,6 +10,19 @@
 
 ;; If functionality is added to express further groupings we'll have to revise
 ;; this strategy.
+
+;; An open-validating group spec
+(s/def ::group
+  (s/and (s/conformer (fn [x]
+                        (reduce-kv
+                         (fn [m k v]
+                           (if (nil? v)
+                             m
+                             (assoc m k v)))
+                         {}
+                         x)))
+         ::xs/group))
+
 (defrecord Personae [member
                      objectType
                      name
@@ -21,15 +34,8 @@
                      account]
   p/FromInput
   (validate [this]
-    (s/explain-data ::xs/group
-                    ;; Remove the nils from being a record
-                    (reduce-kv
-                     (fn [m k v]
-                       (if (nil? v)
-                         m
-                         (assoc m k v)))
-                     {}
-                     this)))
+    (s/explain-data ::group
+                    this))
 
   p/Serializable
   (deserialize [this r]
