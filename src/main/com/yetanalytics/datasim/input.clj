@@ -7,6 +7,7 @@
             [com.yetanalytics.datasim.profile :as profile]
             [com.yetanalytics.datasim.personae :as personae]
             [com.yetanalytics.datasim.alignments :as alignments]
+            [com.yetanalytics.datasim.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]))
 
 (s/def ::profiles
@@ -19,11 +20,15 @@
 (s/def ::alignments
   ::alignments/alignments)
 
+(s/def ::parameters
+  ::params/parameters)
+
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
                    ::personae
-                   ::alignments]))
+                   ::alignments
+                   ::parameters]))
 
 (defrecord Input [profiles]
   p/FromInput
@@ -46,6 +51,10 @@
 (defmethod from-location :alignments
   [_ location]
   (dio/read-loc (alignments/map->Alignments {}) location))
+
+(defmethod from-location :parameters
+  [_ location]
+  (dio/read-loc (params/map->Parameters {}) location))
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result"

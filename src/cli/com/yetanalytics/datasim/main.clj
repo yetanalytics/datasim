@@ -3,6 +3,7 @@
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input :as input]
             [expound.alpha :as expound]
+            [com.yetanalytics.datasim.parameters :as params]
             [clojure.pprint :refer [pprint]])
   (:gen-class))
 
@@ -35,6 +36,17 @@
     :validate (if validate?
                 [input/validate-throw "Failed to validate Alignments."]
                 [])]
+   ["-o" "--parameters URI" "Sim Parameters Location"
+    :id :parameters
+    :desc "The location of a Sim Parameters Document."
+    :parse-fn (partial input/from-location :parameters)
+    :validate (if validate?
+                [input/validate-throw "Failed to validate Parameters."]
+                [])
+    ;; TODO: it looks like, when the validation is skipped, a simple empty
+    ;; default doesn't work here, as the full input spec fails.
+    ;; For now we just hack it by calling the defaults fn directly.
+    :default (params/add-defaults {})]
    ["-h" "--help"]])
 
 (defn bail!
