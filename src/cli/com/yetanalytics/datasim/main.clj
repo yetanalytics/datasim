@@ -20,6 +20,13 @@
                         id
                         (fnil conj [])
                         v))]
+   ["-a" "--actor-personae URI" "Actor Personae Location"
+    :id :personae
+    :desc "The location of an Actor Personae document indicating the actors in the sim."
+    :parse-fn (partial input/from-location :personae)
+    :validate (if validate?
+                [input/validate-throw "Failed to validate personae."]
+                [])]
    ["-h" "--help"]])
 
 (defn bail!
