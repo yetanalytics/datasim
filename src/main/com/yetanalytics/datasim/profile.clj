@@ -1,6 +1,5 @@
 (ns com.yetanalytics.datasim.profile
   (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]
             [com.yetanalytics.pan.objects.profile :as profile]
