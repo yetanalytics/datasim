@@ -3,6 +3,7 @@
    we don't get into circ. dependency errors.")
 
 (defprotocol FromInput
+  "Things that come from the user and must be validated."
   (validate [this]
     "Validate the input, which must be read in first. Returns the output of `s/explain-data`"))
 
@@ -12,3 +13,10 @@
     "Get it from a reader.")
   (serialize [this w]
     "Write it to a writer"))
+
+(defprotocol IdIndexed
+  "Things that have subobjects indexed by IDs."
+  (get-id [this id]
+    "Get something (possibly nested) by ID")
+  (flat-map [this]
+    "Return a flat map of all Identified subobjects"))

@@ -2,7 +2,8 @@
   (:require [clojure.tools.cli :refer [parse-opts]]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input :as input]
-            [expound.alpha :as expound])
+            [expound.alpha :as expound]
+            [clojure.pprint :refer [pprint]])
   (:gen-class))
 
 (defn cli-options
@@ -26,6 +27,13 @@
     :parse-fn (partial input/from-location :personae)
     :validate (if validate?
                 [input/validate-throw "Failed to validate personae."]
+                [])]
+   ["-l" "--alignments URI" "Actor Alignments Location"
+    :id :alignments
+    :desc "The location of an Actor Alignments Document."
+    :parse-fn (partial input/from-location :alignments)
+    :validate (if validate?
+                [input/validate-throw "Failed to validate Alignments."]
                 [])]
    ["-h" "--help"]])
 
@@ -72,6 +80,8 @@
                   "generate" (println "{}")
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON
-                  "validate-input" (println "Input is valid."))
+                  "validate-input"
+                  (do (println "Input is valid. Input:\n\n")
+                      (pprint input)))
                 (do (println "No command entered.")
                     (println summary))))))))
