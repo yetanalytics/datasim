@@ -2,6 +2,8 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [incanter.interpolation :as interp]
+            [incanter.stats :as stats]
+            [incanter.core :as incanter]
             [com.yetanalytics.datasim.clock :as clock]
             [java-time :as t])
   (:import [java.util Random]))
@@ -346,7 +348,7 @@
                               zone
                               :minute-of-day)
         day-night-seq (map (comp
-                            cos
+                            incanter/cos
                             #(*  2 Math/PI (/ % 86400000))
                             (partial * 60000))
                            mod-seq)
