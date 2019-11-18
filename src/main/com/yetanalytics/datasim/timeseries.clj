@@ -492,22 +492,16 @@
          group-seed (.nextLong sim-rng)
 
          ;; create a stochastic seq for the group
-         group-arma (take-sample
-                     (arma-seq (merge common-arma
-                                      {:seed group-seed}))
-                     sample-n
-                     :from :minutes)
+         group-arma (arma-seq (merge common-arma
+                                     {:seed group-seed}))
 
          ;; Create a periodic seq for the lunch hour break
-         lunch-hour-seq (take-sample
-                         (map
-                          (fn [x]
-                            (if (<= 720 x 780)
-                              1.0
-                              -1.0))
-                          mod-seq)
-                         sample-n
-                         :from :minutes)
+         lunch-hour-seq (map
+                         (fn [x]
+                           (if (<= 720 x 780)
+                             1.0
+                             -1.0))
+                         mod-seq)
          ;; form a mask for the group + day-night + lunch
          mask (op-seq max
                       [group-arma
@@ -518,12 +512,9 @@
          bob-arma-seed (.nextLong sim-rng)
 
          ;; create a stochastic seq for bob
-         bob-arma (take-sample
-                   (arma-seq
-                    (merge common-arma
-                           {:seed bob-arma-seed}))
-                   sample-n
-                   :from :minutes)
+         bob-arma (arma-seq
+                   (merge common-arma
+                          {:seed bob-arma-seed}))
 
          ;; Bob's activity probability
          bob-prob (op-seq (fn [a b]
