@@ -48,6 +48,15 @@
     ;; For now we just hack it by calling the defaults fn directly.
     :default (params/add-defaults {})]
 
+   ["-i" "--input URI" "Combined Simulation input"
+    :id :input
+    :desc "The location of a JSON file containing a combined simulation input spec."
+    :parse-fn (partial input/from-location :input :json)
+    :validate (if validate?
+                [input/validate-throw "Failed to validate input."]
+                [])
+    ]
+
    ["-h" "--help"]])
 
 (defn bail!
@@ -83,7 +92,7 @@
           ;; At this point, we have valid individual inputs. However, there may
           ;; be cross-validation that needs to happen, so we compose the
           ;; comprehensive spec from the options and check that.
-          (let [input (input/map->Input options)]
+          (let [input (or (:input options) (input/map->Input options))]
             (if-let [spec-error (input/validate input)]
               (bail! [(binding [s/*explain-out* expound/printer]
                        (expound/explain-result-str spec-error))])

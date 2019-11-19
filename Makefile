@@ -1,4 +1,4 @@
-.PHONY: clean bundle test-cli test-unit ci
+.PHONY: clean bundle test-cli test-cli-comprehensive test-unit ci
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
@@ -22,5 +22,9 @@ test-unit:
 
 test-cli:
 	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -l dev-resources/alignments/simple.json -o dev-resources/parameters/simple.json validate-input dev-resources/input/simple.json
+
+test-cli-comprehensive:
+	clojure -A:cli:run -i dev-resources/input/simple.json validate-input dev-resources/input/simple.json
+
 
 ci: test-unit test-cli
