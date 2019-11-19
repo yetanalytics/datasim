@@ -10,7 +10,7 @@
                 (dio/read-loc-json "dev-resources/profiles/cmi5/fixed.json"))]
       (is (instance? com.yetanalytics.datasim.input.profile.Profile p))
       (is (satisfies? p/FromInput p))
-      (is (satisfies? p/Serializable p))))
+      (is (satisfies? p/JSONRepresentable p))))
   (testing "Validate a profile"
     (is (nil? (p/validate (-> (profile/map->Profile {})
                               (dio/read-loc-json "dev-resources/profiles/cmi5/fixed.json")))))

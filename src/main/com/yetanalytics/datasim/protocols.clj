@@ -7,13 +7,6 @@
   (validate [this]
     "Validate the input, which must be read in first. Returns the output of `s/explain-data`"))
 
-(defprotocol Serializable
-  "Things that are serializable/deserializable"
-  (deserialize [this r]
-    "Get it from a reader.")
-  (serialize [this w]
-    "Write it to a writer"))
-
 (defprotocol JSONRepresentable
   "Things that can be represented as JSON"
   (read-key-fn [this k]
@@ -27,5 +20,4 @@
   (write-value-fn [this k v]
     "Wrapped in a partial, is a value-fn suitable for http://clojure.github.io/data.json/#clojure.data.json/write")
   (write-body-fn [this]
-    "Return the part of the record used to generate json.")
-  )
+    "Return the part of the record used to generate json."))

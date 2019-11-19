@@ -61,10 +61,4 @@
   (write-key-fn [this k]
     (name k))
   (write-value-fn [this k v]
-    v)
-
-  p/Serializable
-  (deserialize [this r]
-    (map->Personae
-     (json/read r :key-fn keyword)))
-  (serialize [this w]))
+    v))

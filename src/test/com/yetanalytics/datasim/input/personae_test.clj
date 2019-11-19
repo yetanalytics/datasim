@@ -10,7 +10,7 @@
                 (dio/read-loc-json "dev-resources/personae/simple.json"))]
       (is (instance? com.yetanalytics.datasim.input.personae.Personae p))
       (is (satisfies? p/FromInput p))
-      (is (satisfies? p/Serializable p))))
+      (is (satisfies? p/JSONRepresentable p))))
   (testing "Validate a personae"
     (let [personae (-> (personae/map->Personae {})
                        (dio/read-loc-json "dev-resources/personae/simple.json"))]

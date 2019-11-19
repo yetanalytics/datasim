@@ -38,10 +38,4 @@
   (write-key-fn [this k]
     (name k))
   (write-value-fn [this k v]
-    v)
-
-  p/Serializable
-  (deserialize [this r]
-    (map->Alignments
-     {:alignment-map (json/read r :key-fn str)}))
-  (serialize [this w]))
+    v))

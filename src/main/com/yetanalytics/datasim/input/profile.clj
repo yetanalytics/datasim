@@ -40,16 +40,4 @@
         "@context"
         nn)))
   (write-value-fn [this k v]
-    v)
-
-  p/Serializable
-  (deserialize [this r]
-    (map->Profile
-     (json/read r :key-fn (fn [^String k]
-                            (keyword nil
-                                     (let [kn (name k)]
-                                       (if (= "@context" kn)
-                                         "_context"
-                                         kn)))))))
-
-  (serialize [this w]))
+    v))

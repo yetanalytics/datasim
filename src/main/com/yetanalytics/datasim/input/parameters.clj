@@ -75,10 +75,4 @@
   (write-key-fn [this k]
     (name k))
   (write-value-fn [this k v]
-    v)
-
-  p/Serializable
-  (deserialize [this r]
-    (map->Parameters
-     (add-defaults (json/read r :key-fn keyword))))
-  (serialize [this w]))
+    v))
