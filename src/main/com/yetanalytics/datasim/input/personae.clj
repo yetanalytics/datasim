@@ -52,7 +52,7 @@
 
   p/JSONRepresentable
   (read-key-fn [this k]
-    (keyword k))
+    (keyword nil k))
   (read-value-fn [this k v]
     v)
   (read-body-fn [this json-result]
