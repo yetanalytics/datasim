@@ -50,6 +50,19 @@
     (s/explain-data ::personae
                     this))
 
+  p/JSONRepresentable
+  (read-key-fn [this k]
+    (keyword k))
+  (read-value-fn [this k v]
+    v)
+  (read-body-fn [this json-result]
+    (map->Personae
+     json-result))
+  (write-key-fn [this k]
+    (name k))
+  (write-value-fn [this k v]
+    v)
+
   p/Serializable
   (deserialize [this r]
     (map->Personae

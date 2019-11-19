@@ -1,14 +1,19 @@
 (ns com.yetanalytics.datasim.io
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [com.yetanalytics.datasim.protocols :as p]))
+            [com.yetanalytics.datasim.protocols :as p]
+            [clojure.data.json :as json]))
 
-(defn read-loc
+(defn read-loc-json
   "Reads in a file from the given location and parses it."
   [record loc]
   (try (with-open [r (io/reader loc)]
          (try
-           (p/deserialize record r)
+           (p/read-body-fn
+            record
+            (json/read r
+                       :key-fn (partial p/read-key-fn record)
+                       :value-fn (partial p/read-value-fn record)))
            (catch Exception e
              (throw (ex-info "Parse Error"
                              {:type ::parse-error

@@ -36,25 +36,25 @@
     (s/explain-data :com.yetanalytics.datasim/input this)))
 
 (defmulti from-location
-  "Instantiate a new input object of type-k from location"
-  (fn [type-k _]
-    type-k))
+  "Instantiate a new input object of type-k from location in the given format"
+  (fn [type-k fmt-k _]
+    [type-k fmt-k]))
 
-(defmethod from-location :profile
-  [_ location]
-  (dio/read-loc (profile/map->Profile {}) location))
+(defmethod from-location [:profile :json]
+  [_ _ location]
+  (dio/read-loc-json (profile/map->Profile {}) location))
 
-(defmethod from-location :personae
-  [_ location]
-  (dio/read-loc (personae/map->Personae {}) location))
+(defmethod from-location [:personae :json]
+  [_ _ location]
+  (dio/read-loc-json (personae/map->Personae {}) location))
 
-(defmethod from-location :alignments
-  [_ location]
-  (dio/read-loc (alignments/map->Alignments {}) location))
+(defmethod from-location [:alignments :json]
+  [_ _ location]
+  (dio/read-loc-json (alignments/map->Alignments {}) location))
 
-(defmethod from-location :parameters
-  [_ location]
-  (dio/read-loc (params/map->Parameters {}) location))
+(defmethod from-location [:parameters :json]
+  [_ _ location]
+  (dio/read-loc-json (params/map->Parameters {}) location))
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result"

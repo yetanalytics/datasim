@@ -13,7 +13,7 @@
   [["-p" "--profile URI" "xAPI Profile Location"
     :id :profiles
     :desc "The location of an xAPI profile, can be used multiple times."
-    :parse-fn (partial input/from-location :profile)
+    :parse-fn (partial input/from-location :profile :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate profile."]
                 [])
@@ -25,21 +25,21 @@
    ["-a" "--actor-personae URI" "Actor Personae Location"
     :id :personae
     :desc "The location of an Actor Personae document indicating the actors in the sim."
-    :parse-fn (partial input/from-location :personae)
+    :parse-fn (partial input/from-location :personae :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate personae."]
                 [])]
    ["-l" "--alignments URI" "Actor Alignments Location"
     :id :alignments
     :desc "The location of an Actor Alignments Document."
-    :parse-fn (partial input/from-location :alignments)
+    :parse-fn (partial input/from-location :alignments :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate Alignments."]
                 [])]
    ["-o" "--parameters URI" "Sim Parameters Location"
     :id :parameters
     :desc "The location of a Sim Parameters Document."
-    :parse-fn (partial input/from-location :parameters)
+    :parse-fn (partial input/from-location :parameters :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate Parameters."]
                 [])

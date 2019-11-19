@@ -3,7 +3,8 @@
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]
             [com.yetanalytics.pan.objects.profile :as profile]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [clojure.walk :as w])
   (:import [java.io Reader Writer]))
 
 (defrecord Profile [id
@@ -22,10 +23,33 @@
   (validate [this]
     (s/explain-data ::profile/profile this))
 
+  p/JSONRepresentable
+  (read-key-fn [this k]
+    (keyword nil
+             (if (= "@context" k)
+               "_context"
+               k)))
+  (read-value-fn [this k v]
+    v)
+  (read-body-fn [this json-result]
+    (map->Profile
+     json-result))
+  (write-key-fn [this k]
+    (let [nn (name k)]
+      (if (= nn "_context")
+        "@context"
+        nn)))
+  (write-value-fn [this k v]
+    v)
+
   p/Serializable
   (deserialize [this r]
     (map->Profile
      (json/read r :key-fn (fn [^String k]
                             (keyword nil
-                                     (cs/replace k \@ \_))))))
+                                     (let [kn (name k)]
+                                       (if (= "@context" kn)
+                                         "_context"
+                                         kn)))))))
+
   (serialize [this w]))

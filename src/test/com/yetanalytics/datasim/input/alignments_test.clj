@@ -7,11 +7,11 @@
 (deftest read-in-test
   (testing "Read alignments in from file"
     (let [p (-> (alignments/map->Alignments {})
-                (dio/read-loc "dev-resources/alignments/simple.json"))]
+                (dio/read-loc-json "dev-resources/alignments/simple.json"))]
       (is (instance? com.yetanalytics.datasim.input.alignments.Alignments p))
       (is (satisfies? p/FromInput p))
       (is (satisfies? p/Serializable p))))
   (testing "Validate alignments"
     (let [alignments (-> (alignments/map->Alignments {})
-                       (dio/read-loc "dev-resources/alignments/simple.json"))]
+                       (dio/read-loc-json "dev-resources/alignments/simple.json"))]
       (is (nil? (p/validate alignments))))))
