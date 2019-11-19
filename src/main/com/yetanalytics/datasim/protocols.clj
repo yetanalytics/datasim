@@ -13,10 +13,3 @@
     "Get it from a reader.")
   (serialize [this w]
     "Write it to a writer"))
-
-(defprotocol IdIndexed
-  "Things that have subobjects indexed by IDs."
-  (get-id [this id]
-    "Get something (possibly nested) by ID")
-  (flat-map [this]
-    "Return a flat map of all Identified subobjects"))

@@ -1,5 +1,7 @@
 (ns com.yetanalytics.datasim.util.xapi
-  "Misc. xAPI-oriented utilities")
+  "Misc. xAPI-oriented utilities"
+  (:require [clojure.spec.alpha :as s]
+            [xapi-schema.spec :as xs]))
 
 (defn agent-id
   "Return a string representing the id of an agent in the sim. Will be prefixed
@@ -20,3 +22,12 @@
            (format "mbox_sha1sum::%s" mbox_sha1sum))
       (and openid
            (format "openid::%s" openid))))
+
+(defn make-ifi-map
+  "Given an xapi group, make a map of ifis"
+  [{:keys [member] :as group}]
+  (into {}
+        (for [actor member
+              :let [id (agent-id actor)]
+              :when id]
+          [id actor])))

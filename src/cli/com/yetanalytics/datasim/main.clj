@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input :as input]
             [expound.alpha :as expound]
-            [com.yetanalytics.datasim.parameters :as params]
+            [com.yetanalytics.datasim.input.parameters :as params]
             [clojure.pprint :refer [pprint]])
   (:gen-class))
 

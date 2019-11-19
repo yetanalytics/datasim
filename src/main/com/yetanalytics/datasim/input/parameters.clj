@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.parameters
+(ns com.yetanalytics.datasim.input.parameters
   "Simulation global parameters"
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]

@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.io-test
   (:require [clojure.test :refer :all]
             [com.yetanalytics.datasim.io :as io]
-            [com.yetanalytics.datasim.profile :as profile]))
+            [com.yetanalytics.datasim.input.profile :as profile]))
 
 (deftest read-loc-test
   (let [p (profile/map->Profile {})]
