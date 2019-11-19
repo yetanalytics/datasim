@@ -25,10 +25,11 @@
 
   p/JSONRepresentable
   (read-key-fn [this k]
-    (keyword nil
-             (if (= "@context" k)
-               "_context"
-               k)))
+    (let [kn (name k)]
+      (keyword nil
+               (if (= "@context" kn)
+                 "_context"
+                 kn))))
   (read-value-fn [this k v]
     v)
   (read-body-fn [this json-result]
@@ -40,4 +41,6 @@
         "@context"
         nn)))
   (write-value-fn [this k v]
-    v))
+    v)
+  (write-body-fn [this]
+    this))

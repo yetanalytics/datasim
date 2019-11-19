@@ -47,6 +47,7 @@
     ;; default doesn't work here, as the full input spec fails.
     ;; For now we just hack it by calling the defaults fn directly.
     :default (params/add-defaults {})]
+
    ["-h" "--help"]])
 
 (defn bail!
@@ -71,7 +72,7 @@
                                        ;; more in-depth one.
                                        (not= "validate-input"
                                              (last args))))
-        [?command] arguments]
+        [?command & rest-args] arguments]
     (cond (seq errors)
           (bail! errors)
 
@@ -93,7 +94,11 @@
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON
                   "validate-input"
-                  (do (println "Input is valid. Input:\n\n")
-                      (pprint input)))
+                  (let [[location] rest-args]
+                    (if location
+                      (do (input/to-file input :json location)
+                          (println (format "Input specification written to %s" location)))
+                      ;; TODO: Figure out why we get a stream closed error here
+                      (input/to-out input :json))))
                 (do (println "No command entered.")
                     (println summary))))))))

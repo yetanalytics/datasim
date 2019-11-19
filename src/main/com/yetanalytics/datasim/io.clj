@@ -24,3 +24,32 @@
                          {:type ::io-error
                           :location loc}
                          e)))))
+
+(defn write-loc-json
+  "Write a record to a location"
+  [record loc]
+  (try (with-open [w (io/writer loc)]
+         (try
+           (json/write (p/write-body-fn record)
+                       w
+                       :key-fn (partial p/write-key-fn record)
+                       :value-fn (partial p/write-value-fn record)
+                       :escape-slash false
+                       :escape-unicode false)
+           (catch Exception e
+             (throw (ex-info "Parse Error"
+                             {:type ::unparse-error
+                              :location loc}
+                             e)))))
+       (catch java.io.IOException e
+         (throw (ex-info "I/O Error"
+                         {:type ::io-error
+                          :location loc}
+                         e)))))
+
+(defn write-file-json
+  "Write a record to a file"
+  [record loc]
+  (let [file (io/file loc)]
+    (io/make-parents file)
+    (write-loc-json record file)))

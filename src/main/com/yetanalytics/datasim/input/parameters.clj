@@ -66,7 +66,7 @@
 
   p/JSONRepresentable
   (read-key-fn [this k]
-    (keyword nil k))
+    (keyword nil (name k)))
   (read-value-fn [this k v]
     v)
   (read-body-fn [this json-result]
@@ -75,4 +75,6 @@
   (write-key-fn [this k]
     (name k))
   (write-value-fn [this k v]
-    v))
+    v)
+  (write-body-fn [this]
+    (into {} this)))
