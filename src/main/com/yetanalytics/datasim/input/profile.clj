@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.profile
+(ns com.yetanalytics.datasim.input.profile
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]

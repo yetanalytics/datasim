@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.personae
+(ns com.yetanalytics.datasim.input.personae
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.protocols :as p]

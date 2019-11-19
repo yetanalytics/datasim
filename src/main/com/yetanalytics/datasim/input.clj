@@ -4,10 +4,10 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as ps]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.profile :as profile]
-            [com.yetanalytics.datasim.personae :as personae]
-            [com.yetanalytics.datasim.alignments :as alignments]
-            [com.yetanalytics.datasim.parameters :as params]
+            [com.yetanalytics.datasim.input.profile :as profile]
+            [com.yetanalytics.datasim.input.personae :as personae]
+            [com.yetanalytics.datasim.input.alignments :as alignments]
+            [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]))
 
 (s/def ::profiles

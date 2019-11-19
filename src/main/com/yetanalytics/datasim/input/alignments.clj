@@ -1,8 +1,8 @@
-(ns com.yetanalytics.datasim.alignments
+(ns com.yetanalytics.datasim.input.alignments
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as profile]
-            [com.yetanalytics.datasim.personae :as personae]
+            [com.yetanalytics.datasim.input.personae :as personae]
             [clojure.data.json :as json]
             [com.yetanalytics.datasim.iri :as iri]))
 
