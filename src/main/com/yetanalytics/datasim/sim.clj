@@ -135,11 +135,3 @@
             [actor-id
              {:seed actor-seed
               :prob-seq actor-prob}]))))
-
-(comment
-  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
-
-  (s/valid? ::skeleton (build-skeleton i))
-
-
-  )
