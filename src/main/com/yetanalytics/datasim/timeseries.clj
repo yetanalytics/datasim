@@ -111,13 +111,14 @@
 (defn arma-seq
   "Given arma params, return an infinite lazy seq of values"
   ([{:keys [seed] :as arma-model}]
-   (with-meta
-     (arma-seq arma-model
-               0.0
-               0.0
-               (Random. seed))
-     {::seed seed
-      ::arma arma-model}))
+   (lazy-seq
+    (with-meta
+      (arma-seq arma-model
+                0.0
+                0.0
+                (Random. seed))
+      {::seed seed
+       ::arma arma-model})))
   ([{:keys [std phi theta c] :as arma-model
      :or {phi []
           theta []}}
