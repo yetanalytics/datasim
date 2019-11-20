@@ -65,12 +65,12 @@
 
 (defn add-defaults
   "Generate defualts"
-  [{:keys [start timezone seed] :as params}]
+  [{:keys [start from timezone seed] :as params}]
   (merge
    params
    (let [s (or start (.toString (Instant/now)))]
      {:start s
-      :from s
+      :from (or from s)
       :timezone (or timezone "UTC")
       :seed (or seed (.nextLong (Random.)))})))
 
