@@ -57,8 +57,7 @@
   (let [^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
-        ?sample-n (:whole (t/convert-amount 1 :days
-                                            :millis)) #_(when end
+        ?sample-n (when end
                     (let [t-end (.toEpochMilli (t/instant end))]
                       (- t-end t-zero)))
         ;; Useful time seqs
