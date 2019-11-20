@@ -19,8 +19,10 @@
          (is (satisfies? p/FromInput x))
          (is (satisfies? p/JSONRepresentable x)))
        (testing "validation"
-         (is (nil? (p/validate x)))
-         (is (some? (p/validate (invalidator x)))))))
+         (is (nil? (validate x)))
+         (is (some? (validate (invalidator x))))
+         (is (thrown? clojure.lang.ExceptionInfo
+                      (validate-throw (invalidator x)))))))
    "xAPI Profile" :profile "dev-resources/profiles/cmi5/fixed.json"
    #(assoc % :id "foo") ;; profiles need an IRI ID
 
