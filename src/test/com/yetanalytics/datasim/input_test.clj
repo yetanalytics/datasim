@@ -8,12 +8,12 @@
 
 (deftest input-objects-test
   (t/do-template
-   [nm'         ;; friendly name
+   [nm         ;; friendly name
     k           ;; key
     loc         ;; location of good json
     invalidator ;; a function to make it invalid
     ]
-   (testing (format "testing %s:" nm')
+   (testing (format "testing %s:" nm)
      (let [x (from-location k :json loc)]
        (testing "protocols"
          (is (satisfies? p/FromInput x))
