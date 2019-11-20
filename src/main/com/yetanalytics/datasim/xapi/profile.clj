@@ -68,17 +68,17 @@
                          (gen/return [])]
                         [(align-likelihood
                           actor-alignment
-                          (:id optional))
+                          optional)
                          (pattern-gen*
                           profile-map
                           actor-alignment
-                          (:id optional))]])
+                          optional)]])
         ;; TODO: Figure out effect, if any
         oneOrMore
         (gen/vector (pattern-gen*
                      profile-map
                      actor-alignment
-                     (:id oneOrMore))
+                     oneOrMore)
                     1 100)
         sequence
         (apply gen/tuple (mapv (partial
@@ -91,11 +91,11 @@
          [[1.0 (gen/return [])]
           [(align-likelihood
             actor-alignment
-            (:id zeroOrMore))
+            zeroOrMore)
            (gen/vector (pattern-gen*
                         profile-map
                         actor-alignment
-                        (:id zeroOrMore))
+                        zeroOrMore)
                        1 100)]]))
       "StatementTemplate"
       (gen/return iri))))
@@ -126,10 +126,16 @@
                      type]} (get profile-map iri)]
          (assert (= type "Pattern") "IRI must be for a pattern")
          (assert primary "Can only generate a primary pattern.")
-         (gen/fmap flatten
-                   (pattern-gen* profile-map
-                                 actor-alignment
-                                 iri)))))))
+         (gen/such-that
+          not-empty
+          (gen/fmap flatten
+                    (pattern-gen* profile-map
+                                  actor-alignment
+                                  iri))))))))
+
+
+
+
 
 
 
@@ -140,21 +146,23 @@
     (i/from-location
      :profile :json "dev-resources/profiles/cmi5/fixed.json"))
 
+  (com.yetanalytics.datasim.protocols/validate p)
+
   (clojure.pprint/pprint (keep (fn [[id {:keys [type primary]}]]
                                    (when (and (= type "Pattern")
                                               primary)
                                      id))
                                  (iri-map p)))
 
-  (time (first (gen/generate
-   (pattern-gen
-    p ;; profile
-    {} #_{"https://w3id.org/xapi/cmi5#satisfied" -1.0} ;; alignment
-    ;; "https://w3id.org/xapi/cmi5#toplevel" ;; entry pattern
-    )
-   3 ;; gen 'size'
-   1234
-   )))
+  (time (gen/generate
+         (pattern-gen
+          p ;; profile
+          {} #_{"https://w3id.org/xapi/cmi5#satisfied" -1.0} ;; alignment
+          "https://w3id.org/xapi/cmi5#toplevel" ;; entry pattern
+          )
+         0 ;; gen 'size'
+         123
+         ))
 
 
 
