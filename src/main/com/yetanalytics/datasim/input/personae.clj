@@ -38,7 +38,7 @@
 
 (defrecord Personae [member
                      objectType
-                     name
+                     ;; name
 
                      ;; prob not used
                      mbox
@@ -50,8 +50,23 @@
     (s/explain-data ::personae
                     this))
 
-  p/Serializable
-  (deserialize [this r]
+  p/JSONRepresentable
+  (read-key-fn [this k]
+    (keyword nil (name k)))
+  (read-value-fn [this k v]
+    v)
+  (read-body-fn [this json-result]
     (map->Personae
-     (json/read r :key-fn keyword)))
-  (serialize [this w]))
+     json-result))
+  (write-key-fn [this k]
+    (name k))
+  (write-value-fn [this k v]
+    v)
+  (write-body-fn [this]
+    (reduce-kv
+     (fn [m k v]
+       (if (nil? v)
+         m
+         (assoc m k v)))
+     {}
+     this)))

@@ -13,7 +13,7 @@
   [["-p" "--profile URI" "xAPI Profile Location"
     :id :profiles
     :desc "The location of an xAPI profile, can be used multiple times."
-    :parse-fn (partial input/from-location :profile)
+    :parse-fn (partial input/from-location :profile :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate profile."]
                 [])
@@ -25,21 +25,21 @@
    ["-a" "--actor-personae URI" "Actor Personae Location"
     :id :personae
     :desc "The location of an Actor Personae document indicating the actors in the sim."
-    :parse-fn (partial input/from-location :personae)
+    :parse-fn (partial input/from-location :personae :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate personae."]
                 [])]
    ["-l" "--alignments URI" "Actor Alignments Location"
     :id :alignments
     :desc "The location of an Actor Alignments Document."
-    :parse-fn (partial input/from-location :alignments)
+    :parse-fn (partial input/from-location :alignments :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate Alignments."]
                 [])]
    ["-o" "--parameters URI" "Sim Parameters Location"
     :id :parameters
     :desc "The location of a Sim Parameters Document."
-    :parse-fn (partial input/from-location :parameters)
+    :parse-fn (partial input/from-location :parameters :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate Parameters."]
                 [])
@@ -47,6 +47,16 @@
     ;; default doesn't work here, as the full input spec fails.
     ;; For now we just hack it by calling the defaults fn directly.
     :default (params/add-defaults {})]
+
+   ["-i" "--input URI" "Combined Simulation input"
+    :id :input
+    :desc "The location of a JSON file containing a combined simulation input spec."
+    :parse-fn (partial input/from-location :input :json)
+    :validate (if validate?
+                [input/validate-throw "Failed to validate input."]
+                [])
+    ]
+
    ["-h" "--help"]])
 
 (defn bail!
@@ -71,7 +81,7 @@
                                        ;; more in-depth one.
                                        (not= "validate-input"
                                              (last args))))
-        [?command] arguments]
+        [?command & rest-args] arguments]
     (cond (seq errors)
           (bail! errors)
 
@@ -82,7 +92,7 @@
           ;; At this point, we have valid individual inputs. However, there may
           ;; be cross-validation that needs to happen, so we compose the
           ;; comprehensive spec from the options and check that.
-          (let [input (input/map->Input options)]
+          (let [input (or (:input options) (input/map->Input options))]
             (if-let [spec-error (input/validate input)]
               (bail! [(binding [s/*explain-out* expound/printer]
                        (expound/explain-result-str spec-error))])
@@ -93,7 +103,11 @@
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON
                   "validate-input"
-                  (do (println "Input is valid. Input:\n\n")
-                      (pprint input)))
+                  (let [[location] rest-args]
+                    (if location
+                      (do (input/to-file input :json location)
+                          (println (format "Input specification written to %s" location)))
+                      ;; TODO: Figure out why we get a stream closed error here
+                      (input/to-out input :json))))
                 (do (println "No command entered.")
                     (println summary))))))))

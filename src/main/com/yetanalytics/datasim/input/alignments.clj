@@ -27,9 +27,17 @@
   (validate [this]
     (s/explain-data ::alignments
                     this))
-
-  p/Serializable
-  (deserialize [this r]
+  p/JSONRepresentable
+  (read-key-fn [this k]
+    (name k))
+  (read-value-fn [this k v]
+    v)
+  (read-body-fn [this json-result]
     (map->Alignments
-     {:alignment-map (json/read r :key-fn str)}))
-  (serialize [this w]))
+     {:alignment-map json-result}))
+  (write-key-fn [this k]
+    (name k))
+  (write-value-fn [this k v]
+    v)
+  (write-body-fn [this]
+    alignment-map))

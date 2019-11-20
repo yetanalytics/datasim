@@ -8,7 +8,8 @@
             [com.yetanalytics.datasim.input.personae :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.io :as dio]))
+            [com.yetanalytics.datasim.io :as dio]
+            [clojure.walk :as w]))
 
 (s/def ::profiles
   (s/every ::ps/profile :min-count 1
@@ -30,31 +31,135 @@
                    ::alignments
                    ::parameters]))
 
+(def subobject-constructors
+  {:profile profile/map->Profile
+   :profiles profile/map->Profile ;; hacky
+   :personae personae/map->Personae
+   :alignments alignments/map->Alignments
+   :parameters params/map->Parameters})
+
+(defn realize-subobjects
+  "Make subobjects from JSON into records"
+  [json-result]
+  (reduce-kv
+   (fn [m k v]
+     (if-let [constructor (get subobject-constructors k)]
+       (let [rec (constructor {})
+             key-fn
+             (partial
+              p/read-key-fn
+              rec)
+             body-fn
+             (cond->> (partial
+                       p/read-body-fn
+                       rec)
+               ;; for profiles, it's a vector
+               (= k :profiles)
+               (partial mapv))]
+         (assoc m
+                k
+                (body-fn
+                 (w/postwalk
+                  (fn [node]
+                    ;; here we can be sure every prop is a key
+                    ;; since we force it with read-key-fn on input
+                    (if (keyword? node)
+                      (let [nn (name node)]
+                        (key-fn node))
+                      node))
+                  v))))
+       (throw (ex-info (format "Unknown key %s" k)
+                       {:type ::unknown-key
+                        :key k
+                        :json json-result}))))
+   {}
+   json-result))
+
+(defn unrealize-subobjects
+  "Make subobjects ready for writing to JSON"
+  [input]
+  (reduce-kv
+   (fn [m k v]
+     (if-let [constructor (get subobject-constructors k)]
+       (let [rec (constructor {})
+             key-fn
+             (partial
+              p/write-key-fn
+              rec)
+             body-fn
+             (cond->> p/write-body-fn
+               ;; for profiles, it's a vector
+               (= k :profiles)
+               (partial mapv))]
+         (assoc m
+                k
+                (w/postwalk
+                 (fn [node]
+                   ;; Here we can't know it's a key unless we find it in a map
+                   (if (map? node)
+                     (reduce-kv
+                      (fn [m' k' v']
+                        (assoc m' (key-fn k') v'))
+                      {}
+                      node)
+                     node))
+                 (body-fn v))))
+       (throw (ex-info (format "Unknown key %s" k)
+                       {:type ::unknown-key
+                        :key k
+                        :input input}))))
+   {}
+   input))
+
 (defrecord Input [profiles]
   p/FromInput
   (validate [this]
-    (s/explain-data :com.yetanalytics.datasim/input this)))
+    (s/explain-data :com.yetanalytics.datasim/input this))
 
-(defmulti from-location
-  "Instantiate a new input object of type-k from location"
-  (fn [type-k _]
-    type-k))
+  p/JSONRepresentable
+  (read-key-fn [this k]
+    (keyword nil k))
+  (read-value-fn [this k v]
+    v)
+  (read-body-fn [this json-result]
+    (map->Input
+     (realize-subobjects json-result)))
+  (write-key-fn [this k]
+    (name k))
+  (write-value-fn [this k v]
+    v)
+  (write-body-fn [this]
+    (unrealize-subobjects this)))
 
-(defmethod from-location :profile
-  [_ location]
-  (dio/read-loc (profile/map->Profile {}) location))
+(defn from-location
+  [type-k fmt-k location]
+  (if-let [constructor (if (= type-k :input)
+                         map->Input
+                         (get subobject-constructors type-k))]
+    (case fmt-k
+      ;; currently only JSON
+      :json (dio/read-loc-json (constructor {}) location))
+    (throw (ex-info (format "Unknown key %s" type-k)
+                    {:type ::unknown-key
+                     :key type-k}))))
 
-(defmethod from-location :personae
-  [_ location]
-  (dio/read-loc (personae/map->Personae {}) location))
+(defn to-file
+  [record fmt-k location]
+  (case fmt-k
+    ;; currently only JSON
+    :json (dio/write-file-json record location)))
 
-(defmethod from-location :alignments
-  [_ location]
-  (dio/read-loc (alignments/map->Alignments {}) location))
+(defn to-out
+  [record fmt-k]
+  (case fmt-k
+    ;; currently only JSON
+    :json (dio/write-loc-json record *out*)))
 
-(defmethod from-location :parameters
-  [_ location]
-  (dio/read-loc (params/map->Parameters {}) location))
+(defn to-err
+  [record fmt-k]
+  (case fmt-k
+    ;; currently only JSON
+    :json (dio/write-loc-json record *err*)))
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result"
