@@ -3,7 +3,7 @@
             [com.yetanalytics.datasim.io :as io]
             [com.yetanalytics.datasim.input.profile :as profile]))
 
-(deftest read-loc-jsontest
+(deftest read-loc-json-test
   (let [p (profile/map->Profile {})]
     (testing "Reads files as json"
       (is (map? (io/read-loc-json p "dev-resources/profiles/cmi5/fixed.json"))))
