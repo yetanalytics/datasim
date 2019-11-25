@@ -60,7 +60,7 @@
      (* sd (.nextGaussian rng))))
 
 (defn rand-long
-  [^Random rng mean sd]
+  [^Random rng]
   (.nextLong rng))
 
 (defn rand-uuid
