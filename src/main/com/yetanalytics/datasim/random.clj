@@ -1,7 +1,8 @@
 (ns com.yetanalytics.datasim.random
   "Seeded random functions"
   (:require [com.yetanalytics.datasim.util.maths :as maths])
-  (:import [java.util Random]))
+  (:import [java.util
+            UUID Random]))
 
 (defn seed-rng
   ^Random [^Long seed]
@@ -61,6 +62,13 @@
 (defn rand-long
   [^Random rng mean sd]
   (.nextLong rng))
+
+(defn rand-uuid
+  "Produce a random uuid (as a string) for the rng"
+  [^Random rng]
+  (let [arr (byte-array 16)]
+    (.nextBytes rng arr)
+    (.toString (UUID/nameUUIDFromBytes arr))))
 
 (defn choose
   [rng weights coll
