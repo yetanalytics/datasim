@@ -1,8 +1,26 @@
 (ns com.yetanalytics.datasim.xapi.profile
-  "Understanding elements of xAPI profiles"
-  (:require [com.yetanalytics.datasim.random :as random]
+  "Understanding elements of xAPI profiles
+  Generate Profile walks"
+  (:require [clojure.spec.alpha :as s]
+            [com.yetanalytics.datasim.iri :as iri]
+            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.pan.objects.profile :as profile]
+            [com.yetanalytics.pan.objects.concept :as concept]
+            [com.yetanalytics.pan.objects.pattern :as pattern]
+            [com.yetanalytics.pan.objects.template :as template]
             [clojure.zip :as z])
   (:import [java.util Random]))
+
+
+(s/def ::iri-map
+  (s/map-of iri/iri-spec
+            (s/or :concept ::concept/concept
+                  :pattern ::pattern/pattern
+                  :template ::template/template)))
+
+(s/fdef profiles->map
+  :args (s/cat :profiles (s/+ ::profile/profile))
+  :ret ::iri-map)
 
 (defn profiles->map
   "Given any number of profiles, return all IRIs mapped to what they reference"
