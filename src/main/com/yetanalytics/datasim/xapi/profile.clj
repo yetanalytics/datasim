@@ -99,12 +99,13 @@
        ;; We store the map in meta, which is always preserved
        (vary-meta assoc ::iri-map iri-map)))))
 
+
 (defn rand-pattern-zip
   "Building on the comprehension from pattern-zip, return a zipper that uses a
   deterministic pseudorandom walk for choosing children/paths."
-  [alignment
+  [profiles
+   alignment
    ^Random rng
-   profiles
    & {:keys [repeat-max]
       :or {repeat-max 5}}]
   (let [pzip (apply pattern-zip profiles)
@@ -126,6 +127,7 @@
                                ]
                         {label :en} :prefLabel
                         :as profile-obj} (get iri-map node-iri)]
+                   (assert profile-obj "Can't navigate if not a pattern")
                    (cond
                      alternates
                      [(random/choose rng alignment alternates)]
@@ -146,7 +148,49 @@
                      ))))))
 
 
+(defn walk-once
+  "From the root of a pattern zip, perform a single walk of a primary pattern,
+  returning a seq of locs"
+  [loc]
+  (->> loc
+       (iterate z/next)
+       (take-while (complement z/end?))
+       ;; cut the root node off the top
+       rest
+       ;; empty seq nodes will be nil, so only keep the good'ns
+       (filter z/node)))
 
+(defn registration-seq
+  "Given a seed, alignment and profiles, return an infinite seq of maps where
+  `:registration` is a string uuid
+  `:template` is a statement template
+  `:seed` is a derived seed for generating the statement."
+  ([profiles
+    alignment
+    seed]
+   (lazy-seq
+    (let [^Random rng (random/seed-rng seed)
+          root-loc (rand-pattern-zip profiles alignment rng)]
+      (registration-seq root-loc rng))))
+  ([root-loc
+    ^Random rng]
+   (lazy-seq
+    (let [registration (random/rand-uuid rng)]
+      (concat
+       (->> root-loc
+            ;; do one deterministic walk
+            walk-once
+            ;; Get the statement templates
+            (keep (fn [loc]
+                    (let [{obj-type :type
+                           :as o} (loc-object loc)]
+                      (when (= "StatementTemplate" obj-type)
+                        {:registration registration
+                         :template o
+                         :seed (random/rand-long rng)})))))
+       (registration-seq
+        root-loc
+        rng))))))
 
 (comment
 
@@ -166,25 +210,30 @@
 
   ;; traverse randomly
   (-> (rand-pattern-zip
-       {} (random/seed-rng 45)
+       {} (Random. ) #_(random/seed-rng 2)
        [p])
-      (->> (iterate z/next)
-           (take-while (complement z/end?))
-           #_(keep z/node)
-           (filter #(= "StatementTemplate"
-                       (:type (loc-object %))))
-           (keep (juxt z/node
-                       z/path))
-
-           (into [])
-           )
-
-
+      walk-once
+      (->> (map z/node))
+      last
       )
+  (->> (registration-seq [p] {} 42)
+       (take 200)
+       (partition-by :registration)
+       first
+       clojure.pprint/pprint
+       )
 
 
+  (def loc (atom (rand-pattern-zip
+                  [p] {} (random/seed-rng 45)
+                  )))
 
 
+  (z/node @loc
+          )
+  (some #(when (nil? (z/node %))
+           %)
+        (iterate z/next @loc))
 
 
 

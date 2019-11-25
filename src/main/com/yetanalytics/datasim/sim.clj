@@ -5,8 +5,11 @@
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
+   [com.yetanalytics.datasim.xapi.profile :as p]
    [com.yetanalytics.datasim.util.xapi :as xapiu]
    [com.yetanalytics.datasim.util.maths :as maths]
+   [com.yetanalytics.pan.objects.template :as template]
+   [xapi-schema.spec :as xs]
    [java-time :as t])
   (:import [java.time Instant ZoneRegion]
            [java.util Random]))
@@ -29,6 +32,22 @@
 (s/def :actor-map/prob-seq
   (s/and unrealized-lazy-seq-spec
          (s/every :prob-seq/moment)))
+
+
+(s/def :stub/registration
+  ::xs/uuid)
+
+(s/def :stub/seed
+  int?)
+
+(s/def :reg-seq/stub
+  (s/keys :req-un [:stub/registration
+                   ::template/template
+                   :stub/seed]))
+
+(s/def :actor-map/reg-seq
+  (s/and unrealized-lazy-seq-spec
+         (s/every :reg-seq/stub)))
 
 (s/def :skeleton/actor-map
   (s/keys :req-un [:actor-map/prob-seq
@@ -53,7 +72,9 @@
             timezone seed
 
 
-            ]} :parameters}]
+            ]} :parameters
+    profiles :profiles
+    {alignments :alignment-map} :alignments}]
   (let [^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
@@ -129,8 +150,35 @@
                                                     (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
                                                  [actor-arma mask]))
 
+                      actor-alignment (get alignments actor-id {})
+                      actor-reg-seed (.nextLong sim-rng)
+
+                      ;; infinite seq of maps containing registration uuid,
+                      ;; statement template, and a seed for generation
+                      actor-reg-seq (p/registration-seq
+                                     profiles actor-alignment actor-reg-seed)
+
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)]]
             [actor-id
              {:seed actor-seed
-              :prob-seq actor-prob}]))))
+              :prob-seq actor-prob
+              :reg-seq actor-reg-seq}]))))
+
+
+(comment
+  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
+
+
+  (def skel
+    (time (build-skeleton i)))
+
+  (-> skel
+      first
+      second
+      :prob-seq
+      (->> (take 10)))
+
+
+
+  )
