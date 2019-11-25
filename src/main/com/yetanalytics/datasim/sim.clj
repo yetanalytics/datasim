@@ -14,6 +14,8 @@
   (:import [java.time Instant ZoneRegion]
            [java.util Random]))
 
+
+;; this don't work
 (def unrealized-lazy-seq-spec
   (s/and #(instance? clojure.lang.LazySeq %)
           (complement realized?)))
@@ -30,8 +32,7 @@
             :NaN? false)))
 
 (s/def :actor-map/prob-seq
-  (s/and unrealized-lazy-seq-spec
-         (s/every :prob-seq/moment)))
+  (s/every :prob-seq/moment))
 
 
 (s/def :stub/registration
@@ -46,11 +47,11 @@
                    :stub/seed]))
 
 (s/def :actor-map/reg-seq
-  (s/and unrealized-lazy-seq-spec
-         (s/every :reg-seq/stub)))
+  (s/every :reg-seq/stub))
 
 (s/def :skeleton/actor-map
   (s/keys :req-un [:actor-map/prob-seq
+                   :actor-map/reg-seq
                    :actor-map/seed
                    ]))
 (s/def ::skeleton
@@ -173,11 +174,17 @@
   (def skel
     (time (build-skeleton i)))
 
+  (s/explain ::skeleton skel)
+
   (-> skel
       first
       second
-      :prob-seq
-      (->> (take 10)))
+      :reg-seq
+      first
+      :registration)
+
+
+  (s/explain ::xs/uuid "B73E0E16-386D-3D6D-8AE9-33B09C1C599E")
 
 
 
