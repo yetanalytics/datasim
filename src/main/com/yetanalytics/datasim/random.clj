@@ -64,11 +64,16 @@
   (.nextLong rng))
 
 (defn rand-uuid
-  "Produce a random uuid (as a string) for the rng"
+  "Produce a random uuid (as a string) for the rng.
+  Derived from `clojure.test.check.generators/uuid`"
   [^Random rng]
-  (let [arr (byte-array 16)]
-    (.nextBytes rng arr)
-    (.toString (UUID/nameUUIDFromBytes arr))))
+  (let [x1 (-> (rand-long rng)
+               (bit-and -45057)
+               (bit-or 0x4000))
+        x2 (-> (rand-long rng)
+               (bit-or -9223372036854775808)
+               (bit-and -4611686018427387905))]
+    (.toString (UUID. x1 x2))))
 
 (defn choose
   [rng weights coll
