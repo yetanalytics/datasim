@@ -33,7 +33,7 @@
   :args
   (s/cat
    :args-map
-   (s/keys*
+   (s/keys
     :req-un [;; input for the whole simulation
              :com.yetanalytics.datasim/input
              ;; flat map of profile iris to objects
@@ -73,3 +73,30 @@
     {}
     ;; The duration in MS so we can continue the sim
     {:duration-ms 1000}))
+
+
+(comment
+  ;; for REPL hacking
+  (let [input (input/from-location :input :json "dev-resources/input/simple.json")
+        iri-map (apply profile/profiles->map (:profiles input))]
+    (generate-statement
+     {:input input
+      :iri-map iri-map
+      :actor (-> input :personae :member first)
+      :alignment (get-in input [:alignments :alignment-map "mbox::mailto:bob@example.org"])
+      :sim-t 0
+      :seed 42
+      :template (get iri-map "https://w3id.org/xapi/cmi5#satisfied")
+      :registration (.toString (java.util.UUID/randomUUID))}))
+
+
+
+
+
+
+
+
+
+
+
+  )
