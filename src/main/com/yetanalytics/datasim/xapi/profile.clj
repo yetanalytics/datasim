@@ -184,11 +184,18 @@
             ;; Get the statement templates
             (keep (fn [loc]
                     (let [{obj-type :type
-                           :as o} (loc-object loc)]
+                           :as o} (loc-object loc)
+                          iri-map (::iri-map (meta loc))]
                       (when (= "StatementTemplate" obj-type)
                         {:registration registration
                          :template o
-                         :seed (random/rand-long rng)})))))
+                         :seed (random/rand-long rng)
+                         :pattern-ancestors
+                         (into []
+                               (for [iri (rest (z/path loc))
+                                     :let [{:keys [primary]} (get iri-map iri)]]
+                                 {:id iri
+                                  :primary (true? primary)}))})))))
        (registration-seq
         root-loc
         rng))))))
@@ -218,8 +225,6 @@
       last
       )
   (->> (registration-seq [p] {} 42)
-       (take 200)
-       (partition-by :registration)
        first
        clojure.pprint/pprint
        )
