@@ -81,7 +81,8 @@
                      (remove (comp zero? second))
                      (drop-while
                       (fn [[t prob]]
-                        (>= (random/rand* rng) prob))))]
+                        (>= (random/rand* rng) prob)))
+                     not-empty)]
        (let [;; for additional spiciness, set the actual time of activity
              ;; (or at least that passed to the statement generator) to a time
              ;; somewhere between t and t+1m
