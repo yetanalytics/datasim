@@ -8,6 +8,7 @@
    [com.yetanalytics.datasim.xapi.profile :as p]
    [com.yetanalytics.datasim.util.xapi :as xapiu]
    [com.yetanalytics.datasim.util.maths :as maths]
+   [com.yetanalytics.datasim.random :as random]
    [com.yetanalytics.pan.objects.template :as template]
    [xapi-schema.spec :as xs]
    [java-time :as t])
@@ -54,16 +55,77 @@
                    :actor-map/reg-seq
                    :actor-map/seed
                    ]))
+
+;; Based on the probability of activity at a given minute, and an infinite seq
+;; of profile walks, emit statements for one actor
+(s/def :skeleton/statement-seq
+  (s/every
+   ;; stubbed
+   map?
+   #_::xs/statement))
+
+(s/fdef statement-seq
+  :args (s/cat :actor-map :skeleton/actor-map)
+  :ret :skeleton/statement-seq)
+
+(defn statement-seq
+  [{:keys [prob-seq
+           reg-seq
+           seed
+           rng]
+    :as argm}]
+  (lazy-seq
+   (let [^Random rng (or rng (random/seed-rng seed))]
+     (when-let [[[t _] & rest-prob]
+                (->> prob-seq
+                     (remove (comp zero? second))
+                     (drop-while
+                      (fn [[t prob]]
+                        (>= (random/rand* rng) prob))))]
+       (let [;; for additional spiciness, set the actual time of activity
+             ;; (or at least that passed to the statement generator) to a time
+             ;; somewhere between t and t+1m
+             t-actual (long (+ t (random/rand-int* rng 60000)))
+
+             ;; t -> t-actual -> <statement generator> -> timestamp, duration
+             ;; the sequence should resume after timestamp + duration.
+
+             ;; TODO: The statement gen function will return a statement
+             ;; with duration ms in the meta.
+
+
+             statement (with-meta
+                         (assoc (first reg-seq)
+                                :t (.toString (Instant/ofEpochMilli t-actual)))
+                         {:duration-ms (long
+                                        (random/rand-gauss
+                                         rng 600000.0 0.5))})
+             ;; Get the length of time the statement took from the gen function.
+             {:keys [duration-ms]} (meta statement)]
+         (cons statement
+               (statement-seq
+                {:prob-seq (drop-while
+                            (comp
+                             (partial >
+                                      ;; TODO: figure out the actual
+                                      ;; thing to use for cooldown
+                                      (+ t-actual duration-ms))
+                             first)
+                            rest-prob)
+                 :reg-seq (rest reg-seq)
+                 :seed seed
+                 :rng rng})))))))
+
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
-            :skeleton/actor-map))
+            :skeleton/statement-seq))
 
 (s/fdef build-skeleton
   :args (s/cat :input :com.yetanalytics.datasim/input)
   :ret ::skeleton)
 
 (defn build-skeleton
-  "Given simulation input, return a skeleton with seeds and probability
+  "Given simulation input, return a skeleton with statement
   sequences per actor from `start` of sim.
 
   Should be run once (in a single thread)
@@ -162,9 +224,10 @@
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)]]
             [actor-id
-             {:seed actor-seed
-              :prob-seq actor-prob
-              :reg-seq actor-reg-seq}]))))
+             (statement-seq
+              {:seed actor-seed
+               :prob-seq actor-prob
+               :reg-seq actor-reg-seq})]))))
 
 
 (comment
@@ -179,13 +242,14 @@
   (-> skel
       first
       second
-      :reg-seq
-      first
-      :registration)
+      (->> (take 10))
+      clojure.pprint/pprint
+      )
 
 
   (s/explain ::xs/uuid "B73E0E16-386D-3D6D-8AE9-33B09C1C599E")
 
-
+  (.toString (Instant/ofEpochMilli
+   1574078559219))
 
   )
