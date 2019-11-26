@@ -147,6 +147,7 @@
                      sequence
                      ))))))
 
+;; TODO: Pass antecedent patterns in the result of registration seq
 
 (defn walk-once
   "From the root of a pattern zip, perform a single walk of a primary pattern,

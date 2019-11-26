@@ -10,11 +10,11 @@
 
 ;; The duration, in milliseconds, of the returned statement
 ;; This is so we can resume processing AFTER the statement timestamp + duration
-(s/def ::duration-ms
+(s/def ::end-ms
   pos-int?)
 
 (s/def ::meta
-  (s/keys :req-un [::duration-ms]))
+  (s/keys :req-un [::end-ms]))
 
 (s/def ::alignment
   :alignment-map/actor-alignment)
@@ -29,6 +29,16 @@
 (s/def ::sub-registration
   ::xs/uuid)
 
+;; TODO: this is a stub for the real ones
+(s/def ::pattern-ancestors
+  (s/every map?))
+
+;; a stub for a map of activities by IRI
+(s/def ::activities
+  (s/map-of ::xs/iri ;; activity type
+            (s/map-of ::xs/iri
+                      ::xs/activity)))
+
 (s/fdef generate-statement
   :args
   (s/cat
@@ -38,6 +48,8 @@
              :com.yetanalytics.datasim/input
              ;; flat map of profile iris to objects
              ::profile/iri-map
+             ;; all the activities we can use, by activity type
+             ::activities
              ;; the actor for the statement
              ;; (may have to stringify keys?)
              ::xs/actor
@@ -45,6 +57,9 @@
              ::alignment
              ;; a statement template to generate from
              ::template/template
+             ;; antecedent patterns to the current template, and whether or not
+             ;; they are primary
+             ::pattern-ancestors
              ;; Simulation time, in ms since epoch
              ::sim-t
              ;; A seed to generate with. Note that if you're calling more seeded
@@ -72,7 +87,7 @@
     ;; The generated statement
     {}
     ;; The duration in MS so we can continue the sim
-    {:duration-ms 1000}))
+    {:end-ms (+ sim-t 1000)}))
 
 
 (comment

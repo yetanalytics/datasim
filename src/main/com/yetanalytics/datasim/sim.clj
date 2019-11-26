@@ -98,19 +98,18 @@
              statement (with-meta
                          (assoc (first reg-seq)
                                 :t (.toString (Instant/ofEpochMilli t-actual)))
-                         {:duration-ms (long
-                                        (random/rand-gauss
-                                         rng 600000.0 0.5))})
+                         {:end-ms (+ t-actual
+                                     (long
+                                      (random/rand-gauss
+                                       rng 600000.0 0.5)))})
              ;; Get the length of time the statement took from the gen function.
-             {:keys [duration-ms]} (meta statement)]
+             {:keys [end-ms]} (meta statement)]
          (cons statement
                (statement-seq
                 {:prob-seq (drop-while
                             (comp
                              (partial >
-                                      ;; TODO: figure out the actual
-                                      ;; thing to use for cooldown
-                                      (+ t-actual duration-ms))
+                                      end-ms)
                              first)
                             rest-prob)
                  :reg-seq (rest reg-seq)
