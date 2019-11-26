@@ -6,6 +6,8 @@
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
    [com.yetanalytics.datasim.xapi.profile :as p]
+   [com.yetanalytics.datasim.xapi.activity :as activity]
+   [com.yetanalytics.datasim.xapi.statement :as statement]
    [com.yetanalytics.datasim.util.xapi :as xapiu]
    [com.yetanalytics.datasim.util.maths :as maths]
    [com.yetanalytics.datasim.random :as random]
@@ -65,15 +67,26 @@
    #_::xs/statement))
 
 (s/fdef statement-seq
-  :args (s/cat :actor-map :skeleton/actor-map)
+  :args (s/cat
+         :input :com.yetanalytics.datasim/input
+         :iri-map ::p/iri-map
+         :activities ::activity/cosmos
+         :actor ::xs/agent
+         :alignment :alignment-map/actor-alignment
+         :actor-map :skeleton/actor-map)
   :ret :skeleton/statement-seq)
 
 (defn statement-seq
-  [{:keys [prob-seq
+  [input
+   iri-map
+   activities
+   actor
+   alignment
+   {:keys [prob-seq
            reg-seq
            seed
            rng]
-    :as argm}]
+    :as actor-map}]
   (lazy-seq
    (let [^Random rng (or rng (random/seed-rng seed))]
      (when-let [[[t _] & rest-prob]
@@ -93,9 +106,16 @@
 
              ;; TODO: The statement gen function will return a statement
              ;; with duration ms in the meta.
+             statement (statement/generate-statement
+                        (merge (first reg-seq)
+                               {:input input
+                                :iri-map iri-map
+                                :activities activities
+                                :actor actor
+                                :alignment alignment
+                                :sim-t t-actual}))
 
-
-             statement (with-meta
+             #_statement #_(with-meta
                          (assoc (first reg-seq)
                                 :t (.toString (Instant/ofEpochMilli t-actual)))
                          {:end-ms (+ t-actual
@@ -106,6 +126,11 @@
              {:keys [end-ms]} (meta statement)]
          (cons statement
                (statement-seq
+                input
+                iri-map
+                activities
+                actor
+                alignment
                 {:prob-seq (drop-while
                             (comp
                              (partial >
@@ -137,7 +162,8 @@
 
             ]} :parameters
     profiles :profiles
-    {alignments :alignment-map} :alignments}]
+    {alignments :alignment-map} :alignments
+    :as input}]
   (let [^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
@@ -196,10 +222,15 @@
         mask (ts/op-seq max
                         [group-arma
                          day-night-seq
-                         lunch-hour-seq])]
+                         lunch-hour-seq])
+        ;; activities used in the sim
+        activities (activity/derive-cosmos input (.nextLong sim-rng))
+        iri-map (apply p/profiles->map profiles)]
     ;; Now, for each actor we 'initialize' what is needed for the sim
     (into {}
-          (for [actor-id (sort (map xapiu/agent-id actors))
+          (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
+                                                           identity)
+                                                     actors))
                 :let [;; seed specifically for the ARMA model
                       actor-arma-seed (.nextLong sim-rng)
                       ;; an arma seq
@@ -225,6 +256,11 @@
                       actor-seed (.nextLong sim-rng)]]
             [actor-id
              (statement-seq
+              input
+              iri-map
+              activities
+              actor
+              actor-alignment
               {:seed actor-seed
                :prob-seq actor-prob
                :reg-seq actor-reg-seq})]))))
