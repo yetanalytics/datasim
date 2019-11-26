@@ -21,6 +21,7 @@
                             timestamp-key :timestamp
                             ;; TODO: remove, just dev
                             t :t}]
+                        ;; TODO: don't re-parse
                         (.toEpochMilli
                          (Instant/parse (or timestamp-str
                                             timestamp-key
