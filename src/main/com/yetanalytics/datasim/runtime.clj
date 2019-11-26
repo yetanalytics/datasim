@@ -44,6 +44,24 @@
              :seed 42,
              :from "2019-11-18T11:38:39.219768Z"}))
 
+
+  (def statements
+    (into []
+          (-> (sim/build-skeleton i)
+              ;; take the actor statement seqs
+              vals
+              (->> (su/seq-sort
+                    (fn [{timestamp-str "timestamp"
+                          timestamp-key :timestamp
+                          ;; TODO: remove, just dev
+                          t :t}]
+                      ;; TODO: don't re-parse
+                      (.toEpochMilli
+                       (Instant/parse (or timestamp-str
+                                          timestamp-key
+                                          t)))))))))
+
+
   (run-sim! i)
 
 
