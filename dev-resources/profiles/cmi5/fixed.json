@@ -541,7 +541,7 @@
                 "en": "Satisfieds"
             },
             "inScheme": "https://w3id.org/xapi/cmi5/v1.0",
-            "zeroOrMore": {"id": "https://w3id.org/xapi/cmi5#satisfied"}
+            "zeroOrMore": "https://w3id.org/xapi/cmi5#satisfied"
         },
         {
             "id": "https://w3id.org/xapi/cmi5#waivedsession",
@@ -676,7 +676,7 @@
                 "en": "Maybe Completed"
             },
             "inScheme": "https://w3id.org/xapi/cmi5/v1.0",
-            "optional": {"id": "https://w3id.org/xapi/cmi5#completed"}
+            "optional": "https://w3id.org/xapi/cmi5#completed"
         },
         {
             "id": "https://w3id.org/xapi/cmi5#typicalsession",
@@ -705,7 +705,7 @@
                 "en": "This pattern provides an option to use zero or more of the alernates for the Typical Session pattern."
             },
             "inScheme": "https://w3id.org/xapi/cmi5/v1.0",
-            "zeroOrMore": {"id": "https://w3id.org/xapi/cmi5#typicalsession"}
+            "zeroOrMore": "https://w3id.org/xapi/cmi5#typicalsession"
         },
         {
             "id": "https://w3id.org/xapi/cmi5#toplevel",

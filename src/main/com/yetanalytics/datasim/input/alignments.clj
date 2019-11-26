@@ -10,13 +10,15 @@
 ;; Actor IFI -> map
 ;;              IRI -> weight
 
+(s/def :alignment-map/actor-alignment
+  (s/map-of iri/iri-spec
+            (s/double-in :min -1.0 :max 1.0
+                         :infinite? false
+                         :NaN? false)))
 
 (s/def ::alignment-map
   (s/map-of ::xapi/agent-id
-            (s/map-of iri/iri-spec
-                      (s/double-in :min -1.0 :max 1.0
-                                   :infinite? false
-                                   :NaN? false))))
+            :alignment-map/actor-alignment))
 
 (s/def ::alignments
   (s/keys :req-un [::alignment-map]))

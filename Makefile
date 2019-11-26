@@ -1,4 +1,4 @@
-.PHONY: clean bundle test-cli test-cli-comprehensive test-unit ci
+.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
@@ -25,6 +25,9 @@ test-cli:
 
 test-cli-comprehensive:
 	clojure -A:cli:run -i dev-resources/input/simple.json validate-input dev-resources/input/simple.json
+
+test-cli-output:
+	clojure -A:cli:run -i dev-resources/input/simple.json generate
 
 
 ci: test-unit test-cli

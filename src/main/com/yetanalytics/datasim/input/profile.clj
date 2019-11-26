@@ -3,9 +3,20 @@
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]
             [com.yetanalytics.pan.objects.profile :as profile]
+            [com.yetanalytics.pan.objects.pattern :as pat]
             [clojure.data.json :as json]
             [clojure.walk :as w])
   (:import [java.io Reader Writer]))
+
+;; Spec overrides for Kelivin's lib:
+
+(s/def ::pat/optional
+  ::pat/id)
+
+(s/def ::pat/oneOrMore
+  ::pat/id)
+(s/def ::pat/zeroOrMore
+  ::pat/id)
 
 (defrecord Profile [id
                     ;; type ;; that would conflict and be annoying, it's static anyhow

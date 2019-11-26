@@ -15,6 +15,11 @@
 (s/def ::start
   ::xs/timestamp)
 
+;; (optional) start of the returned statements (if after ::start).
+;; This lets us page through sims to later times. Defaults to ::start
+(s/def ::from
+  ::xs/timestamp)
+
 ;; (optional) end of the simulation (exclusive), 8601 stamp
 (s/def ::end
   (s/nilable ::xs/timestamp))
@@ -40,21 +45,34 @@
    (s/keys :req-un [::start
                     ::timezone
                     ::seed]
-           :opt-un [::end])
-   (fn [{:keys [start end]}]
-     (if (and start end)
-       (t/before? (t/instant start)
-                  (t/instant end))
-       true))))
+           :opt-un [::end
+                    ::from])
+   (fn [{:keys [start from end]}]
+     (when end
+       (assert (t/before? (t/instant start)
+                          (t/instant end))
+               "Sim must start before it ends.")
+       (when from
+         (assert (t/before? (t/instant from)
+                            (t/instant end))
+                 "From must be before end.")))
+     (when from
+       (assert (or (= from start)
+                   (t/before? (t/instant start)
+                              (t/instant from)))
+               "Sim start must be before or equal to from."))
+     true)))
 
 (defn add-defaults
   "Generate defualts"
-  [{:keys [start timezone seed] :as params}]
+  [{:keys [start from timezone seed] :as params}]
   (merge
    params
-   {:start (or start (.toString (Instant/now)))
-    :timezone (or timezone "UTC")
-    :seed (or seed (.nextLong (Random.)))}))
+   (let [s (or start (.toString (Instant/now)))]
+     {:start s
+      :from (or from s)
+      :timezone (or timezone "UTC")
+      :seed (or seed (.nextLong (Random.)))})))
 
 (defrecord Parameters [start
                        end
