@@ -102,6 +102,9 @@
       :sim-t 0
       :seed 42
       :template (get iri-map "https://w3id.org/xapi/cmi5#satisfied")
+      :pattern-ancestors
+      [{:id "https://w3id.org/xapi/cmi5#toplevel", :primary true}
+       {:id "https://w3id.org/xapi/cmi5#satisfieds", :primary false}]
       :registration (.toString (java.util.UUID/randomUUID))}))
 
 
