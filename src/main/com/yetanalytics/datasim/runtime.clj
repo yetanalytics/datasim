@@ -17,15 +17,8 @@
                 ;; take the actor statement seqs
                 vals
                 (->> (su/seq-sort
-                      (fn [{timestamp-str "timestamp"
-                            timestamp-key :timestamp
-                            ;; TODO: remove, just dev
-                            t :t}]
-                        ;; TODO: don't re-parse
-                        (.toEpochMilli
-                         (Instant/parse (or timestamp-str
-                                            timestamp-key
-                                            t)))))))]
+                      (comp :timestamp-ms
+                            meta))))]
     (json/write s *out*
                 :escape-slash false
                 :escape-unicode false)
