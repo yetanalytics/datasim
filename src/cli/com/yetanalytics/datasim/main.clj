@@ -4,6 +4,7 @@
             [com.yetanalytics.datasim.input :as input]
             [expound.alpha :as expound]
             [com.yetanalytics.datasim.input.parameters :as params]
+            [com.yetanalytics.datasim.runtime :as runtime]
             [clojure.pprint :refer [pprint]])
   (:gen-class))
 
@@ -99,7 +100,7 @@
               (if ?command
                 (case ?command
                   ;; Where the CLI will actually perform generation
-                  "generate" (println "{}")
+                  "generate" (runtime/run-sim! input)
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON
                   "validate-input"
