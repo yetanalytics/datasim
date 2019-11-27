@@ -1,7 +1,11 @@
 (ns com.yetanalytics.datasim.xapi.statement.location
-  (:require [com.yetanalytics.datasim.xapi.statement.helpers :as h]))
+  (:require [com.yetanalytics.datasim.xapi.statement.helpers :as h]
+            [com.yetanalytics.datasim.xapi.statement.location.inference :as inf]
+            [com.yetanalytics.datasim.xapi.statement.location.nav-by-expectation :as nav]
+            [com.yetanalytics.datasim.xapi.statement.location.determining-property :refer [path-to-determining-property?]]))
 
 (defn follow-stmt-path
+  "responsible for creation of `generated` "
   [stmt-path & {:keys [rng] :as passdown}]
   (let [[top-lvl-k] stmt-path
         ?more       (not-empty (h/butfirst stmt-path))]
