@@ -56,7 +56,7 @@
       ;; can be a fn or data
       (let [matches (if (fn? any-all-none)
                       ;; (->> none-coll (handle-none generated) (handle-any rng))
-                      ;; - see `compound-logic`
+                      ;; - see `matchable/compound-logic`
                       (any-all-none generated)
                       any-all-none)]
         ;; attempt lookup, fallback to `matches`
@@ -161,7 +161,7 @@
 
 (defn matchable-values
   "handles interpretation of matchable values defined by the rule"
-  [{:keys [matchable generated within-path iri-lookup]}]
+  [{:keys [matchable generated within-path iri-lookup stmt-path]}]
   (let [matched-values (handle-matchables
                         {:matchable   matchable
                          :generated   generated
@@ -195,6 +195,7 @@
           stmt-val              (matchable-values {:matchable   matchable
                                                    :generated   generated
                                                    :within-path nested
-                                                   :iri-lookup  iri-lookup})]
+                                                   :iri-lookup  iri-lookup
+                                                   :stmt-path   stmt-path})]
       {:stmt/path stmt-path
        :stmt/val  stmt-val})))
