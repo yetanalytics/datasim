@@ -1,9 +1,7 @@
 (ns com.yetanalytics.datasim.timeseries
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
-            [incanter.interpolation :as interp]
-            [incanter.stats :as stats]
-            [incanter.core :as incanter]
+            ;; [incanter.interpolation :as interp]
             [com.yetanalytics.datasim.clock :as clock]
             [java-time :as t]
             [com.yetanalytics.datasim.util.maths :as maths])
@@ -190,7 +188,7 @@
                    :gauss-mean 500 :seed 42
                    )) ;; => (614.1905315473055 591.9407948982788 405.0133363109104 389.3009713600662 528.0977638072779 568.4622795632655 418.27785926012734 360.33565973219567 480.9055486929125 648.621339239065)
 
-(defn interpolate-seq
+#_(defn interpolate-seq
   "Given a series of point tuples where x is time and y is a known value, return
    an interpolated sequence of y every step"
   [& {:keys [;; init args
@@ -403,8 +401,8 @@
                               zone
                               :minute-of-day)
         day-night-seq (map (comp
-                            incanter/cos
-                            #(* 2 Math/PI (/ % 86400000))
+                            #(Math/cos ^Double %)
+                            #(double (* 2 Math/PI (/ % 86400000)))
                             (partial * 60000))
                            mod-seq)
 
@@ -440,6 +438,7 @@
      }))
 
 (comment
+
   (use '(incanter core stats charts io))
 
   (time
