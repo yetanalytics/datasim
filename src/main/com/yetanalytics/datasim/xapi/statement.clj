@@ -352,6 +352,17 @@
 ;; any/all/none
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn any-all-helper
+  "normalize coll then return if non-empty."
+  [coll]
+  (let [normalized (normalize-to-vec coll)]
+    (when-some [_ (try (seq normalized)
+                       (catch Exception e
+                         (throw (ex-info "normalization is broken!"
+                                         {:coll coll :normalized normalized}
+                                         e))))]
+      normalized)))
+
 (defn handle-any
   "selection of a value from the `coll` of possible values
    - will return nil if there are no values to select from!"
