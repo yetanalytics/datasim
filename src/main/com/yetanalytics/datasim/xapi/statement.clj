@@ -617,7 +617,7 @@
 (defn follow-stmt-path
   [stmt-path & {:keys [] :as passdown}]
   (let [[top-lvl-k] stmt-path
-        ?more       (not-empty (everything-but-first stmt-path))]
+        ?more       (not-empty (butfirst stmt-path))]
     (case top-lvl-k
       "id"          "FIXME: handle presence + any/all/none"
       "actor"       "FIXME: ?more is relevant"
