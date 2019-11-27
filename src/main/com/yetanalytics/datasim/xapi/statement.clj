@@ -237,6 +237,76 @@
     (assert (= root "$") "JSONPath string did not start with root!")
     (everything-but-first deconstructed)))
 
+(comment
+  (= ["result" "score" "raw"]
+     (deconstruct-json-path "$.result.score.raw"))
+  (= ["context" "contextActivities" "category"]
+     (deconstruct-json-path "$.context.contextActivities.category"))
+  (= "bad root detected"
+     (try (deconstruct-json-path "$$.result.score.raw")
+          (catch AssertionError e "bad root detected"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; any/all/none
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn handle-any
+  "selection of a value from the `coll` of possible values
+   - will return nil if there are no values to select from!"
+  [rng coll]
+  (let [normalized (if-not (vector? coll) (into [] coll) coll)]
+    (when (not-empty normalized)
+      (random/rand-nth* rng normalized))))
+
+(defn handle-all
+  "parse out the single value from `coll`
+   - typical use case seen in the wild so supported"
+  [coll]
+  (if (and (coll? coll) (= 1 (count coll)))
+    ;; care about the one thing in there
+    (first coll)
+    ;; FIXME: not currently sure of how this should be handled
+    ;; - may come into play when there are more than 1 any/all/none that are compounding
+    (throw (ex-info "only simple handling of 'all' is supported!"
+                    {:all coll}))))
+
+(defn handle-none
+  "remove items from `possibilities` that are found in
+   `none-coll` and returns the set of remaining items."
+  [possibilities none-coll]
+  (let [p-set (set possibilities)
+        n-set (set none-coll)]
+    (if-not (empty? p-set)
+      (cset/difference p-set n-set)
+      (throw (ex-info "no possibilities were provided!"
+                      {:possibilities possibilities
+                       :none          none-coll})))))
+(comment
+  (= #{7 4 5}
+     (handle-none [3 4 5 6 7] [1 2 3 6]))
+  (= #{4 3 5}
+     (handle-none [3 4 5] []))
+  (= "no possibilities were provided!"
+     (try (handle-none [] [1 2 3])
+          (catch Exception e (ex-message e)))))
+
+(defn compound-logic
+  "returns the set of possible matchable values key'd by any/all/none"
+  [rule]
+  (let [{any-coll  :any
+         all-coll  :all
+         none-coll :none} rule
+        remaining-set     (handle-none any-coll none-coll)]
+    ;; FIXME: probably not exhaustive
+    ;; - ie, what happens when `:none` and `:all` have overlaps????
+    (if (not-empty all-coll)
+      (handle-all (cset/intersection remaining-set (set all-coll)))
+      (handle-any remaining-set))))
+
+;; FIXME: when compound-logic returns nil/empty, generate based on stmt-path
+
+;; TODO: handle value determination or generation given stmt-path terminal value
+;; - base level on which inferences can be made
 
 
 
