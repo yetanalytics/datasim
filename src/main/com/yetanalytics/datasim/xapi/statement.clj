@@ -639,8 +639,26 @@
                        :more       ?more})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Per rule fn
+;; Per rule
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn matchable-values
+  "handles interpretation of matchable values defined by the rule"
+  [{:keys [matchable generated within-path iri-lookup]}]
+  (let [matched-values (handle-matchables
+                        {:matchable   matchable
+                         :generated   generated
+                         :within-path within-path
+                         :iri-lookup  iri-lookup})
+        non-iri?       (or (try (contains? matched-values :fallback)
+                                (catch Exception e false))
+                           (try (contains? matched-values :non-iri)
+                                (catch Exception e false)))]
+    (if non-iri?
+      (let [{:keys [non-iri fallback]} matched-values]
+        "TODO: figure out which is used as stmt value based on stmt-path")
+      (let [{component-type :type :as profile-item} matched-values]
+        "TODO: figure out what needs to be parsed from profile item based on stmt-path"))))
 
 (defn from-rule
   [{:keys [location
