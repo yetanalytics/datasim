@@ -39,3 +39,12 @@
         "mbox::mailto:alice@example.org"
         "mbox::mailto:bob@example.org"
         "mbox::mailto:fred@example.org"))))
+
+(deftest stack-test
+  (testing "that we can iterate for a long time w/o a stack overflow"
+    (is (s/valid? ::xs/statement
+                  (-> valid-input
+                      (assoc-in [:parameters :end] nil)
+                      build-skeleton
+                      (get "mbox::mailto:bob@example.org")
+                      (nth 100000))))))
