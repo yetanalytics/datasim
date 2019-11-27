@@ -387,7 +387,7 @@
   [possibilities none-coll]
   (let [p-set (set possibilities)
         n-set (set none-coll)]
-    (if-not (empty? p-set)
+    (if (seq p-set)
       (cset/difference p-set n-set)
       (throw (ex-info "no possibilities were provided!"
                       {:possibilities possibilities
@@ -396,7 +396,8 @@
   (= #{7 4 5}
      (handle-none [3 4 5 6 7] [1 2 3 6]))
   (= #{4 3 5}
-     (handle-none [3 4 5] []))
+     (handle-none [3 4 5] [])
+     (handle-none [3 4 5] nil))
   (= "no possibilities were provided!"
      (try (handle-none [] [1 2 3])
           (catch Exception e (ex-message e)))))
