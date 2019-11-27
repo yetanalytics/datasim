@@ -402,43 +402,51 @@
      (try (handle-none [] [1 2 3])
           (catch Exception e (ex-message e)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; any + all + none
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn compound-logic
-  "returns the set of possible matchable values key'd by any/all/none"
-  [rule]
+  "returns possible matchable value(s) based on `rule`"
+  [rule rng]
   (let [{any-coll  :any
          all-coll  :all
-         none-coll :none} rule
-        remaining-set     (handle-none any-coll none-coll)]
-    ;; FIXME: probably not exhaustive
-    ;; - ie, what happens when `:none` and `:all` have overlaps????
-    (if (not-empty all-coll)
-      (handle-all (cset/intersection remaining-set (set all-coll)))
-      (handle-any remaining-set))))
-
-;; FIXME: when compound-logic returns nil/empty, generate based on stmt-path
-
-;; TODO: handle value determination or generation given stmt-path terminal value
-;; - base level on which inferences can be made
+         none-coll :none} rule]
+    (if-some [remaining-set (try (handle-none any-coll none-coll)
+                                 (catch Exception e nil))]
+      (if (seq all-coll)
+        ;; find the overlap between (`any` - `none`) and `all`
+        (handle-all (cset/intersection remaining-set (set all-coll)))
+        ;; pick one using `rng`
+        (handle-any rng remaining-set))
+      (if (seq all-coll)
+        ;; ignore `none` and handle `all`
+        (handle-all all-coll)
+        ;; return a fn which expects a collection of possible values
+        ;; - filtered down to valid values based on `none` and return one of them using `rng`
+        (fn [possibilities]
+          (->> none-coll
+               (handle-none possibilities)
+               (handle-any rng)))))))
 
 (comment
-  (= {:all #{2}}
+  (= 2
      (compound-logic {:any [1 2 3]
                       :all [2]
-                      :none [1 3]}))
-
-  (= {:any #{3 2}}
+                      :none [1 3]}
+                     (random/seed-rng 123))
      (compound-logic {:any [1 2 3]
                       :all []
-                      :none [1]})
+                      :none [1]}
+                     (random/seed-rng 123))
      (compound-logic {:any [1 2 3]
-                      :all nil
-                      :none [1]})
-     (compound-logic {:any [2 3]
-                      :all nil
-                      :none nil})
+                      :none [1]}
+                     (random/seed-rng 123))
+     (compound-logic {:any [2 3]}
+                     (random/seed-rng 123))
      (compound-logic {:any [1 2 3 4]
-                      :all nil
-                      :none [1 4]})))
+                      :none [1 4]}
+                     (random/seed-rng 123)))
 
 (defn matchable-values
   "handles interpretation of matchable values defined by the rule"
