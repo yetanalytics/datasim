@@ -125,19 +125,19 @@
     ^Double prev-value
     ^Double prev-epsilon
     ^Random rng]
-   (let [new-epsilon (* (.nextGaussian rng) std)
-         sum-phi (reduce (fn [old nxt]
-                           (+ old
-                              (* nxt
-                                 prev-value)))
-                         0.0 phi)
-         sum-theta (reduce (fn [old nxt]
-                             (+ old
-                                (* nxt prev-epsilon)))
-                           0.0
-                           theta)
-         ret (+ c new-epsilon sum-phi sum-theta)]
-     (lazy-seq
+   (lazy-seq
+    (let [new-epsilon (* (.nextGaussian rng) std)
+          sum-phi (reduce (fn [old nxt]
+                            (+ old
+                               (* nxt
+                                  prev-value)))
+                          0.0 phi)
+          sum-theta (reduce (fn [old nxt]
+                              (+ old
+                                 (* nxt prev-epsilon)))
+                            0.0
+                            theta)
+          ret (+ c new-epsilon sum-phi sum-theta)]
       (cons ret
             (arma-seq arma-model
                       ret
