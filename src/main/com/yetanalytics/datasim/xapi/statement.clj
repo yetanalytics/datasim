@@ -448,11 +448,167 @@
                       :none [1 4]}
                      (random/seed-rng 123)))
 
-(defn matchable-values
-  "handles interpretation of matchable values defined by the rule"
-  [rule & {:keys [] :as passdown}]
-  ;; FIXME: top level impl
-  )
+  (= [1 2 3 4]
+     (compound-logic {:all [1 2 3 4]} (random/seed-rng 123))
+     ;; `none` ignored if no `any` but some `all`
+     (compound-logic {:all [1 2 3 4] :none [1 2 3 4]} (random/seed-rng 123)))
+
+  ;; filter coll of generated possibilities based on `none` then select using `rng`
+  (= 3 ((compound-logic
+         {:none [5 6 7 8]}
+         (random/seed-rng 123)) [1 2 3 4])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Priority determination
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn iri-lookup-attempt
+  "query `iri-map` for more data about `maybe-iri`, defaults to `maybe-iri` + `fallback` if not found."
+  [{:keys [maybe-iri iri-map fallback]}]
+  (get iri-map maybe-iri
+       {:non-iri maybe-iri
+        :fallback fallback}))
+
+(comment
+  (= "bar"
+     (iri-lookup-attempt
+      {:maybe-iri "foo"
+       :iri-map   {"foo" "bar"}
+       :fallback "not needed"}))
+  (= {:non-iri "foo" :fallback "needed"}
+     (iri-lookup-attempt
+      {:maybe-iri "foo"
+       :iri-map   {:foo "bar"}
+       :fallback "needed"})))
+
+(defn handle-matchables
+  "helper fn which returns the stmt value to use for the current rule
+   - `matchable` = any/all/none
+   - `generated` = based on `location`
+   - `within-path` = item within `location` array, ie. ...['within-path']
+   - `iri-lookup` = iri-map from input"
+  [{:keys [matchable generated within-path iri-lookup]}]
+  (let [in-path-fn (fn [fallback]
+                     (if-some [_ within-path]
+                       ;; non-nil
+                       (if (string? within-path)
+                         ;; string
+                         (case within-path
+                           "*" fallback
+                           ""  fallback
+                           ;; assume IRI but return `within-path` + `fallback` if assumption is wrong
+                           (iri-lookup-attempt
+                            {:maybe-iri within-path
+                             :iri-map   iri-lookup
+                             :fallback  fallback}))
+                         ;; some non-string, unexpected, return fallback
+                         fallback)
+                       ;; nil, return fallback
+                       fallback))]
+    ;; check `matchable` first to see if profile does the work for us
+    (if-some [any-all-none (try (not-empty matchable)
+                                (catch Exception e matchable))]
+      ;; can be a fn or data
+      (let [matches (if (fn? any-all-none)
+                      ;; (->> none-coll (handle-none generated) (handle-any rng))
+                      ;; - see `compound-logic`
+                      (any-all-none generated)
+                      any-all-none)]
+        ;; attempt lookup, fallback to `matches`
+        (in-path-fn matches))
+      ;; attempt lookup, fallback to `generated`
+      (in-path-fn generated))))
+
+(comment
+  ;; `within-path` takes highest priority bc it CAN be a direct reference to something in profile
+  (= "test value"
+     (handle-matchables
+      {:matchable "matchable"
+       :generated "generated"
+       :within-path "mock-iri"
+       :iri-lookup {"mock-iri" "test value"}}))
+  ;; but if not, return `maybe-iri` + `fallback` with `matchable` taking higher priority then `generated`
+  (= {:non-iri "lookup miss"
+      :fallback "matchable"}
+     (handle-matchables
+      {:matchable "matchable"
+       :generated "generated"
+       :within-path "lookup miss"
+       :iri-lookup {"mock-iri" "test value"}}))
+  ;; but when `matchable` is not usable, fallback to `generated`
+  (= {:non-iri "lookup miss"
+      :fallback "generated"}
+     (handle-matchables
+      {:matchable nil
+       :generated "generated"
+       :within-path "lookup miss"
+       :iri-lookup {"mock-iri" "test value"}})
+     (handle-matchables
+      {:matchable []
+       :generated "generated"
+       :within-path "lookup miss"
+       :iri-lookup {"mock-iri" "test value"}}))
+  ;; no special handling of `fallback`
+  (= {:non-iri "lookup miss"
+      :fallback []}
+     (handle-matchables
+      {:matchable []
+       :generated []
+       :within-path "lookup miss"
+       :iri-lookup {"mock-iri" "test value"}}))
+  ;; but when its *, "" or nil, next priority is `matchable`
+  (= "Generated"
+     (handle-matchables
+      {:matchable (fn [d] (string/capitalize d))
+       :generated "generated"
+       :within-path nil
+       :iri-lookup {}}))
+  (= "matchable"
+     (handle-matchables
+      {:matchable "matchable"
+       :generated "generated"
+       :within-path :unexpected
+       :iri-lookup {}})
+     (handle-matchables
+      {:matchable "matchable"
+       :generated "generated"
+       :within-path "*"
+       :iri-lookup {}})
+     (handle-matchables
+      {:matchable "matchable"
+       :generated "generated"
+       :within-path ""
+       :iri-lookup {}})
+     (handle-matchables
+      {:matchable "matchable"
+       :generated "generated"
+       :iri-lookup {}}))
+  ;; return of `generation` only happens when necessary
+  (= "generated"
+     (handle-matchables
+      {:matchable []
+       :generated "generated"
+       :within-path nil
+       :iri-lookup {}})
+     (handle-matchables
+      {:matchable nil
+       :generated "generated"
+       :within-path nil
+       :iri-lookup {}})
+     (handle-matchables
+      {:matchable ""
+       :generated "generated"
+       :within-path nil
+       :iri-lookup {}})
+     (handle-matchables
+      {:matchable nil
+       :generated "generated"
+       :within-path :unexpected
+       :iri-lookup {}})
+     (handle-matchables
+      {:generated "generated"
+       :within-path "*"
+       :iri-lookup {}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Path
