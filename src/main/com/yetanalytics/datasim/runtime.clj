@@ -32,27 +32,21 @@
             :parameters
             merge
             {:start "2019-11-18T11:38:39.219768Z",
-             :end "2019-11-19T11:38:39.219768Z"
+             :end nil #_"2019-11-19T11:38:39.219768Z"
              :timezone "America/New_York",
              :seed 42,
              :from "2019-11-18T11:38:39.219768Z"}))
 
 
-  (def statements
-    (into []
-          (-> (sim/build-skeleton i)
-              ;; take the actor statement seqs
-              vals
-              (->> (su/seq-sort
-                    (fn [{timestamp-str "timestamp"
-                          timestamp-key :timestamp
-                          ;; TODO: remove, just dev
-                          t :t}]
-                      ;; TODO: don't re-parse
-                      (.toEpochMilli
-                       (Instant/parse (or timestamp-str
-                                          timestamp-key
-                                          t)))))))))
+  (-> (sim/build-skeleton i)
+      ;; take the actor statement seqs
+      #_(get "mbox::mailto:bob@example.org")
+      vals
+      (->> (su/seq-sort
+            (comp :timestamp-ms
+                  meta)))
+
+      (nth 1000000))
 
 
   (run-sim! i)
