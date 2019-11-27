@@ -367,9 +367,8 @@
   "selection of a value from the `coll` of possible values
    - will return nil if there are no values to select from!"
   [rng coll]
-  (let [normalized (if-not (vector? coll) (into [] coll) coll)]
-    (when (not-empty normalized)
-      (random/rand-nth* rng normalized))))
+  (when-some [data (any-all-helper coll)]
+    (random/rand-nth* rng data)))
 
 (defn handle-all
   "parse out the single value from `coll`
