@@ -337,7 +337,7 @@
   [path]
   (let [[root & components :as deconstructed] (string/split path #"\.")]
     (assert (= root "$") "JSONPath string did not start with root!")
-    (everything-but-first deconstructed)))
+    (butfirst deconstructed)))
 
 (comment
   (= ["result" "score" "raw"]
