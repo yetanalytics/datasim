@@ -82,6 +82,16 @@
   (= [{:foo "baz"}]
      (butfirst [{"I'm" "removed"} {:foo "baz"}])))
 
+(defn next-to-last
+  "returns the second from last value within `coll`"
+  [coll]
+  (-> coll normalize-to-vec pop peek))
+
+(comment
+  (= 2 (next-to-last [1 2 3]))
+  (= 1 (next-to-last [1 2]))
+  (= nil (next-to-last [1])))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lookup from IRI map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,6 +114,18 @@
       {:maybe-iri "foo"
        :iri-map   {:foo "bar"}
        :fallback "needed"})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Useful preds for Vector and Map
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn containsv?
+  [coll v]
+  (not= -1 (.indexOf coll v)))
+
+(defn contains-many?
+  [m & ks]
+  (every? #(contains? m %) ks))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; quick testing fn for ensuring determinism
