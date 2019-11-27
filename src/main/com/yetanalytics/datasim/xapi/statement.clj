@@ -230,6 +230,12 @@
       :value "https://w3id.org/xapi/catch/v1"})
   (= (handle-json-path-str "$.result.score.raw") {:path "$.result.score.raw"}))
 
+(defn deconstruct-json-path
+  "ensure root was $ before returning the path into stmt"
+  [path]
+  (let [[root & components :as deconstructed] (string/split path #"\.")]
+    (assert (= root "$") "JSONPath string did not start with root!")
+    (everything-but-first deconstructed)))
 
 
 
