@@ -389,53 +389,54 @@
                             (range t-zero Long/MAX_VALUE step)))
                     (partial range t-zero Long/MAX_VALUE))
         ;; Primary
-        sec-seq (r-partial 1000)
+        ;; sec-seq (r-partial 1000)
         min-seq (r-partial 60000)
-        hour-seq (r-partial 3600000)
-        week-seq (r-partial 604800000)
-        day-seq (r-partial 86400000)
+        ;; hour-seq (r-partial 3600000)
+        ;; week-seq (r-partial 604800000)
+        ;; day-seq (r-partial 86400000)
 
         ;; secondary/local
-        moh-seq (local-seq-as min-seq
-                              zone
-                              :minute-of-hour)
+        ;; moh-seq (local-seq-as min-seq
+        ;;                       zone
+        ;;                       :minute-of-hour)
         mod-seq (local-seq-as min-seq
                               zone
                               :minute-of-day)
         day-night-seq (map (comp
                             incanter/cos
-                            #(*  2 Math/PI (/ % 86400000))
+                            #(* 2 Math/PI (/ % 86400000))
                             (partial * 60000))
                            mod-seq)
 
-        hod-seq (local-seq-as hour-seq
-                              zone
-                              :hour-of-day)
+        ;; hod-seq (local-seq-as hour-seq
+        ;;                       zone
+        ;;                       :hour-of-day)
 
 
-        dow-seq (local-seq-as day-seq
-                              zone
-                              :day-of-week)
+        ;; dow-seq (local-seq-as day-seq
+        ;;                       zone
+        ;;                       :day-of-week)
 
-        dom-seq (local-seq-as day-seq
-                              zone
-                              :day-of-month)
-        doy-seq (local-seq-as day-seq
-                              zone
-                              :day-of-year)]
-    {:t-seq t-seq
-     :sec-seq sec-seq
+        ;; dom-seq (local-seq-as day-seq
+        ;;                       zone
+        ;;                       :day-of-month)
+        ;; doy-seq (local-seq-as day-seq
+        ;;                       zone
+        ;;                       :day-of-year)
+        ]
+    {; :t-seq t-seq
+     ; :sec-seq sec-seq
      :min-seq min-seq
-     :hour-seq hour-seq
-     :day-seq day-seq
-     :week-seq week-seq
-     :moh-seq moh-seq
+     ;:hour-seq hour-seq
+     ;:day-seq day-seq
+     ;:week-seq week-seq
+     ;:moh-seq moh-seq
      :mod-seq mod-seq
      :day-night-seq day-night-seq
-     :hod-seq hod-seq
-     :dow-seq dow-seq
-     :dom-seq dom-seq
-     :doy-seq doy-seq
+     ;:hod-seq hod-seq
+     ;:dow-seq dow-seq
+     ;:dom-seq dom-seq
+     ;:doy-seq doy-seq
      }))
 
 (comment
