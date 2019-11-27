@@ -189,12 +189,18 @@
 ;; FIXME: given Kelvins work, `handle-json-path-str` is not exhaustive
 ;; - not going to include any of the edge cases within the demo profile
 
-;; FIXME: handle @context when any/all/none contain objects (maps)
+;; FIXME: handle @context for any/all/none objects (maps)
 ;; - JSONLD/Linked Data specific, not priority
 
 ;; FIXME: support for selectors
 
-;; FIXME: usage of scopeNote?
+;; FIXME: support subregistrations (ctx extension)
+;; - extension key = "https://w3id.org/xapi/profiles/extensions/subregistration"
+;; -- only found in stmts with an existing registration
+;; -- array valued, non-empty
+
+;; FIXME: add Profile(s) to ["context" "contextActivities" "category"]
+;; FIXME: add registration to ["context" "registration"]
 
 ;; TODO: handle generation inference/boundaries given stmt-path terminal value
 ;; - enumeration of possible/sensible `location` strings
