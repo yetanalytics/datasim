@@ -178,18 +178,18 @@
         "TODO: figure out what needs to be parsed from profile item based on stmt-path"))))
 
 (defn from-rule
-  "top level fn that returns `stmt-path` and `stmt-val` or nil"
+  "top level fn that returns `stmt-path` and `stmt-val`
+   - `:stmt/val` will be set to `:excluded` when presence = excluded"
   [{:keys [location
            ;; selector FIXME: not currently supported
-           ;; scopeNote FIXME: not currently relevant
            presence
            any
            all
            none] :as rule}
    & {:keys [rng iri-lookup] :as passdown}]
-  (let [{:keys [path nested]} (jpath/handle-json-path-str location)
-        stmt-path             (jpath/deconstruct-json-path path)
-        continue?             (continue-given-presence? presence)]
+  (let [{:keys [path nested after-nested]} (jpath/handle-json-path-str location)
+        stmt-path                          (jpath/deconstruct-json-path path)
+        continue?                          (continue-given-presence? presence)]
     (if continue?
       (let [matchable (matchable/compound-logic rule rng)
             generated (loc/follow-stmt-path stmt-path :rng rng)
