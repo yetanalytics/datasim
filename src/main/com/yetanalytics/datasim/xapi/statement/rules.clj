@@ -187,15 +187,18 @@
            all
            none] :as rule}
    & {:keys [rng iri-lookup] :as passdown}]
-  (when (continue-given-presence? presence)
-    (let [{:keys [path nested]} (jpath/handle-json-path-str location)
-          stmt-path             (jpath/deconstruct-json-path path)
-          matchable             (matchable/compound-logic rule rng)
-          generated             (loc/follow-stmt-path stmt-path :rng rng)
-          stmt-val              (matchable-values {:matchable   matchable
-                                                   :generated   generated
-                                                   :within-path nested
-                                                   :iri-lookup  iri-lookup
-                                                   :stmt-path   stmt-path})]
+  (let [{:keys [path nested]} (jpath/handle-json-path-str location)
+        stmt-path             (jpath/deconstruct-json-path path)
+        continue?             (continue-given-presence? presence)]
+    (if continue?
+      (let [matchable (matchable/compound-logic rule rng)
+            generated (loc/follow-stmt-path stmt-path :rng rng)
+            stmt-val  (matchable-values {:matchable   matchable
+                                         :generated   generated
+                                         :within-path nested
+                                         :iri-lookup  iri-lookup
+                                         :stmt-path   stmt-path})]
+        {:stmt/path stmt-path
+         :stmt/val  stmt-val})
       {:stmt/path stmt-path
-       :stmt/val  stmt-val})))
+       :stmt/val :excluded})))
