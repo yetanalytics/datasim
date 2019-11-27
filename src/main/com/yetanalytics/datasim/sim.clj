@@ -91,10 +91,10 @@
    (let [^Random rng (or rng (random/seed-rng seed))]
      (when-let [[[t _] & rest-prob]
                 (->> prob-seq
-                     (remove (comp zero? second))
                      (drop-while
                       (fn [[t prob]]
-                        (>= (random/rand* rng) prob)))
+                        (or (zero? prob)
+                            (>= (random/rand* rng) prob))))
                      not-empty)]
        (let [;; for additional spiciness, set the actual time of activity
              ;; (or at least that passed to the statement generator) to a time
