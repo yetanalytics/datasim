@@ -1,6 +1,8 @@
 (ns com.yetanalytics.datasim.xapi.statement
   "Generate Statements"
   (:require [clojure.spec.alpha :as s]
+            [clojure.string :as string]
+            [clojure.set :as cset]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.input :as input]
@@ -180,8 +182,21 @@
        {:id "https://w3id.org/xapi/cmi5#satisfieds", :primary false}]
       :registration (.toString (java.util.UUID/randomUUID))}))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Generation from a Rule
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; simple utility
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn everything-but-first
+  "returns subvec of everything except for the first item in `coll`
+   - `coll` must be a vector of this fn will throw."
+  [coll]
+  (assert (vector? coll)
+          "only supported for vectors! consider using `clojure.core/pop`")
+  (if (empty? coll) coll (subvec coll 1)))
 
 
 
