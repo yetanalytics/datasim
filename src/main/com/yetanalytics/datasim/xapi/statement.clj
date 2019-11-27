@@ -196,8 +196,6 @@
 
 ;; FIXME: usage of scopeNote?
 
-;; FIXME: correct handling of seed, just a stub right now
-
 ;; TODO: handle generation inference/boundaries given stmt-path terminal value
 ;; - enumeration of possible/sensible `location` strings
 
