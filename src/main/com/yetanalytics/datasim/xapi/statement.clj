@@ -327,6 +327,9 @@
   (= (handle-json-path-str "$.context.contextActivities.category['https://w3id.org/xapi/catch/v1']")
      {:path "$.context.contextActivities.category"
       :nested "https://w3id.org/xapi/catch/v1"})
+  (= (handle-json-path-str "$.context.contextActivities.category['*']")
+     {:path "$.context.contextActivities.category"
+      :nested "*"})
   (= (handle-json-path-str "$.result.score.raw") {:path "$.result.score.raw"}))
 
 (defn deconstruct-json-path
