@@ -91,10 +91,10 @@
    (let [^Random rng (or rng (random/seed-rng seed))]
      (when-let [[[t _] & rest-prob]
                 (->> prob-seq
-                     (remove (comp zero? second))
                      (drop-while
                       (fn [[t prob]]
-                        (>= (random/rand* rng) prob)))
+                        (or (zero? prob)
+                            (>= (random/rand* rng) prob))))
                      not-empty)]
        (let [;; for additional spiciness, set the actual time of activity
              ;; (or at least that passed to the statement generator) to a time
@@ -171,17 +171,17 @@
                     (let [t-end (.toEpochMilli (t/instant end))]
                       (- t-end t-zero)))
         ;; Useful time seqs
-        {:keys [week-seq
+        {:keys [;; week-seq
                 min-seq
-                t-seq
-                doy-seq
-                moh-seq
-                day-seq
-                sec-seq
-                dom-seq
-                hod-seq
-                hour-seq
-                dow-seq
+                ;; t-seq
+                ;; doy-seq
+                ;; moh-seq
+                ;; day-seq
+                ;; sec-seq
+                ;; dom-seq
+                ;; hod-seq
+                ;; hour-seq
+                ;; dow-seq
                 mod-seq
                 day-night-seq]} (if ?sample-n
                                   (ts/time-seqs :t-zero t-zero

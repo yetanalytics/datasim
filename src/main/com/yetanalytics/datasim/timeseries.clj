@@ -1,9 +1,7 @@
 (ns com.yetanalytics.datasim.timeseries
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
-            [incanter.interpolation :as interp]
-            [incanter.stats :as stats]
-            [incanter.core :as incanter]
+            ;; [incanter.interpolation :as interp]
             [com.yetanalytics.datasim.clock :as clock]
             [java-time :as t]
             [com.yetanalytics.datasim.util.maths :as maths])
@@ -125,19 +123,19 @@
     ^Double prev-value
     ^Double prev-epsilon
     ^Random rng]
-   (let [new-epsilon (* (.nextGaussian rng) std)
-         sum-phi (reduce (fn [old nxt]
-                           (+ old
-                              (* nxt
-                                 prev-value)))
-                         0.0 phi)
-         sum-theta (reduce (fn [old nxt]
-                             (+ old
-                                (* nxt prev-epsilon)))
-                           0.0
-                           theta)
-         ret (+ c new-epsilon sum-phi sum-theta)]
-     (lazy-seq
+   (lazy-seq
+    (let [new-epsilon (* (.nextGaussian rng) std)
+          sum-phi (reduce (fn [old nxt]
+                            (+ old
+                               (* nxt
+                                  prev-value)))
+                          0.0 phi)
+          sum-theta (reduce (fn [old nxt]
+                              (+ old
+                                 (* nxt prev-epsilon)))
+                            0.0
+                            theta)
+          ret (+ c new-epsilon sum-phi sum-theta)]
       (cons ret
             (arma-seq arma-model
                       ret
@@ -190,7 +188,7 @@
                    :gauss-mean 500 :seed 42
                    )) ;; => (614.1905315473055 591.9407948982788 405.0133363109104 389.3009713600662 528.0977638072779 568.4622795632655 418.27785926012734 360.33565973219567 480.9055486929125 648.621339239065)
 
-(defn interpolate-seq
+#_(defn interpolate-seq
   "Given a series of point tuples where x is time and y is a known value, return
    an interpolated sequence of y every step"
   [& {:keys [;; init args
@@ -389,56 +387,58 @@
                             (range t-zero Long/MAX_VALUE step)))
                     (partial range t-zero Long/MAX_VALUE))
         ;; Primary
-        sec-seq (r-partial 1000)
+        ;; sec-seq (r-partial 1000)
         min-seq (r-partial 60000)
-        hour-seq (r-partial 3600000)
-        week-seq (r-partial 604800000)
-        day-seq (r-partial 86400000)
+        ;; hour-seq (r-partial 3600000)
+        ;; week-seq (r-partial 604800000)
+        ;; day-seq (r-partial 86400000)
 
         ;; secondary/local
-        moh-seq (local-seq-as min-seq
-                              zone
-                              :minute-of-hour)
+        ;; moh-seq (local-seq-as min-seq
+        ;;                       zone
+        ;;                       :minute-of-hour)
         mod-seq (local-seq-as min-seq
                               zone
                               :minute-of-day)
         day-night-seq (map (comp
-                            incanter/cos
-                            #(*  2 Math/PI (/ % 86400000))
+                            #(Math/cos ^Double %)
+                            #(double (* 2 Math/PI (/ % 86400000)))
                             (partial * 60000))
                            mod-seq)
 
-        hod-seq (local-seq-as hour-seq
-                              zone
-                              :hour-of-day)
+        ;; hod-seq (local-seq-as hour-seq
+        ;;                       zone
+        ;;                       :hour-of-day)
 
 
-        dow-seq (local-seq-as day-seq
-                              zone
-                              :day-of-week)
+        ;; dow-seq (local-seq-as day-seq
+        ;;                       zone
+        ;;                       :day-of-week)
 
-        dom-seq (local-seq-as day-seq
-                              zone
-                              :day-of-month)
-        doy-seq (local-seq-as day-seq
-                              zone
-                              :day-of-year)]
-    {:t-seq t-seq
-     :sec-seq sec-seq
+        ;; dom-seq (local-seq-as day-seq
+        ;;                       zone
+        ;;                       :day-of-month)
+        ;; doy-seq (local-seq-as day-seq
+        ;;                       zone
+        ;;                       :day-of-year)
+        ]
+    {; :t-seq t-seq
+     ; :sec-seq sec-seq
      :min-seq min-seq
-     :hour-seq hour-seq
-     :day-seq day-seq
-     :week-seq week-seq
-     :moh-seq moh-seq
+     ;:hour-seq hour-seq
+     ;:day-seq day-seq
+     ;:week-seq week-seq
+     ;:moh-seq moh-seq
      :mod-seq mod-seq
      :day-night-seq day-night-seq
-     :hod-seq hod-seq
-     :dow-seq dow-seq
-     :dom-seq dom-seq
-     :doy-seq doy-seq
+     ;:hod-seq hod-seq
+     ;:dow-seq dow-seq
+     ;:dom-seq dom-seq
+     ;:doy-seq doy-seq
      }))
 
 (comment
+
   (use '(incanter core stats charts io))
 
   (time

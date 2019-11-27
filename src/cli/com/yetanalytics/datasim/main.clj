@@ -86,7 +86,7 @@
     (cond (seq errors)
           (bail! errors)
 
-          (:help options)
+          (or (empty? args) (:help options))
           (println summary)
 
           :else
