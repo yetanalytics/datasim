@@ -198,6 +198,37 @@
           "only supported for vectors! consider using `clojure.core/pop`")
   (if (empty? coll) coll (subvec coll 1)))
 
+(comment
+  (= [] (everything-but-first []))
+  (= [] (everything-but-first ["a"]))
+  (= ["b" "c"] (everything-but-first ["a" "b" "c"]))
+  (= "only supported on vecs"
+     (try (everything-but-first (list "a" "b" "c"))
+          (catch AssertionError e "only supported on vecs"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JSON Path parsing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; FIXME: given Kelvins work, `handle-json-path-str` is not exhaustive
+;; - not going to include any of the edge cases within the demo profile
+
+(defn handle-json-path-str
+  "extract items found within json-path string array, ie. ['some-iri']
+   - `path` everything up to the array
+   - `nested` everything inbetween [' and ']"
+  [path-str]
+  (if (string/includes? path-str "['")
+    (let [[path v*] (string/split path-str #"\['")
+          [v _] (string/split v* #"\']")]
+      {:path path :nested v})
+    {:path path-str}))
+
+(comment
+  (= (handle-json-path-str "$.context.contextActivities.category['https://w3id.org/xapi/catch/v1']")
+     {:path "$.context.contextActivities.category"
+      :value "https://w3id.org/xapi/catch/v1"})
+  (= (handle-json-path-str "$.result.score.raw") {:path "$.result.score.raw"}))
 
 
 
