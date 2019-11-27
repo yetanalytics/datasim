@@ -2,7 +2,7 @@
   (:require [com.yetanalytics.datasim.xapi.statement.helpers :as h]))
 
 (defn follow-stmt-path
-  [stmt-path & {:keys [] :as passdown}]
+  [stmt-path & {:keys [rng] :as passdown}]
   (let [[top-lvl-k] stmt-path
         ?more       (not-empty (h/butfirst stmt-path))]
     (case top-lvl-k

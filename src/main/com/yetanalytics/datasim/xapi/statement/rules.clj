@@ -186,12 +186,12 @@
            any
            all
            none] :as rule}
-   & {:keys [seed iri-lookup] :as passdown}]
+   & {:keys [rng iri-lookup] :as passdown}]
   (when (continue-given-presence? presence)
     (let [{:keys [path nested]} (jpath/handle-json-path-str location)
           stmt-path             (jpath/deconstruct-json-path path)
-          matchable             (matchable/compound-logic rule seed)
-          generated             (loc/follow-stmt-path stmt-path)
+          matchable             (matchable/compound-logic rule rng)
+          generated             (loc/follow-stmt-path stmt-path :rng rng)
           stmt-val              (matchable-values {:matchable   matchable
                                                    :generated   generated
                                                    :within-path nested
