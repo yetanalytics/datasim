@@ -9,7 +9,8 @@
 (defn handle-json-path-str
   "extract items found within json-path string array, ie. ['some-iri']
    - `path` everything up to the array
-   - `nested` everything inbetween [' and ']"
+   - `nested` everything inbetween [' and ']
+   - `after-nested` everything after the closing bracket of `nested`"
   [path-str]
   ;; FIXME: look for start of array, then check and strip quote if there, etc.
   ;; - currently incorrectly assumes that * is wrapped in single quotes
@@ -19,15 +20,9 @@
           [v _ :as around-vec] (string/split v* #"\']")
           after-vec            (h/butfirst around-vec)]
       (if (seq after-vec)
-        {:path path :nested v :rest after-vec}
+        {:path path :nested v :after-nested after-vec}
         {:path path :nested v}))
     {:path path-str}))
-
-;; TODO: mini dsl based on :path, :nested, :rest
-;; - :nested = * ~ mapv
-;;           = 'some-iri' ~ filterv (fn [{:keys [id]}] (= id some-iri))
-;; - :rest = navigation into object when :nested = some-iri
-;;         = navigate into every object
 
 (comment
   (= (handle-json-path-str "$.context.contextActivities.category['https://w3id.org/xapi/catch/v1']")
