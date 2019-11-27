@@ -186,6 +186,28 @@
 ;; Generation from a Rule
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; FIXME: given Kelvins work, `handle-json-path-str` is not exhaustive
+;; - not going to include any of the edge cases within the demo profile
+
+;; FIXME: handle @context when any/all/none contain objects (maps)
+;; - JSONLD/Linked Data specific, not priority
+
+;; FIXME: support for selectors
+
+;; FIXME: usage of scopeNote?
+
+;; FIXME: correct handling of seed, just a stub right now
+
+;; TODO: handle generation inference/boundaries given stmt-path terminal value
+;; - enumeration of possible/sensible `location` strings
+
+;; TODO: handling of thing returned by `in-path-fn` (in `handle-matchables`) based on `location`
+
+;; TODO: parsing of profile item returned by `iri-lookup-attempt` based on
+;; `:type` and/or `location`
+
+;; TODO: impl of value interp (profile item vs not profile item) within `matchable-values`
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; simple utility
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
