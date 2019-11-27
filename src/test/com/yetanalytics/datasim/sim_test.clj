@@ -2,7 +2,8 @@
   (:require [clojure.test :refer :all]
             [com.yetanalytics.datasim.sim :refer :all]
             [com.yetanalytics.datasim.input :as input]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [xapi-schema.spec :as xs]))
 
 (def valid-input
   (input/from-location
@@ -17,13 +18,33 @@
 
 (deftest disjoint-rng-test
   (testing "Make sure RNGs aren't shared across threads."
-    (let [skeleton (build-skeleton valid-input)]
-      (are [actor-id] (let [prob-seq (get-in skeleton
-                                             [actor-id
-                                              :prob-seq])
-                            f1 (future (nth prob-seq 1000))
-                            f2 (future (nth prob-seq 1000))]
+    (let [skeleton (build-skeleton (assoc-in valid-input
+                                             [:parameters :end] nil))]
+      (are [actor-id] (let [statement-seq (get skeleton
+                                               actor-id)
+                            f1 (future (nth statement-seq 1000))
+                            f2 (future (nth statement-seq 1000))]
                         (= @f1 @f2))
         "mbox::mailto:alice@example.org"
         "mbox::mailto:bob@example.org"
         "mbox::mailto:fred@example.org"))))
+
+(deftest xapi-test
+  (testing "sim returns valid xapi statements"
+    (let [skeleton (build-skeleton (assoc-in valid-input
+                                             [:parameters :end] nil))]
+      (are [actor-id] (s/valid? (s/every ::xs/statement)
+                                (get skeleton
+                                     actor-id))
+        "mbox::mailto:alice@example.org"
+        "mbox::mailto:bob@example.org"
+        "mbox::mailto:fred@example.org"))))
+
+(deftest stack-test
+  (testing "that we can iterate for a long time w/o a stack overflow"
+    (is (s/valid? ::xs/statement
+                  (-> valid-input
+                      (assoc-in [:parameters :end] nil)
+                      build-skeleton
+                      (get "mbox::mailto:bob@example.org")
+                      (nth 100000))))))
