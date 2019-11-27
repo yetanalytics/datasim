@@ -371,16 +371,15 @@
     (random/rand-nth* rng data)))
 
 (defn handle-all
-  "parse out the single value from `coll`
-   - typical use case seen in the wild so supported"
+  "return the first item in `coll` if its the only item, otherwise return all of `coll`
+   - will return nil if `coll` is empty"
   [coll]
-  (if (and (coll? coll) (= 1 (count coll)))
-    ;; care about the one thing in there
-    (first coll)
-    ;; FIXME: not currently sure of how this should be handled
-    ;; - may come into play when there are more than 1 any/all/none that are compounding
-    (throw (ex-info "only simple handling of 'all' is supported!"
-                    {:all coll}))))
+  (when-some [data (any-all-helper coll)]
+    (if (= 1 (count data))
+      ;; only care about the single value inside the vector
+      (first data)
+      ;; return normalized `coll` containing 2 or more items
+      data)))
 
 (defn handle-none
   "remove items from `possibilities` that are found in
