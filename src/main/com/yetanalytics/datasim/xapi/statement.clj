@@ -180,7 +180,7 @@
       :pattern-ancestors
       [{:id "https://w3id.org/xapi/cmi5#toplevel", :primary true}
        {:id "https://w3id.org/xapi/cmi5#satisfieds", :primary false}]
-      :registration (.toString (java.util.UUID/randomUUID))}))
+      :registration (.toString (java.util.UUID/randomUUID))})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Generation from a Rule
@@ -362,5 +362,20 @@
                        :after-root top-lvl-k
                        :more       ?more})))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Per rule fn
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  )
+(defn from-rule
+  [{:keys [location
+           ;; selector FIXME: not currently supported
+           ;; scopeNote FIXME: not currently relevant
+           presence
+           any
+           all
+           none] :as rule}
+   seed]
+  (let [{:keys [path nested]} (handle-json-path-str location)
+        stmt-path             (deconstruct-json-path path)]
+    ;; FIXME: update/impl top-down logic once bottom-up support is fleshed out
+    stmt-path))
