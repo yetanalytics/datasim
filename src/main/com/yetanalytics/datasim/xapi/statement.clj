@@ -291,11 +291,26 @@
      (butfirst [{"I'm" "removed"} {:foo "baz"}])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JSON Path parsing
+;; Rule Presence logic
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME: given Kelvins work, `handle-json-path-str` is not exhaustive
-;; - not going to include any of the edge cases within the demo profile
+(defn continue-given-presence?
+  "should processing of the current rule continue or not."
+  [s]
+  (case s
+    "excluded" false
+    true))
+
+(comment
+  (= false (continue-given-presence? "excluded"))
+  (= true
+     (continue-given-presence? "included")
+     (continue-given-presence? "recommended")
+     (continue-given-presence? nil)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JSON Path parsing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn handle-json-path-str
   "extract items found within json-path string array, ie. ['some-iri']
