@@ -180,7 +180,7 @@
       :pattern-ancestors
       [{:id "https://w3id.org/xapi/cmi5#toplevel", :primary true}
        {:id "https://w3id.org/xapi/cmi5#satisfieds", :primary false}]
-      :registration (.toString (java.util.UUID/randomUUID))})))
+      :registration (random/rand-uuid top-rng)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Generation from a Rule
