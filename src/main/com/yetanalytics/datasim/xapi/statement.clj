@@ -96,7 +96,8 @@
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
-
+  ;; TODO: add Profile(s) to ["context" "contextActivities" "category"]
+  ;; TODO: add registration to ["context" "registration"]
   (let [rng (random/seed-rng seed)]
     (with-meta
       ;; The generated statement (or the easy stuff anyhow)
@@ -199,11 +200,23 @@
 ;; -- only found in stmts with an existing registration
 ;; -- array valued, non-empty
 
-;; FIXME: add Profile(s) to ["context" "contextActivities" "category"]
-;; FIXME: add registration to ["context" "registration"]
+;; FIXME: handling of signed stmts based on usageType
+;; - http://adlnet.gov/expapi/attachments/signature
+;; -- contentType MUST = application/octet-stream
 
-;; TODO: handle generation inference/boundaries given stmt-path terminal value
-;; - enumeration of possible/sensible `location` strings
+;; FIXME: validation of JSONPath strings for xAPI validity?
+
+;; TODO: update JSONPath to not always expect the item in the array to be single quoted
+
+;; WIP: mini dsl based on :path, :nested, :rest
+;; - :nested = * ~ mapv
+;;           = 'some-iri' ~ filterv (fn [{:keys [id]}] (= id some-iri))
+;; - :rest = navigation into object when :nested = some-iri
+;;         = navigate into every object
+;; see `translate-placeholder` in ...nav-by-expectation
+
+;; WIP: handle generation inference/boundaries given stmt-path terminal value
+;; - see com.yetanalytics.datasim.xapi.statement.location.inference
 
 ;; TODO: handling of thing returned by `in-path-fn` (in `handle-matchables`) based on `location`
 
