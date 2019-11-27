@@ -308,6 +308,31 @@
 ;; TODO: handle value determination or generation given stmt-path terminal value
 ;; - base level on which inferences can be made
 
+(comment
+  (= {:all #{2}}
+     (compound-logic {:any [1 2 3]
+                      :all [2]
+                      :none [1 3]}))
+
+  (= {:any #{3 2}}
+     (compound-logic {:any [1 2 3]
+                      :all []
+                      :none [1]})
+     (compound-logic {:any [1 2 3]
+                      :all nil
+                      :none [1]})
+     (compound-logic {:any [2 3]
+                      :all nil
+                      :none nil})
+     (compound-logic {:any [1 2 3 4]
+                      :all nil
+                      :none [1 4]})))
+
+(defn matchable-values
+  "handles interpretation of matchable values defined by the rule"
+  [rule & {:keys [] :as passdown}]
+  ;; FIXME: top level impl
+  )
 
 
 
