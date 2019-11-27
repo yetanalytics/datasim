@@ -54,10 +54,14 @@
 
 (comment
 
-  (h/test-n-times 100
+  (h/test-n-times 1000
                   (fn []
                     (handle-any (random/seed-rng 123) [1 2 3]))
                   #(= 3 %))
+  (h/test-n-times 1000
+                  (fn []
+                    (handle-any (random/seed-rng 123) [1 2]))
+                  #(= 2 %))
   (= #{7 4 5}
      (handle-none [3 4 5 6 7] [1 2 3 6]))
   (= #{4 3 5}
