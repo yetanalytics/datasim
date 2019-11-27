@@ -104,3 +104,12 @@
       {:maybe-iri "foo"
        :iri-map   {:foo "bar"}
        :fallback "needed"})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; quick testing fn for ensuring determinism
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn test-n-times
+  "super simple run test n times and ensure all values follow same pred"
+  [n fn pred-fn]
+  (every? pred-fn (repeatedly n fn)))

@@ -53,6 +53,11 @@
                        :none          none-coll})))))
 
 (comment
+
+  (h/test-n-times 100
+                  (fn []
+                    (handle-any (random/seed-rng 123) [1 2 3]))
+                  #(= 3 %))
   (= #{7 4 5}
      (handle-none [3 4 5 6 7] [1 2 3 6]))
   (= #{4 3 5}
@@ -90,30 +95,74 @@
                (handle-any rng)))))))
 
 (comment
-  (= 2
-     (compound-logic {:any [1 2 3]
-                      :all [2]
-                      :none [1 3]}
-                     (random/seed-rng 123))
-     (compound-logic {:any [1 2 3]
-                      :all []
-                      :none [1]}
-                     (random/seed-rng 123))
-     (compound-logic {:any [1 2 3]
-                      :none [1]}
-                     (random/seed-rng 123))
-     (compound-logic {:any [2 3]}
-                     (random/seed-rng 123))
-     (compound-logic {:any [1 2 3 4]
-                      :none [1 4]}
-                     (random/seed-rng 123)))
 
-  (= [1 2 3 4]
-     (compound-logic {:all [1 2 3 4]} (random/seed-rng 123))
-     ;; `none` ignored if no `any` but some `all`
-     (compound-logic {:all [1 2 3 4] :none [1 2 3 4]} (random/seed-rng 123)))
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [1 2 3]
+                                     :all [2]
+                                     :none [1 3]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
 
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [1 2 3]
+                                     :all [2]
+                                     :none [1 3]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
+
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [1 2 3]
+                                     :all []
+                                     :none [1]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
+
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [1 2 3]
+                                     :all []
+                                     :none [1]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
+
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [1 2 3]
+                                     :none [1]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
+
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [2 3]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
+
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:any [1 2 3 4]
+                                     :none [1 4]}
+                                    (random/seed-rng 123)))
+                  #(= 2 %))
+
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:all [1 2 3 4]}
+                                    (random/seed-rng 123)))
+                  #(= [1 2 3 4] %))
+
+  ;; `none` ignored if no `any` but some `all`
+  (h/test-n-times 100
+                  (fn []
+                    (compound-logic {:all [1 2 3 4] :none [1 2 3 4]}
+                                    (random/seed-rng 123)))
+                  #(= [1 2 3 4] %))
   ;; filter coll of generated possibilities based on `none` then select using `rng`
-  (= 3 ((compound-logic
-         {:none [5 6 7 8]}
-         (random/seed-rng 123)) [1 2 3 4])))
+  (h/test-n-times 100
+                  (fn []
+                    ((compound-logic {:none [5 6 7 8]} (random/seed-rng 123))
+                     [1 2 3 4]))
+                  #(= 3 %)))
