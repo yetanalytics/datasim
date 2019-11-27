@@ -27,7 +27,8 @@
    :main-opts ["-m" "cognitect.test-runner"
                "-d" "src/test"]}
   :build
-  {:extra-deps {yetanalytics/yeti-bundler
-                {:git/url "git@github.com:yetanalytics/yeti-bundler.git"
-                 :sha "f7ac2667c06a7da66598697f63b1b1fa7a43a572"}}
-   :main-opts ["-m" "com.yetanalytics.yeti-bundler"]}}}
+  {:extra-paths ["src/build"]
+   :extra-deps {badigeon/badigeon {:git/url "https://github.com/EwenG/badigeon.git"
+                                   :sha "f4bcca58536f49c10a5ea87b662f33ccf83338ce"
+                                   :tag "0.0.10"}}
+   :main-opts ["-m" "com.yetanalytics.datasim.build"]}}}
