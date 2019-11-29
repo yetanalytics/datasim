@@ -6,19 +6,25 @@
 ;; Parse array within JSON Path string
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn strip-single-quotes
+  "when `s` contains a single quote, remove all instances of single quotes"
+  [s]
+  (if (string/includes? s "'")
+    (string/replace s "'" "")
+    s))
+
 (defn handle-json-path-str
   "extract items found within json-path string array, ie. ['some-iri']
    - `path` everything up to the array
    - `nested` everything inbetween [' and ']
    - `after-nested` everything after the closing bracket of `nested`"
   [path-str]
-  ;; FIXME: look for start of array, then check and strip quote if there, etc.
-  ;; - currently incorrectly assumes that * is wrapped in single quotes
-  ;; -- I have seen it both ways, not sure which one is correct
-  (if (string/includes? path-str "['")
-    (let [[path v*] (string/split path-str #"\['")
-          [v _ :as around-vec] (string/split v* #"\']")
-          after-vec            (h/butfirst around-vec)]
+  (if (string/includes? path-str "[")
+    (let [[path v*]          (string/split path-str #"\[")
+          ;; FIXME: not exhaustive parsing of JSON Path
+          no-quotes          (strip-single-quotes v*)
+          [v :as around-vec] (string/split no-quotes #"\]")
+          after-vec          (h/butfirst around-vec)]
       (if (seq after-vec)
         {:path path :nested v :after-nested after-vec}
         {:path path :nested v}))
@@ -28,14 +34,14 @@
   (= (handle-json-path-str "$.context.contextActivities.category['https://w3id.org/xapi/catch/v1']")
      {:path "$.context.contextActivities.category"
       :nested "https://w3id.org/xapi/catch/v1"})
-  (= (handle-json-path-str "$.attachments['*'].usageType")
+  (= (handle-json-path-str "$.attachments[*].usageType")
      {:path   "$.attachments"
       :nested "*"
-      :rest [".usageType"]})
+      :after-nested [".usageType"]})
   (= (handle-json-path-str "$.attachments['*'].usageType.dummyChild")
      {:path   "$.attachments"
       :nested "*"
-      :rest [".usageType.dummyChild"]})
+      :after-nested [".usageType.dummyChild"]})
   (= (handle-json-path-str "$.context.contextActivities.category['*']")
      {:path "$.context.contextActivities.category"
       :nested "*"})
