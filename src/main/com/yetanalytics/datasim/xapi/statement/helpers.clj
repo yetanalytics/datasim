@@ -98,22 +98,18 @@
 
 (defn iri-lookup-attempt
   "query `iri-map` for more data about `maybe-iri`, defaults to `maybe-iri` + `fallback` if not found."
-  [{:keys [maybe-iri iri-map fallback]}]
-  (get iri-map maybe-iri
-       {:non-iri maybe-iri
-        :fallback fallback}))
+  [{:keys [maybe-iri iri-map]}]
+  (get iri-map maybe-iri {:non-iri maybe-iri}))
 
 (comment
   (= "bar"
      (iri-lookup-attempt
       {:maybe-iri "foo"
-       :iri-map   {"foo" "bar"}
-       :fallback "not needed"}))
-  (= {:non-iri "foo" :fallback "needed"}
+       :iri-map   {"foo" "bar"}}))
+  (= {:non-iri "foo"}
      (iri-lookup-attempt
       {:maybe-iri "foo"
-       :iri-map   {:foo "bar"}
-       :fallback "needed"})))
+       :iri-map   {:foo "bar"}})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Useful preds for Vector and Map
