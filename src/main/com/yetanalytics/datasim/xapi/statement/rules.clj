@@ -80,14 +80,67 @@
     ;; `old` = `at-path`
     ;; `new` = result of following let binding
     (if continue?
-      (let [matchable (matchable/compound-logic rule rng)
-            generated (loc/follow-stmt-path stmt-path :rng rng)
-            stmt-val  (matchable-values {:matchable   matchable
-                                         :generated   generated
-                                         :within-path nested
-                                         :iri-lookup  iri-lookup
-                                         :stmt-path   stmt-path})]
-        {:stmt/path stmt-path
-         :stmt/val  stmt-val})
-      {:stmt/path stmt-path
-       :stmt/val :excluded})))
+      (let [;; what do we know based on `nested`?
+            ref-resolve  (when-some [_ nested]
+                           ;; there is some non-nil reference to either
+                           ;; - all objs
+                           ;; OR
+                           ;; - something within all objs
+                           ;; OR
+                           ;; - target obj
+                           (if (string? nested)
+                             ;; should be a string, if not, throw as unexpected state
+                             (case nested
+                               ;; return the vector of things found `at-path`
+                               "*" {:splat at-path}
+                               ;; assume IRI but return `nested` if assumption is wrong
+                               ;; - `nested` will be found at the key `:non-iri` if lookup returned nil
+                               (h/iri-lookup-attempt
+                                {:maybe-iri nested
+                                 :iri-map   iri-lookup}))
+                             (throw (ex-info "the lookup was not a string! unexpected state!"
+                                             {:nested  nested
+                                              :path    path
+                                              :at-path at-path}))))
+            ;; what do we know based on rule's any/all/none
+            matchable    (when (or (some? any)
+                                   (some? all)
+                                   (some? none))
+                           ;; we have something from the rule, use it
+                           ;; OR
+                           ;; we don't have something from the rule, return nil
+                           (matchable/compound-logic rule rng))
+            any-all-none (cond (fn? matchable)
+                               ;; we need to filter generated values based on `none`
+                               (let [generated (loc/follow-stmt-path path :rng rng)]
+                                 (if (some? generated)
+                                   ;; we were able to infer enough to come up with at least one possible value
+                                   ;; - filter `generated` based on `none`
+                                   {:could-be (matchable generated)}
+                                   ;; if generation doesn't provide anything, the must-not values are returned
+                                   ;; - the must not values will then used to further improve inference
+                                   {:must-nots (matchable generated)}))
+                               (and (vector? matchable)
+                                    (cset/subset? (set matchable) (set all)))
+                               ;; the `all` collection or a setubet of `all` was returned by `compound-logic`
+                               ;; - no need to generate, we have our value
+                               {:all-of matchable}
+                               (some? matchable)
+                               ;; scalar or vector value for potential inclusion within `stmt` at `path`
+                               ;; - no need to generate, we have our value, just determine if it will be used to update `stmt`
+                               {:could-be matchable}
+                               :else
+                               ;; we don't have something form the rule, return generated
+                               {:generated (loc/follow-stmt-path path :rng rng)})
+            stmt-val     (derive-stmt-val {:stmt-path     path
+                                           :within-stmt   at-path
+                                           :within-path   nested
+                                           :any-all-none  any-all-none
+                                           :resolved-ref  ref-resolve
+                                           :iri-lookup    iri-lookup})]
+        {:stmt/path path
+         :stmt/val  stmt-val
+         :stmt/this stmt})
+      {:stmt/path path
+       :stmt/val :excluded
+       :stmt/this stmt})))
