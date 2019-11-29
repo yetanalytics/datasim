@@ -40,17 +40,23 @@
       ;; return normalized `coll` containing 2 or more items
       data)))
 
+(defn handle-none-helper
+  "normalization before set creation to prevent unintended alteration of `possibilities`"
+  [possibilities]
+  (let [normalized (h/normalize-to-vec possibilities)]
+    (if (seq normalized)
+      (set normalized)
+      (throw (ex-info "no possibilities were provided!"
+                      {:possibilities possibilities
+                       :normalized    normalized})))))
+
 (defn handle-none
   "remove items from `possibilities` that are found in
    `none-coll` and returns the set of remaining items."
   [possibilities none-coll]
-  (let [p-set (set possibilities)
+  (let [p-set (handle-none-helper possibilities)
         n-set (set none-coll)]
-    (if (seq p-set)
-      (cset/difference p-set n-set)
-      (throw (ex-info "no possibilities were provided!"
-                      {:possibilities possibilities
-                       :none          none-coll})))))
+    (cset/difference p-set n-set)))
 
 (comment
 
