@@ -51,20 +51,36 @@
 ;; Split on branch/node to create key seq for nav into stmt
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn split-on-dot
+  "split `s` at `.` when present in `s`"
+  [s]
+  (if (string/includes? s ".")
+    (string/split s #"\.")
+    s))
+
 (defn deconstruct-json-path
   "ensure root was $ before returning the path into stmt"
-  [path & {:keys [remainder]}]
-  (let [[root & components :as deconstructed] (string/split path #"\.")
-        within-array-path (when (seq remainder) (string/split remainder #"\."))]
+  [{:keys [path nested after-nested]}]
+  (let [[root & components :as deconstructed] (split-on-dot path)
+        maybe-nested (when (string? nested) {:nested nested})
+        maybe-more   (when (seq after-nested)
+                       (reduce into []
+                               (map (fn [s]
+                                      (let [[maybe-empty :as split] (split-on-dot s)]
+                                        (if (and (vector? split) (empty? maybe-empty))
+                                          (h/butfirst split)
+                                          split)))
+                                    after-nested)))]
     (assert (= root "$") "JSONPath string did not start with root!")
-    ;; FIXME: figure out simple/clean way to talk about within array paths!
-    (h/butfirst deconstructed)))
+    (as-> {:path-ks (h/butfirst deconstructed)} k-seqs
+      (if (map? maybe-nested) (merge k-seqs maybe-nested) k-seqs)
+      (if (seq maybe-more) (assoc k-seqs :within-array-path maybe-more) k-seqs))))
 
 (comment
-  (= ["result" "score" "raw"]
-     (deconstruct-json-path "$.result.score.raw"))
-  (= ["context" "contextActivities" "category"]
-     (deconstruct-json-path "$.context.contextActivities.category"))
+  (= {:path-ks ["result" "score" "raw"]}
+     (deconstruct-json-path {:path "$.result.score.raw"}))
+  (= {:path-ks ["context" "contextActivities" "category"]}
+     (deconstruct-json-path {:path "$.context.contextActivities.category"}))
   (= "bad root detected"
      (try (deconstruct-json-path "$$.result.score.raw")
           (catch AssertionError e "bad root detected"))))
