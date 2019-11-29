@@ -82,5 +82,131 @@
   (= {:path-ks ["context" "contextActivities" "category"]}
      (deconstruct-json-path {:path "$.context.contextActivities.category"}))
   (= "bad root detected"
-     (try (deconstruct-json-path "$$.result.score.raw")
-          (catch AssertionError e "bad root detected"))))
+     (try (deconstruct-json-path {:path "$$.result.score.raw"})
+          (catch AssertionError e "bad root detected")))
+  (= {:path-ks ["context" "contextActivities" "category"]
+      :nested "https://w3id.org/xapi/catch/v1"}
+     (deconstruct-json-path {:path "$.context.contextActivities.category"
+                             :nested "https://w3id.org/xapi/catch/v1"}))
+  (= {:path-ks ["attachments"]
+      :nested "*"
+      :within-array-path ["usageType" "dummyChild"]}
+     (deconstruct-json-path {:path   "$.attachments"
+                             :nested "*"
+                             :after-nested [".usageType.dummyChild"]})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Update fn based on deconstructed JSON Path
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn apply-deconstruced-json-path
+  "use the results of `deconstruct-json-path` to return a fn which
+   expects a `stmt` as its only argument. the fn will follow the json path
+   into the `stmt` and return a map containing `:path`, `:at-path` and `:stmt`"
+  [{:keys [path-ks nested within-array-path]}]
+  (when (seq path-ks)
+    (fn [stmt]
+      (let [base (get-in stmt path-ks)]
+        (if (seq nested)
+          (let [target-obj       (case nested
+                                   "*" base
+                                   ;; there should only be one obj with the target id (if any)
+                                   (first (filter (fn [m] (= (get m "id") nested)) base)))
+                with-placeholder (conj path-ks :placeholder)]
+            (if (seq within-array-path)
+              (let [at-path (cond (map? target-obj)
+                                  ;; get to the value in target object
+                                  (get-in target-obj within-array-path)
+                                  ;; get to the value in every target obj
+                                  (vector? target-obj)
+                                  (mapv (fn [each-obj] (get-in each-obj within-array-path)) target-obj)
+                                  ;; no target obj, return whatever is there (most likely nil)
+                                  :else target-obj)]
+                {:path    (into with-placeholder within-array-path)
+                 :at-path at-path
+                 :stmt    stmt})
+              {:path    with-placeholder
+               :at-path target-obj
+               :stmt    stmt}))
+          {:path    path-ks
+           :at-path base
+           :stmt    stmt})))))
+
+(comment
+  ;; simple get-in call
+  (= {:at-path "target-val"
+      :path    ["foo" "bar"]
+      :stmt    {"foo" {"bar" "target-val"}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]})
+      {"foo" {"bar" "target-val"}}))
+  ;; get-in call + filter for `target-obj-id`
+  (= {:at-path {"id" "target-obj-id"}
+      :path    ["foo" "bar" :placeholder]
+      :stmt    {"foo" {"bar" [{"id" "target-obj-id"}
+                              {"id" "NOT-target-obj-id"}]}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
+                                     :nested "target-obj-id"})
+      {"foo" {"bar" [{"id" "target-obj-id"}
+                     {"id" "NOT-target-obj-id"}]}}))
+  ;; get-in call + filter for `target-obj-id` + get call
+  (= {:at-path "nested in target obj"
+      :path    ["foo" "bar" :placeholder "nested-key"]
+      :stmt    {"foo" {"bar" [{"id" "target-obj-id"
+                               "nested-key" "nested in target obj"}
+                              {"id" "NOT-target-obj-id"}]}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
+                                     :nested "target-obj-id"
+                                     :within-array-path ["nested-key"]})
+      {"foo" {"bar" [{"id" "target-obj-id"
+                      "nested-key" "nested in target obj"}
+                     {"id" "NOT-target-obj-id"}]}}))
+  ;; get-in call + filter for `target-obj-id` + get-in call
+  (= {:at-path "even deeper"
+      :path    ["foo" "bar" :placeholder "nested-key" "nested"]
+      :stmt    {"foo" {"bar" [{"id" "target-obj-id"
+                               "nested-key" {"nested" "even deeper"}}
+                              {"id" "NOT-target-obj-id"}]}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
+                                     :nested "target-obj-id"
+                                     :within-array-path ["nested-key" "nested"]})
+      {"foo" {"bar" [{"id" "target-obj-id"
+                      "nested-key" {"nested" "even deeper"}}
+                     {"id" "NOT-target-obj-id"}]}}))
+  ;; get-in call which returns array, we care about everything in the array
+  (= {:at-path [{"id" "target-obj-id"}
+                {"id" "NOT-target-obj-id"}]
+      :path    ["foo" "bar" :placeholder]
+      :stmt    {"foo" {"bar" [{"id" "target-obj-id"}
+                              {"id" "NOT-target-obj-id"}]}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
+                                     :nested "*"})
+      {"foo" {"bar" [{"id" "target-obj-id"}
+                     {"id" "NOT-target-obj-id"}]}}))
+  ;; get-in call which returns array, we care about something within each array item
+  (= {:at-path ["from-first-obj" "from-second-obj"]
+      :path    ["foo" "bar" :placeholder "top-lvl-prop"]
+      :stmt    {"foo" {"bar" [{"id" "target-obj-id"
+                               "top-lvl-prop" "from-first-obj"}
+                              {"id" "NOT-target-obj-id"
+                               "top-lvl-prop" "from-second-obj"}]}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
+                                     :nested "*"
+                                     :within-array-path ["top-lvl-prop"]})
+      {"foo" {"bar" [{"id" "target-obj-id"
+                      "top-lvl-prop" "from-first-obj"}
+                     {"id" "NOT-target-obj-id"
+                      "top-lvl-prop" "from-second-obj"}]}}))
+  ;; get-in call which returns array, we care about something nested within each array item
+  (= {:at-path ["from-first-obj" "from-second-obj"]
+      :path    ["foo" "bar" :placeholder "top-lvl-prop" "nested-prop"]
+      :stmt    {"foo" {"bar" [{"id" "target-obj-id"
+                               "top-lvl-prop" {"nested-prop" "from-first-obj"}}
+                              {"id" "NOT-target-obj-id"
+                               "top-lvl-prop" {"nested-prop" "from-second-obj"}}]}}}
+     ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
+                                     :nested "*"
+                                     :within-array-path ["top-lvl-prop" "nested-prop"]})
+      {"foo" {"bar" [{"id" "target-obj-id"
+                      "top-lvl-prop" {"nested-prop" "from-first-obj"}}
+                     {"id" "NOT-target-obj-id"
+                      "top-lvl-prop" {"nested-prop" "from-second-obj"}}]}})))
