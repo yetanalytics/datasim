@@ -100,12 +100,16 @@
         ;; return a fn which expects a collection of possible values
         ;; - filtered down to valid values based on `none` and return one of them using `rng`
         (fn [possibilities]
-          (->> none-coll
-               (handle-none possibilities)
-               (handle-any rng)))))))
+          ;; determine if any `possibilites` were passed to the fn or not
+          (let [filter-attempt (try (handle-none possibilities none-coll)
+                                    (catch Exception e nil))]
+            (case filter-attempt
+              ;; `handle-none` threw, return `none-coll`
+              nil none-coll
+              ;; `filter-attempt` was successful, select from any of the remaining possibilities
+              (handle-any rng filter-attempt))))))))
 
 (comment
-
   (h/test-n-times 100
                   (fn []
                     (compound-logic {:any [1 2 3]
@@ -175,4 +179,28 @@
                   (fn []
                     ((compound-logic {:none [5 6 7 8]} (random/seed-rng 123))
                      [1 2 3 4]))
-                  #(= 3 %)))
+                  #(= 3 %))
+  ;; possibilities was nil, return `none`
+  (h/test-n-times 100
+                  (fn []
+                    ((compound-logic {:none [5 6 7 8]} (random/seed-rng 123))
+                     nil))
+                  #(= [5 6 7 8] %))
+  ;; possibilities was empty, return `none`
+  (h/test-n-times 100
+                  (fn []
+                    ((compound-logic {:none [5 6 7 8]} (random/seed-rng 123))
+                     []))
+                  #(= [5 6 7 8] %))
+  ;; possibilities was empty, return `none`
+  (h/test-n-times 100
+                  (fn []
+                    ((compound-logic {:none [5 6 7 8]} (random/seed-rng 123))
+                     (list)))
+                  #(= [5 6 7 8] %))
+  ;; possibilities was empty, return `none`
+  (h/test-n-times 100
+                  (fn []
+                    ((compound-logic {:none [5 6 7 8]} (random/seed-rng 123))
+                     {}))
+                  #(= [5 6 7 8] %)))
