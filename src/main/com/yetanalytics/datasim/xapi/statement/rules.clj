@@ -64,18 +64,21 @@
   )
 
 (defn from-rule
-  "top level fn that returns `stmt-path` and `stmt-val`
-   - `:stmt/val` will be set to `:excluded` when presence = excluded"
+  "FIXME: update doc string to reflect updated functionality"
   [{:keys [location
            ;; selector FIXME: not currently supported
            presence
            any
            all
            none] :as rule}
-   & {:keys [rng iri-lookup] :as passdown}]
-  (let [{:keys [path nested after-nested]} (jpath/handle-json-path-str location)
-        stmt-path                          (jpath/deconstruct-json-path path)
+   & {:keys [rng iri-lookup statement] :as passdown}]
+  (let [parsed                             (jpath/handle-json-path-str location)
+        deconstructed                      (jpath/deconstruct-json-path parsed)
+        in-stmt-fn                         (jpath/apply-deconstruced-json-path deconstructed)
+        {:keys [path at-path stmt nested]} (in-stmt-fn statement)
         continue?                          (continue-given-presence? presence)]
+    ;; `old` = `at-path`
+    ;; `new` = result of following let binding
     (if continue?
       (let [matchable (matchable/compound-logic rule rng)
             generated (loc/follow-stmt-path stmt-path :rng rng)
