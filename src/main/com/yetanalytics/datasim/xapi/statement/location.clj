@@ -6,6 +6,8 @@
 
 (defn follow-stmt-path
   "responsible for creation of `generated` "
+  ;; - its OKAY if this returns nil! will result in further inference based on `none`
+  ;; -- TODO: impl of the `none` based inference fn
   [stmt-path & {:keys [rng] :as passdown}]
   (let [[top-lvl-k] stmt-path
         ?more       (not-empty (h/butfirst stmt-path))]
