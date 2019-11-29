@@ -6,23 +6,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn handle-placeholder
-  "FIXME: better way of handling this"
+  "identification of `:placeholder` which is used as a stand in
+   for some array within a JSON Path string"
   [next-k-in-ks]
   (or (= next-k-in-ks :placeholder)
       (= next-k-in-ks "*")
       (string? next-k-in-ks)))
-
-(defn translate-placeholder
-  ;; FIXME: update after inference from `stmt-path` fleshed out
-  "return fn corresponding to intention of the JSON Path Array
-   - splat ~ applies to all items in array
-   - string ~ filter array items for one with `:id` which matches the string."
-  [{:keys [stmt-path nested ks-after-placeholder]}]
-  (case nested
-    "*"  "FIXME: depends on `ks-after-placeholder`"
-    nil  "FIXME: update-in-fn which accounts for inferences from `stmt-path`"
-    (when (string? nested)
-      "FIXME: filter the coll found at `stmt-path` for items with id matching expecte")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; simple expectation checker
