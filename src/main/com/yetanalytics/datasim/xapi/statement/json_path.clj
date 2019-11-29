@@ -59,7 +59,9 @@
     s))
 
 (defn deconstruct-json-path
-  "ensure root was $ before returning the path into stmt"
+  "ensure root was $ before returning the path into stmt.
+   results in a map of `:path-ks`, `:nested` and `within-array-path`.
+    - keys will only be included in return map if their value is non-nil"
   [{:keys [path nested after-nested]}]
   (let [[root & components :as deconstructed] (split-on-dot path)
         maybe-nested (when (string? nested) {:nested nested})
@@ -124,10 +126,12 @@
                                   :else target-obj)]
                 {:path    (into with-placeholder within-array-path)
                  :at-path at-path
-                 :stmt    stmt})
+                 :stmt    stmt
+                 :nested  nested})
               {:path    with-placeholder
                :at-path target-obj
-               :stmt    stmt}))
+               :stmt    stmt
+               :nested  nested}))
           {:path    path-ks
            :at-path base
            :stmt    stmt})))))
@@ -143,7 +147,8 @@
   (= {:at-path {"id" "target-obj-id"}
       :path    ["foo" "bar" :placeholder]
       :stmt    {"foo" {"bar" [{"id" "target-obj-id"}
-                              {"id" "NOT-target-obj-id"}]}}}
+                              {"id" "NOT-target-obj-id"}]}}
+      :nested  "target-obj-id"}
      ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
                                      :nested "target-obj-id"})
       {"foo" {"bar" [{"id" "target-obj-id"}
@@ -153,7 +158,8 @@
       :path    ["foo" "bar" :placeholder "nested-key"]
       :stmt    {"foo" {"bar" [{"id" "target-obj-id"
                                "nested-key" "nested in target obj"}
-                              {"id" "NOT-target-obj-id"}]}}}
+                              {"id" "NOT-target-obj-id"}]}}
+      :nested "target-obj-id"}
      ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
                                      :nested "target-obj-id"
                                      :within-array-path ["nested-key"]})
@@ -165,7 +171,8 @@
       :path    ["foo" "bar" :placeholder "nested-key" "nested"]
       :stmt    {"foo" {"bar" [{"id" "target-obj-id"
                                "nested-key" {"nested" "even deeper"}}
-                              {"id" "NOT-target-obj-id"}]}}}
+                              {"id" "NOT-target-obj-id"}]}}
+      :nested  "target-obj-id"}
      ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
                                      :nested "target-obj-id"
                                      :within-array-path ["nested-key" "nested"]})
@@ -177,7 +184,8 @@
                 {"id" "NOT-target-obj-id"}]
       :path    ["foo" "bar" :placeholder]
       :stmt    {"foo" {"bar" [{"id" "target-obj-id"}
-                              {"id" "NOT-target-obj-id"}]}}}
+                              {"id" "NOT-target-obj-id"}]}}
+      :nested  "*"}
      ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
                                      :nested "*"})
       {"foo" {"bar" [{"id" "target-obj-id"}
@@ -188,7 +196,8 @@
       :stmt    {"foo" {"bar" [{"id" "target-obj-id"
                                "top-lvl-prop" "from-first-obj"}
                               {"id" "NOT-target-obj-id"
-                               "top-lvl-prop" "from-second-obj"}]}}}
+                               "top-lvl-prop" "from-second-obj"}]}}
+      :nested  "*"}
      ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
                                      :nested "*"
                                      :within-array-path ["top-lvl-prop"]})
@@ -202,7 +211,8 @@
       :stmt    {"foo" {"bar" [{"id" "target-obj-id"
                                "top-lvl-prop" {"nested-prop" "from-first-obj"}}
                               {"id" "NOT-target-obj-id"
-                               "top-lvl-prop" {"nested-prop" "from-second-obj"}}]}}}
+                               "top-lvl-prop" {"nested-prop" "from-second-obj"}}]}}
+      :nested  "*"}
      ((apply-deconstruced-json-path {:path-ks ["foo" "bar"]
                                      :nested "*"
                                      :within-array-path ["top-lvl-prop" "nested-prop"]})
