@@ -206,21 +206,16 @@
 
 ;; FIXME: validation of JSONPath strings for xAPI validity?
 
-;; TODO: update JSONPath to not always expect the item in the array to be single quoted
-
-;; WIP: mini dsl based on :path, :nested, :rest
-;; - :nested = * ~ mapv
-;;           = 'some-iri' ~ filterv (fn [{:keys [id]}] (= id some-iri))
-;; - :rest = navigation into object when :nested = some-iri
-;;         = navigate into every object
-;; see `translate-placeholder` in ...nav-by-expectation
-
 ;; WIP: handle generation inference/boundaries given stmt-path terminal value
 ;; - see com.yetanalytics.datasim.xapi.statement.location.inference
 
-;; TODO: handling of thing returned by `in-path-fn` (in `handle-matchables`) based on `location`
+;; WIP: impl of `derive-stmt-val` which takes into account
+;; - resolved reference
+;; - resolved any/all/none with respect to generated
+;; - the path into the stmt,
+;; -- ie. is it a determining property?
+;; -- ie. what can we infer given the path
+;; - the thing at path within stmt
 
-;; TODO: parsing of profile item returned by `iri-lookup-attempt` based on
-;; `:type` and/or `location`
-
-;; TODO: impl of value interp (profile item vs not profile item) within `matchable-values`
+;; TODO: parsing of profile item, ie. if `ref-resolve` is a map not containing one of my flag keys (:splat, :non-iri)
+;; - based on `:type` and/or `location`

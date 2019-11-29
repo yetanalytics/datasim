@@ -44,7 +44,7 @@
   )
 
 (comment
-  ;; `matchable-values` needs to account for a few things
+  ;; `derive-stmt-val` needs to account for a few things
   ;; - `ref-resolve` has 4 possible returns
   ;; -- `:splat` = coll of things found `at-path`, ie. {`:splat` `at-path`}
   ;; -- `:non-iri` = key queried for but nil was returned, ie. {`:non-iri` `nested`}
@@ -142,5 +142,5 @@
          :stmt/val  stmt-val
          :stmt/this stmt})
       {:stmt/path path
-       :stmt/val :excluded
+       :stmt/val  :excluded
        :stmt/this stmt})))
