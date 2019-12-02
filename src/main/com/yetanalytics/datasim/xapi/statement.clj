@@ -204,10 +204,13 @@
 ;; - http://adlnet.gov/expapi/attachments/signature
 ;; -- contentType MUST = application/octet-stream
 
-;; FIXME: validation of JSONPath strings for xAPI validity?
+;; FIXME: what happens when a statement template rule specifies that
+;;        context.registration should take on a particular value?
+;; - ie. one not associated with the Parent Pattern in any way
 
-;; WIP: handle generation inference/boundaries given stmt-path terminal value
-;; - see com.yetanalytics.datasim.xapi.statement.location.inference
+;; WIP: inference about JSONPath strings which are valid paths to xAPI properties
+
+;; WIP: handle generation based on inference/boundaries
 
 ;; WIP: impl of `derive-stmt-val` which takes into account
 ;; - resolved reference
@@ -217,5 +220,8 @@
 ;; -- ie. what can we infer given the path
 ;; - the thing at path within stmt
 
+;; TODO: iterate over rules and update stmt as necessary
+
 ;; TODO: parsing of profile item, ie. if `ref-resolve` is a map not containing one of my flag keys (:splat, :non-iri)
 ;; - based on `:type` and/or `location`
+;; - final fallback prior to generation, want to use the profile as much as possible
