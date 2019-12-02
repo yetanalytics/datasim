@@ -92,6 +92,13 @@
   (= 1 (next-to-last [1 2]))
   (= nil (next-to-last [1])))
 
+(defn replace-last
+  [coll replacement]
+  (-> coll normalize-to-vec pop (conj replacement)))
+
+(comment
+  (= (replace-last [1 2 3] 4) [1 2 4]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Lookup from IRI map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
