@@ -135,6 +135,30 @@
      (group-member? ["actor" "member" :placeholder "account" "homePage"])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; One of the xAPI properties which CAN be a group
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn property-which-can-be-a-group
+  "groups can only be found in certain parts of an xAPI stmt, determines if `stmt-path`
+   is navigating into one of those properties"
+  [stmt-path]
+  (let [;; does `stmt-path` point to something within the Account IFI?
+        account?     (account-ifi? stmt-path)
+        ;; top level Actor key or account IFI within actor
+        actor?       (or (:test-result (nav/path-value-check "actor" stmt-path) false)
+                         (and account? (nav/step-back-expected? "account" stmt-path :next-key "actor")))
+        ;; top level Object key or account IFI within Object
+        obj?         (or (:test-result (nav/path-value-check "object" stmt-path) false)
+                         (and account? (nav/step-back-expected? "account" stmt-path :next-key "object")))
+        ;; top level Agent or Group key within instructor or account IFI within instructor
+        instruct?    (or (nav/step-back-expected? "instructor" stmt-path :next-key "context")
+                         (and account? (nav/step-back-expected? "instructor" (pop stmt-path) :next-key "context")))
+        ;; top level Group key within team or account IFI within team
+        team?        (or (nav/step-back-expected? "team" stmt-path :next-key "context")
+                         (and account? (nav/step-back-expected? "team" (pop stmt-path) :next-key "context")))]
+    (or actor? obj? instruct? team?)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Identified Group JSON Object without `member`
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
