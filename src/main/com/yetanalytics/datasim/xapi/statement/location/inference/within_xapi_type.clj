@@ -627,68 +627,67 @@
       false)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Extension JSON Object
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn extension?
-  [stmt-path]
-  (let [terminate-at (peek stmt-path)]
-    (or (nav/step-back-expected? "definition" stmt-path :next-key "object")
-        ;; TODO: other places an extension can be found
-        )))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Activity Definition JSON Object
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn activity-definition?
-  [stmt-path]
-  (let [terminate-at (peek stmt-path)]
-    (or (nav/step-back-expected? "definition" stmt-path :next-key "object")
-        ;; TODO: other places activity definition can be found
-        )))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Activities JSON Objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- context-activity-array?
+  "helper fn for determining if WITHIN one of the context Activities but not AT one of them"
+  [stmt-path target-ctx-activity]
+  (let [up-to-target (try (subvec stmt-path 0 3) (catch Exception e []))
+        to-target?   (= (peek up-to-target) target-ctx-activity)
+        at-target?   (= stmt-path up-to-target)]
+    (if at-target?
+      ;; only return true when WITHIN not AT
+      false
+      (and to-target?
+           (nav/step-back-expected? "contextActivities" up-to-target :next-key "context")))))
+
 (defn parent?
+  "does `stmt-path` point at a property within the parent context activities array"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (context-activity-array? stmt-path "parent"))
 
 (defn grouping?
+  "does `stmt-path` point at a property within the grouping context activities array"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (context-activity-array? stmt-path "grouping"))
 
 (defn category?
+  "does `stmt-path` point at a property within the category context activities array"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (context-activity-array? stmt-path "category"))
 
 (defn other?
+  "does `stmt-path` point at a property within the other context activities array"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (context-activity-array? stmt-path "other"))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Activity JSON Object
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn activity?
-  [stmt-path]
-  ;; TODO: impl!
-  )
+(comment
+  (= true
+     (parent? ["context" "contextActivities"])
+     (parent? ["context" "contextActivities" "parent" :placeholder "id"])
+     (parent? ["context" "contextActivities" "parent" "id"])
+     (parent? ["context" "contextActivities" "parent" "extensions"])
+     (parent? ["context" "contextActivities" "parent" "extensions" "some-iri-key"])
+     (parent? ["context" "contextActivities" "parent" :placeholder "extensions" "some-iri-key"])
+     ;; WITHIN not AT
+     (false? (parent? ["context" "contextActivities" "parent"]))
+     ;; only calibrated for the Parent context activity
+     (false? (parent? ["context" "contextActivities" "other" "id"]))
+     (other? ["context" "contextActivities" "other" "id"])
+     (other? ["context" "contextActivities" "other" :placeholder "id"])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Activities JSON Object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn context-activity?
+  "does `stmt-path` point to something within one of the context activities"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (or (parent? stmt-path)
+      (grouping? stmt-path)
+      (category? stmt-path)
+      (other? stmt-path)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object Extension JSON Object
