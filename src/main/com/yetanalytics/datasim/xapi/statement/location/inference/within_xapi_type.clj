@@ -900,7 +900,8 @@
         ;; within actor's member array, account IFI handled within `group-member?`
         member?      (and (group-member? stmt-path)
                           ;; restriction to just actor members based on first 2 keys of `stmt-path`
-                          (= (subvec stmt-path 0 2) ["actor" "member"]))
+                          (= (try (subvec stmt-path 0 2) (catch Exception e []))
+                             ["actor" "member"]))
         ;; terminate at :placeholder
         group?       (nav/step-back-expected? "member" stmt-path :expected-pop ["actor" "member"])]
     (case terminate-at
