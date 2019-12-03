@@ -717,7 +717,129 @@
 (defn result-extension?
   "does `stmt-path` point to something within a Result Extension"
   [stmt-path]
-  ;; TODO: impl!
+  (let [up-to-ext (try (subvec stmt-path 0 2) (catch Exception e []))]
+    (nav/step-back-expected? "extensions" up-to-ext :next-key "result")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Activity Extension JSON Object
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn context-activity-extension?
+  "does `stmt-path` point to something within an Activity Extension"
+  [stmt-path]
+  (let [end-idx   (if (h/containsv? stmt-path :placeholder) 6 5)
+        up-to-ext (try (subvec stmt-path 0 end-idx) (catch Exception e []))
+        at-ext    (peek up-to-ext)]
+    (if (= stmt-path up-to-ext)
+      ;; WITHIN not AT
+      false
+      (and
+       (= at-ext "extensions")
+       (or
+        ;; parent w/ placeholder or without
+        (parent? stmt-path)
+        ;; grouping w/ placeholder or without
+        (grouping? stmt-path)
+        ;; category w/ placeholder or without
+        (category? stmt-path)
+        ;; other w/ placeholder or without
+        (other? stmt-path))))))
+
+(comment
+  (context-activity-extension? ["context" "contextActivities" "parent" :placeholder "definition" "extensions" "some-iri-k"])
+  (context-activity-extension? ["context" "contextActivities" "parent" "definition" "extensions" "some-iri-k"])
+  (false?
+   (context-activity-extension? ["context" "contextActivities" "foo" "definition" "extensions" "some-iri-k"])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Extension JSON Object
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn extension?
+  "does `stmt-path` point to a key within an extension"
+  [stmt-path]
+  (let [ctx-ext?   (context-extension? stmt-path)
+        r-ext?     (result-extension? stmt-path)
+        obj-ext?   (object-extension? stmt-path)
+        act-ext?   (context-activity-extension? stmt-path)]
+    (or ctx-ext? r-ext? obj-ext? act-ext?)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Activity Definition JSON Object
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn activity-definition?
+  [stmt-path]
+  (let [terminate-at (peek stmt-path)
+        ;; does a single step back result in `definition`
+        within-def?  (:test-result (nav/path-value-check "definition" stmt-path) false)
+        ;; at some language tag within a language map
+        within-lmap? (language-map? stmt-path)
+        ;; at some language map within a `definition`
+        at-lmap?     (and
+                      within-def?
+                      (case terminate-at
+                        "name"        true
+                        "description" true
+                        false))
+        ;; within some extension, context, result, object activity, context activity
+        within-ext?  (extension? stmt-path)
+        ;; at extension key within a activity definition
+        at-ext?      (and
+                      within-def?
+                      (= terminate-at "extensions"))
+        ;; at the `type` key within an activity definition
+        at-type?     (and
+                      within-def?
+                      (= terminate-at "type"))
+        ;; at the `moreInfo` key within an activity definition
+        at-more-info (and
+                      within-def?
+                      (= terminate-at "moreInfo"))
+        ;; within one of the interaction components
+        within-ia    (interaction-component? stmt-path)
+        ;; within the correct response pattern array
+        within-crp   (nav/step-back-expected? "correctResponsePattern" stmt-path :next-key "definition")
+        ;; at one of the interaction keys within an activity definition
+        at-iap?      (and
+                      within-def?
+                      (case terminate-at
+                        "interactionType"         true
+                        "correctResponsesPattern" true
+                        "choices"                 true
+                        "scale"                   true
+                        "source"                  true
+                        "target"                  true
+                        "steps"                   true
+                        false))]
+    (or within-lmap?
+        at-lmap?
+        within-ext?
+        at-ext?
+        at-type?
+        at-more-info
+        within-ia
+        within-crp
+        at-iap?)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Activity JSON Object
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn activity?
+  [stmt-path]
+  (let [terminate-at (peek stmt-path)
+        ;; based on the property
+        top-lvl-k    (case terminate-at
+                       "objectType" true
+                       "id"         true
+                       "definition" true
+                       false)
+        ;; if within an activity definition, also within an activity
+        in-def?      (activity-definition? stmt-path)
+        ;; based on expected locations
+        ;; TODO: left off here
+        ])
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
