@@ -694,24 +694,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn object-extension?
+  "does `stmt-path` point to something within an Object Extension"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (let [up-to-ext (try (subvec stmt-path 0 3) (catch Exception e []))]
+    (and (= (peek up-to-ext) "extensions")
+         (nav/step-back-expected? "definition" up-to-ext :next-key "object"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Extension JSON Object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn context-extension?
+  "does `stmt-path` point to something within a Context Extension"
   [stmt-path]
-  ;; TODO: impl!
-  )
+  (let [up-to-ext (try (subvec stmt-path 0 2) (catch Exception e []))]
+    (nav/step-back-expected? "extensions" up-to-ext :next-key "context")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Result Extension JSON Object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn result-extension?
+  "does `stmt-path` point to something within a Result Extension"
   [stmt-path]
   ;; TODO: impl!
   )
