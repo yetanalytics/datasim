@@ -162,7 +162,9 @@
 ;; Identified Group JSON Object without `member`
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn memberless-identified-group?
+(comment
+  ;; this is probably better in the top level inference ns.
+ (defn memberless-identified-group?
   [stmt-path]
   (let [terminate-at (peek stmt-path)
         ;; does `stmt-path` point to something within the Account IFI?
@@ -182,24 +184,12 @@
                            "objectType"   true
                            false))
         ;; based on path to target xAPI Property
-        ;; - groups can only be found in certain parts of an xAPI stmt, takes advantage of that
-        
-        ;; top level Actor key or account IFI within actor
-        actor?       (or (:test-result (nav/path-value-check "actor" stmt-path) false)
-                         (and account? (nav/step-back-expected? "account" stmt-path :next-key "actor")))
-        ;; top level Object key or account IFI within Object
-        obj?         (or (:test-result (nav/path-value-check "object" stmt-path) false)
-                         (and account? (nav/step-back-expected? "account" stmt-path :next-key "object")))
-        ;; top level Agent or Group key within instructor or account IFI within instructor
-        instruct?    (or (nav/step-back-expected? "instructor" stmt-path :next-key "context")
-                         (and account? (nav/step-back-expected? "instructor" (pop stmt-path) :next-key "context")))
+        given-path?  (property-which-can-be-a-group stmt-path)
+        ;; should false be returned or a fn which will determine if memberless identified group
+        maybe?       (and resolve? given-path?)
         ;; top level Group key within team or account IFI within team
         team?        (or (nav/step-back-expected? "team" stmt-path :next-key "context")
-                         (and account? (nav/step-back-expected? "team" (pop stmt-path) :next-key "context")))
-        ;; combine all possibilities given `stmt-path`
-        given-path?  (or actor? obj? instruct? team?)
-        ;; should false be returned or a fn which will determine if memberless identified group
-        maybe?       (and resolve? given-path?)]
+                         (and account? (nav/step-back-expected? "team" (pop stmt-path) :next-key "context")))]
     (if (and ifi? team?)
       true
       ;; `ifi?` tells us identified thing, `team?` tells us group. nothing more needed
@@ -266,7 +256,7 @@
                                       ;; equality check to fail bc when clause will return nil
                                       ;; - no ifi means it was an anon group and anon group must have `member` property
                                       (when at-ifi obj-type))))))}
-        false))))
+        false)))))
 
 (comment
   (= true
@@ -288,36 +278,45 @@
 ;; Identified Group JSON Object with member
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn identified-group-with-member?
+(comment
+  ;; probably better of in top level inference ns
+ (defn identified-group-with-member?
   [stmt-path]
   ;; TODO: impl!
-  )
+  ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Anon Group JSON Object with member
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn anon-group?
-  [stmt-path]
-  ;; TODO: impl!
-  )
+(comment
+  ;; probably better of in top level inference ns
+  (defn anon-group?
+    [stmt-path]
+    ;; TODO: impl!
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Any Group JSON Object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn group?
-  [stmt-path]
-  ;; TODO: impl!
-  )
+(comment
+  ;; probably better of in top level inference ns
+  (defn group?
+    [stmt-path]
+    ;; TODO: impl!
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Agent JSON Object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn agent?
-  ;; TODO: impl!
-  )
+(comment
+  ;; probably better of in top level inference ns
+  (defn agent?
+    [stmt-path]
+    ;; TODO: impl!
+    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interaction Component JSON Object
