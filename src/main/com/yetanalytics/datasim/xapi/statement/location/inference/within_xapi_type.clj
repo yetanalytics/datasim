@@ -515,7 +515,7 @@
 
    ensures the language map is found within an expected xAPI JSON Object
    or Collection of JSON Objects (as appropriate)
-    - ie. `verb`, `activity-definition`, `interaction-component`"
+    - ie. `verb`, `activity-definition`, `interaction-component`, `attachments`"
   [stmt-path]
   (let [;; Step back to expected property?
         {in-display? :test-result} (nav/path-value-check "display" stmt-path)
@@ -568,6 +568,7 @@
      (language-map? ["definition" "description" "en-US"])
      (false? (language-map? ["definition" "name"]))
      (language-map? ["definition" "name" "en-US"])
+     (language-map? ["context" "contextActivities" "parent" :placeholder "definition" "name" "en-US"])
      ;; `interaction-component` WITHIN `activity-definition`
      ;; - `choices`
      (false? (language-map? ["choices" "description" "en-US"]))
