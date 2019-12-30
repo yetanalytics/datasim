@@ -21,6 +21,7 @@
                     json-locs
                     json->path-map
                     path-map->json
+                    ;; prune ;; TODO: Fix gen so it doesn't get roots
                     })
         {:keys [total
                 check-passed]} (stest/summarize-results results)]

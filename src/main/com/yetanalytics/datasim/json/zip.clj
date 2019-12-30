@@ -125,6 +125,21 @@
                (take-while some?
                            (iterate z/up loc))))))
 
+(s/fdef prune
+  :args (s/cat :loc ::loc)
+  :ret ::loc)
+
+(defn prune
+  "Remove the current node, if it is a value in a map entry also remove the parent.
+   Shouldn't get called on root"
+  [loc]
+  (let [ploc (z/up loc)
+        pnode (z/node ploc)]
+    (z/remove
+     (if (map-entry? pnode)
+       ploc
+       loc))))
+
 ;; given a root and a key-path, can we return a loc at that path?
 ;; this would make up some for the inefficiency of having to walk everything
 ;; when there is a known path?

@@ -2,7 +2,9 @@
   (:require [blancas.kern.core :as k]
             [blancas.kern.lexer.basic :as kl]
             [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.json.zip :as jzip]))
+            [com.yetanalytics.datasim.json :as json]
+            [com.yetanalytics.datasim.json.zip :as jzip]
+            [clojure.zip :as z]))
 
 (s/def ::root
   #{'$})
@@ -198,3 +200,57 @@
              key-path))
       nil
       :else partial-sat)))
+
+(s/fdef select-deep
+  :args (s/cat :path ::json-path
+               :json ::json/any)
+  :ret ::json/any)
+
+(defn select-deep
+  "Given json data and a parsed path, return only the selections with everything
+  else pruned"
+  [json path]
+  (loop [loc (jzip/json-zip json)]
+    (if (z/end? loc)
+      (z/root loc)
+      (if (jzip/internal? loc)
+        (recur (z/next loc))
+        (let [key-path (jzip/k-path loc)]
+          (if-let [sat (satisfied path key-path)]
+            ;; if we have satisfied at least some of the spec, we
+            ;; want to keep going
+            (recur (z/next loc))
+            ;; if it doesn't match, kill this or any internal nodes
+            ;; leading to it.
+            (recur (jzip/prune loc))))))))
+
+(s/fdef select
+  :args (s/cat :path ::json-path
+               :json ::json/any)
+  :ret (s/every ::json/any))
+
+
+
+(defn select
+  "Given json data and a parsed path, return a selection vector."
+  [json path]
+  (loop [loc (jzip/json-zip json)
+         selection []]
+    (if (z/end? loc)
+      selection
+      (if (jzip/internal? loc)
+        (recur (z/next loc)
+               selection)
+        (let [key-path (jzip/k-path loc)]
+          (if-let [sat (satisfied path key-path)]
+            (if (= sat path)
+              ;; if we have totally satisfied the spec we can keep and prune
+              (recur (z/next (jzip/prune loc))
+                     (conj selection (z/node loc)))
+              ;; if we have partially satisfied the spec we want to keep going
+              (recur (z/next loc)
+                     selection))
+            ;; if it doesn't match, kill this or any internal nodes
+            ;; leading to it, reducing our search space
+            (recur (jzip/prune loc)
+                   selection)))))))
