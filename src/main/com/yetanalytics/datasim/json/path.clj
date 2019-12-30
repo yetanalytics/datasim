@@ -1,7 +1,8 @@
 (ns com.yetanalytics.datasim.json.path
   (:require [blancas.kern.core :as k]
             [blancas.kern.lexer.basic :as kl]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [com.yetanalytics.datasim.json.zip :as jzip]))
 
 (s/def ::root
   #{'$})
@@ -160,3 +161,40 @@
   [path]
   (:value (k/parse json-path
                    path)))
+
+(s/fdef satisfied
+  :args (s/cat :json-path ::json-path
+               :key-path ::jzip/key-path)
+  :ret (s/nilable ::json-path))
+
+(defn satisfied
+  "Given a json path and a key path, return nil if they diverge, or if they partially
+  match return a seq of the covered pattern"
+  [path key-path]
+  (when-let [partial-sat
+             (map first
+                  (take-while
+                   (fn [[p pk]]
+                     (cond
+                       (= p '*) true
+                       (set? p) (contains? p pk)
+                       :else (let [{:keys [start
+                                           end
+                                           step]} p]
+                               (some (partial = pk)
+                                     (range start end step)))))
+                   (map vector
+                        path
+                        key-path)))]
+    (cond
+      ;; satisfied, we can keep it
+      (= path partial-sat)
+      path
+
+      ;; otherwise we are partial, if there is more left in key path this is
+      ;; is a failure
+      (not-empty
+       (drop (count partial-sat)
+             key-path))
+      nil
+      :else partial-sat)))

@@ -22,3 +22,16 @@
     "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/sessionid']"
     [#{"context"} #{"extensions"} #{"https://w3id.org/xapi/cmi5/context/extensions/sessionid"}]
     ))
+
+(deftest satisfied-test
+  (let [json-path [#{"foo"} #{"bar"} '* #{"quxx"} #{0 1}]
+        key-path ["foo" "bar" "baz" "quxx" 0]]
+    (testing "when json-path and key path match"
+      (testing "returns the json path"
+        (is (= json-path (satisfied json-path key-path)))))
+    (testing "when json-path and key path match partially"
+      (testing "returns the json path"
+        (is (= (take 3 json-path) (take 3 (satisfied json-path key-path))))))
+    (testing "when json-path and key path diverge"
+      (testing "returns nil"
+        (is (nil? (satisfied json-path (assoc key-path 3 "blork"))))))))
