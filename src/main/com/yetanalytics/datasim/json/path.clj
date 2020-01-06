@@ -255,9 +255,13 @@
             (recur (jzip/prune loc)
                    selection)))))))
 
+(s/def :excise/prune-empty?
+  boolean?)
+
 (s/fdef excise
   :args (s/cat :path ::json-path
-               :json ::json/any)
+               :json ::json/any
+               :options (s/keys* :opt-un [:excise/prune-empty?]))
   :ret (s/every ::json/any)
   :fn (fn [{:keys [ret]
             {path :path
@@ -265,17 +269,25 @@
         (empty? (select json path))))
 
 (defn excise
-  "Given json data and a parsed path, return the data without the selection, and any empty container."
-  [json path]
+  "Given json data and a parsed path, return the data without the selection, and
+  any empty container.
+  If :prune-empty? is true, will remove empty arrays and maps"
+  [json path & {:keys [prune-empty?]}]
   (loop [loc (jzip/json-zip json)]
     (if (z/end? loc)
       (z/root loc)
-      (if (jzip/internal? loc)
+      (cond
+        (jzip/internal? loc)
         (recur (z/next loc))
+
+        (and prune-empty?
+             (let [node (z/node loc)]
+               (and (coll? node)
+                    (empty? node))))
+        (recur (jzip/prune loc))
+        :else
         (let [key-path (jzip/k-path loc)]
           (let [sat (satisfied path key-path)]
             (if (= sat path)
-              ;; if we have totally satisfied the spec we can keep and prune
-              (recur (z/next (jzip/prune loc)))
-              ;; if we have partially satisfied the spec we want to keep going
+              (recur (jzip/prune loc))
               (recur (z/next loc)))))))))

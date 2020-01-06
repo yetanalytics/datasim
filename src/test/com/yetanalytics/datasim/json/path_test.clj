@@ -136,7 +136,8 @@
 
 (deftest excise-test
   (are [path s-after]
-      (= (excise long-statement (parse path))
+      (= (excise long-statement (parse path)
+                 :prune-empty? true)
          s-after)
     "$.id" (dissoc long-statement "id")
     "$.timestamp" (dissoc long-statement "timestamp")
@@ -158,6 +159,11 @@
                                "contextActivities"
                                "other"]
                (partial mapv #(dissoc % "id")))
+    "$.context.contextActivities.other[*]"
+    (update-in long-statement ["context"
+                               "contextActivities"
+                               ]
+               dissoc "other")
 
     "$.result.duration"
     (update long-statement "result" dissoc "duration")
@@ -166,5 +172,4 @@
     (update-in  long-statement ["result" "extensions"] dissoc "http://example.com/profiles/meetings/resultextensions/minuteslocation")
 
     "$.object.definition.type"
-    (update-in  long-statement ["object" "definition"] dissoc "type")
-    ))
+    (update-in  long-statement ["object" "definition"] dissoc "type")))
