@@ -3,7 +3,10 @@
             [com.yetanalytics.datasim.json.path :refer :all]
             [blancas.kern.core :as k]
             [clojure.java.io :as io]
-            [clojure.data.json :as json]))
+            [clojure.data.json :as json]
+            [clojure.test.check :as tc]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as stest]))
 
 (def long-statement
   (with-open
@@ -129,4 +132,39 @@
     "$.object.definition.type"
     ["http://adlnet.gov/expapi/activities/meeting"]
 
+    ))
+
+(deftest excise-test
+  (are [path s-after]
+      (= (excise long-statement (parse path))
+         s-after)
+    "$.id" (dissoc long-statement "id")
+    "$.timestamp" (dissoc long-statement "timestamp")
+
+    "$.result.success"
+    (update long-statement "result" dissoc "success")
+
+    "$.result.completion"
+    (update long-statement "result" dissoc "completion")
+
+    "$.context.contextActivities.category[*].id"
+    (update-in long-statement ["context"
+                               "contextActivities"
+                               "category"]
+               (partial mapv #(dissoc % "id")))
+
+    "$.context.contextActivities.other[*].id"
+    (update-in long-statement ["context"
+                               "contextActivities"
+                               "other"]
+               (partial mapv #(dissoc % "id")))
+
+    "$.result.duration"
+    (update long-statement "result" dissoc "duration")
+
+    "$.result.extensions['http://example.com/profiles/meetings/resultextensions/minuteslocation']"
+    (update-in  long-statement ["result" "extensions"] dissoc "http://example.com/profiles/meetings/resultextensions/minuteslocation")
+
+    "$.object.definition.type"
+    (update-in  long-statement ["object" "definition"] dissoc "type")
     ))
