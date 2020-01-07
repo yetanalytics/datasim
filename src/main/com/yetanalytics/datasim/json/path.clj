@@ -189,16 +189,16 @@
                         path
                         key-path)))]
     (cond
-      ;; satisfied, we can keep it
-      (= path partial-sat)
-      path
 
-      ;; otherwise we are partial, if there is more left in key path this is
-      ;; is a failure
+      ;; if there is more left in key path this is a failure
       (not-empty
        (drop (count partial-sat)
              key-path))
       nil
+      ;; totally satisfied, we can keep it
+      (= path partial-sat)
+      path
+      ;; partially satisfied
       :else partial-sat)))
 
 (s/fdef select-deep

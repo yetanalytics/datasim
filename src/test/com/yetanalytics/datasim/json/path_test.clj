@@ -169,7 +169,7 @@
     (update long-statement "result" dissoc "duration")
 
     "$.result.extensions['http://example.com/profiles/meetings/resultextensions/minuteslocation']"
-    (update-in  long-statement ["result" "extensions"] dissoc "http://example.com/profiles/meetings/resultextensions/minuteslocation")
+    (update  long-statement "result" dissoc "extensions")
 
     "$.object.definition.type"
     (update-in  long-statement ["object" "definition"] dissoc "type")))
