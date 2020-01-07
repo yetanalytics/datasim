@@ -286,8 +286,8 @@
                     (empty? node))))
         (recur (jzip/prune loc))
         :else
-        (let [key-path (jzip/k-path loc)]
-          (let [sat (satisfied path key-path)]
-            (if (= sat path)
-              (recur (jzip/prune loc))
-              (recur (z/next loc)))))))))
+        (let [key-path (jzip/k-path loc)
+              sat (satisfied path key-path)]
+          (if (= sat path)
+            (recur (jzip/prune loc))
+            (recur (z/next loc))))))))
