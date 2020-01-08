@@ -192,6 +192,87 @@
   [root key-path]
   (-> root json-zip (get-child-in key-path)))
 
+(s/fdef stub-in
+  :args (s/cat :loc ::loc
+               :key-path ::key-path)
+  :ret ::loc)
+
+(defn stub-in
+  "Given a loc an key path, stub out the path if it does not exist, returning
+  a loc for the destination. If the loc does not exist, it will have the value
+  ::stub. If incorrect keys are given for the data, will throw.
+  If stub-in encounters an intermediate node of ::stub, it will replce it with
+  the proper datastructure for the key path."
+  [loc key-path]
+  (let [node (z/node loc)]
+    (if (map-entry? node)
+      (recur (-> loc z/down z/right) key-path)
+      (if-let [k (first key-path)]
+        (if (or (coll? node) (= ::stub node))
+          (do (assert (cond
+                        (map? node) (string? k)
+                        (coll? node) (number? k)
+                        :else true) "Incorrect key type for node")
+              (recur
+               (if (= ::stub node)
+                 (cond
+                   (string? k)
+                   (-> loc
+                       (z/replace
+                        (z/make-node loc
+                                     {}
+                                     [(clojure.lang.MapEntry. k
+                                                              ::stub)]))
+                       z/down)
+                   (number? k)
+                   (-> loc
+                       (z/replace
+                        (z/make-node loc
+                                     []
+                                     (repeat (inc k) ::stub)))
+                       z/down
+                       (->> (iterate z/right))
+                       (nth k)))
+                 (let [child-locs (take-while
+                                   (complement nil?)
+                                   (iterate z/right
+                                            (z/down loc)))]
+                   (if-let [[fk fv :as found] (find node k)]
+                     (if (map? node)
+                       (some
+                        (fn [cl]
+                          (when (= found (z/node cl))
+                            cl))
+                        child-locs)
+                       (nth child-locs fk))
+                     (if (map? node)
+                       (-> loc
+                           (z/append-child
+                            (clojure.lang.MapEntry. k
+                                                    ::stub))
+                           z/down
+                           z/rightmost)
+                       (let [[lc rc] (split-at k child-locs)]
+                         (-> loc
+                             (z/replace
+                              (z/make-node loc
+                                           node
+                                           (concat
+                                            (map z/node lc)
+                                            (repeat (- (inc k)
+                                                       (count lc))
+                                                      ::stub)
+                                            (map z/node rc))))
+                             z/down
+                             (->> (iterate z/right))
+                             (nth k)))))))
+               (rest key-path)))
+          (throw (ex-info "Can't path into a leaf node"
+                          {:type ::cant-path-leaf-node
+                           :loc loc
+                           :key-path key-path})))
+        loc))))
+
 (s/def ::path-map
   (s/map-of
    ::key-path
