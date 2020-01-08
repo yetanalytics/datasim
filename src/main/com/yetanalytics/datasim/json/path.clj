@@ -4,7 +4,8 @@
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.json :as json]
             [com.yetanalytics.datasim.json.zip :as jzip]
-            [clojure.zip :as z]))
+            [clojure.zip :as z]
+            [clojure.math.combinatorics :as combo]))
 
 (s/def ::root
   #{'$})
@@ -52,6 +53,15 @@
 
 
 (defrecord RangeSpec [start end step])
+
+
+(s/fdef range-spec?
+  :args (s/cat :item any?)
+  :ret boolean?)
+
+(defn range-spec?
+  [item]
+  (instance? RangeSpec item))
 
 (s/def ::range
   (s/keys :req-un [:range/start
@@ -291,3 +301,33 @@
           (if (= sat path)
             (recur (jzip/prune loc))
             (recur (z/next loc))))))))
+
+
+(s/def :enumerate/limit
+  number?)
+
+(s/fdef enumerate
+  :args (s/cat :path ::json-path
+               :options (s/keys* :opt-un [:enumerate/limit]))
+  :ret (s/every ::jzip/key-path))
+
+(defn enumerate
+  "Given a json path, return a lazy seq of concrete key paths. wildcards/ranges
+  will be enumerated up to :limit, which defaults to 10"
+  [path & {:keys [limit]
+           :or {limit 10}}]
+  (apply combo/cartesian-product
+         (map
+          (fn [element]
+            (cond
+              (set? element)
+              element
+
+              (= '* element)
+              (range limit)
+              ;; otherwise, itsa range spec
+              :else
+              (let [{:keys [start end step]} element]
+                (take limit
+                      (range start end step)))))
+          path)))

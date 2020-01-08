@@ -13,14 +13,16 @@
         ;; org.threeten/threeten-extra {:mvn/version "1.4"}
         org.apache.jena/jena-iri {:mvn/version "3.13.1"}
         ;; JSON Path Parser built with
-        org.blancas/kern {:mvn/version "1.1.0"}}
+        org.blancas/kern {:mvn/version "1.1.0"}
+        org.clojure/test.check {:mvn/version "RELEASE"}
+        org.clojure/math.combinatorics {:mvn/version "0.1.6"}}
  :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:mvn/version "0.4.2"}}}
   :run {:main-opts ["-m" "com.yetanalytics.datasim.main"]}
   :dev {:extra-paths ["dev-resources" "src/dev"]
-        :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}
+        :extra-deps {
                      incanter/incanter-core {:mvn/version "1.9.3"}
                      incanter/incanter-charts {:mvn/version "1.9.3"}}}
   :test {:extra-paths ["src/test"]}

@@ -173,3 +173,23 @@
 
     "$.object.definition.type"
     (update-in  long-statement ["object" "definition"] dissoc "type")))
+
+
+(deftest enumerate-test
+  (are [path result-count]
+      (= result-count
+         (count (enumerate path)))
+    [#{"store"} #{"book"} '* #{"author"}]                  10
+    ['* #{"author"}]                                       10
+    [#{"store"} '*]                                        10
+    [#{"store"} '* #{"price"}]                             10
+    ['* #{"book"} #{2}]                                    10
+    ['* #{"book"} (->RangeSpec -1 9223372036854775807 1)]  100
+    ['* #{"book"} #{0 1}]                                  20
+    ['* #{"book"} (->RangeSpec 0 2 1)]                     20
+    '[* *]                                                 100
+    ;; selections from cmi5
+    [#{"context"} #{"contextActivities"} #{"grouping"} '*] 10
+
+    [#{"context"} #{"extensions"} #{"https://w3id.org/xapi/cmi5/context/extensions/sessionid"}] 1
+    ))
