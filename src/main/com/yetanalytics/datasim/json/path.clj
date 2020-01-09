@@ -367,3 +367,78 @@
                 (take limit
                       (range start end step)))))
           path)))
+
+(s/fdef discrete?
+  :args (s/cat :path ::json-path)
+  :ret boolean?)
+
+(defn discrete?
+  "Is the path free of wildcards?"
+  [path]
+  (not
+   (some (fn [x]
+           (or (= '* x)
+               (and (range-spec? x)
+                    (not (:bounded? x)))))
+         path)))
+
+(s/fdef apply-values
+  :args (s/cat :json ::json/any
+               :path ::json-path
+               :values (s/every ::json/any))
+  :ret (s/every ::json/any)
+  :fn (fn [{:keys [ret]
+            {path :path
+             json :json
+             values :values} :args}]
+        (= (set values)
+           (set (select ret path)))))
+
+(defn apply-values
+  "Given json data, path and values, apply them to the structure.
+  If there is no place to put a value, enumerate further possible paths and use
+  those."
+  [json path values]
+  (loop [loc (jzip/json-zip json)
+         vs values
+         applied-paths #{}]
+    (if (not-empty vs)
+      (if (z/end? loc)
+        ;; if we're at the end and we've still got values, we'll want to
+        ;; enumerate enough paths we haven't seen and apply the vals there.
+        ;; If there are more vals than paths we can enumerate, throw.
+        (let [new-paths (take (count vs)
+                              (remove applied-paths (enumerate path)))]
+          (if (= (count vs)
+                 (count new-paths))
+            (recur (reduce
+                    (fn [loc kp]
+                      (-> loc
+                          (jzip/stub-in kp)
+                          z/root
+                          jzip/json-zip))
+                    (jzip/json-zip (z/root loc))
+                    new-paths)
+                   vs
+                   applied-paths)
+            (throw (ex-info "Couldn't make enough paths"
+                            {:type ::out-of-paths
+                             :path path
+                             :json (z/root loc)
+                             :values values
+                             :values-remaining vs
+                             :new-paths new-paths}))))
+        (if (jzip/internal? loc)
+          (recur (z/next loc) vs applied-paths)
+          (let [key-path (jzip/k-path loc)]
+            (if (and (not (applied-paths key-path))
+                     (= (satisfied path key-path) path))
+              (recur (-> loc
+                         (z/replace (first vs))
+                         z/next)
+                     (rest vs)
+                     (conj applied-paths
+                           key-path))
+              (recur (z/next loc) vs applied-paths)))))
+      ;; we're done!
+      (z/root loc))))
