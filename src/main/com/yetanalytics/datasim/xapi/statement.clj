@@ -11,7 +11,8 @@
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.random :as random]
             [xapi-schema.spec :as xs]
-            [clojure.walk :as w])
+            [clojure.walk :as w]
+            [com.yetanalytics.datasim.xapi.profile.template.rule :as rule])
   (:import [java.time Instant]))
 
 ;; The duration, in milliseconds, of the returned statement
@@ -31,7 +32,7 @@
 
 (s/def ::sim-t pos-int?)
 
-(s/def ::seed int?)
+#_(s/def ::seed int?)
 
 (s/def ::registration
   ::xs/uuid)
@@ -74,7 +75,7 @@
              ::sim-t
              ;; A seed to generate with. Note that if you're calling more seeded
              ;; generators, you'll need to make a seed from this one for each.
-             ::seed
+             ::random/seed
              ;; A registration UUID string
              ::registration]
     :opt-un [::sub-registration]))
@@ -92,7 +93,8 @@
     seed :seed
     {template-iri :id
      ?verb-id :verb
-     ?activity-type :objectActivityType} :template
+     ?activity-type :objectActivityType
+     template-rules :rules} :template
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
@@ -100,54 +102,54 @@
   ;; TODO: add registration to ["context" "registration"]
   (let [rng (random/seed-rng seed)]
     (with-meta
-      ;; The generated statement (or the easy stuff anyhow)
-      ;; doesn't use any rules or anything yet.
-      ;; Maybe start with this and reduce over the rules?
-      {"id" (random/rand-uuid rng)
-       "actor" (w/stringify-keys actor)
+      ;; Start with this and reduce over the rules
+      (rule/apply-rules-gen {"id" (random/rand-uuid rng)
+                             "actor" (w/stringify-keys actor)
 
-       ;; TODO: this verb thing is a stub, make it better
-       ;; and pay attention to the rules
-       "verb" (or
-               ;; explicit verb
-               (and ?verb-id
-                    (merge {"id" ?verb-id}
-                           (when-let [lmap (get-in iri-map [?verb-id :prefLabel])]
-                             {"display" (w/stringify-keys lmap)})))
-               ;; choose a verb from the prof
-               (when-let [verbs (not-empty (into {}
-                                                 (filter (comp (partial = "Verb")
-                                                               :type second))
-                                                 iri-map))]
-                 (let [some-v-id (random/choose rng alignment (keys verbs))
-                       v-concept (get verbs some-v-id)]
-                   (merge {"id" some-v-id}
-                          (when-let [lmap (get v-concept :prefLabel)]
-                            {"display" (w/stringify-keys lmap)}))))
-               {"id" "http://adlnet.gov/expapi/verbs/experienced"
-                "display" {"en" "experienced"}})
+                             ;; TODO: this verb thing is a stub, make it better
+                             ;; and pay attention to the rules
+                             "verb" (or
+                                     ;; explicit verb
+                                     (and ?verb-id
+                                          (merge {"id" ?verb-id}
+                                                 (when-let [lmap (get-in iri-map [?verb-id :prefLabel])]
+                                                   {"display" (w/stringify-keys lmap)})))
+                                     ;; choose a verb from the prof
+                                     (when-let [verbs (not-empty (into {}
+                                                                       (filter (comp (partial = "Verb")
+                                                                                     :type second))
+                                                                       iri-map))]
+                                       (let [some-v-id (random/choose rng alignment (keys verbs))
+                                             v-concept (get verbs some-v-id)]
+                                         (merge {"id" some-v-id}
+                                                (when-let [lmap (get v-concept :prefLabel)]
+                                                  {"display" (w/stringify-keys lmap)}))))
+                                     {"id" "http://adlnet.gov/expapi/verbs/experienced"
+                                      "display" {"en" "experienced"}})
 
-       "object" (or
-                 ;; there's an activity type we choose one of those
-                 (and ?activity-type
-                      (let [some-activity-id
-                            (random/choose rng
-                                           alignment
-                                           (keys (get activities ?activity-type)))]
-                        (get-in activities [?activity-type some-activity-id])))
-                 ;; no type, choose any activity
-                 (let [flat-activities
-                       (reduce merge
-                               (vals activities))
+                             "object" (or
+                                       ;; there's an activity type we choose one of those
+                                       (and ?activity-type
+                                            (let [some-activity-id
+                                                  (random/choose rng
+                                                                 alignment
+                                                                 (keys (get activities ?activity-type)))]
+                                              (get-in activities [?activity-type some-activity-id])))
+                                       ;; no type, choose any activity
+                                       (let [flat-activities
+                                             (reduce merge
+                                                     (vals activities))
 
-                       some-activity-id
-                       (random/choose rng
-                                      alignment
-                                      (keys flat-activities))]
-                   (get flat-activities some-activity-id)))
+                                             some-activity-id
+                                             (random/choose rng
+                                                            alignment
+                                                            (keys flat-activities))]
+                                         (get flat-activities some-activity-id)))
 
-       ;; Timestamp is up to you, here I just made it sim-t
-       "timestamp" (.toString (Instant/ofEpochMilli sim-t))}
+                             ;; Timestamp is up to you, here I just made it sim-t
+                             "timestamp" (.toString (Instant/ofEpochMilli sim-t))}
+                            template-rules
+                            :seed (random/rand-long rng))
       ;; The duration in MS so we can continue the sim
       {
        ;; The time (in millis since the epoch) after which the actor can
@@ -181,7 +183,10 @@
       :pattern-ancestors
       [{:id "https://w3id.org/xapi/cmi5#toplevel", :primary true}
        {:id "https://w3id.org/xapi/cmi5#satisfieds", :primary false}]
-      :registration (random/rand-uuid top-rng)})))
+      :registration (random/rand-uuid top-rng)}))
+
+
+  )
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Generation from a Rule
