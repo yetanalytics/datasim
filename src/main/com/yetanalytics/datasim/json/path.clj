@@ -325,24 +325,26 @@
   any empty container.
   If :prune-empty? is true, will remove empty arrays and maps"
   [json path & {:keys [prune-empty?]}]
-  (loop [loc (jzip/json-zip json)]
+  (loop [loc (jzip/json-zip json)
+         excised-paths #{}]
     (if (z/end? loc)
-      (z/root loc)
+      (vary-meta (z/root loc) assoc :paths excised-paths)
       (cond
         (jzip/internal? loc)
-        (recur (z/next loc))
+        (recur (z/next loc) excised-paths)
 
         (and prune-empty?
              (let [node (z/node loc)]
                (and (coll? node)
                     (empty? node))))
-        (recur (jzip/prune loc))
+        (recur (jzip/prune loc) excised-paths)
         :else
         (let [key-path (jzip/k-path loc)
               sat (satisfied path key-path)]
           (if (= sat path)
-            (recur (jzip/prune loc))
-            (recur (z/next loc))))))))
+            (recur (jzip/prune loc) (conj excised-paths
+                                          key-path))
+            (recur (z/next loc) excised-paths)))))))
 
 
 (s/def :enumerate/limit
@@ -447,4 +449,4 @@
                            key-path))
               (recur (z/next loc) vs applied-paths)))))
       ;; we're done!
-      (vary-meta (z/root loc) assoc :applied-paths applied-paths))))
+      (vary-meta (z/root loc) assoc :paths applied-paths))))
