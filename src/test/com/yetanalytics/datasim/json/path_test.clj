@@ -35,7 +35,7 @@
 
 (deftest satisfied-test
   (let [json-path [#{"foo"} #{"bar"} '* #{"quxx"} #{0 1}]
-        key-path ["foo" "bar" "baz" "quxx" 0]]
+        key-path  ["foo" "bar" "baz" "quxx" 0]]
     (testing "when json-path and key path match"
       (testing "returns the json path"
         (is (= json-path (satisfied json-path key-path)))))
@@ -50,7 +50,7 @@
   (are [path selection]
       (= (select-deep long-statement (parse path))
          selection)
-    "$.id" {"id" "6690e6c9-3ef0-4ed3-8b37-7f3964730bee"}
+    "$.id"        {"id" "6690e6c9-3ef0-4ed3-8b37-7f3964730bee"}
     "$.timestamp" {"timestamp" "2013-05-18T05:32:34.804Z"}
 
     "$.context.contextActivities.grouping[*]"
@@ -107,7 +107,7 @@
   (are [path selection]
       (= (select long-statement (parse path))
          selection)
-    "$.id" ["6690e6c9-3ef0-4ed3-8b37-7f3964730bee"]
+    "$.id"        ["6690e6c9-3ef0-4ed3-8b37-7f3964730bee"]
     "$.timestamp" ["2013-05-18T05:32:34.804Z"]
 
     "$.result.success"
@@ -139,7 +139,7 @@
       (= (excise long-statement (parse path)
                  :prune-empty? true)
          s-after)
-    "$.id" (dissoc long-statement "id")
+    "$.id"        (dissoc long-statement "id")
     "$.timestamp" (dissoc long-statement "timestamp")
 
     "$.result.success"
@@ -179,17 +179,17 @@
   (are [path result-count]
       (= result-count
          (count (enumerate path)))
-    [#{"store"} #{"book"} '* #{"author"}]                  10
-    ['* #{"author"}]                                       10
-    [#{"store"} '*]                                        10
-    [#{"store"} '* #{"price"}]                             10
-    ['* #{"book"} #{2}]                                    10
-    ['* #{"book"} (->RangeSpec -1 9223372036854775807 1 false)]  100
-    ['* #{"book"} #{0 1}]                                  20
+    [#{"store"} #{"book"} '* #{"author"}]                       10
+    ['* #{"author"}]                                            10
+    [#{"store"} '*]                                             10
+    [#{"store"} '* #{"price"}]                                  10
+    ['* #{"book"} #{2}]                                         10
+    ['* #{"book"} (->RangeSpec -1 9223372036854775807 1 false)] 100
+    ['* #{"book"} #{0 1}]                                       20
     ['* #{"book"} (->RangeSpec 0 2 1 true)]                     20
-    '[* *]                                                 100
+    '[* *]                                                      100
     ;; selections from cmi5
-    [#{"context"} #{"contextActivities"} #{"grouping"} '*] 10
+    [#{"context"} #{"contextActivities"} #{"grouping"} '*]      10
 
     [#{"context"} #{"extensions"} #{"https://w3id.org/xapi/cmi5/context/extensions/sessionid"}] 1
     ))
