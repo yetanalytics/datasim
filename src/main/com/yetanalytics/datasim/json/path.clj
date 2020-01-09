@@ -50,9 +50,12 @@
 (s/def :range/step
   int?)
 
+(s/def :range/bounded? ;; was this range bounded, or does it use a MAX_VALUE?
+  boolean?)
 
 
-(defrecord RangeSpec [start end step])
+
+(defrecord RangeSpec [start end step bounded?])
 
 
 (s/fdef range-spec?
@@ -66,7 +69,8 @@
 (s/def ::range
   (s/keys :req-un [:range/start
                    :range/end
-                   :range/step]))
+                   :range/step
+                   :range/bounded?]))
 
 (def index-range
   (k/bind [start (k/option 0
@@ -87,7 +91,9 @@
 
                         (if (number? step)
                           step
-                          (Long/parseLong step))))))
+                          (Long/parseLong step))
+                        ;; if the option is used, we're unbounded
+                        (number? end)))))
 
 (defn escaped-by
   [c & [charset-p]]
