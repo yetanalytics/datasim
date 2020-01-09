@@ -452,7 +452,7 @@
                     "all": [true]
                 },
                 {
-                    "location": "$.result['https://w3id.org/xapi/cmi5/result/extensions/reason']",
+                    "location": "$.result.extensions['https://w3id.org/xapi/cmi5/result/extensions/reason']",
                     "presence": "included"
                 },
                 {
