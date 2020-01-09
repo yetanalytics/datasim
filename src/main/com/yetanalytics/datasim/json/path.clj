@@ -447,4 +447,4 @@
                            key-path))
               (recur (z/next loc) vs applied-paths)))))
       ;; we're done!
-      (z/root loc))))
+      (vary-meta (z/root loc) assoc :applied-paths applied-paths))))
