@@ -271,12 +271,42 @@
             (recur (jzip/prune loc)
                    selection)))))))
 
+(s/fdef select-paths
+  :args (s/cat :path ::json-path
+               :json ::json/any)
+  :ret (s/map-of ::jzip/key-path
+                 ::json/any))
+
+(defn select-paths
+  "Given json data and a parsed path, return a selection map of key paths to values"
+  [json path]
+  (loop [loc (jzip/json-zip json)
+         selection {}]
+    (if (z/end? loc)
+      selection
+      (if (jzip/internal? loc)
+        (recur (z/next loc)
+               selection)
+        (let [key-path (jzip/k-path loc)]
+          (if-let [sat (satisfied path key-path)]
+            (if (= sat path)
+              ;; if we have totally satisfied the spec we can keep and prune
+              (recur (z/next (jzip/prune loc))
+                     (assoc selection key-path (z/node loc)))
+              ;; if we have partially satisfied the spec we want to keep going
+              (recur (z/next loc)
+                     selection))
+            ;; if it doesn't match, kill this or any internal nodes
+            ;; leading to it, reducing our search space
+            (recur (jzip/prune loc)
+                   selection)))))))
+
 (s/def :excise/prune-empty?
   boolean?)
 
 (s/fdef excise
-  :args (s/cat :path ::json-path
-               :json ::json/any
+  :args (s/cat :json ::json/any
+               :path ::json-path
                :options (s/keys* :opt-un [:excise/prune-empty?]))
   :ret (s/every ::json/any)
   :fn (fn [{:keys [ret]
