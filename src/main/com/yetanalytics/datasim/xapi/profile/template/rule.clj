@@ -169,6 +169,8 @@
          (not (contains? none v))
          true)))
 
+;; TODO: We ensure that the rules pass, but we do not ensure that intermediate
+;; parts of the statement are valid!
 (defn apply-rules-gen
   "Given a partial statement and rules, attempt to make the statement satisfy
   the rules. Additional options like :seed help do this deterministically.
@@ -236,7 +238,17 @@
                                                  rule-or-val-gen))
                                               (apply gen/tuple (repeat path-count
                                                                        rule-or-val-gen))))
-                                          (gen/vector rule-or-val-gen 1 10))
+                                          ;; deal with distinct arrays
+                                          (if (#{:definition/choices
+                                                 :definition/scale
+                                                 :definition/source
+                                                 :definition/target
+                                                 :definition/steps} xapi-spec)
+                                            (gen/vector-distinct rule-or-val-gen
+                                                                 {:min-elements 1
+                                                                  :max-elements (or (and all)
+                                                                                    (count all))})
+                                            (gen/vector rule-or-val-gen 1 10)))
                                  ;; at least 1 any
                                  any (gen/such-that (partial some (partial contains? any))))]
                 (recur
