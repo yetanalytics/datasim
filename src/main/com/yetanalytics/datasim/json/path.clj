@@ -72,6 +72,9 @@
                    :range/step
                    :range/bounded?]))
 
+(def ^:const max-long-str
+  (str Long/MAX_VALUE))
+
 (def index-range
   (k/bind [start (k/option 0
                            index)
@@ -93,7 +96,10 @@
                           step
                           (Long/parseLong step))
                         ;; if the option is used, we're unbounded
-                        (number? end)))))
+                        (if (#{Long/MAX_VALUE
+                               max-long-str} end)
+                          false
+                          true)))))
 
 (defn escaped-by
   [c & [charset-p]]

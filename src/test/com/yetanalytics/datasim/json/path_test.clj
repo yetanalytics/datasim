@@ -21,9 +21,9 @@
     "$.store.*"              [#{"store"} '*]
     "$.store..price"         [#{"store"} '* #{"price"}]
     "$..book[2]"             ['* #{"book"} #{2}]
-    "$..book[-1:]"           ['* #{"book"} (->RangeSpec -1 9223372036854775807 1)]
+    "$..book[-1:]"           ['* #{"book"} (->RangeSpec -1 Long/MAX_VALUE 1 false)]
     "$..book[0,1]"           ['* #{"book"} #{0 1}]
-    "$..book[:2]"            ['* #{"book"} (->RangeSpec 0 2 1)]
+    "$..book[:2]"            ['* #{"book"} (->RangeSpec 0 2 1 true)]
     "$..*"                   '[* *]
     ;; selections from cmi5
     "$.context.contextActivities.grouping[*]"
@@ -184,9 +184,9 @@
     [#{"store"} '*]                                        10
     [#{"store"} '* #{"price"}]                             10
     ['* #{"book"} #{2}]                                    10
-    ['* #{"book"} (->RangeSpec -1 9223372036854775807 1)]  100
+    ['* #{"book"} (->RangeSpec -1 9223372036854775807 1 false)]  100
     ['* #{"book"} #{0 1}]                                  20
-    ['* #{"book"} (->RangeSpec 0 2 1)]                     20
+    ['* #{"book"} (->RangeSpec 0 2 1 true)]                     20
     '[* *]                                                 100
     ;; selections from cmi5
     [#{"context"} #{"contextActivities"} #{"grouping"} '*] 10
