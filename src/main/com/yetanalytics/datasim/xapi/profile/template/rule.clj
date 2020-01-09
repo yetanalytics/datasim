@@ -228,8 +228,14 @@
                                       ;; must not be in none if defined
                                       none (gen/such-that (complement (partial contains? none))))
                     values-gen (cond->> (if (json-path/discrete? location)
-                                          (apply gen/tuple (repeat (count location-enum)
-                                                                   rule-or-val-gen))
+                                          (let [path-count (count location-enum)]
+                                            (if (= 1 path-count)
+                                              (gen/tuple
+                                               (if any
+                                                 (gen/elements any)
+                                                 rule-or-val-gen))
+                                              (apply gen/tuple (repeat path-count
+                                                                       rule-or-val-gen))))
                                           (gen/vector rule-or-val-gen 1 10))
                                  ;; at least 1 any
                                  any (gen/such-that (partial some (partial contains? any))))]
@@ -244,6 +250,7 @@
                                                                  :matched matches
                                                                  :rule-or-val-gen rule-or-val-gen
                                                                  :values-gen values-gen
+                                                                 :seed seed
                                                                  }
                                                                 exi)))))
 
