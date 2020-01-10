@@ -186,65 +186,104 @@
   (:value (k/parse json-path
                    path)))
 
-(s/fdef satisfied
-  :args (s/cat :json-path ::json-path
-               :key-path ::jzip/key-path)
-  :ret (s/nilable ::json-path))
+(s/def :enumerate/limit
+  number?)
 
-(defn satisfied
-  "Given a json path and a key path, return nil if they diverge, or if they partially
-  match return a seq of the covered pattern"
-  [path key-path]
-  (when-let [partial-sat
-             (map first
-                  (take-while
-                   (fn [[p pk]]
-                     (cond
-                       (= p '*) true
-                       (set? p) (contains? p pk)
-                       :else (let [{:keys [start
-                                           end
-                                           step]} p]
-                               (some (partial = pk)
-                                     (range start end step)))))
-                   (map vector
-                        path
-                        key-path)))]
-    (cond
-
-      ;; if there is more left in key path this is a failure
-      (not-empty
-       (drop (count partial-sat)
-             key-path))
-      nil
-      ;; totally satisfied, we can keep it
-      (= path partial-sat)
-      path
-      ;; partially satisfied
-      :else partial-sat)))
-
-(s/fdef select-deep
+(s/fdef enumerate
   :args (s/cat :path ::json-path
-               :json ::json/any)
-  :ret ::json/any)
+               :options (s/keys* :opt-un [:enumerate/limit]))
+  :ret (s/every ::jzip/key-path))
 
-(defn select-deep
-  "Given json data and a parsed path, return only the selections with everything
-  else pruned"
+(defn enumerate
+  "Given a json path, return a lazy seq of concrete key paths. wildcards/ranges
+  will be enumerated up to :limit, which defaults to 10"
+  [path & {:keys [limit]
+           :or {limit 10}}]
+  (map vec
+       (apply combo/cartesian-product
+              (map
+               (fn [element]
+                 (cond
+                   (set? element)
+                   element
+
+                   (= '* element)
+                   (range limit)
+                   ;; otherwise, itsa range spec
+                   :else
+                   (let [{:keys [start end step]} element]
+                     (take limit
+                           (range start end step)))))
+               path))))
+
+(s/fdef path-seq
+  :args (s/cat :json ::json/any
+               :path ::json-path)
+  :ret (s/every (s/tuple ::jzip/key-path
+                         ::json/any)))
+
+(defn path-seq*
   [json path]
-  (loop [loc (jzip/json-zip json)]
-    (if (z/end? loc)
-      (z/root loc)
-      (if (jzip/internal? loc)
-        (recur (z/next loc))
-        (let [key-path (jzip/k-path loc)]
-          (if-let [sat (satisfied path key-path)]
-            ;; if we have satisfied at least some of the spec, we
-            ;; want to keep going
-            (recur (z/next loc))
-            ;; if it doesn't match, kill this or any internal nodes
-            ;; leading to it.
-            (recur (jzip/prune loc))))))))
+  (lazy-seq
+   (let [path-enum (map vec
+                        (apply combo/cartesian-product
+                               path))
+         hits (for [p path-enum
+                    :let [hit (get-in json p)]
+                    :while (some? hit)]
+                   [p hit])
+         ]
+     (when (not-empty hits)
+       (concat
+        hits
+        ;; if the enum continues,
+        (when-let [first-fail (first (drop (count hits) path-enum))]
+          (let [last-pass (first (last hits))
+                fail-idx
+                (some
+                 (fn [[idx pv fv]]
+                   (when (not= pv fv)
+                     idx))
+                 (map vector
+                      (range)
+                      last-pass
+                      first-fail))]
+            (when-let [[edit-idx v]
+                       (and (< 0 fail-idx)
+                            (some
+                             (fn [idx]
+                               (let [seg (get path idx)]
+                                 (if (set? seg)
+                                   (when (< 1 (count seg))
+                                     [idx (disj seg
+                                                (get first-fail
+                                                     idx))])
+                                   (let [re-ranged
+                                         (drop-while
+                                          #(<= % (get first-fail idx))
+                                          seg)]
+                                     (when (first re-ranged)
+                                       [idx re-ranged])))))
+                             (reverse (range fail-idx))))]
+              (path-seq*
+               json
+               (assoc path edit-idx v))))))))))
+
+(defn path-seq
+  [json path]
+  (path-seq* json (mapv
+                   (fn [element]
+                     (cond
+                       (set? element)
+                       element
+
+                       (= '* element)
+                       (range)
+                       ;; otherwise, itsa range spec
+                       :else
+                       (let [{:keys [start end step]} element]
+                         (range start end step))))
+                   path)))
 
 (s/fdef select
   :args (s/cat :path ::json-path
@@ -256,26 +295,8 @@
 (defn select
   "Given json data and a parsed path, return a selection vector."
   [json path]
-  (loop [loc (jzip/json-zip json)
-         selection []]
-    (if (z/end? loc)
-      selection
-      (if (jzip/internal? loc)
-        (recur (z/next loc)
-               selection)
-        (let [key-path (jzip/k-path loc)]
-          (if-let [sat (satisfied path key-path)]
-            (if (= sat path)
-              ;; if we have totally satisfied the spec we can keep and prune
-              (recur (z/next (jzip/prune loc))
-                     (conj selection (z/node loc)))
-              ;; if we have partially satisfied the spec we want to keep going
-              (recur (z/next loc)
-                     selection))
-            ;; if it doesn't match, kill this or any internal nodes
-            ;; leading to it, reducing our search space
-            (recur (jzip/prune loc)
-                   selection)))))))
+  (into []
+        (map second (path-seq json path))))
 
 (s/fdef select-paths
   :args (s/cat :path ::json-path
@@ -286,26 +307,8 @@
 (defn select-paths
   "Given json data and a parsed path, return a selection map of key paths to values"
   [json path]
-  (loop [loc (jzip/json-zip json)
-         selection {}]
-    (if (z/end? loc)
-      selection
-      (if (jzip/internal? loc)
-        (recur (z/next loc)
-               selection)
-        (let [key-path (jzip/k-path loc)]
-          (if-let [sat (satisfied path key-path)]
-            (if (= sat path)
-              ;; if we have totally satisfied the spec we can keep and prune
-              (recur (z/next (jzip/prune loc))
-                     (assoc selection key-path (z/node loc)))
-              ;; if we have partially satisfied the spec we want to keep going
-              (recur (z/next loc)
-                     selection))
-            ;; if it doesn't match, kill this or any internal nodes
-            ;; leading to it, reducing our search space
-            (recur (jzip/prune loc)
-                   selection)))))))
+  (into {}
+        (path-seq json path)))
 
 (s/def :excise/prune-empty?
   boolean?)
@@ -320,61 +323,45 @@
              json :json} :args}]
         (empty? (select json path))))
 
+(defn- cut [prune-empty? j key-path]
+  (if (some? (get-in j key-path))
+    (if (= 1 (count key-path))
+      ;; we don't prune at the top level, so this is simple
+      (let [[k] key-path
+            j-after (if (string? k)
+                      (dissoc j k)
+                      (into []
+                            (let [[before [_ & after]] (split-at k j)]
+                              (concat before after))))]
+        j-after)
+      (let [last-k (peek key-path)
+            parent-key-path (into [] (butlast key-path))
+            parent (get-in j parent-key-path)
+            j-after (update-in j
+                               parent-key-path
+                               (partial cut prune-empty?)
+                               [last-k])]
+        (if (and prune-empty?
+                 (empty? (get-in j-after parent-key-path)))
+          (recur prune-empty? j-after parent-key-path)
+          j-after)))
+    j))
+
 (defn excise
   "Given json data and a parsed path, return the data without the selection, and
   any empty container.
   If :prune-empty? is true, will remove empty arrays and maps"
   [json path & {:keys [prune-empty?]}]
-  (loop [loc (jzip/json-zip json)
-         excised-paths #{}]
-    (if (z/end? loc)
-      (vary-meta (z/root loc) assoc :paths excised-paths)
-      (cond
-        (jzip/internal? loc)
-        (recur (z/next loc) excised-paths)
-
-        (and prune-empty?
-             (let [node (z/node loc)]
-               (and (coll? node)
-                    (empty? node))))
-        (recur (jzip/prune loc) excised-paths)
-        :else
-        (let [key-path (jzip/k-path loc)
-              sat (satisfied path key-path)]
-          (if (= sat path)
-            (recur (jzip/prune loc) (conj excised-paths
-                                          key-path))
-            (recur (z/next loc) excised-paths)))))))
-
-
-(s/def :enumerate/limit
-  number?)
-
-(s/fdef enumerate
-  :args (s/cat :path ::json-path
-               :options (s/keys* :opt-un [:enumerate/limit]))
-  :ret (s/every ::jzip/key-path))
-
-(defn enumerate
-  "Given a json path, return a lazy seq of concrete key paths. wildcards/ranges
-  will be enumerated up to :limit, which defaults to 10"
-  [path & {:keys [limit]
-           :or {limit 10}}]
-  (apply combo/cartesian-product
-         (map
-          (fn [element]
-            (cond
-              (set? element)
-              element
-
-              (= '* element)
-              (range limit)
-              ;; otherwise, itsa range spec
-              :else
-              (let [{:keys [start end step]} element]
-                (take limit
-                      (range start end step)))))
-          path)))
+  (let [ps (path-seq json path)
+        psk (map first ps)]
+    (vary-meta
+     (reduce
+      (partial cut prune-empty?)
+      json
+      ;; reverse the paths so the indices stay correct!
+      ;; TODO: probably doesn't handle array slices
+      (reverse psk))
+     assoc :paths (into #{} psk))))
 
 (s/fdef discrete?
   :args (s/cat :path ::json-path)
@@ -407,46 +394,23 @@
   If there is no place to put a value, enumerate further possible paths and use
   those."
   [json path values]
-  (loop [loc (jzip/json-zip json)
+  ;; TODO: probably doesn't handle array slices
+  (loop [key-paths (enumerate path)
          vs values
+         j json
          applied-paths #{}]
-    (if (not-empty vs)
-      (if (z/end? loc)
-        ;; if we're at the end and we've still got values, we'll want to
-        ;; enumerate enough paths we haven't seen and apply the vals there.
-        ;; If there are more vals than paths we can enumerate, throw.
-        (let [new-paths (take (count vs)
-                              (remove applied-paths (enumerate path)))]
-          (if (= (count vs)
-                 (count new-paths))
-            (recur (reduce
-                    (fn [loc kp]
-                      (-> loc
-                          (jzip/stub-in kp)
-                          z/root
-                          jzip/json-zip))
-                    (jzip/json-zip (z/root loc))
-                    new-paths)
-                   vs
-                   applied-paths)
-            (throw (ex-info "Couldn't make enough paths"
-                            {:type ::out-of-paths
-                             :path path
-                             :json (z/root loc)
-                             :values values
-                             :values-remaining vs
-                             :new-paths new-paths}))))
-        (if (jzip/internal? loc)
-          (recur (z/next loc) vs applied-paths)
-          (let [key-path (jzip/k-path loc)]
-            (if (and (not (applied-paths key-path))
-                     (= (satisfied path key-path) path))
-              (recur (-> loc
-                         (z/replace (first vs))
-                         z/next)
-                     (rest vs)
-                     (conj applied-paths
-                           key-path))
-              (recur (z/next loc) vs applied-paths)))))
-      ;; we're done!
-      (vary-meta (z/root loc) assoc :paths applied-paths))))
+    (if-some [v (first vs)]
+      (if-let [key-path (first key-paths)]
+        (recur (rest key-paths)
+               (rest vs)
+               (json/jassoc-in j key-path v)
+               (conj applied-paths key-path))
+        (throw (ex-info "Couldn't make enough paths"
+                        {:type ::out-of-paths
+                         :path path
+                         :json json
+                         :json-mod j
+                         :values values
+                         :values-remaining vs
+                         })))
+      (vary-meta j assoc :paths applied-paths))))
