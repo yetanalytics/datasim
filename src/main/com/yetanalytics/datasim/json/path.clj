@@ -3,8 +3,6 @@
             [blancas.kern.lexer.basic :as kl]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.json :as json]
-            [com.yetanalytics.datasim.json.zip :as jzip]
-            [clojure.zip :as z]
             [clojure.math.combinatorics :as combo]))
 
 (s/def ::root
@@ -192,7 +190,7 @@
 (s/fdef enumerate
   :args (s/cat :path ::json-path
                :options (s/keys* :opt-un [:enumerate/limit]))
-  :ret (s/every ::jzip/key-path))
+  :ret (s/every ::json/key-path))
 
 (defn enumerate
   "Given a json path, return a lazy seq of concrete key paths. wildcards/ranges
@@ -219,7 +217,7 @@
 (s/fdef path-seq
   :args (s/cat :json ::json/any
                :path ::json-path)
-  :ret (s/every (s/tuple ::jzip/key-path
+  :ret (s/every (s/tuple ::json/key-path
                          ::json/any)))
 
 (defn path-seq*
@@ -301,7 +299,7 @@
 (s/fdef select-paths
   :args (s/cat :path ::json-path
                :json ::json/any)
-  :ret (s/map-of ::jzip/key-path
+  :ret (s/map-of ::json/key-path
                  ::json/any))
 
 (defn select-paths

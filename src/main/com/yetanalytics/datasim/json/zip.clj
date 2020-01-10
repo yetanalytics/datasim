@@ -88,15 +88,10 @@
              (some-> loc z/up z/node map-entry?))
         false)))
 
-(s/def ::key
-  (s/or :index (s/int-in 0 Integer/MAX_VALUE)
-        :key (s/or :string string?
-                   :keyword keyword?)))
-
 (s/fdef el-key
   :args (s/cat :loc ::loc)
   :ret (s/nilable
-        ::key))
+        ::json/key))
 
 (defn el-key
   [loc]
@@ -109,13 +104,10 @@
         (vector? p)
         (count (z/lefts loc))))))
 
-(s/def ::key-path
-  (s/every ::key))
-
 (s/fdef k-path
   :args (s/cat :loc ::loc)
   :ret (s/nilable
-        ::key-path))
+        ::json/key-path))
 
 (defn k-path
   [loc]
@@ -146,7 +138,7 @@
 
 (s/fdef get-child
   :args (s/cat :loc ::loc
-               :k ::key)
+               :k ::json/key)
   :ret (s/nilable ::loc))
 
 (defn get-child
@@ -173,7 +165,7 @@
 
 (s/fdef get-child-in
   :args (s/cat :loc (s/nilable ::loc)
-               :key-path ::key-path)
+               :key-path ::json/key-path)
   :ret (s/nilable ::loc))
 
 
@@ -184,7 +176,7 @@
 
 (s/fdef loc-in
   :args (s/cat :root ::json/any
-               :key-path ::key-path)
+               :key-path ::json/key-path)
   :ret (s/nilable ::loc))
 
 (defn loc-in
@@ -194,7 +186,7 @@
 
 (s/fdef stub-in
   :args (s/cat :loc ::loc
-               :key-path ::key-path)
+               :key-path ::json/key-path)
   :ret ::loc)
 
 (defn stub-in
@@ -275,7 +267,7 @@
 
 (s/def ::path-map
   (s/map-of
-   ::key-path
+   ::json/key-path
    ::json/any))
 
 (s/fdef json-locs
