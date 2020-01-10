@@ -284,8 +284,8 @@
                    path)))
 
 (s/fdef select
-  :args (s/cat :path ::json-path
-               :json ::json/any)
+  :args (s/cat :json ::json/any
+               :path ::json-path)
   :ret (s/every ::json/any))
 
 
@@ -293,12 +293,14 @@
 (defn select
   "Given json data and a parsed path, return a selection vector."
   [json path]
-  (into []
-        (map second (path-seq json path))))
+  (let [ps (path-seq json path)]
+    (vary-meta (into []
+                     (map second ps))
+               assoc :paths (map first ps))))
 
 (s/fdef select-paths
-  :args (s/cat :path ::json-path
-               :json ::json/any)
+  :args (s/cat :json ::json/any
+               :path ::json-path)
   :ret (s/map-of ::json/key-path
                  ::json/any))
 
