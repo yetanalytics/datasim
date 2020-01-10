@@ -5,9 +5,7 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.json :as j]
             [com.yetanalytics.datasim.json.path :as json-path]
-            [com.yetanalytics.datasim.json.zip :as jzip]
             [com.yetanalytics.datasim.xapi.path :as xp]
-            [clojure.zip :as z]
             [com.yetanalytics.datasim.random :as random]
             [clojure.set :as cset]
             [clojure.test.check.generators :as gen]))

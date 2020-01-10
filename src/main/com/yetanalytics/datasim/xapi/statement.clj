@@ -2,7 +2,6 @@
   "Generate Statements"
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
-            [clojure.set :as cset]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.input :as input]
@@ -162,28 +161,3 @@
        ;; note that just has to be greater that sim-t and less than or eq to end-ms,
        ;; it's up to you. For the stub we just make it sim-t
        :timestamp-ms sim-t})))
-
-
-(comment
-  ;; for REPL hacking
-  (let [top-seed 42
-        top-rng (random/seed-rng top-seed)
-        input (input/from-location :input :json "dev-resources/input/simple.json")
-        iri-map (apply profile/profiles->map (:profiles input))
-        activities (activity/derive-cosmos input (random/rand-long top-rng))]
-    (generate-statement
-     {:input input
-      :iri-map iri-map
-      :activities activities
-      :actor (-> input :personae :member first)
-      :alignment (get-in input [:alignments :alignment-map "mbox::mailto:bob@example.org"])
-      :sim-t 0
-      :seed (random/rand-long top-rng)
-      :template (get iri-map "https://w3id.org/xapi/cmi5#satisfied")
-      :pattern-ancestors
-      [{:id "https://w3id.org/xapi/cmi5#toplevel", :primary true}
-       {:id "https://w3id.org/xapi/cmi5#satisfieds", :primary false}]
-      :registration (random/rand-uuid top-rng)}))
-
-
-  )
