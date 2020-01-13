@@ -46,7 +46,8 @@
             (comp :timestamp-ms
                   meta)))
 
-      (nth 1000000))
+      (nth 100)
+      time)
 
 
   (run-sim! i)
