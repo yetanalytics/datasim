@@ -93,7 +93,8 @@
     {template-iri :id
      ?verb-id :verb
      ?activity-type :objectActivityType
-     template-rules :rules} :template
+     template-rules :rules
+     :as template} :template
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
@@ -160,4 +161,7 @@
        ;; the time of the timestamp (in millis since the epoch)
        ;; note that just has to be greater that sim-t and less than or eq to end-ms,
        ;; it's up to you. For the stub we just make it sim-t
-       :timestamp-ms sim-t})))
+       :timestamp-ms sim-t
+       ;; Return the template, useful for a bunch of things
+       :template template
+       })))
