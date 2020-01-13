@@ -71,8 +71,7 @@
   returns a tuple, a list of matched values from location, selector, containing the key ::unmatchable if a selector cannot be matched."
   [statement
    {:keys [location selector] :as rule}]
-  (let [loc-values (into #{}
-                         (json-path/select statement location))]
+  (let [loc-values (json-path/select statement location)]
     (into loc-values
           (when selector
             (mapcat
@@ -136,22 +135,6 @@
                          values))
               true))))))
 
-(s/fdef rule-gen
-  :args (s/cat :rule ::parsed-rule
-               :xapi-gen gen/generator?)
-  :ret (s/nilable gen/generator?))
-
-(defn rule-gen
-  "Return a generator for values based on a rule, using a provided xapi
-  generator for undefined things."
-  [{:keys [any all none]} xapi-gen]
-  (if all
-    (gen/elements all)
-    (gen/one-of (if any
-                  [(gen/elements any) xapi-gen]
-                  [xapi-gen]))))
-
-
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
                :raw-rules (s/every ::rules/rule)
@@ -203,72 +186,91 @@
                  (update paths :excised into (some-> statement-excised
                                                      meta
                                                      :paths))))
-              ;; for other rules, we'll need to get fancier...
-              (let [location-enum (json-path/enumerate location)
-                    xapi-spec     (try (xp/path->spec
-                                        ::xs/statement
-                                        (first location-enum)
-                                        statement)
-                                       (catch java.lang.AssertionError ae
-                                         (throw (ex-info "Couldn't figure out xapi path"
-                                                         {:type      ::undefined-path
-                                                          :key-path  (first location-enum)
-                                                          :rule      rule
-                                                          :statement statement}
-                                                         ae))))
-
-                    xapi-gen      (s/gen xapi-spec)
-                    xapi-rule-gen (rule-gen rule xapi-gen)
-
-                    ;; TODO: remove unmatchable paths
-
-                    valid-values (into #{}
-                                       (filter (partial valid-value? rule)
-                                               (remove #{::unmatchable} matches)))
-
-                    rule-or-val-gen   (cond->> (gen/one-of (into [xapi-rule-gen]
-                                                                 (map gen/return
-                                                                      valid-values)))
-                                        ;; must be in all if defined
-                                        all  (gen/such-that (partial contains? all))
-                                        ;; must not be in none if defined
-                                        none (gen/such-that (complement (partial contains? none))))
-                    values-gen        (cond->> (if (json-path/discrete? location)
-                                                 (let [path-count (count location-enum)]
-                                                   (if (= 1 path-count)
-                                                     (gen/tuple
-                                                      (if any
-                                                        (gen/elements any)
-                                                        rule-or-val-gen))
-                                                     (apply gen/tuple (repeat path-count
-                                                                              rule-or-val-gen))))
-                                                 ;; deal with distinct arrays
-                                                 (if (#{:definition/choices
-                                                        :definition/scale
-                                                        :definition/source
-                                                        :definition/target
-                                                        :definition/steps} xapi-spec)
-                                                   (gen/vector-distinct rule-or-val-gen
-                                                                        {:min-elements 1
-                                                                         :max-elements (or (and all)
-                                                                                           (count all))})
-                                                   (gen/vector rule-or-val-gen 1 10)))
-                                        ;; at least 1 any
-                                        any (gen/such-that (partial some (partial contains? any))))
+              (let [discrete? (json-path/discrete? location)
+                    location-enum (if discrete?
+                                    (json-path/enumerate location)
+                                    (json-path/enumerate location :limit 3))
+                    ;; spec generation is expensive, let's wrap it up for control
+                    gen-xapi! (fn []
+                                (try (gen/generate
+                                      (cond->> (s/gen
+                                                (try (xp/path->spec
+                                                      ::xs/statement
+                                                      (first location-enum)
+                                                      statement)
+                                                     (catch java.lang.AssertionError ae
+                                                       (throw (ex-info "Couldn't figure out xapi path"
+                                                                       {:type      ::undefined-path
+                                                                        :key-path  (first location-enum)
+                                                                        :rule      rule
+                                                                        :statement statement}
+                                                                       ae)))))
+                                        (not-empty none) (gen/such-that (partial (complement contains?)
+                                                                                 none)))
+                                                   30 (random/rand-long rng))
+                                     (catch clojure.lang.ExceptionInfo exi
+                                       (throw (ex-info "Generation error!"
+                                                       {:type            ::gen-error
+                                                        :rule            rule
+                                                        :statement       statement
+                                                        :matched         matches}
+                                                       exi)))))
+                    any-all (not-empty (concat any all))
+                    values
+                    (if (and discrete?
+                             (= 1 (count location-enum))) ;; a single loc that must conform
+                      [(cond (not-empty any)
+                             (random/choose rng {} any)
+                             (not-empty all)
+                             (random/choose rng {} all)
+                             :else (gen-xapi!))]
+                      ;; multiple discrete locs or infinite locs
+                      (loop [loc-enum (cond->> location-enum
+                                        ;; only needs limiting if not discrete
+                                        (not discrete?) (take (max
+                                                               ;; gotta be at least 1
+                                                               1
+                                                               ;; gotta be at least as many as matched
+                                                               (count (remove (partial = ::unmatchable)
+                                                                              matches))
+                                                               ;; or as many as all provided vals
+                                                               (count (concat any all))
+                                                               ;; or maybe up to N
+                                                               (random/rand-int* rng 10))))
+                             vs []
+                             any-sat? false]
+                        (if-let [path (first loc-enum)]
+                          (let [?match (get-in statement path)
+                                v (cond (and (some? ?match) (valid-value? rule ?match))
+                                        ?match
+                                        any-all
+                                        ;; try to use each provided val once
+                                        (if-let [any-all-remaining (not-empty (remove
+                                                                               (partial contains? vs)
+                                                                               any-all))]
+                                          (random/choose rng {} any-all-remaining)
+                                          ;; but it is better to repeat then gen
+                                          (random/choose rng {} any-all))
+                                        :else
+                                        (gen-xapi!))]
+                            (recur (rest loc-enum)
+                                   (conj vs v)
+                                   (or any-sat?
+                                       (empty? any)
+                                       (and (not-empty any)
+                                            (contains? any v))
+                                       false)))
+                          ;; handle possible lack of any...
+                          (if any-sat?
+                            vs
+                            ;; if there's no any, just swap one
+                            (let [swap-idx (random/rand-int* rng (count vs))]
+                              (assoc vs swap-idx (random/choose rng {} any)))))))
+                    ;; ;; TODO: remove unmatchable paths
                     statement-applied (json-path/apply-values
                                        statement location
-                                       (try (gen/generate values-gen 30 seed)
-                                            (catch clojure.lang.ExceptionInfo exi
-                                              (throw (ex-info "Generation error!"
-                                                              {:type            ::gen-error
-                                                               :rule            rule
-                                                               :statement       statement
-                                                               :matched         matches
-                                                               :rule-or-val-gen rule-or-val-gen
-                                                               :values-gen      values-gen
-                                                               :seed            seed
-                                                               }
-                                                              exi)))))]
+                                       values
+                                       :enum-limit 3)]
                 (recur
                  statement-applied
                  (rest rules)
