@@ -216,6 +216,11 @@
                                                         :matched         matches}
                                                        exi)))))
                     any-all (not-empty (concat any all))
+
+                    ;; In certain situations, we should attempt to make the
+                    ;; values distinct. This is pretty open ended, but generally
+                    ;; if the path points at an ID this is sane to do...
+                    distinct? (= #{"id"} (last location))
                     values
                     (if (and discrete?
                              (= 1 (count location-enum))) ;; a single loc that must conform
@@ -236,7 +241,9 @@
                                                                ;; or as many as all provided vals
                                                                (count (concat any all))
                                                                ;; or maybe up to N
-                                                               (random/rand-int* rng 10))))
+                                                               (if distinct? ;; for distinct, use what we have
+                                                                 1
+                                                                 (random/rand-int* rng 10)))))
                              vs []
                              any-sat? false]
                         (if-let [path (first loc-enum)]
@@ -250,7 +257,10 @@
                                                                                any-all))]
                                           (random/choose rng {} any-all-remaining)
                                           ;; but it is better to repeat then gen
-                                          (random/choose rng {} any-all))
+                                          ;; unless this should be distinct...
+                                          (if distinct?
+                                            (gen-xapi!)
+                                            (random/choose rng {} any-all)))
                                         :else
                                         (gen-xapi!))]
                             (recur (rest loc-enum)
