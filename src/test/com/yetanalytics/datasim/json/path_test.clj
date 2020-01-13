@@ -107,7 +107,7 @@
 (deftest enumerate-test
   (are [path result-count]
       (= result-count
-         (count (enumerate path)))
+         (count (enumerate path :limit 10)))
     [#{"store"} #{"book"} '* #{"author"}]                       10
     ['* #{"author"}]                                            10
     [#{"store"} '*]                                             10

@@ -195,8 +195,7 @@
 (defn enumerate
   "Given a json path, return a lazy seq of concrete key paths. wildcards/ranges
   will be enumerated up to :limit, which defaults to 10"
-  [path & {:keys [limit]
-           :or {limit 10}}]
+  [path & {:keys [limit]}]
   (map vec
        (apply combo/cartesian-product
               (map
@@ -206,12 +205,14 @@
                    element
 
                    (= '* element)
-                   (range limit)
+                   (if limit
+                     (range limit)
+                     (range))
                    ;; otherwise, itsa range spec
                    :else
                    (let [{:keys [start end step]} element]
-                     (take limit
-                           (range start end step)))))
+                     (cond->> (range start end step)
+                       limit (take limit)))))
                path))))
 
 (s/fdef path-seq
@@ -351,7 +352,8 @@
   "Given json data and a parsed path, return the data without the selection, and
   any empty container.
   If :prune-empty? is true, will remove empty arrays and maps"
-  [json path & {:keys [prune-empty?]}]
+  [json path & {:keys [prune-empty?
+                       ]}]
   (let [ps (path-seq json path)
         psk (map first ps)]
     (vary-meta
