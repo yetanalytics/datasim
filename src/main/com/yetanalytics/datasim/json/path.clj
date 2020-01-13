@@ -395,24 +395,52 @@
   "Given json data, path and values, apply them to the structure.
   If there is no place to put a value, enumerate further possible paths and use
   those."
-  [json path values]
+  [json path values & {:keys [enum-limit]}]
   ;; TODO: probably doesn't handle array slices
-  (loop [key-paths (enumerate path)
-         vs values
-         j json
-         applied-paths #{}]
-    (if-some [v (first vs)]
-      (if-let [key-path (first key-paths)]
-        (recur (rest key-paths)
-               (rest vs)
-               (json/jassoc-in j key-path v)
-               (conj applied-paths key-path))
-        (throw (ex-info "Couldn't make enough paths"
-                        {:type ::out-of-paths
-                         :path path
-                         :json json
-                         :json-mod j
-                         :values values
-                         :values-remaining vs
-                         })))
-      (vary-meta j assoc :paths applied-paths))))
+  (let [ps (map first (path-seq json path))
+        [splice-vals append-vals] (split-at (count ps) values)
+        json-spliced (reduce
+                      (fn [j [p v]]
+                        (assoc-in j p v))
+                      json
+                      (map vector
+                           ps
+                           splice-vals))]
+    (if (not-empty append-vals)
+      ;; if there are still vals to append, we should do so
+      (loop [key-paths (remove
+                        (partial contains? (set ps))
+                        (enumerate
+                         path
+                         :limit (or enum-limit 3)))
+             vs values
+             j json
+             applied-paths #{}]
+        (if-some [v (first vs)]
+          (if-let [key-path (first key-paths)]
+            (recur (rest key-paths)
+                   (rest vs)
+                   (json/jassoc-in j key-path v)
+                   (conj applied-paths key-path))
+            (throw (ex-info "Couldn't make enough paths"
+                            {:type ::out-of-paths
+                             :path path
+                             :json json
+                             :json-mod j
+                             :values values
+                             :values-remaining vs
+                             })))
+          (vary-meta j assoc :paths applied-paths)))
+      ;; extra hanging paths should be removed.
+      (let [spliced-count (count json-spliced)]
+        (vary-meta
+         (if-let [extra-paths (not-empty (drop spliced-count
+                                               ps))]
+           (reduce
+            (partial cut true)
+            json-spliced
+            (reverse extra-paths))
+           json-spliced)
+         assoc :paths (into #{}
+                            (take spliced-count
+                                  ps)))))))
