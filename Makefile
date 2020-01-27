@@ -1,4 +1,4 @@
-.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci
+.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci server
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
@@ -31,3 +31,6 @@ test-cli-output:
 
 
 ci: test-unit test-cli
+
+server:
+	clojure -A:server
