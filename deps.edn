@@ -45,5 +45,9 @@
                  io.pedestal/pedestal.immutant
                  {:mvn/version "0.5.7"}
                  org.slf4j/slf4j-simple
-                 {:mvn/version "1.7.28"}}
+                 {:mvn/version "1.7.28"}
+                 clj-http
+                 {:mvn/version "3.10.0"}
+                 cheshire
+                 {:mvn/version "5.9.0"}}
    :main-opts   ["-m" "com.yetanalytics.datasim.server"]}}}
