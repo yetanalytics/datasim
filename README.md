@@ -70,9 +70,25 @@ This reference implementation of DATASIM can either be used as a CLI tool, or as
 
 In the form of a CLI application, DATASIM takes the inputs listed above as JSON files as command line arguments and runs a simulation based on them. It also outputs the *Simulation Specification* during this process.
 
-##### Clojure Cli
+##### CLI
 
-    clojure -Acli:run -h
+For the CLI the first step is to build the project so that it can be run on a JVM.
+
+    make bundle
+
+Now that we have this, navigate to target/bundle and run
+
+    bin/run.sh
+
+With no commands it will give you the list of parameters.
+
+For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:
+
+    bin/run.sh -p [profile json file] -a [actors json filename] -l [alignments json filename] -o [sim params json filename] validate-input [desired output filename]
+
+Once we have that simulation specification, we can run the sim just from that like so:
+
+    bin/run.sh -i dev-resources/input/simple.json generate
 
 #### Docker
 
