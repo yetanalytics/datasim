@@ -126,8 +126,10 @@
                      (or strict (not-empty values)))
               (not (or (contains? values ::unmatchable)
                        (empty? values)
-                       (not (cset/superset? all
-                                            (set values)))))
+                       ;; see `match-all-logic-test` + `replicate-conditional` in hickey comment for proof
+                       (not (if (empty? (cset/difference all (set values)))
+                              (cset/superset? all (set values))
+                              false))))
               true)
             (if (and none
                      (or strict (not-empty values)))
