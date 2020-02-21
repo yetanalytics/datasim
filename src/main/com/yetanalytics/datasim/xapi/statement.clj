@@ -185,6 +185,11 @@
                                                             (keys flat-activities))]
                                          (get flat-activities some-activity-id)))
 
+                             "context" {"contextActivities"
+                                        ;; only adding the inScheme from current template
+                                        {"category" [{"id" template-in-scheme}]}
+                                        "registration" registration}
+
                              ;; Timestamp is up to you, here I just made it sim-t
                              "timestamp" (.toString (Instant/ofEpochMilli sim-t))}
                             template-rules
