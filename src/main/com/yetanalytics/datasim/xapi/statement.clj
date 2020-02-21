@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.statement
   "Generate Statements"
   (:require [clojure.spec.alpha :as s]
+            [clojure.set :as cset]
             [clojure.string :as string]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
@@ -94,6 +95,7 @@
      ?verb-id :verb
      ?activity-type :objectActivityType
      template-rules :rules
+     template-in-scheme :inScheme
      :as template} :template
     pattern-ancestors :pattern-ancestors
     registration :registration
