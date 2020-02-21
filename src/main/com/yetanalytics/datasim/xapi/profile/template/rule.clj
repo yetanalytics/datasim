@@ -137,6 +137,45 @@
                          values))
               true))))))
 
+(comment
+  ;; -> everything within `all-set` within `target-set`?
+  ;;    -> no = failure = (not (not false)) = false
+  ;;    -> yes = continue
+  ;;       -> anything within `target-set` that's not in `all-set`?
+  ;;          -> yes = failure = (not (not false)) = false
+  ;;          -> no = success = (not (not true)) = true
+
+  (defn match-all-logic-test
+    "Checks `target` set against top and bottom bounds of `all-set`"
+    [all-set target-set]
+    ;; everything within `all-set` within `target-set`?
+    (if (empty? (cset/difference all-set target-set))
+      ;; anything within `target-set` that's not in `all-set`?
+      (cset/superset? all-set target-set)
+      false))
+
+  (def all-set-fixture #{:a :b :c})
+
+  (defn replicate-conditional
+    "assuming non-empty matchables which doesn't contain `::unmatchable`"
+    [target-set]
+    (not (or false false (not (match-all-logic-test all-set-fixture target-set)))))
+
+  (def test-set        #{:c :b :a :A})
+  ;; ^ 1 more than `all-set-fixture`
+  (def test-set-1      #{:a :b})
+  ;; ^ 1 less than `all-set-fixture`
+  (def test-set-2      #{:d :e :f})
+  ;; ^ same number as `all-set-fixture` but different members
+  (def test-set-3      #{:b :c :a})
+  ;; ^ matches `all-set-fixture`
+
+  (and
+   (false? (replicate-conditional test-set))
+   (false? (replicate-conditional test-set-1))
+   (false? (replicate-conditional test-set-2))
+   (true? (replicate-conditional test-set-3))))
+
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
                :raw-rules (s/every ::rules/rule)
