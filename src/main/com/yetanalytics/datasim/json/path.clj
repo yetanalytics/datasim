@@ -152,7 +152,10 @@
     ;; normal key
     (k/<$>
      (partial hash-set)
-     (k/<+> (k/many1 k/alpha-num)))
+     (k/<+> (k/many1 k/alpha-num)
+            ;; support full language tags
+            (k/optional (k/<+> (k/one-of* "-")
+                               (k/many1 k/alpha-num)))))
     ;; dot wildcard
     wildcard
     ;; double-dot wildcard
@@ -162,6 +165,26 @@
       (k/>> kl/dot
             (k/many1 k/alpha-num)))))))
 
+(comment
+  ;; proof for language tag issue
+  (= "en-US"
+     (->> "en-US"
+          (k/parse (k/<+> (k/many1 k/alpha-num)
+                          (k/optional (k/<+> (k/one-of* "-")
+                                             (k/many1 k/alpha-num)))))
+          :value))
+  (= "en"
+     (->> "en-US"
+          (k/parse (k/<+> (k/many1 k/alpha-num)))
+          :value)
+     (->> "en"
+          (k/parse (k/<+> (k/many1 k/alpha-num)))
+          :value)
+     (->> "en"
+          (k/parse (k/<+> (k/many1 k/alpha-num)
+                          (k/optional (k/<+> (k/one-of* "-")
+                                             (k/many1 k/alpha-num)))))
+          :value)))
 
 (def json-path
   (k/>> root
