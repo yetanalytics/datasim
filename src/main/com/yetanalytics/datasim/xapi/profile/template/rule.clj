@@ -265,6 +265,8 @@
                     values
                     (if (and discrete?
                              (= 1 (count location-enum))) ;; a single loc that must conform
+                      ;; FIXME: needs to ensure `all` is safe for `location`
+                      ;; (if (not-empty all) all [(if (not-empty any) (random/choose rng {} any) (gen-xapi!))])
                       [(cond (not-empty any)
                              (random/choose rng {} any)
                              (not-empty all)
