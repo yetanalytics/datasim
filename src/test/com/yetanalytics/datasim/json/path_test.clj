@@ -31,7 +31,13 @@
 
     "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/sessionid']"
     [#{"context"} #{"extensions"} #{"https://w3id.org/xapi/cmi5/context/extensions/sessionid"}]
-    ))
+
+    ;; Language tag edge case
+    "$.object.definition.name.en-US"
+    [#{"object"} #{"definition"} #{"name"} #{"en-US"}]
+
+    "$.object.definition.name.en"
+    [#{"object"} #{"definition"} #{"name"} #{"en"}]))
 
 (deftest select-test
   (are [path selection]
