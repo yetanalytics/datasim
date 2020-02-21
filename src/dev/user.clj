@@ -26,7 +26,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def test-profile
-  ;; nil
   (input/from-location
    :profile
    :json
@@ -75,32 +74,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def test-personae
-  ;; nil
   (input/from-location
    :personae
    :json
    "/Users/williamhoyt/projects/profile-tools/resources/datasim/persona.json"))
 
 (def test-alignments
-  ;; nil
   (input/from-location
    :alignments
    :json
    "/Users/williamhoyt/projects/profile-tools/resources/datasim/tccc_test_alignments.json"))
 
 (def test-parameters
-  ;; nil
   (input/from-location
    :parameters
    :json
    "/Users/williamhoyt/projects/profile-tools/resources/datasim/test_parameters.json"))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DATASIM input
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def test-input
-  ;; nil
   {:profiles [test-profile video-profile activity-stream-profile acrossx-profile tincan-profile]
    :personae test-personae
    :alignments test-alignments
    :parameters test-parameters})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DATASIM run
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn run-sim!
   []
