@@ -60,6 +60,10 @@
     selector (assoc :selector
                     (into [] (json-path/parse selector)))))
 
+(comment
+  ;; FIXME: en-US -> en
+  (parse-rule {:location "$.object.definition.name.en-US"}))
+
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
                :rule ::parsed-rule)
