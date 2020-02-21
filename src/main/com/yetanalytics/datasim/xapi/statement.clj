@@ -100,8 +100,10 @@
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
-  ;; TODO: add Profile(s) to ["context" "contextActivities" "category"]
-  ;; TODO: add registration to ["context" "registration"]
+  ;; TODO: subregistration from :pattern-ancestors logic
+  ;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
+  ;;    -> subregistration extension key
+  ;;    -> only necessary when a primary pattern contains another primary pattern
   (let [rng (random/seed-rng seed)]
     (with-meta
       ;; Start with this and reduce over the rules
