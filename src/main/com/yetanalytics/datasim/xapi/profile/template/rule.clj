@@ -60,10 +60,6 @@
     selector (assoc :selector
                     (into [] (json-path/parse selector)))))
 
-(comment
-  ;; FIXME: en-US -> en
-  (parse-rule {:location "$.object.definition.name.en-US"}))
-
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
                :rule ::parsed-rule)
@@ -128,12 +124,39 @@
               true)
             (if (and all
                      (or strict (not-empty values)))
-              (not (or (contains? values ::unmatchable)
-                       (empty? values)
-                       ;; see `match-all-logic-test` + `replicate-conditional` in hickey comment for proof
-                       (not (if (empty? (cset/difference all (set values)))
-                              (cset/superset? all (set values))
-                              false))))
+              (let [values-set* (if (and (coll? values)
+                                         (coll? (first values))
+                                         (= 1 (count values)))
+                                  ;; first and only coll in a coll of colls
+                                  (first values)
+                                  values)
+                    values-set (cond
+                                 ;; most cases, gaurd for map to prevent conversion to keypairs
+                                 (and (coll? values-set*) (not (map? values-set*)))
+                                 (into #{} values-set*)
+                                 ;; if `all` specified an object for the location, prevent conversion to keypairs
+                                 (map? values-set*)
+                                 #{values-set*}
+                                 ;; attempt conversion to set, throw on error
+                                 (some? values-set*)
+                                 (try (set values-set*)
+                                      (catch Exception e
+                                        (throw (ex-info "Unexpected State!"
+                                                        {:type            ::rule-check-error
+                                                         :rule            rule
+                                                         :statement       statement
+                                                         :matched         matches
+                                                         :values          values
+                                                         :values-set*     values-set*}
+                                                        e))))
+                                 :else #{})]
+                (not (or (contains? values ::unmatchable)
+                         (empty? values)
+                         (not
+                          ;; see `match-all-logic-test` bellow for logic proof
+                          (if (empty? (cset/difference all values-set))
+                            (cset/superset? all values-set)
+                            false)))))
               true)
             (if (and none
                      (or strict (not-empty values)))
