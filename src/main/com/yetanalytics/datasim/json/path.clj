@@ -441,10 +441,22 @@
              applied-paths #{}]
         (if-some [v (first vs)]
           (if-let [key-path (first key-paths)]
-            (recur (rest key-paths)
-                   (rest vs)
-                   (json/jassoc-in j key-path v)
-                   (conj applied-paths key-path))
+            (let [;; edge case check
+                  ;; -> single `key-path` but many `values`
+                  cur-only-path? (nil? (seq (rest key-paths)))
+                  first-of-many? (and (> (count values) 1)
+                                      ;; ensure caught before attempted
+                                      (= v (first values)))]
+              (if (and cur-only-path? first-of-many?)
+                ;; FIXME: update ^ to check location makes sense for an array
+                (recur (rest key-paths)
+                       [] ;; consuming all values at once, pass empty to pull out of loop
+                       (json/jassoc-in j key-path vs)
+                       (conj applied-paths key-path))
+                (recur (rest key-paths)
+                       (rest vs)
+                       (json/jassoc-in j key-path v)
+                       (conj applied-paths key-path))))
             (throw (ex-info "Couldn't make enough paths"
                             {:type ::out-of-paths
                              :path path
