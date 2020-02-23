@@ -107,100 +107,95 @@
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
-  ;; TODO: subregistration from :pattern-ancestors logic
-  ;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
-  ;;    -> subregistration extension key
-  ;;    -> only necessary when a primary pattern contains another primary pattern
-  (let [rng (random/seed-rng seed)]
+  (let [rng        (random/seed-rng seed)
+        ;; components of `base-stmt`
+        stmt-id    (random/rand-uuid rng)
+        stmt-actor (w/stringify-keys actor)
+        stmt-verb  (or
+                    ;; explicit verb
+                    (and ?verb-id
+                         (merge {"id" ?verb-id}
+                                (when-let [lmap (get-in iri-map [?verb-id :prefLabel])]
+                                  {"display" (w/stringify-keys lmap)})))
+                    ;; choose a verb from the prof
+                    (when-let [verbs (not-empty (into {}
+                                                      (filter (comp (partial = "Verb")
+                                                                    :type second))
+                                                      iri-map))]
+                      (let [some-v-id (random/choose rng alignment (keys verbs))
+                            v-concept (get verbs some-v-id)]
+                        (merge {"id" some-v-id}
+                               (when-let [lmap (get v-concept :prefLabel)]
+                                 {"display" (w/stringify-keys lmap)}))))
+                    {"id" "http://adlnet.gov/expapi/verbs/experienced"
+                     "display" {"en" "experienced"}})
+        stmt-obj   (or
+                    ;; quick scan rules for "$.object.id"
+                    ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
+                    ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
+                    ;;    -> remove activity type level from `activities` and search for `rule-obj-id`, nil if not found
+                    (letfn [(search-rules [target-location]
+                              ;; filter `template-rules` for a rule whose location is set to `target-location`
+                              (->> template-rules
+                                   (filterv (fn [r] (= (:location r) target-location)))
+                                   first
+                                   not-empty))
+                            (handle-rule-vals [the-rule]
+                              ;; handle `:any` and/or `:all` within `the-rule`
+                              (let [{any-coll :any
+                                     all-coll :all} the-rule
+                                    n-any           (count any-coll)
+                                    n-all           (count all-coll)]
+                                ;; returns single item from `:any` or `:all` or returns nil
+                                (cond (and (> n-any 0) (> n-all 0))
+                                      ;; both any and all for some reason
+                                      ;; -> use all to filter any
+                                      (let [remaining (into [] (cset/intersection (set all-coll) (set any-coll)))]
+                                        (random/choose rng alignment remaining))
+                                      (= n-all 1)
+                                      ;; not handling (> n-all 1) as it doesn't make sense in isolation
+                                      (first all-coll)
+                                      (> n-any 0)
+                                      ;; allow for users to shoot themselves in the foot
+                                      (random/choose rng alignment any-coll))))]
+                      (when-let [rule-obj-id (handle-rule-vals (search-rules "$.object.id"))]
+                        ;; there's a rule specifying object.id, prep for lookup in `activities`
+                        (if-let [obj-at (or ?activity-type
+                                            (when-let [obj-type-rule (search-rules "$.object.definition.type")]
+                                              (handle-rule-vals obj-type-rule)))]
+                          (get-in activities [obj-at rule-obj-id])
+                          (get (reduce merge (vals activities)) rule-obj-id))))
+                    ;; there's an activity type we choose one of those
+                    (and ?activity-type
+                         (let [some-activity-id
+                               (random/choose rng
+                                              alignment
+                                              (keys (get activities ?activity-type)))]
+                           (get-in activities [?activity-type some-activity-id])))
+                    ;; no type, choose any activity
+                    (let [flat-activities
+                          (reduce merge
+                                  (vals activities))
+
+                          some-activity-id
+                          (random/choose rng
+                                         alignment
+                                         (keys flat-activities))]
+                      (get flat-activities some-activity-id)))
+        stmt-ctx   {"contextActivities" {"category" [{"id" template-in-scheme}]}
+                    "registration"      registration}
+        stmt-ts    (.toString (Instant/ofEpochMilli sim-t))
+        ;; Start with this and reduce over the rules
+        base-stmt  {"id"        stmt-id
+                    "actor"     stmt-actor
+                    "verb"      stmt-verb
+                    "object"    stmt-obj
+                    "context"   stmt-ctx
+                    "timestamp" stmt-ts}
+        ;; addition of `:spec` key to 0 or more `template-rules`
+        template-rules! (ext/derive-generation-hint profiles rng template-rules)]
     (with-meta
-      ;; Start with this and reduce over the rules
-      (rule/apply-rules-gen {"id" (random/rand-uuid rng)
-                             "actor" (w/stringify-keys actor)
-
-                             ;; TODO: this verb thing is a stub, make it better
-                             ;; and pay attention to the rules
-                             "verb" (or
-                                     ;; explicit verb
-                                     (and ?verb-id
-                                          (merge {"id" ?verb-id}
-                                                 (when-let [lmap (get-in iri-map [?verb-id :prefLabel])]
-                                                   {"display" (w/stringify-keys lmap)})))
-                                     ;; choose a verb from the prof
-                                     (when-let [verbs (not-empty (into {}
-                                                                       (filter (comp (partial = "Verb")
-                                                                                     :type second))
-                                                                       iri-map))]
-                                       (let [some-v-id (random/choose rng alignment (keys verbs))
-                                             v-concept (get verbs some-v-id)]
-                                         (merge {"id" some-v-id}
-                                                (when-let [lmap (get v-concept :prefLabel)]
-                                                  {"display" (w/stringify-keys lmap)}))))
-                                     {"id" "http://adlnet.gov/expapi/verbs/experienced"
-                                      "display" {"en" "experienced"}})
-
-                             "object" (or
-                                       ;; quick scan rules for "$.object.id"
-                                       ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
-                                       ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
-                                       ;;    -> remove activity type level from `activities` and search for `rule-obj-id`, nil if not found
-                                       (letfn [(search-rules [target-location]
-                                                 ;; filter `template-rules` for a rule whose location is set to `target-location`
-                                                 (->> template-rules
-                                                      (filterv (fn [r] (= (:location r) target-location)))
-                                                      first
-                                                      not-empty))
-                                               (handle-rule-vals [the-rule]
-                                                 ;; handle `:any` and/or `:all` within `the-rule`
-                                                 (let [{any-coll :any
-                                                        all-coll :all} the-rule
-                                                       n-any           (count any-coll)
-                                                       n-all           (count all-coll)]
-                                                   ;; returns single item from `:any` or `:all` or returns nil
-                                                   (cond (and (> n-any 0) (> n-all 0))
-                                                         ;; both any and all for some reason
-                                                         ;; -> use all to filter any
-                                                         (let [remaining (into [] (cset/intersection (set all-coll) (set any-coll)))]
-                                                           (random/choose rng alignment remaining))
-                                                         (= n-all 1)
-                                                         ;; not handling (> n-all 1) as it doesn't make sense in isolation
-                                                         (first all-coll)
-                                                         (> n-any 0)
-                                                         ;; allow for users to shoot themselves in the foot
-                                                         (random/choose rng alignment any-coll))))]
-                                         (when-let [rule-obj-id (handle-rule-vals (search-rules "$.object.id"))]
-                                           ;; there's a rule talking specifying object.id, set up to look for it in `activities`
-                                           (if-let [obj-at (or ?activity-type
-                                                               (when-let [obj-type-rule (search-rules "$.object.definition.type")]
-                                                                 (handle-rule-vals obj-type-rule)))]
-                                             (get-in activities [obj-at rule-obj-id])
-                                             (get (reduce merge (vals activities)) rule-obj-id))))
-                                       ;; there's an activity type we choose one of those
-                                       (and ?activity-type
-                                            (let [some-activity-id
-                                                  (random/choose rng
-                                                                 alignment
-                                                                 (keys (get activities ?activity-type)))]
-                                              (get-in activities [?activity-type some-activity-id])))
-                                       ;; no type, choose any activity
-                                       (let [flat-activities
-                                             (reduce merge
-                                                     (vals activities))
-
-                                             some-activity-id
-                                             (random/choose rng
-                                                            alignment
-                                                            (keys flat-activities))]
-                                         (get flat-activities some-activity-id)))
-
-                             "context" {"contextActivities"
-                                        ;; only adding the inScheme from current template
-                                        {"category" [{"id" template-in-scheme}]}
-                                        "registration" registration}
-
-                             ;; Timestamp is up to you, here I just made it sim-t
-                             "timestamp" (.toString (Instant/ofEpochMilli sim-t))}
-                            template-rules
-                            :seed (random/rand-long rng))
+      (rule/apply-rules-gen base-stmt template-rules! :seed (random/rand-long rng))
       ;; The duration in MS so we can continue the sim
       {
        ;; The time (in millis since the epoch) after which the actor can
