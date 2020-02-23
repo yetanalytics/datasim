@@ -50,11 +50,14 @@
   (cond-> (assoc
            (reduce-kv
             (fn [m k v]
-              (if (= :presence k)
+              (if (or (= :presence k)
+                      ;; custom key added for extension generation hint
+                      ;; -> addition to rule is strictly controlled, see `com.yetanalytics.datasim.xapi.extensions`
+                      (= :spec k))
                 (assoc m k v)
                 (assoc m k (set v))))
             {}
-            (select-keys rule [:any :all :none :presence]))
+            (select-keys rule [:any :all :none :presence :spec]))
            :location (into []
                            (json-path/parse location)))
     selector (assoc :selector
