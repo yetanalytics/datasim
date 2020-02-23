@@ -267,17 +267,18 @@
                     gen-xapi! (fn []
                                 (try (gen/generate
                                       (cond->> (s/gen
-                                                (try (xp/path->spec
-                                                      ::xs/statement
-                                                      (first location-enum)
-                                                      statement)
-                                                     (catch java.lang.AssertionError ae
-                                                       (throw (ex-info "Couldn't figure out xapi path"
-                                                                       {:type      ::undefined-path
-                                                                        :key-path  (first location-enum)
-                                                                        :rule      rule
-                                                                        :statement statement}
-                                                                       ae)))))
+                                                (or spec ;; known to be `s/gen` safe
+                                                    (try (xp/path->spec
+                                                          ::xs/statement
+                                                          (first location-enum)
+                                                          statement)
+                                                         (catch java.lang.AssertionError ae
+                                                           (throw (ex-info "Couldn't figure out xapi path"
+                                                                           {:type      ::undefined-path
+                                                                            :key-path  (first location-enum)
+                                                                            :rule      rule
+                                                                            :statement statement}
+                                                                           ae))))))
                                         (not-empty none) (gen/such-that (partial (complement contains?)
                                                                                  none)))
                                                    30 (random/rand-long rng))
