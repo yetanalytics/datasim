@@ -85,6 +85,11 @@
               (s/conformer meta)
               ::meta))
 
+;; TODO: subregistration from :pattern-ancestors logic
+;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
+;;    -> subregistration extension key
+;;    -> only necessary when a primary pattern contains another primary pattern
+
 (defn generate-statement
   [{{:keys [profiles]} :input
     iri-map :iri-map
