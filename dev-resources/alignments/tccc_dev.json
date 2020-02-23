@@ -1,0 +1,18 @@
+{
+  "mbox::mailto:bob@example.org" : {
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle" : 1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double" : 1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat" : -1.0,
+    "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop" : -1.0
+  }
+}

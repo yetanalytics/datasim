@@ -1,0 +1,10 @@
+{
+  "name" : "trainees",
+  "objectType" : "Group",
+  "member" : [
+    {
+      "name" : "Bob Fakename",
+      "mbox" : "mailto:bob@example.org"
+    }
+  ]
+}
