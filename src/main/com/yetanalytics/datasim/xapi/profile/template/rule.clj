@@ -238,7 +238,9 @@
                       :excised #{}}]
       (if-let [{:keys [location selector
                        presence
-                       any all none]
+                       any all none
+                       ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
+                       spec]
                 :as   rule} (first rules)]
         (let [matches (match-rule statement rule)]
           (if (follows-rule? statement rule matches)
