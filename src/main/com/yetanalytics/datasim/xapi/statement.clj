@@ -12,7 +12,9 @@
             [com.yetanalytics.datasim.random :as random]
             [xapi-schema.spec :as xs]
             [clojure.walk :as w]
-            [com.yetanalytics.datasim.xapi.profile.template.rule :as rule])
+            [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
+            [com.yetanalytics.datasim.json.schema :as j-schema]
+            [com.yetanalytics.datasim.xapi.extensions :as ext])
   (:import [java.time Instant]))
 
 ;; The duration, in milliseconds, of the returned statement
