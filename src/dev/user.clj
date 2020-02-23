@@ -3,8 +3,10 @@
             [clojure.pprint :refer [pprint]]
             [clojure.set :as cset]
             [com.yetanalytics.datasim.runtime :as runtime]
+            [com.yetanalytics.datasim.json.path :as json-path]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.xapi.activity :as activity]
+            [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
             [com.yetanalytics.datasim.input :as input]))
 
 (set! *warn-on-reflection* true)
@@ -19,8 +21,6 @@
       (dissoc :templates :patterns)
       (update :concepts (fn [concepts] (filterv (fn [{:keys [id]}] (cset/subset? #{id} target-id-set)) concepts)))))
 
-;; FIXME: move files to datasim
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DATASIM input - profiles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,14 +29,14 @@
   (input/from-location
    :profile
    :json
-   "/Users/williamhoyt/projects/profile-tools/resources/tccc_cuf_hc.jsonld"))
+   "./dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld"))
 
 (def video-profile
   (clean-external-profiles
    (input/from-location
     :profile
     :json
-    "/Users/williamhoyt/projects/profile-tools/resources/video.jsonld")
+    "./dev-resources/profiles/video/profile.jsonld")
    #{"https://w3id.org/xapi/video/verbs/paused"
      "https://w3id.org/xapi/video/verbs/played"
      "https://w3id.org/xapi/video/verbs/seeked"
@@ -49,7 +49,7 @@
    (input/from-location
     :profile
     :json
-    "/Users/williamhoyt/projects/profile-tools/resources/activity_stream_profile.jsonld")
+    "./dev-resources/profiles/activity_streams/profile.jsonld")
    #{"http://activitystrea.ms/start"
      "http://activitystrea.ms/submit"}))
 
@@ -58,7 +58,7 @@
    (input/from-location
     :profile
     :json
-    "/Users/williamhoyt/projects/profile-tools/resources/acrossx.jsonld")
+    "./dev-resources/profiles/acrossx/profile.jsonld")
    #{"https://w3id.org/xapi/acrossx/activities/page"}))
 
 (def tincan-profile
@@ -66,7 +66,7 @@
    (input/from-location
     :profile
     :json
-    "/Users/williamhoyt/projects/profile-tools/resources/tincan.jsonld")
+    "./dev-resources/profiles/tincan/profile.jsonld")
    #{"http://id.tincanapi.com/verb/skipped"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -77,19 +77,19 @@
   (input/from-location
    :personae
    :json
-   "/Users/williamhoyt/projects/profile-tools/resources/datasim/persona.json"))
+   "./dev-resources/personae/tccc_dev.json"))
 
 (def test-alignments
   (input/from-location
    :alignments
    :json
-   "/Users/williamhoyt/projects/profile-tools/resources/datasim/tccc_test_alignments.json"))
+   "./dev-resources/alignments/tccc_dev.json"))
 
 (def test-parameters
   (input/from-location
    :parameters
    :json
-   "/Users/williamhoyt/projects/profile-tools/resources/datasim/test_parameters.json"))
+   "./dev-resources/parameters/tccc_dev.json"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DATASIM input
@@ -119,13 +119,10 @@
   (clojure.pprint/pprint test-cosmos)
 
   (def sim-run (run-sim!))
-
   
-
   (->> sim-run
        first
        second
        (sort-by (fn [{:strs [timestamp]}] timestamp))
        clojure.pprint/pprint)
-
   )
