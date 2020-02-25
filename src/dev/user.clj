@@ -662,8 +662,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def test-input
-  {:profiles [test-profile video-profile activity-stream-profile acrossx-profile tincan-profile]
-   :personae test-personae
+  {:profiles   [test-profile video-profile activity-stream-profile acrossx-profile tincan-profile]
+   :personae   test-personae
    :alignments test-alignments
    :parameters test-parameters})
 
@@ -674,6 +674,15 @@
 (defn run-sim!
   []
   (sim/build-skeleton test-input))
+
+(defn handle-sim-results
+  [sim-result path]
+  (let [stmts (into [] (-> sim-result
+                           vals
+                           (->> (su/seq-sort
+                                 (comp :timestamp-ms
+                                       meta)))))]
+    (pp-json-to-file path stmts)))
 
 (comment
 
