@@ -694,6 +694,8 @@
   (clojure.pprint/pprint test-cosmos)
 
   (def sim-run (run-sim!))
+
+  (handle-sim-results sim-run "./dev-resources/xapi/statements/tccc_dev.json")
   
   (->> sim-run
        first
