@@ -628,6 +628,29 @@
    :json
    "./dev-resources/alignments/tccc_dev.json"))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DATASIM input - Parameters
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-parameters
+  [& {:keys [start-ts end-ts timezone seed]
+      :or {start-ts "2020-02-20T11:38:39.219768Z"
+           end-ts "2020-02-20T17:38:39.219768Z"
+           timezone "America/New_York"
+           seed 88420}}]
+  {:start    start-ts
+   :end      end-ts
+   :timezone timezone
+   :seed     seed})
+
+(def example-parameters
+  (pp-json-to-file "./dev-resources/parameters/tccc_dev.json"
+                   (create-parameters
+                    :start-ts "2020-02-10T11:38:39.219768Z"
+                    :end-ts "2020-02-25T17:38:39.219768Z"
+                    :timezone "America/New_York"
+                    :seed 40)))
+
 (def test-parameters
   (input/from-location
    :parameters
