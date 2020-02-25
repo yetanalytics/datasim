@@ -2,18 +2,28 @@
   (:require [clojure.repl :refer [source doc apropos]]
             [clojure.pprint :refer [pprint]]
             [clojure.set :as cset]
+            [clojure.string :as s]
             [com.yetanalytics.datasim.runtime :as runtime]
             [com.yetanalytics.datasim.json.path :as json-path]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
-            [com.yetanalytics.datasim.input :as input]))
+            [com.yetanalytics.datasim.input :as input]
+            [clojure.java.io :as io]
+            [clojure.core.match :refer [match]]
+            [com.yetanalytics.datasim.util.sequence :as su]
+            [cheshire.core :as json]))
 
 (set! *warn-on-reflection* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dev tools
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn pp-json-to-file
+  "helper for pprinting JSON `data` to `path`"
+  [path data]
+  (json/generate-stream data (io/writer (io/as-file path)) {:pretty {:indent-arrays? true}}))
 
 (defn clean-external-profiles
   [profile target-id-set]
