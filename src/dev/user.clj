@@ -79,9 +79,36 @@
     "./dev-resources/profiles/tincan/profile.jsonld")
    #{"http://id.tincanapi.com/verb/skipped"}))
 
+(def testing-profiles
+  [test-profile video-profile activity-stream-profile acrossx-profile tincan-profile])
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DATASIM input - rest
+;; DATASIM input - personae
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-perona
+  [name]
+  (let [[f-name l-name] (s/split name #" ")
+        mbox (format "mailto:%s@example.org" (s/lower-case f-name))]
+    {:name name
+     :mbox mbox}))
+
+(defn create-personae
+  [group-name member-names]
+  {:name group-name
+   :objectType "Group"
+   :member (mapv create-perona member-names)})
+
+(def example-personae
+  ;; used https://www.name-generator.org.uk/last/ for last name generation
+  (pp-json-to-file "./dev-resources/personae/tccc_dev.json"
+                   (create-personae "trainees"
+                                    ["Bob Nelson"
+                                     "Phil Walker"
+                                     "Sally Davis"
+                                     "Steve Stewart"
+                                     "Fred Evans"
+                                     "Alice Edwards"])))
 
 (def test-personae
   (input/from-location
