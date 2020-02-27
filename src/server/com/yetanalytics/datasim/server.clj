@@ -4,6 +4,7 @@
             [io.pedestal.http.route                 :as route]
             [io.pedestal.http.body-params           :as body-params]
             [io.pedestal.http.ring-middlewares      :refer [multipart-params]]
+            [ring.util.codec                        :as codec]
             [clojure.data.json                      :as json]
             [cheshire.core                          :as c]
             [clj-http.client                        :as client]
@@ -87,6 +88,21 @@
                        {:status 400
                         :body   (.getMessage e)}))))})
 
+(def download-url
+  {:name  :datasim.route/download-url
+   :enter (fn [context]
+            (assoc context
+                   :response
+                   (try
+                     {:status 200
+                      :body   (-> context
+                                  :request
+                                  :query-params
+                                  :url
+                                  codec/url-decode
+                                  client/get
+                                  :body)})))})
+
 (def routes
   (route/expand-routes
    #{["/health"
@@ -94,15 +110,18 @@
       :route-name :datasim.route/health]
      ["/api/v1/generate"
       :post [(multipart-params)
-             generate]]}))
+             generate]]
+     ["/api/v1/download-url"
+      :get  [download-url]]}))
 
 (defn create-server
   []
   (http/create-server
-   {::http/routes routes
-    ::http/type   :immutant
-    ::http/port   9090
-    ::http/join?  false}))
+   {::http/routes          routes
+    ::http/type            :immutant
+    ::http/allowed-origins ["http://localhost:9091"]
+    ::http/port            9090
+    ::http/join?           false}))
 
 (defn start
   []
