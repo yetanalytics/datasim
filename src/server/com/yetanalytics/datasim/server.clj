@@ -103,20 +103,17 @@
                                   client/get
                                   :body)}
                      (catch java.net.MalformedURLException e
-                       (do
-                         (println "Malformed")
-                         {:status 500
-                          :body   "Malformed"}))
+                       {:status 400
+                        :body   "malformed"})
                      (catch org.apache.http.client.ClientProtocolException e
-                       (do
-                         (println "error")
-                         {:status 500
-                          :body   "Error"}))
+                       {:status 406
+                        :body   "client"})
                      (catch java.net.UnknownHostException e
-                       (do
-                         (println "Could not find resource")
-                         {:status 404
-                          :body   "Could not find resource"})))))})
+                       {:status 404
+                        :body   "unknown"})
+                     (catch Exception e
+                       {:status 501
+                        :body   "other"}))))})
 
 (def routes
   (route/expand-routes
