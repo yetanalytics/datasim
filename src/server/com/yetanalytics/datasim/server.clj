@@ -101,7 +101,22 @@
                                   :url
                                   codec/url-decode
                                   client/get
-                                  :body)})))})
+                                  :body)}
+                     (catch java.net.MalformedURLException e
+                       (do
+                         (println "Malformed")
+                         {:status 500
+                          :body   "Malformed"}))
+                     (catch org.apache.http.client.ClientProtocolException e
+                       (do
+                         (println "error")
+                         {:status 500
+                          :body   "Error"}))
+                     (catch java.net.UnknownHostException e
+                       (do
+                         (println "Could not find resource")
+                         {:status 404
+                          :body   "Could not find resource"})))))})
 
 (def routes
   (route/expand-routes
