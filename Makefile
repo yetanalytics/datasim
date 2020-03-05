@@ -9,8 +9,9 @@ clean:
 	rm -rf target
 
 target/bundle:
-	clojure -A:build $(GROUP_ID) $(ARTIFACT_ID) $(VERSION) $(MAIN_NS) cli
+	clojure -A:build $(GROUP_ID) $(ARTIFACT_ID) $(VERSION)
 	chmod u+x target/$(ARTIFACT_ID)-$(VERSION)/bin/run.sh
+	chmod u+x target/$(ARTIFACT_ID)-$(VERSION)/bin/server.sh
 	mv target/$(ARTIFACT_ID)-$(VERSION) target/bundle
 
 bundle: target/bundle
