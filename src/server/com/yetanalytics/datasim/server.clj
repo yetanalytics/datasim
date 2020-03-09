@@ -81,7 +81,7 @@
 ;;  that will be used in basic auth.
 (defonce users
   (let [credentials (env :credentials)
-        users       (clojure.string/split credentials #";")]
+        users       (clojure.string/split credentials #",")]
     ;; Create a map of every allowed credential
     (reduce (fn [m cred]
               (let [[user pass] (clojure.string/split cred #":")]
