@@ -41,7 +41,7 @@
   int?)
 
 ;; Max number of statements returned
-(s/def ::max-statements
+(s/def ::max
   pos-int?)
 
 (s/def ::parameters
@@ -51,7 +51,7 @@
                     ::seed]
            :opt-un [::end
                     ::from
-                    ::max-statements])
+                    ::max])
    (fn [{:keys [start from end]}]
      (when end
        (assert (t/before? (t/instant start)

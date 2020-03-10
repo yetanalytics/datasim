@@ -53,6 +53,6 @@
   (testing "returns statements"
     (is (s/valid? (s/every ::xs/statement) (sim-seq valid-input))))
   (testing "respects max param"
-    (let [ret (sim-seq (assoc-in valid-input [:parameters :max-statements] 3))]
+    (let [ret (sim-seq (assoc-in valid-input [:parameters :max] 3))]
       (is (s/valid? (s/every ::xs/statement) ret))
       (is (= 3 (count ret))))))

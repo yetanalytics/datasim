@@ -272,7 +272,7 @@
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
-  [{{?max-statements :max-statements} :parameters
+  [{{?max-statements :max} :parameters
     :as input}]
   (-> (build-skeleton input)
       ;; take the actor statement seqs
