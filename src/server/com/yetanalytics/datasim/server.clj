@@ -1,5 +1,6 @@
 (ns com.yetanalytics.datasim.server
   (:require [clojure.java.io                        :refer [writer]]
+            [io.pedestal.log                        :as log]
             [io.pedestal.http                       :as http]
             [io.pedestal.http.route                 :as route]
             [io.pedestal.http.ring-middlewares      :refer [multipart-params]]
@@ -43,10 +44,13 @@
                           :personae   (read-data input "personae")
                           :alignments (read-data input "alignments")
                           :parameters (read-data input "parameters")}
-          send-to-lrs    (or (get input "send-to-lrs") false)
+          send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
+                           (read-string send-to-lrs)
+                           false)
           endpoint       (get input "lrs-endpoint")
           api-key        (get input "api-key")
           api-secret-key (get input "api-secret-key")]
+      (log/info :msg "Run Simulation")
       (with-open [w (writer os)]
         ;; Iterate over the entire input skeleton, generate statements.
         ;; Write them wrapped in a list
@@ -60,17 +64,25 @@
             (when send-to-lrs
               ;; Stream statement to an LRS
               (client/post endpoint
-                           {:basic-auth [api-key api-secret-key]
-                            :headers    {"X-Experience-API-Version" "1.0.3"
-                                         "Content-Type"             "application/json;"}
-                            :body       (c/generate-string s)}))
-            ;; Write each statement to the stream, pad with newline at end.
-            (json/write s w
-                        :escape-slash   false
-                        :escape-unicode false)
-            (.write w "\n")
+                           {:basic-auth
+                            [api-key api-secret-key]
+                            :headers
+                            {"X-Experience-API-Version" "1.0.3"
+                             "Content-Type"             "application/json;"}
+                            :body
+                            (c/generate-string s)
+                            :throw-entire-message? true}))
             (catch Exception e
-              (println "---- Error ----"))))
+              (log/error :msg (str "Error Sending to LRS: "
+                                   (c/generate-string s))
+                         :e   (.getMessage e)))
+            (finally
+              ;; Write each statement to the stream, pad with newline at end.
+              (json/write s w
+                          :escape-slash   false
+                          :escape-unicode false)
+              (.write w "\n"))))
+        (log/info :msg "Finish Simulation")
         (.write w "]")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
