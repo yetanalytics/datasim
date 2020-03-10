@@ -55,35 +55,40 @@
         ;; Iterate over the entire input skeleton, generate statements.
         ;; Write them wrapped in a list
         (.write w "[\n")
-        (doseq [s (-> (sim/build-skeleton data)
-                      vals
-                      (->> (su/seq-sort
-                            (comp :timestamp-ms
-                                  meta))))]
-          (try
-            (when send-to-lrs
-              ;; Stream statement to an LRS
-              (client/post endpoint
-                           {:basic-auth
-                            [api-key api-secret-key]
-                            :headers
-                            {"X-Experience-API-Version" "1.0.3"
-                             "Content-Type"             "application/json;"}
-                            :body
-                            (c/generate-string s)
-                            :throw-entire-message? true}))
-            (catch Exception e
-              (log/error :msg (str "Error Sending to LRS: "
-                                   (c/generate-string s))
-                         :e   (.getMessage e)))
-            (finally
-              ;; Write each statement to the stream, pad with newline at end.
-              (json/write s w
-                          :escape-slash   false
-                          :escape-unicode false)
-              (.write w "\n"))))
-        (log/info :msg "Finish Simulation")
-        (.write w "]")))))
+        (try
+          (doseq [s (-> (sim/build-skeleton data)
+                        vals
+                        (->> (su/seq-sort
+                              (comp :timestamp-ms
+                                    meta))))]
+            (try
+              (when send-to-lrs
+                ;; Stream statement to an LRS
+                (client/post endpoint
+                             {:basic-auth
+                              [api-key api-secret-key]
+                              :headers
+                              {"X-Experience-API-Version" "1.0.3"
+                               "Content-Type"             "application/json;"}
+                              :body
+                              (c/generate-string s)
+                              :throw-entire-message? true}))
+              (catch Exception e
+                (log/error :msg (str "Error Sending to LRS: "
+                                     (c/generate-string s))
+                           :e   (.getMessage e)))
+              (finally
+                ;; Write each statement to the stream, pad with newline at end.
+                (json/write s w
+                            :escape-slash   false
+                            :escape-unicode false)
+                (.write w "\n"))))
+          (catch Exception e
+            (log/error :msg "Error Building Simulation Skeleton"
+                       :e   (.getMessage e)))
+          (finally
+            (log/info :msg "Finish Simulation")
+            (.write w "]")))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auth data and fns
