@@ -5,7 +5,7 @@
          :sha "e2c517e7adcedc7f3012b90bce274e2c33cdbcc1"
          :exclusions [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
-        {:git/url "git@github.com:yetanalytics/project-pan.git"
+        {:git/url "https://github.com/yetanalytics/project-pan"
          :sha "811571d52e376a7eb727efaaf1fd4dc08ffb50fc"
          :exclusions [org.clojure/clojurescript
                       org.clojure/test.check]}
