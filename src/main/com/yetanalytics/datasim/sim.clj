@@ -10,6 +10,7 @@
    [com.yetanalytics.datasim.xapi.statement :as statement]
    [com.yetanalytics.datasim.util.xapi :as xapiu]
    [com.yetanalytics.datasim.util.maths :as maths]
+   [com.yetanalytics.datasim.util.sequence :as su]
    [com.yetanalytics.datasim.random :as random]
    [com.yetanalytics.pan.objects.template :as template]
    [xapi-schema.spec :as xs]
@@ -264,6 +265,24 @@
               {:seed actor-seed
                :prob-seq actor-prob
                :reg-seq actor-reg-seq})]))))
+
+(s/fdef sim-seq
+  :args (s/cat :input :com.yetanalytics.datasim/input)
+  :ret :skeleton/statement-seq)
+
+(defn sim-seq
+  "Given input, build a skeleton and produce a seq of statements."
+  [{{?max-statements :max-statements} :parameters
+    :as input}]
+  (-> (build-skeleton input)
+      ;; take the actor statement seqs
+      vals
+      (->> (su/seq-sort
+            (comp :timestamp-ms
+                  meta)))
+      (cond->>
+          ?max-statements
+        (take ?max-statements))))
 
 
 (comment

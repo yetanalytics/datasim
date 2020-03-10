@@ -48,3 +48,11 @@
                       build-skeleton
                       (get "mbox::mailto:bob@example.org")
                       (nth 10000))))))
+
+(deftest sim-seq-test
+  (testing "returns statements"
+    (is (s/valid? (s/every ::xs/statement) (sim-seq valid-input))))
+  (testing "respects max param"
+    (let [ret (sim-seq (assoc-in valid-input [:parameters :max-statements] 3))]
+      (is (s/valid? (s/every ::xs/statement) ret))
+      (is (= 3 (count ret))))))
