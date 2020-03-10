@@ -50,11 +50,14 @@
   (cond-> (assoc
            (reduce-kv
             (fn [m k v]
-              (if (= :presence k)
+              (if (or (= :presence k)
+                      ;; custom key added for extension generation hint
+                      ;; -> addition to rule is strictly controlled, see `com.yetanalytics.datasim.xapi.extensions`
+                      (= :spec k))
                 (assoc m k v)
                 (assoc m k (set v))))
             {}
-            (select-keys rule [:any :all :none :presence]))
+            (select-keys rule [:any :all :none :presence :spec]))
            :location (into []
                            (json-path/parse location)))
     selector (assoc :selector
@@ -124,16 +127,84 @@
               true)
             (if (and all
                      (or strict (not-empty values)))
-              (not (or (contains? values ::unmatchable)
-                       (empty? values)
-                       (not (cset/superset? all
-                                            (set values)))))
+              (let [values-set* (if (and (coll? values)
+                                         (coll? (first values))
+                                         (= 1 (count values)))
+                                  ;; first and only coll in a coll of colls
+                                  (first values)
+                                  values)
+                    values-set (cond
+                                 ;; most cases, gaurd for map to prevent conversion to keypairs
+                                 (and (coll? values-set*) (not (map? values-set*)))
+                                 (into #{} values-set*)
+                                 ;; if `all` specified an object for the location, prevent conversion to keypairs
+                                 (map? values-set*)
+                                 #{values-set*}
+                                 ;; attempt conversion to set, throw on error
+                                 (some? values-set*)
+                                 (try (set values-set*)
+                                      (catch Exception e
+                                        (throw (ex-info "Unexpected State!"
+                                                        {:type            ::rule-check-error
+                                                         :rule            rule
+                                                         :statement       statement
+                                                         :matched         matches
+                                                         :values          values
+                                                         :values-set*     values-set*}
+                                                        e))))
+                                 :else #{})]
+                (not (or (contains? values ::unmatchable)
+                         (empty? values)
+                         (not
+                          ;; see `match-all-logic-test` bellow for logic proof
+                          (if (empty? (cset/difference all values-set))
+                            (cset/superset? all values-set)
+                            false)))))
               true)
             (if (and none
                      (or strict (not-empty values)))
               (not (some (partial contains? none)
                          values))
               true))))))
+
+(comment
+  ;; -> everything within `all-set` within `target-set`?
+  ;;    -> no = failure = (not (not false)) = false
+  ;;    -> yes = continue
+  ;;       -> anything within `target-set` that's not in `all-set`?
+  ;;          -> yes = failure = (not (not false)) = false
+  ;;          -> no = success = (not (not true)) = true
+
+  (defn match-all-logic-test
+    "Checks `target` set against top and bottom bounds of `all-set`"
+    [all-set target-set]
+    ;; everything within `all-set` within `target-set`?
+    (if (empty? (cset/difference all-set target-set))
+      ;; anything within `target-set` that's not in `all-set`?
+      (cset/superset? all-set target-set)
+      false))
+
+  (def all-set-fixture #{:a :b :c})
+
+  (defn replicate-conditional
+    "assuming non-empty matchables which doesn't contain `::unmatchable`"
+    [target-set]
+    (not (or false false (not (match-all-logic-test all-set-fixture target-set)))))
+
+  (def test-set        #{:c :b :a :A})
+  ;; ^ 1 more than `all-set-fixture`
+  (def test-set-1      #{:a :b})
+  ;; ^ 1 less than `all-set-fixture`
+  (def test-set-2      #{:d :e :f})
+  ;; ^ same number as `all-set-fixture` but different members
+  (def test-set-3      #{:b :c :a})
+  ;; ^ matches `all-set-fixture`
+
+  (and
+   (false? (replicate-conditional test-set))
+   (false? (replicate-conditional test-set-1))
+   (false? (replicate-conditional test-set-2))
+   (true? (replicate-conditional test-set-3))))
 
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
@@ -167,7 +238,9 @@
                       :excised #{}}]
       (if-let [{:keys [location selector
                        presence
-                       any all none]
+                       any all none
+                       ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
+                       spec]
                 :as   rule} (first rules)]
         (let [matches (match-rule statement rule)]
           (if (follows-rule? statement rule matches)
@@ -194,17 +267,18 @@
                     gen-xapi! (fn []
                                 (try (gen/generate
                                       (cond->> (s/gen
-                                                (try (xp/path->spec
-                                                      ::xs/statement
-                                                      (first location-enum)
-                                                      statement)
-                                                     (catch java.lang.AssertionError ae
-                                                       (throw (ex-info "Couldn't figure out xapi path"
-                                                                       {:type      ::undefined-path
-                                                                        :key-path  (first location-enum)
-                                                                        :rule      rule
-                                                                        :statement statement}
-                                                                       ae)))))
+                                                (or spec ;; known to be `s/gen` safe
+                                                    (try (xp/path->spec
+                                                          ::xs/statement
+                                                          (first location-enum)
+                                                          statement)
+                                                         (catch java.lang.AssertionError ae
+                                                           (throw (ex-info "Couldn't figure out xapi path"
+                                                                           {:type      ::undefined-path
+                                                                            :key-path  (first location-enum)
+                                                                            :rule      rule
+                                                                            :statement statement}
+                                                                           ae))))))
                                         (not-empty none) (gen/such-that (partial (complement contains?)
                                                                                  none)))
                                                    30 (random/rand-long rng))
@@ -224,7 +298,12 @@
                     values
                     (if (and discrete?
                              (= 1 (count location-enum))) ;; a single loc that must conform
-                      [(cond (not-empty any)
+                      (if (not-empty all)
+                        (into [] all)
+                        [(if (not-empty any)
+                           (random/choose rng {} any)
+                           (gen-xapi!))])
+                      #_[(cond (not-empty any)
                              (random/choose rng {} any)
                              (not-empty all)
                              (random/choose rng {} all)

@@ -1,0 +1,3933 @@
+{
+  "across-all-profiles" : {
+    "alignment-options/concepts" : [
+      {
+        "id" : "https://books.allogy.com/web/tenant/8/books/24235853-a054-4b29-8094-a37267cd458b/#id04cd6c39-0c76-4db8-acba-2e21d641ab37",
+        "type" : "Activity",
+        "activity-name" : "Videos"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "type" : "Activity",
+        "activity-name" : "Care Under Fire Hemorrhage Control"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "type" : "Activity",
+        "activity-name" : "CAT Self (looped)"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "type" : "Activity",
+        "activity-name" : "CAT Self (routed)"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "type" : "Activity",
+        "activity-name" : "CAT Buddy (routed)"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "type" : "Activity",
+        "activity-name" : "SOFT-T Self (looped)"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "type" : "Activity",
+        "activity-name" : "SOFT-T Self (routed)"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "type" : "Activity",
+        "activity-name" : "SOFT-T Buddy (looped)"
+      },
+      {
+        "id" : "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "type" : "Activity",
+        "activity-name" : "SOFT-T Buddy (routed)"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents",
+        "type" : "Activity",
+        "activity-name" : "ASM TCCC Student Course Evaluation"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-1",
+        "type" : "Activity",
+        "activity-name" : "Question 1"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-2",
+        "type" : "Activity",
+        "activity-name" : "Question 2"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-3",
+        "type" : "Activity",
+        "activity-name" : "Question 3"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-4",
+        "type" : "Activity",
+        "activity-name" : "Question 4"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-5",
+        "type" : "Activity",
+        "activity-name" : "Question 5"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-6",
+        "type" : "Activity",
+        "activity-name" : "Question 6"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-7",
+        "type" : "Activity",
+        "activity-name" : "Question 7"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-8",
+        "type" : "Activity",
+        "activity-name" : "Question 8"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-9",
+        "type" : "Activity",
+        "activity-name" : "Question 9"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-10",
+        "type" : "Activity",
+        "activity-name" : "Question 10"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-11",
+        "type" : "Activity",
+        "activity-name" : "Question 11"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-12",
+        "type" : "Activity",
+        "activity-name" : "Question 12"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-13",
+        "type" : "Activity",
+        "activity-name" : "Question 13"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-14",
+        "type" : "Activity",
+        "activity-name" : "Question 14"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-15",
+        "type" : "Activity",
+        "activity-name" : "Question 15"
+      },
+      {
+        "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-16",
+        "type" : "Activity",
+        "activity-name" : "Question 16"
+      },
+      {
+        "id" : "https://w3id.org/xapi/video/verbs/paused",
+        "type" : "Verb",
+        "label" : "paused"
+      },
+      {
+        "id" : "https://w3id.org/xapi/video/verbs/played",
+        "type" : "Verb",
+        "label" : "played"
+      },
+      {
+        "id" : "https://w3id.org/xapi/video/verbs/seeked",
+        "type" : "Verb",
+        "label" : "seeked"
+      },
+      {
+        "id" : "https://w3id.org/xapi/video/activity-type/video",
+        "type" : "ActivityType",
+        "label" : "video"
+      },
+      {
+        "id" : "https://w3id.org/xapi/video/extensions/length",
+        "type" : "ContextExtension",
+        "label" : "length"
+      },
+      {
+        "id" : "https://w3id.org/xapi/video/extensions/volume",
+        "type" : "ContextExtension",
+        "label" : "volume"
+      },
+      {
+        "id" : "http://activitystrea.ms/start",
+        "type" : "Verb",
+        "label" : "started"
+      },
+      {
+        "id" : "http://activitystrea.ms/submit",
+        "type" : "Verb",
+        "label" : "submitted"
+      },
+      {
+        "id" : "https://w3id.org/xapi/acrossx/activities/page",
+        "type" : "ActivityType",
+        "label" : "page"
+      },
+      {
+        "id" : "http://id.tincanapi.com/verb/skipped",
+        "type" : "Verb",
+        "label" : "skipped"
+      }
+    ],
+    "alignment-options/templates" : [
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Initialized"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Paused"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Seeked"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Completed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Terminated"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "type" : "StatementTemplate",
+        "label" : "Volume Change Interaction"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 1"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 1"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 1"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 1"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 1"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 2"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 2"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 2"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 2"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 2"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 3"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 3"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 3"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 3"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 3"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 4"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 4"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 4"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 4"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 4"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 5"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 5"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 5"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 5"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 5"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 6"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 6"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 6"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 6"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 6"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 7"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 7"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 7"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 7"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 7"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 8"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 8"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 8"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 8"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 8"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 9"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 9"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 9"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 9"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 9"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 10"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 10"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 10"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 10"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 10"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 11"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 11"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 11"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 11"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 11"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 12"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 12"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 12"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 12"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 12"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 13"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 13"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 13"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 13"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 13"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 14"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 14"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 14"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 14"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 14"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 15"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 15"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 15"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 15"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 15"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-1",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 16"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-2",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 16"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-3",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 16"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-4",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 16"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-5",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey Question 16"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-1",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 1"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-2",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 2"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-3",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 3"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-4",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 4"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-5",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 5"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-6",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 6"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-7",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 7"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-8",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 8"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-9",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 9"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-10",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 10"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-11",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 11"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-12",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 12"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-13",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 13"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-14",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 14"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-15",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 15"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-16",
+        "type" : "StatementTemplate",
+        "label" : "Skipped Student Feedback Survey Question 16"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#started-survey",
+        "type" : "StatementTemplate",
+        "label" : "Started Student Feedback Survey"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey",
+        "type" : "StatementTemplate",
+        "label" : "Submitted Student Feedback Survey"
+      }
+    ],
+    "alignment-options/patterns" : [
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Intro Video: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Intro Video: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Looped: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self Routed: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Buddy Routed: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Looped: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self Routed: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Looped: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-any-time-after-init-but-before-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Any Time After Init But Before Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-maybe-any-time",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Maybe Any Time"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-optional-after-init",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Optional After Init"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-init-prior-termination",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: After Init Prior Termination"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-optional-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Optional Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-played",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Played"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-played-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: After Played Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-with-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: With Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-without-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Without Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-branch-prior-completion-zero+",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: After Branch Prior Completion Zero+"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-branch-prior-completion",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: After Branch Prior Completion"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-pause",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Pause"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-maybe-resume",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy Routed: Maybe Resume"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#master-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Master: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#master-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Master: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Tourniquet: Soft Cat"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Tourniquet: Cat Soft"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Tourniquet: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Soft Pairs: Double Single"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Soft Pairs: Single Double"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Pairs: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Soft Self: Routed Loop"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Soft Self: Loop Routed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Self: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Soft Buddy: Routed Loop"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Soft Buddy: Loop Routed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft Buddy: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Soft: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Cat Self: Routed Loop"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Cat Self: Loop Routed"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat Self: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Cat Pairs: Double Single"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Cat Pairs: Single Double"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-branch",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Cat: Branch"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-1-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 1: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-1-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 1: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-2-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 2: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-2-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 2: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-3-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 3: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-3-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 3: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-4-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 4: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-4-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 4: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-5-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 5: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-5-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 5: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-6-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 6: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-6-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 6: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-7-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 7: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-7-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 7: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-8-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 8: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-8-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 8: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-9-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 9: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-9-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 9: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-10-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 10: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-10-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 10: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-11-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 11: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-11-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 11: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-12-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 12: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-12-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 12: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-13-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 13: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-13-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 13: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-14-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 14: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-14-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 14: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-15-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 15: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-15-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 15: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-16-lifecycle",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 16: Lifecycle"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-16-feedback-selection",
+        "type" : "Pattern",
+        "primary" : false,
+        "label" : "Q 16: Feedback Selection"
+      },
+      {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "type" : "Pattern",
+        "primary" : true,
+        "label" : "Survey: Lifecycle"
+      }
+    ]
+  },
+  "per-profile" : [
+    {
+      "alignment-options/profile-id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control",
+      "alignment-options/concepts" : [
+        {
+          "id" : "https://books.allogy.com/web/tenant/8/books/24235853-a054-4b29-8094-a37267cd458b/#id04cd6c39-0c76-4db8-acba-2e21d641ab37",
+          "type" : "Activity",
+          "activity-name" : "Videos"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+          "type" : "Activity",
+          "activity-name" : "Care Under Fire Hemorrhage Control"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+          "type" : "Activity",
+          "activity-name" : "CAT Self (looped)"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+          "type" : "Activity",
+          "activity-name" : "CAT Self (routed)"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+          "type" : "Activity",
+          "activity-name" : "CAT Buddy (routed)"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+          "type" : "Activity",
+          "activity-name" : "SOFT-T Self (looped)"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+          "type" : "Activity",
+          "activity-name" : "SOFT-T Self (routed)"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+          "type" : "Activity",
+          "activity-name" : "SOFT-T Buddy (looped)"
+        },
+        {
+          "id" : "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+          "type" : "Activity",
+          "activity-name" : "SOFT-T Buddy (routed)"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents",
+          "type" : "Activity",
+          "activity-name" : "ASM TCCC Student Course Evaluation"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-1",
+          "type" : "Activity",
+          "activity-name" : "Question 1"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-2",
+          "type" : "Activity",
+          "activity-name" : "Question 2"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-3",
+          "type" : "Activity",
+          "activity-name" : "Question 3"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-4",
+          "type" : "Activity",
+          "activity-name" : "Question 4"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-5",
+          "type" : "Activity",
+          "activity-name" : "Question 5"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-6",
+          "type" : "Activity",
+          "activity-name" : "Question 6"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-7",
+          "type" : "Activity",
+          "activity-name" : "Question 7"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-8",
+          "type" : "Activity",
+          "activity-name" : "Question 8"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-9",
+          "type" : "Activity",
+          "activity-name" : "Question 9"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-10",
+          "type" : "Activity",
+          "activity-name" : "Question 10"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-11",
+          "type" : "Activity",
+          "activity-name" : "Question 11"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-12",
+          "type" : "Activity",
+          "activity-name" : "Question 12"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-13",
+          "type" : "Activity",
+          "activity-name" : "Question 13"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-14",
+          "type" : "Activity",
+          "activity-name" : "Question 14"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-15",
+          "type" : "Activity",
+          "activity-name" : "Question 15"
+        },
+        {
+          "id" : "https://learning-media.allogy.com/api/v1/pdf/fcb96fd8-48c0-4916-b353-b426e3968d64/contents#question-16",
+          "type" : "Activity",
+          "activity-name" : "Question 16"
+        }
+      ],
+      "alignment-options/templates" : [
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#initialized:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Initialized"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Paused"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Seeked"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Completed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#terminated:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Terminated"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+          "type" : "StatementTemplate",
+          "label" : "Volume Change Interaction"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 1"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 1"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 1"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 1"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-1-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 1"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 2"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 2"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 2"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 2"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-2-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 2"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 3"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 3"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 3"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 3"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-3-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 3"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 4"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 4"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 4"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 4"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-4-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 4"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 5"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 5"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 5"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 5"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-5-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 5"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 6"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 6"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 6"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 6"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-6-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 6"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 7"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 7"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 7"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 7"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-7-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 7"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 8"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 8"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 8"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 8"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-8-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 8"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 9"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 9"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 9"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 9"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-9-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 9"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 10"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 10"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 10"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 10"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-10-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 10"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 11"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 11"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 11"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 11"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-11-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 11"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 12"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 12"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 12"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 12"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-12-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 12"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 13"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 13"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 13"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 13"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-13-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 13"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 14"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 14"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 14"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 14"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-14-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 14"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 15"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 15"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 15"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 15"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-15-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 15"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-1",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 16"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-2",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 16"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-3",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 16"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-4",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 16"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey-question-question-16-feedback-5",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey Question 16"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-1",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 1"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-2",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 2"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-3",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 3"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-4",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 4"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-5",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 5"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-6",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 6"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-7",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 7"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-8",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 8"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-9",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 9"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-10",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 10"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-11",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 11"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-12",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 12"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-13",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 13"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-14",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 14"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-15",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 15"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#skipped-survey-question-question-16",
+          "type" : "StatementTemplate",
+          "label" : "Skipped Student Feedback Survey Question 16"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#started-survey",
+          "type" : "StatementTemplate",
+          "label" : "Started Student Feedback Survey"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#submitted-survey",
+          "type" : "StatementTemplate",
+          "label" : "Submitted Student Feedback Survey"
+        }
+      ],
+      "alignment-options/patterns" : [
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Intro Video: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Intro Video: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Looped: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self Routed: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Buddy Routed: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Looped: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self Routed: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Looped: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-any-time-after-init-but-before-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Any Time After Init But Before Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-maybe-any-time",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Maybe Any Time"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-optional-after-init",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Optional After Init"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-init-prior-termination",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: After Init Prior Termination"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-optional-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Optional Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-played",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Played"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-played-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: After Played Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-with-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: With Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-without-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Without Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-branch-prior-completion-zero+",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: After Branch Prior Completion Zero+"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-after-branch-prior-completion",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: After Branch Prior Completion"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-pause",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Pause"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-maybe-resume",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy Routed: Maybe Resume"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#master-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Master: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#master-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Master: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Tourniquet: Soft Cat"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Tourniquet: Cat Soft"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Tourniquet: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Soft Pairs: Double Single"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Soft Pairs: Single Double"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Pairs: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Soft Self: Routed Loop"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Soft Self: Loop Routed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Self: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Soft Buddy: Routed Loop"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Soft Buddy: Loop Routed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft Buddy: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Soft: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Cat Self: Routed Loop"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Cat Self: Loop Routed"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat Self: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Cat Pairs: Double Single"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Cat Pairs: Single Double"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-branch",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Cat: Branch"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-1-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 1: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-1-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 1: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-2-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 2: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-2-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 2: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-3-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 3: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-3-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 3: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-4-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 4: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-4-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 4: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-5-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 5: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-5-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 5: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-6-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 6: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-6-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 6: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-7-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 7: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-7-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 7: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-8-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 8: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-8-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 8: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-9-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 9: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-9-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 9: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-10-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 10: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-10-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 10: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-11-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 11: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-11-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 11: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-12-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 12: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-12-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 12: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-13-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 13: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-13-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 13: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-14-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 14: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-14-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 14: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-15-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 15: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-15-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 15: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-16-lifecycle",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 16: Lifecycle"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#q-16-feedback-selection",
+          "type" : "Pattern",
+          "primary" : false,
+          "label" : "Q 16: Feedback Selection"
+        },
+        {
+          "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+          "type" : "Pattern",
+          "primary" : true,
+          "label" : "Survey: Lifecycle"
+        }
+      ]
+    },
+    {
+      "alignment-options/profile-id" : "https://w3id.org/xapi/video",
+      "alignment-options/concepts" : [
+        {
+          "id" : "https://w3id.org/xapi/video/verbs/paused",
+          "type" : "Verb",
+          "label" : "paused"
+        },
+        {
+          "id" : "https://w3id.org/xapi/video/verbs/played",
+          "type" : "Verb",
+          "label" : "played"
+        },
+        {
+          "id" : "https://w3id.org/xapi/video/verbs/seeked",
+          "type" : "Verb",
+          "label" : "seeked"
+        },
+        {
+          "id" : "https://w3id.org/xapi/video/activity-type/video",
+          "type" : "ActivityType",
+          "label" : "video"
+        },
+        {
+          "id" : "https://w3id.org/xapi/video/extensions/length",
+          "type" : "ContextExtension",
+          "label" : "length"
+        },
+        {
+          "id" : "https://w3id.org/xapi/video/extensions/volume",
+          "type" : "ContextExtension",
+          "label" : "volume"
+        }
+      ]
+    },
+    {
+      "alignment-options/profile-id" : "http://activitystrea.ms/schema/",
+      "alignment-options/concepts" : [
+        {
+          "id" : "http://activitystrea.ms/start",
+          "type" : "Verb",
+          "label" : "started"
+        },
+        {
+          "id" : "http://activitystrea.ms/submit",
+          "type" : "Verb",
+          "label" : "submitted"
+        }
+      ]
+    },
+    {
+      "alignment-options/profile-id" : "https://w3id.org/xapi/acrossx",
+      "alignment-options/concepts" : [
+        {
+          "id" : "https://w3id.org/xapi/acrossx/activities/page",
+          "type" : "ActivityType",
+          "label" : "page"
+        }
+      ]
+    },
+    {
+      "alignment-options/profile-id" : "https://registry.tincanapi.com",
+      "alignment-options/concepts" : [
+        {
+          "id" : "http://id.tincanapi.com/verb/skipped",
+          "type" : "Verb",
+          "label" : "skipped"
+        }
+      ]
+    }
+  ]
+}
