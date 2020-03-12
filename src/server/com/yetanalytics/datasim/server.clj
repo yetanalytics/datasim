@@ -64,7 +64,7 @@
             (try
               (when send-to-lrs
                 ;; Stream statement to an LRS
-                (client/post endpoint
+                (client/post (str endpoint "/statements")
                              {:basic-auth
                               [api-key api-secret-key]
                               :headers
@@ -125,7 +125,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A wrapper for Buddy to know what the authentication fn is
-(def backend 
+(def backend
   (backends/basic {:realm  "MyApi"
                    :authfn auth-fn}))
 
