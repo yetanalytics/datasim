@@ -125,7 +125,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A wrapper for Buddy to know what the authentication fn is
-(def backend
+(def backend 
   (backends/basic {:realm  "MyApi"
                    :authfn auth-fn}))
 
