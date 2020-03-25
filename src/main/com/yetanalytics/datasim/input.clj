@@ -13,7 +13,12 @@
             [com.yetanalytics.datasim.util :as u]))
 
 (s/def ::profiles
-  (s/every (s/and (s/conformer u/remove-nil-vals)
+  (s/every (s/and (s/conformer (fn [x]
+                                 ;; Only operate on maps, or invalidator tests
+                                 ;; get an unhandled error
+                                 (if (map? x)
+                                   (u/remove-nil-vals x)
+                                   x)))
                   ::ps/profile) :min-count 1
            :into []))
 
