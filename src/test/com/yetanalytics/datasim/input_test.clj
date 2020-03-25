@@ -38,3 +38,12 @@
    "Combined Input Spec" :input "dev-resources/input/simple.json"
    #(update % :profiles first) ;; profiles are a vector
    ))
+
+(deftest subobject-validation-test
+  (testing "input is valid with a minimal profile"
+    (is (nil? (p/validate (assoc-in (from-location
+                                     :input :json "dev-resources/input/simple.json")
+                                    [:profiles 0]
+                                    (from-location
+                                     :profile :json
+                                     "dev-resources/profiles/minimal.jsonld")))))))
