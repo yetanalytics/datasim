@@ -9,10 +9,12 @@
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]
-            [clojure.walk :as w]))
+            [clojure.walk :as w]
+            [com.yetanalytics.datasim.util :as u]))
 
 (s/def ::profiles
-  (s/every ::ps/profile :min-count 1
+  (s/every (s/and (s/conformer u/remove-nil-vals)
+                  ::ps/profile) :min-count 1
            :into []))
 
 (s/def ::personae
