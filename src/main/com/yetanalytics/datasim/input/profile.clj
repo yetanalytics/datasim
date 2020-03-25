@@ -55,4 +55,4 @@
   (write-value-fn [this k v]
     v)
   (write-body-fn [this]
-    this))
+    (u/remove-nil-vals this)))
