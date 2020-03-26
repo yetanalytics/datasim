@@ -8,7 +8,8 @@
             [com.yetanalytics.datasim.xapi.path :as xp]
             [com.yetanalytics.datasim.random :as random]
             [clojure.set :as cset]
-            [clojure.test.check.generators :as gen]))
+            [clojure.test.check.generators :as gen]
+            [clojure.core.memoize :as memo]))
 
 (s/def ::location
   ::json-path/json-path)
@@ -63,9 +64,9 @@
     selector (assoc :selector
                     (into [] (json-path/parse selector)))))
 
-;; TODO: Memoize in scope, or back with an LRU cache
+;; TODO: Memoize in scope
 (def parse-rule
-  (memoize parse-rule*))
+  (memo/lru parse-rule* {} :lru/threshold 4096))
 
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
