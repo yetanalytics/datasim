@@ -85,6 +85,33 @@
               (s/conformer meta)
               ::meta))
 
+(defn- search-rules
+  [template-rules target-location]
+  ;; filter `template-rules` for a rule whose location is set to `target-location`
+  (->> template-rules
+       (filterv (fn [r] (= (:location r) target-location)))
+       first
+       not-empty))
+
+(defn- handle-rule-vals [rng alignment the-rule]
+  ;; handle `:any` and/or `:all` within `the-rule`
+  (let [{any-coll :any
+         all-coll :all} the-rule
+        n-any           (count any-coll)
+        n-all           (count all-coll)]
+    ;; returns single item from `:any` or `:all` or returns nil
+    (cond (and (> n-any 0) (> n-all 0))
+          ;; both any and all for some reason
+          ;; -> use all to filter any
+          (let [remaining (into [] (cset/intersection (set all-coll) (set any-coll)))]
+            (random/choose rng alignment remaining))
+          (= n-all 1)
+          ;; not handling (> n-all 1) as it doesn't make sense in isolation
+          (first all-coll)
+          (> n-any 0)
+          ;; allow for users to shoot themselves in the foot
+          (random/choose rng alignment any-coll))))
+
 ;; TODO: subregistration from :pattern-ancestors logic
 ;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
 ;;    -> subregistration extension key
@@ -134,37 +161,13 @@
                     ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
                     ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
                     ;;    -> remove activity type level from `activities` and search for `rule-obj-id`, nil if not found
-                    (letfn [(search-rules [target-location]
-                              ;; filter `template-rules` for a rule whose location is set to `target-location`
-                              (->> template-rules
-                                   (filterv (fn [r] (= (:location r) target-location)))
-                                   first
-                                   not-empty))
-                            (handle-rule-vals [the-rule]
-                              ;; handle `:any` and/or `:all` within `the-rule`
-                              (let [{any-coll :any
-                                     all-coll :all} the-rule
-                                    n-any           (count any-coll)
-                                    n-all           (count all-coll)]
-                                ;; returns single item from `:any` or `:all` or returns nil
-                                (cond (and (> n-any 0) (> n-all 0))
-                                      ;; both any and all for some reason
-                                      ;; -> use all to filter any
-                                      (let [remaining (into [] (cset/intersection (set all-coll) (set any-coll)))]
-                                        (random/choose rng alignment remaining))
-                                      (= n-all 1)
-                                      ;; not handling (> n-all 1) as it doesn't make sense in isolation
-                                      (first all-coll)
-                                      (> n-any 0)
-                                      ;; allow for users to shoot themselves in the foot
-                                      (random/choose rng alignment any-coll))))]
-                      (when-let [rule-obj-id (handle-rule-vals (search-rules "$.object.id"))]
-                        ;; there's a rule specifying object.id, prep for lookup in `activities`
-                        (if-let [obj-at (or ?activity-type
-                                            (when-let [obj-type-rule (search-rules "$.object.definition.type")]
-                                              (handle-rule-vals obj-type-rule)))]
-                          (get-in activities [obj-at rule-obj-id])
-                          (get (reduce merge (vals activities)) rule-obj-id))))
+                    (when-let [rule-obj-id (handle-rule-vals rng alignment (search-rules template-rules "$.object.id"))]
+                      ;; there's a rule specifying object.id, prep for lookup in `activities`
+                      (if-let [obj-at (or ?activity-type
+                                          (when-let [obj-type-rule (search-rules template-rules "$.object.definition.type")]
+                                            (handle-rule-vals rng alignment obj-type-rule)))]
+                        (get-in activities [obj-at rule-obj-id])
+                        (get (reduce merge (vals activities)) rule-obj-id)))
                     ;; there's an activity type we choose one of those
                     (and ?activity-type
                          (let [some-activity-id
