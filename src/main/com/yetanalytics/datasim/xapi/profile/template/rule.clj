@@ -44,7 +44,7 @@
   :args (s/cat :rule ::rules/rule)
   :ret ::parsed-rule)
 
-(defn parse-rule
+(defn parse-rule*
   "Parse paths in a rule"
   [{:keys [location selector] :as rule}]
   (cond-> (assoc
@@ -62,6 +62,10 @@
                            (json-path/parse location)))
     selector (assoc :selector
                     (into [] (json-path/parse selector)))))
+
+;; TODO: Memoize in scope, or back with an LRU cache
+(def parse-rule
+  (memoize parse-rule*))
 
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
