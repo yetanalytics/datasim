@@ -3,7 +3,7 @@
             [clojure.data.json :as json]
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.json :as j]))
-
+(set! *warn-on-reflection* true)
 ;; FIXME: what does this look like using the new default as-code/as-data protocols?
 ;; FIXME: what does this look like using spec2?
 
@@ -403,29 +403,26 @@
         ;; build ontop of `boundaries-spec` as necessary
         seed-spec* (cond (and (fn? enum-spec-fn) (fn? const-spec-fn))
                          (s/and enum-spec-fn const-spec-fn boundaries-spec)
-                         
+
                          (and (nil? enum-spec-fn) (fn? const-spec-fn))
                          (s/and const-spec-fn boundaries-spec)
-                         
+
                          (and (fn? enum-spec-fn) (nil? const-spec-fn))
                          (s/and enum-spec-fn boundaries-spec)
-                         
+
                          (and (nil? enum-spec-fn) (nil? const-spec-fn))
                          boundaries-spec)
-        
+
         ;; prep before pass to `s/valid?`, contains `pos?` which isn't nil safe, `-1` forces `::multipleOf` to fail
         multiple-of (or ?multiple-of -1)
-        
+
         ;; when `?multiple-of` present in `number-schema`, use it to create validation fn
         multiples-fn (when (s/valid? ::multipleOf multiple-of)
                        (fn [to-validate]
                          (cond
                            ;; known to be integer so safe to call `mod`
                            (integer? to-validate)
-                           (case (mod to-validate ?multiple-of)
-                             0   true
-                             0.0 true
-                             false)
+                           (zero? (mod to-validate ?multiple-of))
                            ;; any non-integer number, perform division
                            ;; - double -> int -> double strips decimal from `div-result` for comparison to `div-result`
                            ;; - if `to-validate` is divisible by `?multiple-of`, nothing will be stripped and eq check passes
@@ -446,10 +443,7 @@
                                                {:num k})]
                              (if-some [n-to-test to-test]
                                (if-some [int-to-test (:int n-to-test)]
-                                 (case (mod int-to-test ?multiple-of)
-                                   0   true
-                                   0.0 true
-                                   false)
+                                 (zero? (mod int-to-test ?multiple-of))
                                  (if-some [num-to-test (:num n-to-test)]
                                    (let [div-num-res (double (/ num-to-test ?multiple-of))]
                                      (= div-num-res

@@ -9,7 +9,7 @@
 
 (defn containsv?
   "does `coll` contain `query`?"
-  [coll query]
+  [^clojure.lang.PersistentVector coll query]
   (not= -1 (.indexOf coll query)))
 
 ;; FIXME: support activity extensions + substatement extensions
