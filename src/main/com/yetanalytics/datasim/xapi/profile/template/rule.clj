@@ -372,9 +372,10 @@
                                                      meta
                                                      :paths)))))))
         ;; all rules pass and we're done!
-        ;; but not quite... we have to walk up removed/changed/added paths and
-        ;; check the specs
-        (if (s/valid? ::xs/statement statement)
+        statement
+        ;; check the specs (dev/debug)
+
+        #_(if (s/valid? ::xs/statement statement)
           statement
           (throw (ex-info "Healing not yet implemented"
                           {:type ::not-yet-implemented
