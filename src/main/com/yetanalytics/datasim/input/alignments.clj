@@ -32,14 +32,10 @@
   p/JSONRepresentable
   (read-key-fn [this k]
     (name k))
-  (read-value-fn [this k v]
-    v)
   (read-body-fn [this json-result]
     (map->Alignments
      {:alignment-map json-result}))
   (write-key-fn [this k]
     (name k))
-  (write-value-fn [this k v]
-    v)
   (write-body-fn [this]
     alignment-map))

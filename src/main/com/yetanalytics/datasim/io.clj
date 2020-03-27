@@ -12,8 +12,7 @@
            (p/read-body-fn
             record
             (json/read r
-                       :key-fn (partial p/read-key-fn record)
-                       :value-fn (partial p/read-value-fn record)))
+                       :key-fn (partial p/read-key-fn record)))
            (catch Exception e
              (throw (ex-info "Parse Error"
                              {:type ::parse-error
@@ -32,7 +31,6 @@
     (json/write (p/write-body-fn record)
                 w
                 :key-fn (partial p/write-key-fn record)
-                :value-fn (partial p/write-value-fn record)
                 :escape-slash false
                 :escape-unicode false)
     (catch Exception e
