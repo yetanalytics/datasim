@@ -111,7 +111,10 @@
    {}
    input))
 
-(defrecord Input [profiles]
+(defrecord Input [profiles
+                  personae
+                  alignments
+                  parameters]
   p/FromInput
   (validate [this]
     (s/explain-data :com.yetanalytics.datasim/input this))
