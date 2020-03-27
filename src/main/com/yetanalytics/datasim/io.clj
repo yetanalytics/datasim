@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
             [com.yetanalytics.datasim.protocols :as p]
-            [clojure.data.json :as json]))
+            [cheshire.core :as json]))
 
 (defn read-loc-json
   "Reads in a file from the given location and parses it."
@@ -11,8 +11,7 @@
          (try
            (p/read-body-fn
             record
-            (json/read r
-                       :key-fn (partial p/read-key-fn record)))
+            (json/parse-stream r (partial p/read-key-fn record)))
            (catch Exception e
              (throw (ex-info "Parse Error"
                              {:type ::parse-error
@@ -28,11 +27,9 @@
 (defn- write-json!
   [record loc w]
   (try
-    (json/write (p/write-body-fn record)
-                w
-                :key-fn (partial p/write-key-fn record)
-                :escape-slash false
-                :escape-unicode false)
+    (json/generate-stream (p/write-body-fn record)
+                          w
+                          {:key-fn (partial p/write-key-fn record)})
     (catch Exception e
       (throw (ex-info "Unparse Error"
                       {:type ::unparse-error
