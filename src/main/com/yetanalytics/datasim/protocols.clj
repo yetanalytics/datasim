@@ -10,10 +10,10 @@
 (defprotocol JSONRepresentable
   "Things that can be represented as JSON"
   (read-key-fn [this k]
-    "Wrapped in a partial, is a key-fn suitable for http://clojure.github.io/data.json/#clojure.data.json/read")
+    "Wrapped in a partial, will coerce k to internal representation.")
   (read-body-fn [this json-result]
     "Return a new record with the given JSON incorporated")
   (write-key-fn [this k]
-    "Wrapped in a partial, is a key-fn suitable for http://clojure.github.io/data.json/#clojure.data.json/write")
+    "Wrapped in a partial, will coerce k to json representation")
   (write-body-fn [this]
     "Return the part of the record used to generate json."))
