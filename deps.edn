@@ -25,7 +25,8 @@
   :dev {:extra-paths ["dev-resources" "src/dev"]
         :extra-deps {
                      incanter/incanter-core {:mvn/version "1.9.3"}
-                     incanter/incanter-charts {:mvn/version "1.9.3"}}}
+                     incanter/incanter-charts {:mvn/version "1.9.3"}
+                     criterium {:mvn/version "0.4.5"}}}
   :test {:extra-paths ["src/test"]}
   :runner
   {:extra-deps {com.cognitect/test-runner
