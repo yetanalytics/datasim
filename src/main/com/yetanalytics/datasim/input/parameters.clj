@@ -3,7 +3,6 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [xapi-schema.spec :as xs]
-            [clojure.data.json :as json]
             [java-time :as t])
   (:import [java.time.zone ZoneRulesException]
            [java.time Instant]

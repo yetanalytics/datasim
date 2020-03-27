@@ -4,7 +4,6 @@
             [clojure.string :as cs]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [clojure.data.json :as json]
             [clojure.walk :as w])
   (:import [java.io Reader Writer]))
 

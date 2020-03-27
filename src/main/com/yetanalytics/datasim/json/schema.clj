@@ -1,6 +1,6 @@
 (ns com.yetanalytics.datasim.json.schema
   (:require [clojure.spec.alpha :as s]
-            [clojure.data.json :as json]
+            [cheshire.core :as json]
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.json :as j]))
 (set! *warn-on-reflection* true)
@@ -839,7 +839,7 @@
 (defn schema->spec
   ([rng schema]
    (let [parsed-schema (cond (string? schema)
-                             (json/read-str schema)
+                             (json/parse-string schema)
                              (map? schema)
                              (clojure.walk/stringify-keys schema))
          {ext-val-type "type"} parsed-schema]

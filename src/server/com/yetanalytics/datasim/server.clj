@@ -11,7 +11,6 @@
             [buddy.auth                             :as auth]
             [buddy.auth.backends                    :as backends]
             [buddy.auth.middleware                  :as middleware]
-            [clojure.data.json                      :as json]
             [cheshire.core                          :as c]
             [clj-http.client                        :as client]
             [environ.core                           :refer [env]]
@@ -29,7 +28,7 @@
   [m k]
   (-> m
       (get k)
-      (json/read-str :key-fn keyword)))
+      (c/parse-string keyword)))
 
 (defn run-sim!
   "Returns a function that will accept an output stream to write to the client.
@@ -79,9 +78,7 @@
                            :e   (.getMessage e)))
               (finally
                 ;; Write each statement to the stream, pad with newline at end.
-                (json/write s w
-                            :escape-slash   false
-                            :escape-unicode false)
+                (c/generate-stream s w)
                 (.write w "\n"))))
           (catch Exception e
             (log/error :msg "Error Building Simulation Skeleton"

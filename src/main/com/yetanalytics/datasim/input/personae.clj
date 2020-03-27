@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.protocols :as p]
-            [clojure.data.json :as json]
             [com.yetanalytics.datasim.xapi :as xapi])
   (:import [java.io Reader Writer]))
 

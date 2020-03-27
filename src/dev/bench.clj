@@ -2,8 +2,7 @@
   (:require [criterium.core :as c]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.util.sequence :as su]
-            [clojure.data.json :as json]))
+            [com.yetanalytics.datasim.util.sequence :as su]))
 
 
 (def input

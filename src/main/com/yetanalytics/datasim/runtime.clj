@@ -3,7 +3,7 @@
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.input :as input]
             [com.yetanalytics.datasim.util.sequence :as su]
-            [clojure.data.json :as json])
+            [cheshire.core :as json])
   (:import [java.time Instant]))
 
 ;; Simple, single-thread impl for now
@@ -19,9 +19,7 @@
                 (->> (su/seq-sort
                       (comp :timestamp-ms
                             meta))))]
-    (json/write s *out*
-                :escape-slash false
-                :escape-unicode false)
+    (json/generate-stream s *out*)
     (.write *out* "\n")
     (flush)))
 
