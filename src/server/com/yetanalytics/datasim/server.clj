@@ -60,7 +60,7 @@
             (try
               (when send-to-lrs
                 ;; Stream statement to an LRS
-                (client/post endpoint
+                (client/post (str endpoint "/statements")
                              {:basic-auth
                               [api-key api-secret-key]
                               :headers
