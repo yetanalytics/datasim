@@ -55,4 +55,12 @@
   (testing "respects max param"
     (let [ret (sim-seq (assoc-in valid-input [:parameters :max] 3))]
       (is (s/valid? (s/every ::xs/statement) ret))
-      (is (= 3 (count ret))))))
+      (is (= 3 (count ret)))))
+  (testing "respects from param"
+    (let [[s0 s1 & _] (sim-seq valid-input)
+          [s1' & _]   (sim-seq (assoc-in valid-input
+                                         [:parameters
+                                          :from]
+                                         (get s0 "timestamp")))]
+      (is (not= s0 s1'))
+      (is (= s1 s1')))))
