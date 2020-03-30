@@ -272,7 +272,8 @@
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
-  [{{?max-statements :max} :parameters
+  [{{?max-statements :max
+     ?from-stamp     :from} :parameters
     :as input}]
   (-> (build-skeleton input)
       ;; take the actor statement seqs
@@ -281,7 +282,12 @@
             (comp :timestamp-ms
                   meta)))
       (cond->>
-          ?max-statements
+        ?from-stamp
+        (drop-while
+         (let [from-ms (t/to-millis-from-epoch ^String ?from-stamp)]
+           (fn [s]
+             (>= from-ms (-> s meta :timestamp-ms)))))
+        ?max-statements
         (take ?max-statements))))
 
 
