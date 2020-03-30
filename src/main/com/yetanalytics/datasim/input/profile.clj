@@ -4,7 +4,6 @@
             [clojure.string :as cs]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [clojure.data.json :as json]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u])
   (:import [java.io Reader Writer]))
@@ -42,8 +41,6 @@
                (if (= "@context" kn)
                  "_context"
                  kn))))
-  (read-value-fn [this k v]
-    v)
   (read-body-fn [this json-result]
     (map->Profile
      json-result))
@@ -52,7 +49,5 @@
       (if (= nn "_context")
         "@context"
         nn)))
-  (write-value-fn [this k v]
-    v)
   (write-body-fn [this]
     (u/remove-nil-vals this)))

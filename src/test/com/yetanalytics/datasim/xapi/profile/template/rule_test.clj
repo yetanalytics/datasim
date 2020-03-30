@@ -4,7 +4,7 @@
    [com.yetanalytics.datasim.xapi.profile.template.rule :refer :all :as r]
    [com.yetanalytics.datasim.input :as input]
    [clojure.java.io :as io]
-   [clojure.data.json :as json]
+   [cheshire.core :as json]
    [clojure.spec.alpha :as s]
    [xapi-schema.spec :as xs]
    ))
@@ -20,7 +20,7 @@
 ;; A simple statement to augment
 (def simple-statement
   (with-open [r (io/reader "dev-resources/xapi/statements/simple.json")]
-    (json/read r)))
+    (json/parse-stream r)))
 
 (deftest parse-rule-test
   (testing "parses cmi5 rules"

@@ -1,0 +1,289 @@
+{
+  "id" : "https://xapinet.org/xapi/yet/calibration",
+  "definition" : {
+    "en" : "This xAPI Profile is intended for experimental purposes only and can be used to show the basic Pattern selection behavior of simulated datasets"
+  },
+  "@context" : "https://w3id.org/xapi/profiles/context",
+  "prefLabel" : {
+    "en" : "Calibration - Experimental xAPI Profile"
+  },
+  "type" : "Profile",
+  "seeAlso" : "https://github.com/yetanalytics/datasim",
+  "author" : {
+    "url" : "https://www.yetanalytics.com/",
+    "name" : "Yet Analytics",
+    "type" : "Organization"
+  },
+  "conformsTo" : "https://w3id.org/xapi/profiles#1.0",
+  "versions" : [
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "generatedAtTime" : "2020-03-24T19:16:07.395Z"
+    }
+  ],
+  "patterns" : [
+    {
+      "definition" : {
+        "en" : "Pattern 1"
+      },
+      "primary" : true,
+      "prefLabel" : {
+        "en" : "Learning Pattern 1"
+      },
+      "type" : "Pattern",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-1",
+      "sequence" : [
+        "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-2",
+        "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-3",
+        "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-4"
+      ]
+    },
+    {
+      "definition" : {
+        "en" : "Pattern 2"
+      },
+      "primary" : false,
+      "prefLabel" : {
+        "en" : "Learning Pattern 2"
+      },
+      "type" : "Pattern",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-2",
+      "optional" : "https://xapinet.org/xapi/yet/calibration/v1/templates#activity-1"
+    },
+    {
+      "definition" : {
+        "en" : "Pattern 3"
+      },
+      "primary" : false,
+      "prefLabel" : {
+        "en" : "Learning Pattern 3"
+      },
+      "type" : "Pattern",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-3",
+      "optional" : "https://xapinet.org/xapi/yet/calibration/v1/templates#activity-2"
+    },
+    {
+      "definition" : {
+        "en" : "Pattern 4"
+      },
+      "primary" : false,
+      "prefLabel" : {
+        "en" : "Learning Pattern 4"
+      },
+      "type" : "Pattern",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/patterns#pattern-4",
+      "optional" : "https://xapinet.org/xapi/yet/calibration/v1/templates#activity-3"
+    }
+  ],
+  "concepts" : [
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/concepts#activity-1",
+      "type" : "Activity",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "activityDefinition" : {
+        "name" : {
+          "en-US" : "Activity 1"
+        },
+        "description" : {
+          "en-US" : "The first activity"
+        },
+        "@context" : "https://w3id.org/xapi/profiles/activity-context"
+      }
+    },
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/concepts#activity-2",
+      "type" : "Activity",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "activityDefinition" : {
+        "name" : {
+          "en-US" : "Activity 2"
+        },
+        "description" : {
+          "en-US" : "The second activity"
+        },
+        "@context" : "https://w3id.org/xapi/profiles/activity-context"
+      }
+    },
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/concepts#activity-3",
+      "type" : "Activity",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "activityDefinition" : {
+        "name" : {
+          "en-US" : "Activity 3"
+        },
+        "description" : {
+          "en-US" : "The third activity"
+        },
+        "@context" : "https://w3id.org/xapi/profiles/activity-context"
+      }
+    },
+    {
+      "id": "https://xapinet.org/xapi/yet/calibration/v1/concepts#did",
+      "inScheme": "https://xapinet.org/xapi/yet/calibration/v1",
+      "type": "Verb",
+      "definition": {
+        "en": "Did the thing"
+      },
+      "prefLabel": {
+        "en": "did"
+      }
+    }
+  ],
+  "templates" : [
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/templates#activity-1",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "prefLabel" : {
+        "en" : "Activity Template 1"
+      },
+      "definition" : {
+        "en" : "The statement template and rules associated with Activity 1 getting done."
+      },
+      "type" : "StatementTemplate",
+      "verb" : "https://xapinet.org/xapi/yet/calibration/v1/concepts#did",
+      "rules" : [
+        {
+          "location" : "$.id",
+          "presence" : "included"
+        },
+        {
+          "location" : "$.timestamp",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "https://xapinet.org/xapi/yet/calibration/v1/concepts#activity-1"
+          ],
+          "location" : "$.object.id",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "Activity 1"
+          ],
+          "location" : "$.object.definition.name.en-US",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "The first Activity"
+          ],
+          "location" : "$.object.definition.description.en-US",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "https://xapinet.org/xapi/yet/calibration/v1"
+          ],
+          "location" : "$.context.contextActivities.category[0].id",
+          "presence" : "included"
+        }
+      ]
+    },
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/templates#activity-2",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "prefLabel" : {
+        "en" : "Activity Template 2"
+      },
+      "definition" : {
+        "en" : "The statement template and rules associated with Activity 2 getting done."
+      },
+      "type" : "StatementTemplate",
+      "verb" : "https://xapinet.org/xapi/yet/calibration/v1/concepts#did",
+      "rules" : [
+        {
+          "location" : "$.id",
+          "presence" : "included"
+        },
+        {
+          "location" : "$.timestamp",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "https://xapinet.org/xapi/yet/calibration/v1/concepts#activity-2"
+          ],
+          "location" : "$.object.id",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "Activity 2"
+          ],
+          "location" : "$.object.definition.name.en-US",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "The second Activity"
+          ],
+          "location" : "$.object.definition.description.en-US",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "https://xapinet.org/xapi/yet/calibration/v1"
+          ],
+          "location" : "$.context.contextActivities.category[0].id",
+          "presence" : "included"
+        }
+      ]
+    },
+    {
+      "id" : "https://xapinet.org/xapi/yet/calibration/v1/templates#activity-3",
+      "inScheme" : "https://xapinet.org/xapi/yet/calibration/v1",
+      "prefLabel" : {
+        "en" : "Activity Template 3"
+      },
+      "definition" : {
+        "en" : "The statement template and rules associated with Activity 3 getting done."
+      },
+      "type" : "StatementTemplate",
+      "verb" : "https://xapinet.org/xapi/yet/calibration/v1/concepts#did",
+      "rules" : [
+        {
+          "location" : "$.id",
+          "presence" : "included"
+        },
+        {
+          "location" : "$.timestamp",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "https://xapinet.org/xapi/yet/calibration/v1/concepts#activity-3"
+          ],
+          "location" : "$.object.id",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "Activity 3"
+          ],
+          "location" : "$.object.definition.name.en-US",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "The third Activity"
+          ],
+          "location" : "$.object.definition.description.en-US",
+          "presence" : "included"
+        },
+        {
+          "any" : [
+            "https://xapinet.org/xapi/yet/calibration/v1"
+          ],
+          "location" : "$.context.contextActivities.category[0].id",
+          "presence" : "included"
+        }
+      ]
+    }
+  ]
+}

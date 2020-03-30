@@ -118,7 +118,10 @@
    {}
    input))
 
-(defrecord Input [profiles]
+(defrecord Input [profiles
+                  personae
+                  alignments
+                  parameters]
   p/FromInput
   (validate [this]
     (s/explain-data :com.yetanalytics.datasim/input this))
@@ -126,15 +129,11 @@
   p/JSONRepresentable
   (read-key-fn [this k]
     (keyword nil k))
-  (read-value-fn [this k v]
-    v)
   (read-body-fn [this json-result]
     (map->Input
      (realize-subobjects json-result)))
   (write-key-fn [this k]
     (name k))
-  (write-value-fn [this k v]
-    v)
   (write-body-fn [this]
     (unrealize-subobjects this)))
 

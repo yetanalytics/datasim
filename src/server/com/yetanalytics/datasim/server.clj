@@ -11,7 +11,6 @@
             [buddy.auth                             :as auth]
             [buddy.auth.backends                    :as backends]
             [buddy.auth.middleware                  :as middleware]
-            [clojure.data.json                      :as json]
             [cheshire.core                          :as c]
             [clj-http.client                        :as client]
             [environ.core                           :refer [env]]
@@ -29,7 +28,7 @@
   [m k]
   (-> m
       (get k)
-      (json/read-str :key-fn keyword)))
+      (c/parse-string keyword)))
 
 (defn run-sim!
   "Returns a function that will accept an output stream to write to the client.
@@ -56,15 +55,11 @@
         ;; Write them wrapped in a list
         (.write w "[\n")
         (try
-          (doseq [s (-> (sim/build-skeleton data)
-                        vals
-                        (->> (su/seq-sort
-                              (comp :timestamp-ms
-                                    meta))))]
+          (doseq [s (sim/sim-seq data)]
             (try
               (when send-to-lrs
                 ;; Stream statement to an LRS
-                (client/post endpoint
+                (client/post (str endpoint "/statements")
                              {:basic-auth
                               [api-key api-secret-key]
                               :headers
@@ -79,9 +74,7 @@
                            :e   (.getMessage e)))
               (finally
                 ;; Write each statement to the stream, pad with newline at end.
-                (json/write s w
-                            :escape-slash   false
-                            :escape-unicode false)
+                (c/generate-stream s w)
                 (.write w "\n"))))
           (catch Exception e
             (log/error :msg "Error Building Simulation Skeleton"
@@ -125,7 +118,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A wrapper for Buddy to know what the authentication fn is
-(def backend 
+(def backend
   (backends/basic {:realm  "MyApi"
                    :authfn auth-fn}))
 

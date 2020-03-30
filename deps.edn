@@ -1,5 +1,6 @@
 {:paths ["resources" "src/main"]
  :deps {org.clojure/clojure {:mvn/version "RELEASE"}
+        org.clojure/core.memoize {:mvn/version "0.8.2"}
         com.yetanalytics/xapi-schema
         {:git/url "https://github.com/yetanalytics/xapi-schema"
          :sha "e2c517e7adcedc7f3012b90bce274e2c33cdbcc1"
@@ -14,8 +15,9 @@
         org.apache.jena/jena-iri {:mvn/version "3.13.1"}
         ;; JSON Path Parser built with
         org.blancas/kern {:mvn/version "1.1.0"}
-        org.clojure/test.check {:mvn/version "RELEASE"}
-        org.clojure/math.combinatorics {:mvn/version "0.1.6"}}
+        org.clojure/test.check {:mvn/version "1.0.0"}
+        org.clojure/math.combinatorics {:mvn/version "0.1.6"}
+        cheshire {:mvn/version "5.10.0"}}
  :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
@@ -24,7 +26,8 @@
   :dev {:extra-paths ["dev-resources" "src/dev"]
         :extra-deps {
                      incanter/incanter-core {:mvn/version "1.9.3"}
-                     incanter/incanter-charts {:mvn/version "1.9.3"}}}
+                     incanter/incanter-charts {:mvn/version "1.9.3"}
+                     criterium {:mvn/version "0.4.5"}}}
   :test {:extra-paths ["src/test"]}
   :runner
   {:extra-deps {com.cognitect/test-runner
@@ -48,11 +51,9 @@
                  {:mvn/version "1.7.28"}
                  clj-http
                  {:mvn/version "3.10.0"}
-                 cheshire
-                 {:mvn/version "5.9.0"}
                  buddy/buddy-auth
                  {:mvn/version "2.2.0"
                   :exclusions [cheshire]}
-                 environ 
+                 environ
                  {:mvn/version "1.1.0"}}
    :main-opts   ["-m" "com.yetanalytics.datasim.server"]}}}

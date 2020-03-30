@@ -2,8 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.util.sequence :as su]
-            [clojure.data.json :as json])
+            [cheshire.core :as json])
   (:import [java.time Instant]))
 
 ;; Simple, single-thread impl for now
@@ -13,15 +12,8 @@
   :ret nil?)
 
 (defn run-sim! [input]
-  (doseq [s (-> (sim/build-skeleton input)
-                ;; take the actor statement seqs
-                vals
-                (->> (su/seq-sort
-                      (comp :timestamp-ms
-                            meta))))]
-    (json/write s *out*
-                :escape-slash false
-                :escape-unicode false)
+  (doseq [s (sim/sim-seq input)]
+    (json/generate-stream s *out*)
     (.write *out* "\n")
     (flush)))
 
@@ -38,14 +30,7 @@
              :from "2019-11-18T11:38:39.219768Z"}))
 
 
-  (-> (sim/build-skeleton i)
-      ;; take the actor statement seqs
-      #_(get "mbox::mailto:bob@example.org")
-      vals
-      (->> (su/seq-sort
-            (comp :timestamp-ms
-                  meta)))
-
+  (-> (sim/sim-seq i)
       (nth 100)
       time)
 

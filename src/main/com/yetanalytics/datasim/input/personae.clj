@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.protocols :as p]
-            [clojure.data.json :as json]
             [com.yetanalytics.datasim.xapi :as xapi]
             [com.yetanalytics.datasim.util :as u])
   (:import [java.io Reader Writer]))
@@ -47,14 +46,10 @@
   p/JSONRepresentable
   (read-key-fn [this k]
     (keyword nil (name k)))
-  (read-value-fn [this k v]
-    v)
   (read-body-fn [this json-result]
     (map->Personae
      json-result))
   (write-key-fn [this k]
     (name k))
-  (write-value-fn [this k v]
-    v)
   (write-body-fn [this]
     (u/remove-nil-vals this)))

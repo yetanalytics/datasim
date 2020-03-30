@@ -3,7 +3,6 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [xapi-schema.spec :as xs]
-            [clojure.data.json :as json]
             [java-time :as t])
   (:import [java.time.zone ZoneRulesException]
            [java.time Instant]
@@ -40,13 +39,18 @@
 (s/def ::seed
   int?)
 
+;; Max number of statements returned
+(s/def ::max
+  pos-int?)
+
 (s/def ::parameters
   (s/and
    (s/keys :req-un [::start
                     ::timezone
                     ::seed]
            :opt-un [::end
-                    ::from])
+                    ::from
+                    ::max])
    (fn [{:keys [start from end]}]
      (when end
        (assert (t/before? (t/instant start)
@@ -85,14 +89,10 @@
   p/JSONRepresentable
   (read-key-fn [this k]
     (keyword nil (name k)))
-  (read-value-fn [this k v]
-    v)
   (read-body-fn [this json-result]
     (map->Parameters
      (add-defaults json-result)))
   (write-key-fn [this k]
     (name k))
-  (write-value-fn [this k v]
-    v)
   (write-body-fn [this]
     (into {} this)))
