@@ -1,4 +1,4 @@
-.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci
+.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci server
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
@@ -9,8 +9,9 @@ clean:
 	rm -rf target
 
 target/bundle:
-	clojure -A:build $(GROUP_ID) $(ARTIFACT_ID) $(VERSION) $(MAIN_NS) cli
+	clojure -A:build $(GROUP_ID) $(ARTIFACT_ID) $(VERSION)
 	chmod u+x target/$(ARTIFACT_ID)-$(VERSION)/bin/run.sh
+	chmod u+x target/$(ARTIFACT_ID)-$(VERSION)/bin/server.sh
 	mv target/$(ARTIFACT_ID)-$(VERSION) target/bundle
 
 bundle: target/bundle
@@ -31,3 +32,6 @@ test-cli-output:
 
 
 ci: test-unit test-cli
+
+server:
+	clojure -A:server

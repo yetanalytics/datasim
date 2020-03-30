@@ -37,4 +37,22 @@
    :extra-deps {badigeon/badigeon {:git/url "https://github.com/EwenG/badigeon.git"
                                    :sha "f4bcca58536f49c10a5ea87b662f33ccf83338ce"
                                    :tag "0.0.10"}}
-   :main-opts ["-m" "com.yetanalytics.datasim.build"]}}}
+   :main-opts ["-m" "com.yetanalytics.datasim.build"]}
+  :server
+  {:extra-paths ["src/server"]
+   :extra-deps  {io.pedestal/pedestal.service
+                 {:mvn/version "0.5.7"}
+                 io.pedestal/pedestal.immutant
+                 {:mvn/version "0.5.7"}
+                 org.slf4j/slf4j-simple
+                 {:mvn/version "1.7.28"}
+                 clj-http
+                 {:mvn/version "3.10.0"}
+                 cheshire
+                 {:mvn/version "5.9.0"}
+                 buddy/buddy-auth
+                 {:mvn/version "2.2.0"
+                  :exclusions [cheshire]}
+                 environ 
+                 {:mvn/version "1.1.0"}}
+   :main-opts   ["-m" "com.yetanalytics.datasim.server"]}}}
