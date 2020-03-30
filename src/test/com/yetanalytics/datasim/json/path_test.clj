@@ -3,7 +3,7 @@
             [com.yetanalytics.datasim.json.path :refer :all]
             [blancas.kern.core :as k]
             [clojure.java.io :as io]
-            [clojure.data.json :as json]
+            [cheshire.core :as json]
             [clojure.test.check :as tc]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]))
@@ -11,7 +11,7 @@
 (def long-statement
   (with-open
     [r (io/reader (io/resource "xapi/statements/long.json"))]
-    (json/read r)))
+    (json/parse-stream r)))
 
 (deftest parse-test
   (are [path v] (= v

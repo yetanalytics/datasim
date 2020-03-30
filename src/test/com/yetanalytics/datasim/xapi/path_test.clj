@@ -5,7 +5,7 @@
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.json.zip :as pzip]
             [clojure.java.io :as io]
-            [clojure.data.json :as json]))
+            [cheshire.core :as json]))
 
 (deftest spec-map-test
   (is (s/valid? :com.yetanalytics.datasim.xapi.path/spec-map spec-map)))
@@ -13,7 +13,7 @@
 (def long-statement
   (with-open
     [r (io/reader (io/resource "xapi/statements/long.json"))]
-    (json/read r)))
+    (json/parse-stream r)))
 
 
 (deftest path->spec-test

@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as profile]
-            [clojure.data.json :as json]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.xapi :as xapi]))
 
@@ -32,14 +31,10 @@
   p/JSONRepresentable
   (read-key-fn [this k]
     (name k))
-  (read-value-fn [this k v]
-    v)
   (read-body-fn [this json-result]
     (map->Alignments
      {:alignment-map json-result}))
   (write-key-fn [this k]
     (name k))
-  (write-value-fn [this k v]
-    v)
   (write-body-fn [this]
     alignment-map))

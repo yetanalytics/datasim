@@ -8,7 +8,8 @@
             [com.yetanalytics.datasim.xapi.path :as xp]
             [com.yetanalytics.datasim.random :as random]
             [clojure.set :as cset]
-            [clojure.test.check.generators :as gen]))
+            [clojure.test.check.generators :as gen]
+            [clojure.core.memoize :as memo]))
 
 (s/def ::location
   ::json-path/json-path)
@@ -44,7 +45,7 @@
   :args (s/cat :rule ::rules/rule)
   :ret ::parsed-rule)
 
-(defn parse-rule
+(defn parse-rule*
   "Parse paths in a rule"
   [{:keys [location selector] :as rule}]
   (cond-> (assoc
@@ -62,6 +63,10 @@
                            (json-path/parse location)))
     selector (assoc :selector
                     (into [] (json-path/parse selector)))))
+
+;; TODO: Memoize in scope
+(def parse-rule
+  (memo/lru parse-rule* {} :lru/threshold 4096))
 
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
@@ -367,9 +372,10 @@
                                                      meta
                                                      :paths)))))))
         ;; all rules pass and we're done!
-        ;; but not quite... we have to walk up removed/changed/added paths and
-        ;; check the specs
-        (if (s/valid? ::xs/statement statement)
+        statement
+        ;; check the specs (dev/debug)
+
+        #_(if (s/valid? ::xs/statement statement)
           statement
           (throw (ex-info "Healing not yet implemented"
                           {:type ::not-yet-implemented

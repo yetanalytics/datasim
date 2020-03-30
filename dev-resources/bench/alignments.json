@@ -1,0 +1,6 @@
+{"mbox::mailto:bob@example.org":
+ {"https://example.org/activity/a": 0.5,
+  "https://example.org/activity/c": -0.2},
+ "mbox::mailto:alice@example.org":
+ {"https://example.org/activity/c": 0.7,
+  "https://example.org/activity/d": -0.02}}
