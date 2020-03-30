@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.util.sequence :as su]
             [cheshire.core :as json])
   (:import [java.time Instant]))
 
@@ -13,12 +12,7 @@
   :ret nil?)
 
 (defn run-sim! [input]
-  (doseq [s (-> (sim/build-skeleton input)
-                ;; take the actor statement seqs
-                vals
-                (->> (su/seq-sort
-                      (comp :timestamp-ms
-                            meta))))]
+  (doseq [s (sim/sim-seq input)]
     (json/generate-stream s *out*)
     (.write *out* "\n")
     (flush)))

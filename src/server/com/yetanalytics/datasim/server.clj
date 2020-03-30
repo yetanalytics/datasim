@@ -55,11 +55,7 @@
         ;; Write them wrapped in a list
         (.write w "[\n")
         (try
-          (doseq [s (-> (sim/build-skeleton data)
-                        vals
-                        (->> (su/seq-sort
-                              (comp :timestamp-ms
-                                    meta))))]
+          (doseq [s (sim/sim-seq data)]
             (try
               (when send-to-lrs
                 ;; Stream statement to an LRS
@@ -122,7 +118,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A wrapper for Buddy to know what the authentication fn is
-(def backend 
+(def backend
   (backends/basic {:realm  "MyApi"
                    :authfn auth-fn}))
 
