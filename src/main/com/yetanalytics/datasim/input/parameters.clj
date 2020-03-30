@@ -40,13 +40,18 @@
 (s/def ::seed
   int?)
 
+;; Max number of statements returned
+(s/def ::max
+  pos-int?)
+
 (s/def ::parameters
   (s/and
    (s/keys :req-un [::start
                     ::timezone
                     ::seed]
            :opt-un [::end
-                    ::from])
+                    ::from
+                    ::max])
    (fn [{:keys [start from end]}]
      (when end
        (assert (t/before? (t/instant start)

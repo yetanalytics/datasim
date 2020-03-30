@@ -42,10 +42,11 @@ An alignment represents a way to influence the simulation by explicitly weightin
 
 #### Simulation Parameters
 
-The simulation parameters input covers the details of the simulation not covered by other pieces. This includes Start Time, End Time, Timezone, and *seed*. When run, the simulation will create a time sequence from the Start Time to the End Time and generated xAPI statements will have corresponding dates and times. The *seed* is important as it controls the inputs to all random value generation and corresponds to repeatability. A simulation run with the same inputs and the same seed will deterministically create the same xAPI Statements, but changing the seed value will create an entirely different simulation. An example of simulation parameters is below:
+The simulation parameters input covers the details of the simulation not covered by other pieces. This includes Start Time, End Time, Timezone, Max (number of statements) and *seed*. When run, the simulation will create a time sequence from the Start Time to the End Time and generated xAPI statements will have corresponding dates and times. The *seed* is important as it controls the inputs to all random value generation and corresponds to repeatability. A simulation run with the same inputs and the same seed will deterministically create the same xAPI Statements, but changing the seed value will create an entirely different simulation. An example of simulation parameters is below:
 
     {"start": "2019-11-18T11:38:39.219768Z",
      "end": "2019-11-19T11:38:39.219768Z",
+     "max": 200,
      "timezone": "America/New_York",
      "seed": 42}
 
