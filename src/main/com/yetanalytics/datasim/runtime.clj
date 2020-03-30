@@ -30,14 +30,7 @@
              :from "2019-11-18T11:38:39.219768Z"}))
 
 
-  (-> (sim/build-skeleton i)
-      ;; take the actor statement seqs
-      #_(get "mbox::mailto:bob@example.org")
-      vals
-      (->> (su/seq-sort
-            (comp :timestamp-ms
-                  meta)))
-
+  (-> (sim/sim-seq i)
       (nth 100)
       time)
 
