@@ -67,13 +67,12 @@ The simulation specification is a single object containing of all of the above. 
 ### System Requirements
 
 Java (JDK 8+, OpenJDK or Oracle)
+
 Clojure (1.10.1+)
 
 ### Deployment Models
 
 This reference implementation of DATASIM can either be used as a CLI tool, or as a library embedded in another JVM application.
-
-*When complete, the reference model will also include an application server and UI which can be used to interact with it. Documentation will be updated to include instructions for that model upon completion*
 
 #### CLI
 
