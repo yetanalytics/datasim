@@ -6,15 +6,19 @@ The Data and Training Analytics Simulated Input Modeler is a research and develo
 
 The purpose of DATASIM is to provide DoD distributed learning stakeholders the ability to simulate learning activities and generate the resulting xAPI statements at scale both in order to benchmark and stress-test the design of applications with the Total Learning Architecture and to provide stakeholders a way to evaluate the implementation of xAPI data design using the xAPI Profile specification. Ultimately, DATASIM can be used to support conformance testing of applications across the future learning ecosystem.
 
+DATASIM is funded by the Advanced Distributed Learning Initiative at US DoD.
+
+This documentation and repository refer to the simulation engine of DATASIM, which will run as a standalone CLI, and may also be deployed as a REST API. For the User Interface (which interacts with the API) please see https://github.com/yetanalytics/datasim-ui.
+
 ## Usage
 
-### Inputs
+### Simulation Inputs
 
 The inputs to DATASIM consist of four parts, each represented by JSON. They are as follows:
 
 #### xAPI Profile
 
-A valid xAPI Profile is required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles).
+A valid xAPI Profile is required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
 
 #### Actors
 
@@ -60,6 +64,10 @@ The simulation specification is a single object containing of all of the above. 
      "personae": ...,
      "alignments": ... }
 
+### System Requirements
+
+Java (JDK 8+, OpenJDK or Oracle)
+Clojure (1.10.1+)
 
 ### Deployment Models
 
@@ -71,7 +79,7 @@ This reference implementation of DATASIM can either be used as a CLI tool, or as
 
 In the form of a CLI application, DATASIM takes the inputs listed above as JSON files as command line arguments and runs a simulation based on them. It also outputs the *Simulation Specification* during this process.
 
-##### CLI
+##### Local CLI
 
 For the CLI the first step is to build the project so that it can be run on a JVM.
 
@@ -91,7 +99,7 @@ Once we have that simulation specification, we can run the sim just from that li
 
     bin/run.sh -i dev-resources/input/simple.json generate
 
-#### Docker
+##### Docker
 
 Build:
 
@@ -103,7 +111,65 @@ Run:
 
 #### Library
 
-As a library, this reference model can be integrated with any JVM application and its algorithms can be passed inputs and executed from code.
+As a library, this reference model can be integrated with any JVM application and its algorithms can be passed inputs and executed from code. It can be imported as a dep in Clojure, or compiled class files can be referenced from Java.
+
+#### API
+
+##### Starting the API
+
+To start the API, run the following command from this directory:
+
+    make server
+
+By default the server starts at http://localhost:9090
+
+##### API Config
+
+There are two main ways you may want to add additional configuration to the API. The first is the Basic Authentication credentials required to call the API endpoints. Currently on startup the application looks for an Environment Variable called "credentials" in the form of "username:password". So if the username were datasim, and the password were datasim it would be "datasim:datasim". You can set this before launching by setting a local env variable on your machine.
+
+The second is the port and allowed-origins if running from a browser. You can edit **http/allowed-origins** and **http/port** the following object in */src/server/com/yetanalytics/datasim/server.clj* to do so:
+
+    {::http/routes          routes
+     ::http/type            :immutant
+     ::http/allowed-origins ["https://yetanalytics.github.io"
+                         "http://localhost:9091"]
+     ::http/host "0.0.0.0"
+     ::http/port            9090
+     ::http/join?           false}
+
+Currently they are both configured to work with the default settings in the DATASIM-UI project locally.
+
+##### API Endpoints
+
+When launched as a REST API webapp, it has a few endpoints to allow dataset generation. The API is secured by Basic Authentication headers at this time (see API Config). The application has the following endpoints:
+
+###### GET /health
+
+This endpoint is simply a health check for the API. It should return a 200-OK if the app is up and running.
+
+###### GET /api/v1/download-url
+
+This endpoint is a convenience for the frontend to retrieve web resources like xAPI Profiles and is unlikely to be useful to anything else. This takes a single GET parameter, url, which contains a url-encoded string of the destination IRI.
+
+###### POST /api/v1/generate
+
+This endpoint takes a set of simulation inputs, returns a file with the output dataset and optionally pushes the data to an LRS. It accepts the inputs in the Content Type multipart/form-data of the following fields:
+
+    profiles: Array of json-ld xAPI Profiles
+
+    personae: JSON Object containing Actors formatted as above
+
+    alignments: JSON Object containing Alignments formatted as above
+
+    parameters: Simulation Parameters JSON Object
+
+    lrs-endpoint: String with a valid LRS endpoint
+
+    api-key: String with LRS API Key
+
+    api-secret-key: String with LRS API Secret Key
+
+    send-to-lrs: Boolean indicating whether or not to send data to the LRS if applicable
 
 ## License
 
