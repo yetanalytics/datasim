@@ -2,9 +2,9 @@
 
 ## What is DATASIM?
 
-The Data and Training Analytics Simulated Input Modeler is a research and development project designed to provide open source specifications and an open source reference model application for the purpose of generated simulated xAPI data at scale.
+DATASIM is an open source R&D project designed to provide specifications and a reference model application for the purpose of generating simulated xAPI data at scale.
 
-The purpose of DATASIM is to provide DoD distributed learning stakeholders the ability to simulate learning activities and generate the resulting xAPI statements at scale both in order to benchmark and stress-test the design of applications with the Total Learning Architecture and to provide stakeholders a way to evaluate the implementation of xAPI data design using the xAPI Profile specification. Ultimately, DATASIM can be used to support conformance testing of applications across the future learning ecosystem.
+DATASIM provides DoD distributed learning stakeholders and the broader xAPI community with the ability to simulate learning activities and generate the resulting xAPI statements at scale both in order to benchmark and stress-test the design of applications with the Total Learning Architecture and to provide stakeholders a way to evaluate the implementation of xAPI data design using the xAPI Profile specification. Ultimately, DATASIM can be used to support conformance testing of applications across the future learning ecosystem.
 
 DATASIM is funded by the Advanced Distributed Learning Initiative at US DoD.
 
