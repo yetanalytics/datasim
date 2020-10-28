@@ -7,7 +7,7 @@
          :exclusions [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
         {:git/url "https://github.com/yetanalytics/project-pan"
-         :sha "811571d52e376a7eb727efaaf1fd4dc08ffb50fc"
+         :sha "0459503bb6b48fa802dcd0e9f5e1e707e0983bca"
          :exclusions [org.clojure/clojurescript
                       org.clojure/test.check]}
         clojure.java-time {:mvn/version "0.3.2"}

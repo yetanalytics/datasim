@@ -15,6 +15,9 @@
             [clj-http.client                        :as client]
             [environ.core                           :refer [env]]
             [com.yetanalytics.datasim.sim           :as sim]
+            [com.yetanalytics.datasim.input         :as sinput]
+            [com.yetanalytics.pan.errors            :as errors]
+            [clojure.spec.alpha                     :as s]
             [com.yetanalytics.datasim.util.sequence :as su])
   (:import [javax.servlet ServletOutputStream])
   (:gen-class))
@@ -35,53 +38,56 @@
    Inside that function, a writer will open and the simulation will run.
    Each statement will be written to the stream."
   [input]
-  ;; Anon fn that accepts the output stream for the response body.
-  (fn [^ServletOutputStream os]
-    ;; Uses multipart message for the request.
-    ;; Read in each part of the input file, and convert into EDN
-    (let [data           {:profiles   (read-data input "profiles")
-                          :personae   (read-data input "personae")
-                          :alignments (read-data input "alignments")
-                          :parameters (read-data input "parameters")}
-          send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
-                           (read-string send-to-lrs)
-                           false)
-          endpoint       (get input "lrs-endpoint")
-          api-key        (get input "api-key")
-          api-secret-key (get input "api-secret-key")]
-      (log/info :msg "Run Simulation")
-      (with-open [w (writer os)]
-        ;; Iterate over the entire input skeleton, generate statements.
-        ;; Write them wrapped in a list
-        (.write w "[\n")
-        (try
-          (doseq [s (sim/sim-seq data)]
-            (try
-              (when send-to-lrs
-                ;; Stream statement to an LRS
-                (client/post (str endpoint "/statements")
-                             {:basic-auth
-                              [api-key api-secret-key]
-                              :headers
-                              {"X-Experience-API-Version" "1.0.3"
-                               "Content-Type"             "application/json;"}
-                              :body
-                              (c/generate-string s)
-                              :throw-entire-message? true}))
-              (catch Exception e
-                (log/error :msg (str "Error Sending to LRS: "
-                                     (c/generate-string s))
-                           :e   (.getMessage e)))
-              (finally
-                ;; Write each statement to the stream, pad with newline at end.
-                (c/generate-stream s w)
-                (.write w "\n"))))
-          (catch Exception e
-            (log/error :msg "Error Building Simulation Skeleton"
-                       :e   (.getMessage e)))
-          (finally
-            (log/info :msg "Finish Simulation")
-            (.write w "]")))))))
+  ;; Uses multipart message for the request.
+  ;; Read in each part of the input file, and convert into EDN
+  (let [data           {:profiles   (read-data input "profiles")
+                        :personae   (read-data input "personae")
+                        :alignments (read-data input "alignments")
+                        :parameters (read-data input "parameters")}
+        send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
+                         (read-string send-to-lrs)
+                         false)
+        endpoint       (get input "lrs-endpoint")
+        api-key        (get input "api-key")
+        api-secret-key (get input "api-secret-key")
+        spec-errors    (s/explain-data :com.yetanalytics.datasim/input data)]
+    (if (not-empty spec-errors)
+      (errors/expound-error-map spec-errors)
+      ;;(log/info :msg "Run Simulation")
+      ;; Anon fn that accepts the output stream for the response body.
+      (fn [^ServletOutputStream os]
+        (with-open [w (writer os)]
+          ;; Iterate over the entire input skeleton, generate statements.
+          ;; Write them wrapped in a list
+          (.write w "[\n")
+          (try
+            (doseq [s (sim/sim-seq data)]
+              (try
+                (when send-to-lrs
+                  ;; Stream statement to an LRS
+                  (client/post (str endpoint "/statements")
+                               {:basic-auth
+                                [api-key api-secret-key]
+                                :headers
+                                {"X-Experience-API-Version" "1.0.3"
+                                 "Content-Type"             "application/json;"}
+                                :body
+                                (c/generate-string s)
+                                :throw-entire-message? true}))
+                (catch Exception e
+                  (log/error :msg (str "Error Sending to LRS: "
+                                       (c/generate-string s))
+                             :e   (.getMessage e)))
+                (finally
+                  ;; Write each statement to the stream, pad with newline at end.
+                  (c/generate-stream s w)
+                  (.write w "\n"))))
+            (catch Exception e
+              (log/error :msg "Error Building Simulation Skeleton"
+                         :e   (.getMessage e)))
+            (finally
+              (log/info :msg "Finish Simulation")
+              (.write w "]"))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auth data and fns
@@ -153,12 +159,15 @@
               (assoc context
                      :response
                      (try
-                       {:status  200
-                        :headers {"Content-Type"        "application/json; charset=utf-8"
-                                  "Content-Disposition" (format "attachment; filename=\"simulation.json\"")}
-                        :body    (run-sim! (-> context
-                                               :request
-                                               :multipart-params))}
+                       (let [response-body
+                             (run-sim! (-> context
+                                           :request
+                                           :multipart-params))]
+                         {:status  (if (fn? response-body)
+                                     200
+                                     400)
+                          :headers {"Content-Type"        "application/json; charset=utf-8"}
+                          :body    response-body})
                        (catch Exception e
                          {:status 400
                           :body   (.getMessage e)})))
