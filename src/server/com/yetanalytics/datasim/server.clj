@@ -169,7 +169,7 @@
                           :headers {"Content-Type"        "application/json; charset=utf-8"}
                           :body    response-body})
                        (catch Exception e
-                         {:status 400
+                         {:status 500
                           :body   (.getMessage e)})))
               (if (get (-> context :request :headers) "authorization")
                 (assoc context
