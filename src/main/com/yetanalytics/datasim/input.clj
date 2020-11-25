@@ -18,8 +18,9 @@
 (s/def ::personae
   ::personae/personae)
 
-(s/def ::alignments
-  ::alignments/alignments)
+;; big problem with alignments spec, will redo but its tricky and
+;; about to be replaced
+(s/def ::alignments any?)
 
 (s/def ::parameters
   ::params/parameters)
