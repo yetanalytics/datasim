@@ -26,7 +26,7 @@
 (defrecord Alignments [alignment-map]
   p/FromInput
   (validate [this]
-    (s/explain-data ::alignment-map
+    (s/explain-data ::alignments
                     this))
   p/JSONRepresentable
   (read-key-fn [this k]

@@ -34,7 +34,7 @@ test-bundle-output: bundle
 	cd target/bundle; bin/run.sh -i ../../dev-resources/input/simple.json generate
 
 
-ci: test-unit
+ci: test-unit test-cli
 
 server:
 	clojure -A:server

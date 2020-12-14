@@ -29,9 +29,8 @@
    "Actor Personae" :personae "dev-resources/personae/simple.json"
    #(assoc % :member []) ;; groups need members
 
-   ;;Turning off Alignment test temporarily
-   ;;"Actor Alignments" :alignments "dev-resources/alignments/simple.json"
-   ;;#(assoc-in % [:alignment-map "notanid"] "bar") ;; alignments are a map of strings to maps...
+   "Actor Alignments" :alignments "dev-resources/alignments/simple.json"
+   #(assoc-in % [:alignment-map "notanid"] "bar") ;; alignments are a map of strings to maps...
 
    "Simulation Parameters" :parameters "dev-resources/parameters/simple.json"
    #(assoc % :seed "hey") ;; seed is a number
