@@ -23,9 +23,6 @@
 (s/def ::alignments
   (s/keys :req-un [::alignment-map]))
 
-
-
-
 (defrecord Alignments [alignment-map]
   p/FromInput
   (validate [this]
@@ -36,36 +33,8 @@
     (name k))
   (read-body-fn [this json-result]
     (map->Alignments
-     {:alignment json-result}))
+     {:alignment-map json-result}))
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]
     alignment-map))
-
-
-(comment
-
-
-  (gen/sample (s/gen :alignment-map/actor-alignment))
-
-
-
-  (clojure.spec.alpha/def :alignment-map/actor-alignment
-    (clojure.spec.alpha/map-of string?
-              (clojure.spec.alpha/double-in :min -1.0 :max 1.0
-                           :infinite? false
-                           :NaN? false)))
-
-  (clojure.spec.alpha/def ::alignment-map
-    (clojure.spec.alpha/map-of string?
-                               :alignment-map/actor-alignment))
-
-  (clojure.spec.alpha/def ::alignments
-    (clojure.spec.alpha/keys :req-un [::alignment-map]))
-
-  (clojure.spec.alpha/explain-data ::alignment-map {"mbox::mailto:cliff@yetanalytics.com" {"https://www.google.com" 0.6}})
-
-  (clojure.spec.alpha/explain-data ::alignments {"string" {"string"  1.0}})
-
-
-  )
