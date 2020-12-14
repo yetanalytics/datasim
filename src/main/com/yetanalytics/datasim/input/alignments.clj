@@ -1,6 +1,5 @@
 (ns com.yetanalytics.datasim.input.alignments
   (:require [clojure.spec.alpha :as s]
-            [clojure.spec.gen.alpha :as gen]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.datasim.iri :as iri]
@@ -22,6 +21,7 @@
 
 (s/def ::alignments
   (s/keys :req-un [::alignment-map]))
+
 
 (defrecord Alignments [alignment-map]
   p/FromInput
