@@ -18,8 +18,7 @@
 (s/def ::personae
   ::personae/personae)
 
-(s/def ::alignments
-  ::alignments/alignments)
+(s/def ::alignments ::alignments/alignments)
 
 (s/def ::parameters
   ::params/parameters)
@@ -137,7 +136,9 @@
                          (get subobject-constructors type-k))]
     (case fmt-k
       ;; currently only JSON
-      :json (dio/read-loc-json (constructor {}) location))
+      :json (if (= type-k :profiles)
+              (dio/read-loc-array (constructor {}) location)
+              (dio/read-loc-json (constructor {}) location)))
     (throw (ex-info (format "Unknown key %s" type-k)
                     {:type ::unknown-key
                      :key type-k}))))

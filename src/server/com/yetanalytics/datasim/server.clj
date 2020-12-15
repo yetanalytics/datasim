@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.server
-  (:require [clojure.java.io                        :refer [writer]]
+  (:require [clojure.java.io                        :refer [writer input-stream]]
             [io.pedestal.log                        :as log]
             [io.pedestal.http                       :as http]
             [io.pedestal.http.route                 :as route]
@@ -26,12 +26,11 @@
 ;; Datasim fns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn read-data
-  "Given a map and a key, retrieve the content of the key and read the JSON into EDN."
+(defn get-stream
+  "Given a map and a key, retrieve the content of the key as an input stream."
   [m k]
-  (-> m
-      (get k)
-      (c/parse-string keyword)))
+  (let [raw-bytes (.getBytes (get m k))]
+    (input-stream raw-bytes)))
 
 (defn run-sim!
   "Returns a function that will accept an output stream to write to the client.
@@ -40,17 +39,23 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [data           {:profiles   (read-data input "profiles")
-                        :personae   (read-data input "personae")
-                        :alignments (read-data input "alignments")
-                        :parameters (read-data input "parameters")}
+  (let [data           {:profiles   (sinput/from-location :profiles :json
+                                                         (get-stream input "profiles"))
+                        :personae   (sinput/from-location :personae :json
+                                                         (get-stream input "personae"))
+                        :alignments (sinput/from-location :alignments :json
+                                                         (get-stream input "alignments"))
+                        :parameters (sinput/from-location :parameters :json
+                                                          (get-stream input "parameters"))}
+        debug3         (clojure.pprint/pprint (:profiles data))
         send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
                          (read-string send-to-lrs)
                          false)
+        input          (sinput/map->Input data)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
         api-secret-key (get input "api-secret-key")
-        spec-errors    (s/explain-data :com.yetanalytics.datasim/input data)]
+        spec-errors    (sinput/validate input)]
     (if (not-empty spec-errors)
       (errors/expound-error-map spec-errors)
       ;;(log/info :msg "Run Simulation")
@@ -61,7 +66,7 @@
           ;; Write them wrapped in a list
           (.write w "[\n")
           (try
-            (doseq [s (sim/sim-seq data)]
+            (doseq [s (sim/sim-seq input)]
               (try
                 (when send-to-lrs
                   ;; Stream statement to an LRS
