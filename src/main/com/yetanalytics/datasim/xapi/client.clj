@@ -23,11 +23,11 @@
          fail []]
     (if-let [batch (first batches)]
       (let [{:keys [status body] :as response} @(http/post
-                                            (format "%s/statements" endpoint)
-                                            (merge default-http-options
-                                                   http-options
-                                                   {:body (json/encode batch)
-                                                    :as :stream}))]
+                                                 (format "%s/statements" endpoint)
+                                                 (merge default-http-options
+                                                        http-options
+                                                        {:body (json/encode batch)
+                                                         :as :stream}))]
         (if (= 200 status)
           (recur (rest batches)
                  (into success
@@ -38,6 +38,9 @@
                          (json/decode-stream rdr))))
                  fail)
           {:success success
-           :fail (conj fail response)}))
+           :fail (conj fail (assoc response
+                                   :body
+                                   (with-open [rdr (io/reader body)]
+                                     (json/decode-stream rdr))))}))
       {:success success
        :fail fail})))
