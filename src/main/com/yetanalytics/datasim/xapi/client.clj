@@ -38,9 +38,11 @@
                          (json/decode-stream rdr))))
                  fail)
           {:success success
-           :fail (conj fail (assoc response
-                                   :body
-                                   (with-open [rdr (io/reader body)]
-                                     (json/decode-stream rdr))))}))
+           :fail (conj fail
+                       (cond-> response
+                         body
+                         (assoc :body
+                                (with-open [rdr (io/reader body)]
+                                  (json/decode-stream rdr)))))}))
       {:success success
        :fail fail})))
