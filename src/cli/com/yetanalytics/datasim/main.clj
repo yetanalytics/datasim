@@ -145,24 +145,24 @@
                               statements (cond->> (sim/sim-seq input)
                                            (not= post-limit -1)
                                            (take post-limit))
-                              {:keys [success ;; list of successfully posted statement ids
+                              {:keys [success ;; Count of successfully transacted statements
                                       fail ;; list of failed requests
                                       ]
                                :as post-results} (http/post-statements
                                                   post-options
-                                                  statements)]
+                                                  statements
+                                                  :emit-ids-fn
+                                                  (fn [ids]
+                                                    (doseq [^java.util.UUID id ids]
+                                                      (printf "%s\n" (.toString id))
+                                                      (flush))))]
                           (if (not-empty fail)
                             (bail! (for [{:keys [status error]} fail]
                                      (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
                                              status (or (some-> error ex-message) "<none>"))))
-                            (do
-                              (doseq [^java.util.UUID id success]
-                                (printf "%s\n" (.toString id))
-                                (flush))
-                              (System/exit 0))))
+                            (System/exit 0)))
                         ;; Endpoint is required when posting
-                        (bail! ["-E / --endpoint REQUIRED for post."])
-                        ))
+                        (bail! ["-E / --endpoint REQUIRED for post."])))
                     ;; Stdout
                     (runtime/run-sim! input))
 
