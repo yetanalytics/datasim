@@ -114,7 +114,7 @@ Once we have that simulation specification, we can run the sim just from that li
 
     bin/run.sh -i dev-resources/input/simple.json generate
 
-###### CLI LRS Post
+###### CLI LRS POST
 
 If we have an endpoint and credentials for an LRS we can direcly POST the statements to it:
 
@@ -125,6 +125,8 @@ If we have an endpoint and credentials for an LRS we can direcly POST the statem
                -B [batch size] \
                -L [limit statements posted, -1 is no limit] \
                generate post
+
+As statements are successfully sent to the LRS their IDs will be sent to stdout.
 
 **NOTE: If the input specification doesn't have an end parameter and we set the option `-L -1`, DATASIM will continue posting to the LRS indefinitely.**
 
