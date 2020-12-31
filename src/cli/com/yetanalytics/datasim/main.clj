@@ -1,10 +1,12 @@
 (ns com.yetanalytics.datasim.main
-  (:require [clojure.tools.cli :refer [parse-opts]]
+  (:require [clojure.tools.cli :as cli :refer [parse-opts]]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input :as input]
             [expound.alpha :as expound]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.runtime :as runtime]
+            [com.yetanalytics.datasim.sim :as sim]
+            [com.yetanalytics.datasim.xapi.client :as http]
             [clojure.pprint :refer [pprint]])
   (:gen-class))
 
@@ -57,6 +59,26 @@
                 [input/validate-throw "Failed to validate input."]
                 [])
     ]
+   ;; POST options
+   ["-E" "--endpoint URI" "LRS Endpoint for POST"
+    :id :endpoint
+    :desc "The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi"]
+   ["-U" "--username URI" "LRS Basic auth username"
+    :id :username
+    :desc "The basic auth username for the LRS you wish to post to"]
+   ["-P" "--password URI" "LRS Basic auth password"
+    :id :password
+    :desc "The basic auth password for the LRS you wish to post to"]
+   ["-B" "--batch-size SIZE" "LRS POST batch size"
+    :id :batch-size
+    :default 10
+    :parse-fn #(Integer/parseInt %)
+    :desc "The batch size for POSTing to an LRS"]
+   ["-L" "--post-limit LIMIT" "LRS POST total statement limit"
+    :id :post-limit
+    :default 999
+    :parse-fn #(Integer/parseInt %)
+    :desc "The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit."]
 
    ["-h" "--help"]])
 
@@ -93,14 +115,57 @@
           ;; At this point, we have valid individual inputs. However, there may
           ;; be cross-validation that needs to happen, so we compose the
           ;; comprehensive spec from the options and check that.
-          (let [input (or (:input options) (input/map->Input options))]
+          (let [sim-options (select-keys options
+                                         [:input
+                                          :profiles
+                                          :personae
+                                          :parameters
+                                          :alignments])
+                input (or (:input sim-options) (input/map->Input sim-options))]
             (if-let [spec-error (input/validate input)]
               (bail! [(binding [s/*explain-out* expound/printer]
                        (expound/explain-result-str spec-error))])
               (if ?command
                 (case ?command
                   ;; Where the CLI will actually perform generation
-                  "generate" (runtime/run-sim! input)
+                  "generate"
+                  (if (= "post" (first rest-args))
+                    ;; Attempt to post to an LRS
+                    (let [{:keys [endpoint
+                                  username
+                                  password
+                                  batch-size
+                                  post-limit]} options
+                          ]
+                      (if endpoint
+                        (let [post-options (cond-> {:endpoint endpoint
+                                                    :batch-size batch-size}
+                                             (and username password)
+                                             (assoc-in [:http-options :basic-auth] [username password]))
+                              statements (cond->> (sim/sim-seq input)
+                                           (not= post-limit -1)
+                                           (take post-limit))
+                              {:keys [success ;; Count of successfully transacted statements
+                                      fail ;; list of failed requests
+                                      ]
+                               :as post-results} (http/post-statements
+                                                  post-options
+                                                  statements
+                                                  :emit-ids-fn
+                                                  (fn [ids]
+                                                    (doseq [^java.util.UUID id ids]
+                                                      (printf "%s\n" (.toString id))
+                                                      (flush))))]
+                          (if (not-empty fail)
+                            (bail! (for [{:keys [status error]} fail]
+                                     (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
+                                             status (or (some-> error ex-message) "<none>"))))
+                            (System/exit 0)))
+                        ;; Endpoint is required when posting
+                        (bail! ["-E / --endpoint REQUIRED for post."])))
+                    ;; Stdout
+                    (runtime/run-sim! input))
+
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON
                   "validate-input"

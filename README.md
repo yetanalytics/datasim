@@ -88,25 +88,60 @@ Now that we have this, navigate to target/bundle and run
 
     bin/run.sh
 
-With no commands it will give you the list of parameters.
+With no commands or `--help` it will give you the list of parameters:
+
+    -p, --profile URI              The location of an xAPI profile, can be used multiple times.
+    -a, --actor-personae URI       The location of an Actor Personae document indicating the actors in the sim.
+    -l, --alignments URI           The location of an Actor Alignments Document.
+    -o, --parameters URI     {...} The location of a Sim Parameters Document.
+    -i, --input URI                The location of a JSON file containing a combined simulation input spec.
+    -E, --endpoint URI             The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi
+    -U, --username URI             The basic auth username for the LRS you wish to post to
+    -P, --password URI             The basic auth password for the LRS you wish to post to
+    -B, --batch-size SIZE     10   The batch size for POSTing to an LRS
+    -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
+    -h, --help                     Show this list.
 
 For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:
 
-    bin/run.sh -p [profile json file] -a [actors json filename] -l [alignments json filename] -o [sim params json filename] validate-input [desired output filename]
+    bin/run.sh -p [profile json file] \
+               -a [actors json filename] \
+               -l [alignments json filename] \
+               -o [sim params json filename] \
+               validate-input [desired output filename]
 
 Once we have that simulation specification, we can run the sim just from that like so:
 
     bin/run.sh -i dev-resources/input/simple.json generate
 
+###### CLI LRS POST
+
+If we have an endpoint and credentials for an LRS we can direcly POST the statements to it:
+
+    bin/run.sh -i dev-resources/input/simple.json \
+               -E [LRS xAPI endpoint ex. https://lrs.example.org/xapi] \
+               -U [basic auth username] \
+               -P [basic auth password] \
+               -B [batch size] \
+               -L [limit statements posted, -1 is no limit] \
+               generate post
+
+As statements are successfully sent to the LRS their IDs will be sent to stdout.
+
+**NOTE: If the input specification doesn't have an end parameter and we set the option `-L -1`, DATASIM will continue posting to the LRS indefinitely.**
+
 ##### Docker
 
 Build:
 
-    $ make clean bundle && docker build -t yetanalytics/datasim:latest .
+    make clean bundle && docker build -t yetanalytics/datasim:latest .
 
 Run:
 
-    $ docker run -v "$(pwd)"/dev-resources:/dev-resources  -i yetanalytics/datasim:latest -i /dev-resources/input/simple.json generate
+    docker run -v "$(pwd)"/dev-resources:/dev-resources  \
+               -i yetanalytics/datasim:latest \
+               -i /dev-resources/input/simple.json \
+               generate
 
 #### Library
 
