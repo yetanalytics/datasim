@@ -2,6 +2,8 @@
   "Given input, compose a simulation model"
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.core.async :as a]
+   [clojure.core.async.impl.protocols :as ap]
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
@@ -280,8 +282,7 @@
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
-  [{{?max-statements :max
-     ?from-stamp     :from} :parameters
+  [{{?max-statements :max} :parameters
     :as input}
    & {:keys [select-agents]}]
   (-> (build-skeleton input)
@@ -297,10 +298,75 @@
         ?max-statements
         (take ?max-statements))))
 
+(defn- chan?
+  [x]
+  (satisfies? ap/Channel x))
+
+(s/fdef sim-chans
+  :args (s/cat :input :com.yetanalytics.datasim/input
+               :options (s/keys*
+                         :opt-un [::select-agents]))
+  :ret (s/map-of ::xapi/agent-id
+                 chan?))
+
+(defn sim-chans
+  "Given input, build a skeleton and produce a map of agent channels
+
+  Note that input.parameters.max is implemented via global budgets and may
+  have unexpected results. input.parameters.end is preferable"
+  [{{?max-statements :max} :parameters
+    :as input}
+   & {:keys [select-agents]}]
+  (let [skeleton (cond-> (build-skeleton input)
+                   select-agents
+                   (select-keys select-agents))]
+    (if ?max-statements
+      (let [budget-chan (let [c (a/chan)]
+                          (a/go-loop [s-cnt ?max-statements]
+                            (if (< 0 s-cnt)
+                              (do (a/>! c s-cnt)
+                                  (recur (dec s-cnt)))
+                              (a/close! c)))
+                          c)]
+        (reduce-kv
+         (fn [m k v]
+           (let [out-chan (a/chan)] ;; TODO: buf?
+             (a/go-loop [agent-seq v]
+               (if-let [s (and (a/<! budget-chan) ;; like a ticket at the meat counter
+                               (first agent-seq))]
+                 (do
+                   (a/>! out-chan s)
+                   (recur (rest agent-seq)))
+                 (a/close! out-chan)))
+             (assoc m k out-chan)))
+         (empty skeleton)
+         skeleton))
+      ;; Easy route
+      (reduce-kv
+       (fn [m k v]
+         (let [agent-seq v]
+           (assoc m k (a/to-chan! v))))
+       (empty skeleton)
+       skeleton))))
+
+(s/fdef sim-chan
+  :args (s/cat :input :com.yetanalytics.datasim/input
+               :options (s/keys*
+                         :opt-un [::select-agents]))
+  :ret chan?)
+
+(defn sim-chan
+  "Merged output of `sim-chans` for parallel gen"
+  [input
+   & kwargs]
+  (-> (apply sim-chans
+             input
+             kwargs)
+      vals
+      a/merge))
 
 (comment
   (def i (input/from-location :input :json "dev-resources/input/simple.json"))
-
 
   (def skel
     (time (build-skeleton i)))
@@ -317,7 +383,33 @@
 
   (s/explain ::xs/uuid "B73E0E16-386D-3D6D-8AE9-33B09C1C599E")
 
-  (.toString (Instant/ofEpochMilli
-   1574078559219))
+  (let [agent-chan
+        (-> (sim-chans i)
+            (get "mbox::mailto:alice@example.org"))]
+    (a/go-loop [cnt 0]
+      (when-let [s (a/<! agent-chan)]
+        (when (= 0
+                 (mod cnt 10))
+          (printf "\n%d statements\n\n" cnt)
+          (println s))
+        (recur (inc cnt)))
+      ))
+
+  (-> i :parameters clojure.pprint/pprint)
+
+  (def ii
+    (->
+     i
+     (assoc-in [:parameters :end] "2021-01-01T00:00:00.000000Z")))
+
+  (-> ii
+      sim-chan
+      (->> (a/into []))
+      a/<!!
+      count
+      time)
+
+  (time
+   (count (sim-seq ii)))
 
   )
