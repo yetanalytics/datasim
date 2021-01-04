@@ -266,16 +266,25 @@
                :prob-seq actor-prob
                :reg-seq actor-reg-seq})]))))
 
+(s/def ::select-agents
+  (s/every ::xapi/agent-id))
+
 (s/fdef sim-seq
-  :args (s/cat :input :com.yetanalytics.datasim/input)
+  :args (s/cat :input :com.yetanalytics.datasim/input
+               :options (s/keys*
+                         :opt-un [::select-agents]))
   :ret :skeleton/statement-seq)
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
   [{{?max-statements :max
      ?from-stamp     :from} :parameters
-    :as input}]
+    :as input}
+   & {:keys [select-agents]}]
   (-> (build-skeleton input)
+      (cond->
+        select-agents
+        (select-keys select-agents))
       ;; take the actor statement seqs
       vals
       (->> (su/seq-sort
