@@ -100,6 +100,7 @@ With no commands or `--help` it will give you the list of parameters:
     -P, --password URI             The basic auth password for the LRS you wish to post to
     -B, --batch-size SIZE     10   The batch size for POSTing to an LRS
     -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
+    -A, --[no-]async               Async operation. Use --no-async if statements must be sent to server in timestamp order.
     -h, --help                     Show this list.
 
 For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:

@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.main
   (:require [clojure.tools.cli :as cli :refer [parse-opts]]
             [clojure.spec.alpha :as s]
+            [clojure.core.async :as a]
             [com.yetanalytics.datasim.input :as input]
             [expound.alpha :as expound]
             [com.yetanalytics.datasim.input.parameters :as params]
@@ -79,6 +80,9 @@
     :default 999
     :parse-fn #(Integer/parseInt %)
     :desc "The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit."]
+   ["-A" "--[no-]async" "Async operation. Use --no-async if statements must be sent to server in timestamp order."
+    :id :async
+    :default true]
 
    ["-h" "--help"]])
 
@@ -124,7 +128,7 @@
                 input (or (:input sim-options) (input/map->Input sim-options))]
             (if-let [spec-error (input/validate input)]
               (bail! [(binding [s/*explain-out* expound/printer]
-                       (expound/explain-result-str spec-error))])
+                        (expound/explain-result-str spec-error))])
               (if ?command
                 (case ?command
                   ;; Where the CLI will actually perform generation
@@ -135,32 +139,78 @@
                                   username
                                   password
                                   batch-size
-                                  post-limit]} options
+                                  post-limit
+                                  async]} options
                           ]
                       (if endpoint
                         (let [post-options (cond-> {:endpoint endpoint
                                                     :batch-size batch-size}
                                              (and username password)
-                                             (assoc-in [:http-options :basic-auth] [username password]))
-                              statements (cond->> (sim/sim-seq input)
-                                           (not= post-limit -1)
-                                           (take post-limit))
-                              {:keys [success ;; Count of successfully transacted statements
-                                      fail ;; list of failed requests
-                                      ]
-                               :as post-results} (http/post-statements
-                                                  post-options
-                                                  statements
-                                                  :emit-ids-fn
-                                                  (fn [ids]
-                                                    (doseq [^java.util.UUID id ids]
-                                                      (printf "%s\n" (.toString id))
-                                                      (flush))))]
-                          (if (not-empty fail)
-                            (bail! (for [{:keys [status error]} fail]
-                                     (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-                                             status (or (some-> error ex-message) "<none>"))))
-                            (System/exit 0)))
+                                             (assoc-in [:http-options :basic-auth] [username password]))]
+                          (if async
+                            (let [id-buf-size (* batch-size
+                                                 (min 1
+                                                      (or
+                                                       (some-> input
+                                                               :personae
+                                                               :member
+                                                               count)
+                                                       1)))
+                                  ids-chan (a/chan id-buf-size)
+                                  ;; Loop to write out
+                                  _ (a/go-loop []
+                                      (when-let [id (a/<! ids-chan)]
+                                        (printf "%s\n" (.toString ^java.util.UUID id))
+                                        (flush)
+                                        (recur)))
+
+                                  sim-chans (sim/sim-chans
+                                             (cond-> input
+                                               ;; when async, we just use the post
+                                               ;; limit as the max
+                                               (not= post-limit -1)
+                                               (assoc-in [:parameters :max] post-limit)
+                                               ))]
+                              (a/<!! (a/go
+                                       ;; collect for results
+                                       (let [results (a/<!
+                                                      (a/into []
+                                                              (a/merge
+                                                               (for [[agent-id agent-chan] sim-chans]
+                                                                 (http/post-statements-async
+                                                                  post-options
+                                                                  agent-chan
+                                                                  :emit-ids-fn
+                                                                  (fn [ids]
+                                                                    (a/onto-chan! ids-chan ids false)))))))
+                                             successes (reduce + (map :success results))
+                                             fails (mapcat :fail results)]
+                                         ;; handle failure or just exit
+                                         (if (not-empty fails)
+                                           (bail! (for [{:keys [status error]} fails]
+                                                    (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
+                                                            status (or (some-> error ex-message) "<none>"))))
+
+                                           (System/exit 0))))))
+                            (let [statements (cond->> (sim/sim-seq input)
+                                               (not= post-limit -1)
+                                               (take post-limit))
+                                  {:keys [success ;; Count of successfully transacted statements
+                                          fail ;; list of failed requests
+                                          ]
+                                   :as post-results} (http/post-statements
+                                                      post-options
+                                                      statements
+                                                      :emit-ids-fn
+                                                      (fn [ids]
+                                                        (doseq [^java.util.UUID id ids]
+                                                          (printf "%s\n" (.toString id))
+                                                          (flush))))]
+                              (if (not-empty fail)
+                                (bail! (for [{:keys [status error]} fail]
+                                         (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
+                                                 status (or (some-> error ex-message) "<none>"))))
+                                (System/exit 0)))))
                         ;; Endpoint is required when posting
                         (bail! ["-E / --endpoint REQUIRED for post."])))
                     ;; Stdout
