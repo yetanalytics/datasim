@@ -157,11 +157,9 @@
   Should be run once (in a single thread)
   Spooky."
   [{{actors :member} :personae
-    {:keys [start from end
-            timezone seed
-
-
-            ]} :parameters
+    {:keys [start end
+            timezone seed]
+     ?from-stamp :from} :parameters
     profiles :profiles
     {alignments :alignment-map} :alignments
     :as input}]
@@ -256,15 +254,20 @@
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)]]
             [actor-id
-             (statement-seq
-              input
-              iri-map
-              activities
-              actor
-              actor-alignment
-              {:seed actor-seed
-               :prob-seq actor-prob
-               :reg-seq actor-reg-seq})]))))
+             (cond->> (statement-seq
+                       input
+                       iri-map
+                       activities
+                       actor
+                       actor-alignment
+                       {:seed actor-seed
+                        :prob-seq actor-prob
+                        :reg-seq actor-reg-seq})
+               ?from-stamp
+               (drop-while
+                (let [from-ms (t/to-millis-from-epoch ^String ?from-stamp)]
+                  (fn [s]
+                    (>= from-ms (-> s meta :timestamp-ms))))))]))))
 
 (s/def ::select-agents
   (s/every ::xapi/agent-id))
@@ -291,11 +294,6 @@
             (comp :timestamp-ms
                   meta)))
       (cond->>
-        ?from-stamp
-        (drop-while
-         (let [from-ms (t/to-millis-from-epoch ^String ?from-stamp)]
-           (fn [s]
-             (>= from-ms (-> s meta :timestamp-ms)))))
         ?max-statements
         (take ?max-statements))))
 
