@@ -65,6 +65,11 @@
     :id :override-seed
     :parse-fn #(Integer/parseInt %)
     :desc "An integer seed to override the one in the input spec. Use -1 for random."]
+   [nil "--actor AGENT_ID" "Select actor(s) by agent ID"
+    :id :select-agents
+    :multi true
+    :update-fn (fnil conj #{})
+    :desc "Pass an agent id in the format mbox::malto:bob@example.org to select actor(s)"]
    ;; POST options
    ["-E" "--endpoint URI" "LRS Endpoint for POST"
     :id :endpoint
@@ -135,7 +140,8 @@
                                           :personae
                                           :parameters
                                           :alignments])
-                {:keys [override-seed]} options
+                {:keys [override-seed
+                        select-agents]} options
                 input (cond-> (or (:input sim-options) (input/map->Input sim-options))
                         override-seed
                         (assoc-in [:parameters :seed]
@@ -172,7 +178,8 @@
                                               ;; limit as the max
                                               (not= post-limit -1)
                                               (assoc-in [:parameters :max] post-limit)
-                                              ))
+                                              )
+                                            :select-agents select-agents)
                                   result-chan (http/post-statements-async
                                                post-options
                                                sim-chan
@@ -193,7 +200,8 @@
                                       (recur)))
                                   (System/exit 0))))
                             ;; SYNC operation
-                            (let [statements (cond->> (sim/sim-seq input)
+                            (let [statements (cond->> (sim/sim-seq input
+                                                                   :select-agents select-agents)
                                                (not= post-limit -1)
                                                (take post-limit))
                                   {:keys [success ;; Count of successfully transacted statements
@@ -215,7 +223,7 @@
                         ;; Endpoint is required when posting
                         (bail! ["-E / --endpoint REQUIRED for post."])))
                     ;; Stdout
-                    (runtime/run-sim! input))
+                    (runtime/run-sim! input :select-agents select-agents))
 
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON

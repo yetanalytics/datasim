@@ -96,6 +96,7 @@ With no commands or `--help` it will give you the list of parameters:
     -o, --parameters URI     {...} The location of a Sim Parameters Document.
     -i, --input URI                The location of a JSON file containing a combined simulation input spec.
         --seed SEED                An integer seed to override the one in the input spec. Use -1 for random.
+        --actor AGENT_ID           Pass an agent id in the format mbox::malto:bob@example.org to select actor(s)
     -E, --endpoint URI             The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi
     -U, --username URI             The basic auth username for the LRS you wish to post to
     -P, --password URI             The basic auth password for the LRS you wish to post to
