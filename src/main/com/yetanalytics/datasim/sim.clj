@@ -330,7 +330,7 @@
                           c)]
         (reduce-kv
          (fn [m k v]
-           (let [out-chan (a/chan)] ;; TODO: buf?
+           (let [out-chan (a/chan 100)]
              (a/go-loop [agent-seq v]
                (if-let [s (and (a/<! budget-chan) ;; like a ticket at the meat counter
                                (first agent-seq))]
