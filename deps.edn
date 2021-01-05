@@ -23,7 +23,8 @@
  :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
-        :extra-deps {org.clojure/tools.cli {:mvn/version "0.4.2"}}}
+        :extra-deps {org.clojure/tools.cli {:git/url "https://github.com/clojure/tools.cli"
+                                            :sha "c84e20639257d05b46583db73e203cc0cc275d64"}}}
   :run {:main-opts ["-m" "com.yetanalytics.datasim.main"]}
   :dev {:extra-paths ["dev-resources" "src/dev"]
         :extra-deps {
