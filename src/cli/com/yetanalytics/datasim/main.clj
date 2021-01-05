@@ -9,6 +9,7 @@
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.xapi.client :as http]
             [clojure.pprint :refer [pprint]])
+  (:import [java.util Random])
   (:gen-class))
 
 (defn cli-options
@@ -60,6 +61,10 @@
                 [input/validate-throw "Failed to validate input."]
                 [])
     ]
+   [nil "--seed SEED" "Override input seed"
+    :id :override-seed
+    :parse-fn #(Integer/parseInt %)
+    :desc "An integer seed to override the one in the input spec. Use -1 for random."]
    ;; POST options
    ["-E" "--endpoint URI" "LRS Endpoint for POST"
     :id :endpoint
@@ -125,7 +130,13 @@
                                           :personae
                                           :parameters
                                           :alignments])
-                input (or (:input sim-options) (input/map->Input sim-options))]
+                {:keys [override-seed]} options
+                input (cond-> (or (:input sim-options) (input/map->Input sim-options))
+                        override-seed
+                        (assoc-in [:parameters :seed]
+                                  (if (= -1 override-seed)
+                                    (.nextLong (Random.))
+                                    override-seed)))]
             (if-let [spec-error (input/validate input)]
               (bail! [(binding [s/*explain-out* expound/printer]
                         (expound/explain-result-str spec-error))])
