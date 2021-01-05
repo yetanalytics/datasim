@@ -16,7 +16,7 @@
   [{:keys [endpoint
            batch-size
            http-options]
-    :or {batch-size 10}}
+    :or {batch-size 25}}
    statement-seq
    & {:keys [emit-ids-fn]}]
   ;; TODO: Exp backoff, etc
@@ -51,46 +51,57 @@
       {:success success
        :fail fail})))
 
-(defn- post-chan
-  [url options]
-  (let [pchan (a/promise-chan)]
-    (http/post url options
-               (fn [ret] (a/put! pchan ret)))
-    pchan))
-
 (defn post-statements-async
-  "Given LRS options and a seq of statements, send them to an LRS in async batches concurrent by agent
-  If an emit-ids-fn is given it will be called with posted statement ids on success."
+  "Given LRS options and a seq of statements, send them to an LRS in async batches"
   [{:keys [endpoint
            batch-size
            http-options]
-    :or {batch-size 10}}
+    :or {batch-size 25}}
    statement-chan
-   & {:keys [emit-ids-fn]}]
-  ;; TODO: Exp backoff, etc
-  (a/go-loop [sent 0]
-    (if-let [batch (not-empty (a/<! (a/into []
-                                            (a/take batch-size
-                                                    statement-chan))))]
-      (let [{:keys [status headers body error] :as ret}
-            (a/<! (post-chan
-                   (format "%s/statements" endpoint)
-                   (merge default-http-options
-                          http-options
-                          {:body (json/encode batch)
-                           :as :stream})))]
-        (if (and (= 200
-                    status)
-                 (not error))
-          (let [ids (map
-                     (fn [^String id]
-                       (java.util.UUID/fromString id))
-                     (with-open [rdr (io/reader body)]
-                       (json/decode-stream rdr)))]
-            (when emit-ids-fn
-              (emit-ids-fn ids))
-            (recur (+ sent (count batch))))
-          ;; return error
-          {:fail [ret]
-           :success sent}))
-      {:success sent})))
+   & {:keys [concurrency
+             buffer-in
+             buffer-out]
+      :or {concurrency 4
+           buffer-in 100 ;; 10x default batch size
+           buffer-out 100
+           }}]
+  (let [run? (atom true)
+        in-chan (a/chan buffer-in
+                        (partition-all batch-size))
+        ;; is this.. backpressure?
+        out-chan (a/chan buffer-out)]
+    (a/pipeline-async
+     concurrency
+     out-chan
+     (fn [batch p]
+       (if @run?
+         (http/post
+          (format "%s/statements" endpoint)
+          (merge default-http-options
+                 http-options
+                 {:body (json/encode batch)
+                  :as :stream})
+          (fn [{:keys [status headers body error] :as ret}]
+            (if (or (not= 200 status)
+                    error)
+              (do
+                ;; Stop further processing
+                (swap! run? not)
+                (a/put!
+                 p
+                 [:fail ret]))
+              (a/put!
+               p
+               [:success (mapv
+                          (fn [^String id]
+                            (java.util.UUID/fromString id))
+                          (with-open [rdr (io/reader body)]
+                            (json/decode-stream rdr)))]))
+            ;; Close the return channel
+            (a/close! p)))
+         (a/close! p)))
+     in-chan)
+    ;; Pipe to in-chan
+    (a/pipe statement-chan in-chan)
+    ;; Return the out chan
+    out-chan))

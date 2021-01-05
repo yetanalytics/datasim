@@ -99,7 +99,8 @@ With no commands or `--help` it will give you the list of parameters:
     -E, --endpoint URI             The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi
     -U, --username URI             The basic auth username for the LRS you wish to post to
     -P, --password URI             The basic auth password for the LRS you wish to post to
-    -B, --batch-size SIZE     10   The batch size for POSTing to an LRS
+    -B, --batch-size SIZE     25   The batch size for POSTing to an LRS
+    -C, --concurrency CONC    4    The max concurrency of the LRS POST pipeline
     -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
     -A, --[no-]async               Async operation. Use --no-async if statements must be sent to server in timestamp order.
     -h, --help                     Show this list.

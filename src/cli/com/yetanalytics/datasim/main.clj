@@ -77,9 +77,14 @@
     :desc "The basic auth password for the LRS you wish to post to"]
    ["-B" "--batch-size SIZE" "LRS POST batch size"
     :id :batch-size
-    :default 10
+    :default 25
     :parse-fn #(Integer/parseInt %)
     :desc "The batch size for POSTing to an LRS"]
+   ["-C" "--concurrency CONC" "LRS POST concurrency"
+    :id :concurrency
+    :default 4
+    :parse-fn #(Integer/parseInt %)
+    :desc "The max concurrency of the LRS POST pipeline"]
    ["-L" "--post-limit LIMIT" "LRS POST total statement limit"
     :id :post-limit
     :default 999
@@ -150,6 +155,7 @@
                                   username
                                   password
                                   batch-size
+                                  concurrency
                                   post-limit
                                   async]} options
                           ]
@@ -159,50 +165,34 @@
                                              (and username password)
                                              (assoc-in [:http-options :basic-auth] [username password]))]
                           (if async
-                            (let [id-buf-size (* batch-size
-                                                 (min 1
-                                                      (or
-                                                       (some-> input
-                                                               :personae
-                                                               :member
-                                                               count)
-                                                       1)))
-                                  ids-chan (a/chan id-buf-size)
-                                  ;; Loop to write out
-                                  _ (a/go-loop []
-                                      (when-let [id (a/<! ids-chan)]
+                            ;; ASYNC Operation
+                            (let [sim-chan (sim/sim-chan
+                                            (cond-> input
+                                              ;; when async, we just use the post
+                                              ;; limit as the max
+                                              (not= post-limit -1)
+                                              (assoc-in [:parameters :max] post-limit)
+                                              ))
+                                  result-chan (http/post-statements-async
+                                               post-options
+                                               sim-chan
+                                               :concurrency concurrency)]
+
+                              (loop []
+                                (if-let [[tag ret] (a/<!! result-chan)]
+                                  (case tag
+                                    :fail
+                                    (let [{:keys [status error]} ret]
+                                      (bail! [(format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
+                                                      status (or (some-> error ex-message) "<none>"))]))
+                                    :success
+                                    (do
+                                      (doseq [^java.util.UUID id ret]
                                         (printf "%s\n" (.toString ^java.util.UUID id))
-                                        (flush)
-                                        (recur)))
-
-                                  sim-chans (sim/sim-chans
-                                             (cond-> input
-                                               ;; when async, we just use the post
-                                               ;; limit as the max
-                                               (not= post-limit -1)
-                                               (assoc-in [:parameters :max] post-limit)
-                                               ))]
-                              (a/<!! (a/go
-                                       ;; collect for results
-                                       (let [results (a/<!
-                                                      (a/into []
-                                                              (a/merge
-                                                               (for [[agent-id agent-chan] sim-chans]
-                                                                 (http/post-statements-async
-                                                                  post-options
-                                                                  agent-chan
-                                                                  :emit-ids-fn
-                                                                  (fn [ids]
-                                                                    (a/onto-chan! ids-chan ids false)))))))
-                                             successes (reduce + (map :success results))
-                                             fails (mapcat :fail results)]
-                                         ;; handle failure or just exit
-                                         (if (not-empty fails)
-                                           (bail! (for [{:keys [status error]} fails]
-                                                    (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-                                                            status (or (some-> error ex-message) "<none>"))))
-
-                                           (System/exit 0))))))
+                                        (flush))
+                                      (recur)))
+                                  (System/exit 0))))
+                            ;; SYNC operation
                             (let [statements (cond->> (sim/sim-seq input)
                                                (not= post-limit -1)
                                                (take post-limit))
