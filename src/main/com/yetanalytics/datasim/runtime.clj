@@ -11,8 +11,8 @@
   :args (s/cat :input :com.yetanalytics.datasim/input)
   :ret nil?)
 
-(defn run-sim! [input]
-  (doseq [s (sim/sim-seq input)]
+(defn run-sim! [input & rest-args]
+  (doseq [s (apply sim/sim-seq input rest-args)]
     (json/generate-stream s *out*)
     (.write *out* "\n")
     (flush)))
