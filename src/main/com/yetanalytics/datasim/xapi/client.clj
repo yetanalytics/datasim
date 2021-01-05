@@ -52,7 +52,11 @@
        :fail fail})))
 
 (defn post-statements-async
-  "Given LRS options and a seq of statements, send them to an LRS in async batches"
+  "Given LRS options and a channel with statements, send them to an LRS in async
+   batches
+
+   Returns a channel that will reciveve [:success <list of statement ids>] for
+   each batch or [:fail <failing request>]. Will stop sending on failure."
   [{:keys [endpoint
            batch-size
            http-options]
