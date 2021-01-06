@@ -1,22 +1,36 @@
 (ns com.yetanalytics.datasim.onyx.main
   (:gen-class)
-  (:require [clojure.core.async :refer [chan >!! <!! close!]]
+  (:require [clojure.core.async :as a :refer [chan]]
             [onyx.plugin.core-async :refer [take-segments!]]
-            [onyx.api]))
+            [onyx.api]
 
-(defn my-inc [{:keys [n] :as segment}]
-  (assoc segment :n (inc n)))
+            [com.yetanalytics.datasim.sim :as sim]
+            [com.yetanalytics.datasim.input :as input]
+            [com.yetanalytics.datasim.util.xapi :as xapiu]))
+
+#_(defn my-inc [{:keys [n] :as segment}]
+    (assoc segment :n (inc n)))
+
+(defn partition-actors [{:keys [input] :as segment}]
+  ;; Naive partition by actor
+  (for [actor-id (map xapiu/agent-id
+                       (get-in input [:personae :member]))]
+    (assoc segment :actor-id actor-id)))
+
+(defn gen [{:keys [input actor-id]}]
+  (sim/sim-seq input :select-agents [actor-id]))
 
 (def workflow
-  [[:in :inc]
-   [:inc :out]])
+  [[:in :partition-actors]
+   [:partition-actors :gen]
+   [:gen :out]])
 
 (def capacity 1000)
 
-(def input-chan (chan capacity))
-(def input-buffer (atom {}))
+(defonce input-chan (chan capacity))
+(defonce input-buffer (atom {}))
 
-(def output-chan (chan capacity))
+(defonce output-chan (chan capacity))
 
 (def batch-size 10)
 
@@ -29,8 +43,13 @@
     :onyx/batch-size batch-size
     :onyx/doc "Reads segments from a core.async channel"}
 
-   {:onyx/name :inc
-    :onyx/fn :com.yetanalytics.datasim.onyx.main/my-inc
+   {:onyx/name :partition-actors
+    :onyx/fn ::partition-actors
+    :onyx/type :function
+    :onyx/batch-size batch-size}
+
+   {:onyx/name :gen
+    :onyx/fn ::gen
     :onyx/type :function
     :onyx/batch-size batch-size}
 
@@ -42,45 +61,8 @@
     :onyx/batch-size batch-size
     :onyx/doc "Writes segments to a core.async channel"}])
 
-(def input-segments
-  [{:n 0}
-   {:n 1}
-   {:n 2}
-   {:n 3}
-   {:n 4}
-   {:n 5}])
-
-(doseq [segment input-segments]
-  (>!! input-chan segment))
-
-(close! input-chan)
-
-(def id (java.util.UUID/randomUUID))
-
-(def env-config
-  {:zookeeper/address "127.0.0.1:2188"
-   :zookeeper/server? true
-   :zookeeper.server/port 2188
-   :onyx/tenancy-id id})
-
-(def peer-config
-  {:zookeeper/address "127.0.0.1:2188"
-   :onyx/tenancy-id id
-   :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
-   :onyx.messaging/impl :aeron
-   :onyx.messaging/peer-port 40200
-   :onyx.messaging/bind-addr "localhost"})
-
-(def env (onyx.api/start-env env-config))
-
-(def peer-group (onyx.api/start-peer-group peer-config))
-
-(def n-peers (count (set (mapcat identity workflow))))
-
-(def v-peers (onyx.api/start-peers n-peers peer-group))
-
 (defn inject-in-ch [event lifecycle]
-  {:core.async/buffer input-buffer
+  {:core.async/buffer input-buffer ;; TODO: figure out why this is an atom
    :core.async/chan input-chan})
 
 (defn inject-out-ch [event lifecycle]
@@ -102,25 +84,61 @@
    {:lifecycle/task :out
     :lifecycle/calls :onyx.plugin.core-async/writer-calls}])
 
-(def submission)
+#_(def submission)
 
 (defn -main
   [& args]
-  (let [submission   (onyx.api/submit-job peer-config
-                         {:catalog catalog
-                          :workflow workflow
-                          :lifecycles lifecycles
-                          :task-scheduler :onyx.task-scheduler/balanced})
-        _ (onyx.api/await-job-completion peer-config (:job-id submission))
-        results (take-segments! output-chan 50)]
-    (clojure.pprint/pprint results))
+  ;; VERY MUCH JUST DEV RIGHT NOW
+  (let [;; DEV ENV config, should go away for prod things
+        id (java.util.UUID/randomUUID)
 
-  (doseq [v-peer v-peers]
-    (onyx.api/shutdown-peer v-peer))
+        env-config
+        {:zookeeper/address "127.0.0.1:2188"
+         :zookeeper/server? true
+         :zookeeper.server/port 2188
+         :onyx/tenancy-id id}
 
-  (onyx.api/shutdown-peer-group peer-group)
+        env (onyx.api/start-env env-config)
 
-  (onyx.api/shutdown-env env))
+        ;; Peer config: should be there at peer launch + job submission
+
+        peer-config
+        {:zookeeper/address "127.0.0.1:2188"
+         :onyx/tenancy-id id
+         :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
+         :onyx.messaging/impl :aeron
+         :onyx.messaging/peer-port 40200
+         :onyx.messaging/bind-addr "localhost"}
+
+        ;; start peer group
+        peer-group (onyx.api/start-peer-group peer-config)
+
+        n-peers (count (set (mapcat identity workflow)))
+
+        v-peers (onyx.api/start-peers n-peers peer-group)]
+
+
+    (a/>!! input-chan
+           ;; input segments (for now) are an input + some params
+           {:input (input/from-location :input :json "dev-resources/input/simple.json")}
+           )
+    (a/close! input-chan)
+
+    (let [submission   (onyx.api/submit-job peer-config
+                                            {:catalog catalog
+                                             :workflow workflow
+                                             :lifecycles lifecycles
+                                             :task-scheduler :onyx.task-scheduler/balanced})
+          _ (onyx.api/await-job-completion peer-config (:job-id submission))
+          results (take-segments! output-chan 50)]
+      (clojure.pprint/pprint results))
+
+    (doseq [v-peer v-peers]
+      (onyx.api/shutdown-peer v-peer))
+
+    (onyx.api/shutdown-peer-group peer-group)
+
+    (onyx.api/shutdown-env env)))
 
 
 
@@ -128,7 +146,10 @@
 
 
 
+(comment
+  (clojure.pprint/pprint (input/from-location :input :json "dev-resources/input/simple.json"))
 
+  )
 
 
 
