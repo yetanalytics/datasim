@@ -2,11 +2,13 @@
   (:gen-class)
   (:require [clojure.core.async :as a :refer [chan]]
             [onyx.plugin.core-async :refer [take-segments!]]
+            [onyx.plugin.http-output :as http]
             [onyx.api]
 
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.util.xapi :as xapiu]))
+            [com.yetanalytics.datasim.util.xapi :as xapiu]
+            [cheshire.core :as json]))
 
 #_(defn my-inc [{:keys [n] :as segment}]
     (assoc segment :n (inc n)))
@@ -17,8 +19,21 @@
                        (get-in input [:personae :member]))]
     (assoc segment :actor-id actor-id)))
 
-(defn gen [{:keys [input actor-id]}]
-  (sim/sim-seq input :select-agents [actor-id]))
+(defn gen [{:keys [input actor-id lrs]}]
+  ;; Generate batches suitable for LRS POST
+  (let [{:keys [endpoint batch-size]} lrs]
+    (map (fn [statements]
+           {:url endpoint
+            :args
+            {:headers {"X-Experience-API-Version" "1.0.3"
+                       "Content-Type" "application/json"}
+             :body (json/generate-string (into [] statements))
+             :as :json}})
+         (partition-all batch-size (sim/sim-seq input :select-agents [actor-id])))))
+
+(defn post-success?
+  [{:keys [status]}]
+  (= 200 status))
 
 (def workflow
   [[:in :partition-actors]
@@ -54,6 +69,16 @@
     :onyx/batch-size batch-size}
 
    {:onyx/name :out
+    :onyx/plugin :onyx.plugin.http-output/output
+    :onyx/type :output
+    :onyx/medium :http
+    :http-output/success-fn ::post-success?
+    :http-output/retry-params {:base-sleep-ms 200
+                               :max-sleep-ms 30000
+                               :max-total-sleep-ms 3600000}
+    :onyx/batch-size batch-size
+    :onyx/doc "POST statements to http endpoint"}
+   #_{:onyx/name :out
     :onyx/plugin :onyx.plugin.core-async/output
     :onyx/type :output
     :onyx/medium :core.async
@@ -65,13 +90,13 @@
   {:core.async/buffer input-buffer ;; TODO: figure out why this is an atom
    :core.async/chan input-chan})
 
-(defn inject-out-ch [event lifecycle]
+#_(defn inject-out-ch [event lifecycle]
   {:core.async/chan output-chan})
 
 (def in-calls
   {:lifecycle/before-task-start inject-in-ch})
 
-(def out-calls
+#_(def out-calls
   {:lifecycle/before-task-start inject-out-ch})
 
 (def lifecycles
@@ -79,9 +104,9 @@
     :lifecycle/calls :com.yetanalytics.datasim.onyx.main/in-calls}
    {:lifecycle/task :in
     :lifecycle/calls :onyx.plugin.core-async/reader-calls}
-   {:lifecycle/task :out
+   #_{:lifecycle/task :out
     :lifecycle/calls :com.yetanalytics.datasim.onyx.main/out-calls}
-   {:lifecycle/task :out
+   #_{:lifecycle/task :out
     :lifecycle/calls :onyx.plugin.core-async/writer-calls}])
 
 #_(def submission)
@@ -120,7 +145,9 @@
 
     (a/>!! input-chan
            ;; input segments (for now) are an input + some params
-           {:input (input/from-location :input :json "dev-resources/input/simple.json")}
+           {:input (input/from-location :input :json "dev-resources/input/simple.json")
+            :lrs {:endpoint "http://localhost:8080/xapi/statements"
+                  :batch-size 25}}
            )
     (a/close! input-chan)
 
@@ -130,8 +157,9 @@
                                              :lifecycles lifecycles
                                              :task-scheduler :onyx.task-scheduler/balanced})
           _ (onyx.api/await-job-completion peer-config (:job-id submission))
-          results (take-segments! output-chan 50)]
-      (clojure.pprint/pprint results))
+          #_#_results (take-segments! output-chan 50)
+          ]
+      #_(clojure.pprint/pprint results))
 
     (doseq [v-peer v-peers]
       (onyx.api/shutdown-peer v-peer))
