@@ -59,4 +59,13 @@
                   :exclusions [cheshire]}
                  environ
                  {:mvn/version "1.1.0"}}
-   :main-opts   ["-m" "com.yetanalytics.datasim.server"]}}}
+   :main-opts   ["-m" "com.yetanalytics.datasim.server"]}
+  :onyx
+  {:extra-paths ["onyx-resources" "src/onyx"]
+   :extra-deps {org.onyxplatform/onyx {:mvn/version "0.14.6"
+                                       :exclusions
+                                       ;; TODO: More exclusions probably
+                                       [org.clojure/clojure
+                                        org.clojure/core.async
+                                        ]}
+                org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}}}}}

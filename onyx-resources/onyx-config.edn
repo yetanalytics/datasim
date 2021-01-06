@@ -1,0 +1,30 @@
+{;; TODO: This is an aero config, aero is a dep of onyx.
+ ;; Not currently used, included to provide options for deployement
+ :env-config
+ {:onyx/tenancy-id #profile {:default "1"
+                             :docker #env ONYX_ID}
+  :zookeeper/address #profile {:default "127.0.0.1:2181"
+                               :docker "zookeeper:2181"}
+  :zookeeper/server? #profile {:default true
+                               :docker false}
+  :zookeeper.server/port 2188
+  :onyx.log/config #profile {:default nil
+                             :docker {:level :info}}}
+ :peer-config
+ {:onyx/tenancy-id #profile {:default "1"
+                             :docker #env ONYX_ID}
+  :zookeeper/address #profile {:default "127.0.0.1:2181"
+                               :docker "zookeeper:2181"}
+  :onyx.peer/storage.zk.insanely-allow-windowing? #profile {:default true
+                                                            :docker false}
+  :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
+  :onyx.peer/zookeeper-timeout 1000
+  :onyx.messaging/allow-short-circuit? #profile {:default false
+                                                 :docker true}
+  :onyx.messaging/impl :aeron
+  :onyx.messaging/bind-addr #or [#env BIND_ADDR "localhost"]
+  :onyx.messaging/peer-port 40200
+  :onyx.messaging.aeron/embedded-driver? #profile {:default true
+                                                   :docker false}
+  :onyx.log/config #profile {:default nil
+                             :docker {:level :info}}}}
