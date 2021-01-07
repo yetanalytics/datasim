@@ -8,17 +8,22 @@
 
 (defn inject-seq [_ {input-json ::input-json
                      select-agents ::select-agents
-                     {:keys [endpoint batch-size]} ::lrs
+                     {:keys [endpoint
+                             batch-size
+                             username
+                             password]} ::lrs
                      :as lifecycle}]
   (let [input (u/parse-input input-json)]
     {:seq/seq
      (map (fn [statements]
             {:url (format "%s/statements" endpoint)
              :args
-             {:headers {"X-Experience-API-Version" "1.0.3"
-                        "Content-Type" "application/json"}
-              :body (json/generate-string (into [] statements))
-              :as :json}})
+             (cond-> {:headers {"X-Experience-API-Version" "1.0.3"
+                                "Content-Type" "application/json"}
+                      :body (json/generate-string (into [] statements))
+                      :as :json}
+               (and username password)
+               (assoc :basic-auth [username password]))})
           (partition-all batch-size
                          (sim/sim-seq
                           input
