@@ -9,25 +9,19 @@
 
 (defn -main
   "Assuming the given tenancy + peer config is running, submit a sim + post job"
-  [tenancy-id input-loc endpoint & rest-args]
-  (let [ ;; Peer config: should be there at peer launch + job submission
-        peer-config
-        {:zookeeper/address "127.0.0.1:2188"
-         :onyx/tenancy-id tenancy-id
-         :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
-         :onyx.messaging/impl :aeron
-         :onyx.messaging/peer-port 40200
-         :onyx.messaging/bind-addr "localhost"}
-
+  [tenancy-id input-loc endpoint & [username password async?]]
+  (let [{:keys [peer-config]} (-> (config/get-config)
+                                  (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
         submission (onyx.api/submit-job
                     peer-config
                     (job/config
                      {:input-json (slurp input-loc)
                       :lrs {:endpoint endpoint
-                            :batch-size 25}
-                      }))
-        ]
-    (onyx.api/await-job-completion peer-config (:job-id submission))
-    (println "job complete!")
+                            :username username
+                            :password password
+                            :batch-size 25}}))]
+    (when-not (= "true" async?)
+      (onyx.api/await-job-completion peer-config (:job-id submission))
+      (println "job complete!"))
     (clojure.pprint/pprint submission)
     (System/exit 0)))
