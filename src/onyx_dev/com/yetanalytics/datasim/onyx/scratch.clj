@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.onyx.scratch
-  "Scratch ns for playing with onyx" ;; TODO: Move/Remove
+  "Scratch ns for playing with onyx"
   (:require
    [clojure.core.async :as a]
    [onyx.plugin.http-output :as http]

@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.onyx.peer
+(ns com.yetanalytics.datasim.onyx.dev-peer
   (:gen-class)
   (:require onyx.plugin.http-output
             onyx.plugin.seq

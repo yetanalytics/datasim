@@ -73,4 +73,6 @@
                 org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}
                 org.onyxplatform/onyx-http {:mvn/version "0.14.5.0"
                                             :exclusions [aleph
-                                                         io.netty/netty-all]}}}}}
+                                                         io.netty/netty-all]}}}
+  :onyx-dev
+  {:extra-paths ["src/onyx_dev"]}}}
