@@ -1,0 +1,30 @@
+{;; :default profile is dev operation
+ :env-config
+ {:onyx/tenancy-id #profile {:default #env TENANCY_ID}
+  :zookeeper/address #profile {:default #or [#env ZK_ADDRESS
+                                             "127.0.0.1:2188"]
+                               :prod #env ZK_ADDRESS}
+  :zookeeper/server? #profile {:default true
+                               :prod false}
+  :zookeeper.server/port #profile {:default #long #or [#env ZK_SERVER_PORT
+                                                       2188]}
+  :onyx.log/config #profile {:default nil
+                             :prod {:level :info}}}
+ :peer-config
+ {:onyx/tenancy-id #ref [:env-config :onyx/tenancy-id]
+  :zookeeper/address #ref [:env-config :zookeeper/address]
+  :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
+  :onyx.peer/zookeeper-timeout #long #or [#env ZK_TIMEOUT
+                                          1000]
+  :onyx.messaging/impl :aeron
+  :onyx.messaging/bind-addr #or [#env BIND_ADDR
+                                 "localhost"]
+  :onyx.messaging/peer-port #long #or [#env PEER_PORT
+                                       40200]
+  :onyx.messaging.aeron/embedded-driver? #profile {:default true
+                                                   :prod false}
+  :onyx.log/config #profile {:default nil
+                             :docker {:level :info}}}
+ :launch-config
+ {:n-vpeers #long #or [#env N_VPEERS
+                       6]}}

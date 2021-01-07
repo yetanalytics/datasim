@@ -8,7 +8,8 @@
    [onyx.api]
    [onyx.test-helper :as th]
    [com.yetanalytics.datasim.onyx.seq :as dseq]
-   [com.yetanalytics.datasim.onyx.job :as job]))
+   [com.yetanalytics.datasim.onyx.job :as job]
+   [com.yetanalytics.datasim.onyx.config :as config]))
 
 (defonce out-chan (a/chan 1000))
 
@@ -29,28 +30,19 @@
 
 (comment
   ;; Run things in an enclosed environment
-  (let [id (java.util.UUID/randomUUID)]
+  (let [id (java.util.UUID/randomUUID)
+        {:keys [env-config peer-config]} (-> (config/get-config)
+                                             (assoc-in [:env-config :onyx/tenancy-id] id)
+                                             (assoc-in [:peer-config :onyx/tenancy-id] id))]
     (th/with-test-env
-      [{:keys [env-config
-               peer-config
-               n-peersqq
+      [{:keys [n-peers
                env
                peer-group
                peers]
         :as test-env} [;; n-peers
                        12 ;; max for procs on my macbook
-                       ;; env-config
-                       {:zookeeper/address "127.0.0.1:2188"
-                        :zookeeper/server? true
-                        :zookeeper.server/port 2188
-                        :onyx/tenancy-id id}
-                       ;; Peer config
-                       {:zookeeper/address "127.0.0.1:2188"
-                        :onyx/tenancy-id id
-                        :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
-                        :onyx.messaging/impl :aeron
-                        :onyx.messaging/peer-port 40200
-                        :onyx.messaging/bind-addr "localhost"}
+                       env-config
+                       peer-config
                        ]]
       (let [batch-size 10
             capacity 1000
@@ -85,4 +77,5 @@
         (println 'started submission)
         (onyx.api/await-job-completion peer-config (:job-id submission))
         (println 'done submission)
-        ))))
+        )))
+  )

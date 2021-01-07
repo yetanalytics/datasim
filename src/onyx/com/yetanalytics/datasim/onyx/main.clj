@@ -4,7 +4,8 @@
             [onyx.plugin.seq]
             [onyx.api]
             [com.yetanalytics.datasim.onyx.job :as job]
-            [com.yetanalytics.datasim.onyx.seq :as dseq]))
+            [com.yetanalytics.datasim.onyx.seq :as dseq]
+            [com.yetanalytics.datasim.onyx.config :as config]))
 
 (defn -main
   "Assuming the given tenancy + peer config is running, submit a sim + post job"
