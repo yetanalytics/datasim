@@ -73,7 +73,7 @@
          :iri-map ::p/iri-map
          :activities ::activity/cosmos
          :actor ::xs/agent
-         :alignment :alignment-map/actor-alignment
+         :alignment :alignment-map/alignments
          :actor-map :skeleton/actor-map)
   :ret :skeleton/statement-seq)
 
@@ -142,6 +142,34 @@
                  :seed seed
                  :rng rng})))))))
 
+
+
+ (defn get-actor-alignments
+   [alignments actor-id group-name role]
+
+   (reduce (fn [alignment-map alignment]
+             (let [iri (:component alignment)]
+               (if (contains? alignment-map iri)
+                 (let [existing (get alignment-map iri)
+                       existing-count (:count existing)
+                       count (+ existing-count 1)
+                       weight (/ (+ (* existing-count (:weight existing))
+                                    (:weight alignment))
+                                 count)]
+                   (assoc alignment-map iri {:weight weight
+                                             :count count}))
+                 (assoc alignment-map iri
+                        {:weight (:weight alignment)
+                         :count 1}))))
+           {}
+           (reduce (fn [actor-alignments alignment]
+                     (if (contains? #{actor-id group-name role}
+                                    (:id alignment))
+                       (concat actor-alignments (:alignments alignment))
+                       actor-alignments))
+                   []
+                   alignments)))
+
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
             :skeleton/statement-seq))
@@ -156,16 +184,16 @@
 
   Should be run once (in a single thread)
   Spooky."
-  [{{actors :member} :personae
+  [{personae :personae
     {:keys [start from end
             timezone seed
-
-
             ]} :parameters
     profiles :profiles
-    {alignments :alignment-map} :alignments
+    alignments :alignments
     :as input}]
   (let [^ZoneRegion zone (t/zone-id timezone)
+        debug1 (clojure.pprint/pprint "got here")
+        actors (:member personae)
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
@@ -245,7 +273,11 @@
                                                     (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
                                                  [actor-arma mask]))
 
-                      actor-alignment (get alignments actor-id {})
+                      actor-alignment (get-actor-alignments alignments
+                                                            actor-id
+                                                            (:name personae)
+                                                            nil)
+                      ;;debug (clojure.pprint/pprint [actor-id actor-alignment])
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -255,16 +287,17 @@
 
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)]]
-            [actor-id
-             (statement-seq
-              input
-              iri-map
-              activities
-              actor
-              actor-alignment
-              {:seed actor-seed
-               :prob-seq actor-prob
-               :reg-seq actor-reg-seq})]))))
+            (do
+              [actor-id
+               (statement-seq
+                input
+                iri-map
+                activities
+                actor
+                actor-alignment
+                {:seed actor-seed
+                 :prob-seq actor-prob
+                 :reg-seq actor-reg-seq})])))))
 
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input)
@@ -292,6 +325,45 @@
 
 
 (comment
+
+  (def alignments
+    [{:id "cliff@yetanalytics.com"
+      :type "Agent"
+      :alignments [{:component "http://www.google.com/thing1"
+                    :weight 0.6}
+                   {:component "http://www.google.com/thing5"
+                    :weight 0.3}]}
+     {:id "cliff1@yetanalytics.com"
+      :type "Agent"
+      :alignments [{:component "http://www.google.com/thing3"
+                    :weight 0.6}
+                   {:component "http://www.google.com/thing4"
+                    :weight 0.3}]}
+     {:id "group1"
+      :type "Group"
+      :alignments [{
+                    :component "http://www.google.com/thing5"
+                    :weight 0.6
+                    }]}
+     {:id "bombadier"
+      :type "Role"
+      :alignments [{
+                    :component "http://www.google.com/thing5"
+                    :weight 0.6
+                    }]}])
+
+  (def id "cliff@yetanalytics.com")
+
+
+
+  (get-actor-alignments id "group1" "bombadier" alignments)
+
+  (clojure.pprint/pprint alignments)
+
+  (def thing {})
+  (assoc thing :a 3)
+
+
   (def i (input/from-location :input :json "dev-resources/input/simple.json"))
 
 

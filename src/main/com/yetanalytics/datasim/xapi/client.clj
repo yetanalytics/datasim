@@ -4,6 +4,7 @@
    [clojure.java.io :as io]
    [cheshire.core :as json]
    [org.httpkit.client :as http]
+   [clojure.core.async :as async]
    ))
 
 (def default-http-options
@@ -24,12 +25,15 @@
          success 0
          fail []]
     (if-let [batch (first batches)]
-      (let [{:keys [status body] :as response} @(http/post
+      (let [ start (. System (currentTimeMillis))
+            http-opts (merge default-http-options
+                             http-options
+                             {:body (json/encode batch)
+                              :as :stream})
+            {:keys [status body] :as response} @(http/post
                                                  (format "%s/statements" endpoint)
-                                                 (merge default-http-options
-                                                        http-options
-                                                        {:body (json/encode batch)
-                                                         :as :stream}))]
+                                                 http-opts)]
+
         (if (= 200 status)
           (let [ids (map
                      (fn [^String id]

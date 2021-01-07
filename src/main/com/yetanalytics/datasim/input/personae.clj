@@ -37,7 +37,6 @@
 
 (defrecord Personae [member
                      objectType
-                     ;; name
 
                      ;; prob not used
                      mbox

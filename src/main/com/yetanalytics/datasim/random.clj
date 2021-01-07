@@ -151,17 +151,19 @@
   [rng weights coll
    & {:keys [sd]
       :or {sd 0.25}}]
-  (let [even-odds (/ 1 (count coll))]
+  (let [even-odds (/ 1 (count coll))
+        debug (clojure.pprint/pprint [rng weights coll])]
     (apply max-key
            (fn [el]
              (rand-gauss
               rng
-              (+ even-odds (* sd (get weights el 0.0)))
+              (+ even-odds (* sd (get-in weights [el :weight] 0.0)))
               sd))
            coll)))
 
 
 (comment
+
   #_(use '(incanter core stats charts io))
 
   (let [rng (seed-rng 42)
