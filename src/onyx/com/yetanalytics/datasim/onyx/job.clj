@@ -9,10 +9,14 @@
   [{:keys [batch-size
            partition-size ;; How many actors per generator?
            input-json
-           lrs]
+           lrs
+           retry-params]
     :or {batch-size 10
          partition-size 1 ;; one actor per partition
-         }}]
+         retry-params
+         {:base-sleep-ms 200
+          :max-sleep-ms 30000
+          :max-total-sleep-ms 3600000}}}]
 
   (assert lrs "LRS must be provided")
   (assert input-json "Input JSON must be provided")
@@ -54,8 +58,6 @@
                    :onyx/type :output
                    :onyx/medium :http
                    :http-output/success-fn ::http/post-success?
-                   :http-output/retry-params {:base-sleep-ms 200
-                                              :max-sleep-ms 30000
-                                              :max-total-sleep-ms 3600000}
+                   :http-output/retry-params retry-params
                    :onyx/batch-size batch-size
                    :onyx/doc "POST statements to http endpoint"}]}]))))
