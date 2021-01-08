@@ -135,7 +135,6 @@
     registration :registration
     ?sub-registration :sub-registration}]
   (let [rng        (random/seed-rng seed)
-        debug (clojure.pprint/pprint alignment)
         ;; components of `base-stmt`
         stmt-id    (random/rand-uuid rng)
         stmt-actor (w/stringify-keys actor)

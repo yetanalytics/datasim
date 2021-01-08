@@ -151,8 +151,7 @@
   [rng weights coll
    & {:keys [sd]
       :or {sd 0.25}}]
-  (let [even-odds (/ 1 (count coll))
-        debug (clojure.pprint/pprint [rng weights coll])]
+  (let [even-odds (/ 1 (count coll))]
     (apply max-key
            (fn [el]
              (rand-gauss

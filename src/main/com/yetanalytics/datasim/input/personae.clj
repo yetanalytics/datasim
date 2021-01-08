@@ -37,8 +37,6 @@
 
 (defrecord Personae [member
                      objectType
-
-                     ;; prob not used
                      mbox
                      mbox_sha1sum
                      openid

@@ -145,32 +145,28 @@
                  :rng rng})))))))
 
 
+(defn get-actor-alignments
+     [alignments actor-id group-name role]
+     (reduce (fn [alignment-map alignment]
+               (let [iri (:component alignment)]
+                 (if (contains? alignment-map iri)
+                   (let [existing (get alignment-map iri)
+                         existing-count (:count existing)
+                         count (+ existing-count 1)
+                         weight (/ (+ (* existing-count (:weight existing))
+                                      (:weight alignment))
+                                   count)]
+                     (assoc alignment-map iri {:weight weight
+                                               :count count}))
+                   (assoc alignment-map iri
+                          {:weight (:weight alignment)
+                           :count 1}))))
+             {}
+             (for [{alignments :alignments :as actor-alignment} alignments
+                   :when (contains? #{actor-id group-name role} (:id actor-alignment))
+                   alignment alignments]
+               alignment)))
 
- (defn get-actor-alignments
-   [alignments actor-id group-name role]
-
-   (reduce (fn [alignment-map alignment]
-             (let [iri (:component alignment)]
-               (if (contains? alignment-map iri)
-                 (let [existing (get alignment-map iri)
-                       existing-count (:count existing)
-                       count (+ existing-count 1)
-                       weight (/ (+ (* existing-count (:weight existing))
-                                    (:weight alignment))
-                                 count)]
-                   (assoc alignment-map iri {:weight weight
-                                             :count count}))
-                 (assoc alignment-map iri
-                        {:weight (:weight alignment)
-                         :count 1}))))
-           {}
-           (reduce (fn [actor-alignments alignment]
-                     (if (contains? #{actor-id group-name role}
-                                    (:id alignment))
-                       (concat actor-alignments (:alignments alignment))
-                       actor-alignments))
-                   []
-                   alignments)))
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
@@ -273,12 +269,11 @@
                                                    (double
                                                     (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
                                                  [actor-arma mask]))
-
                       actor-alignment (get-actor-alignments alignments
                                                             actor-id
-                                                            (:name personae)
+                                                            (xapiu/agent-id personae)
                                                             nil)
-                      ;;debug (clojure.pprint/pprint [actor-id actor-alignment])
+                      debug (clojure.pprint/pprint [actor-id actor-alignment])
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -309,7 +304,7 @@
 
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input
-               :options (s/keys*
+               :optionspprint (s/keys*
                          :opt-un [::select-agents]))
   :ret :skeleton/statement-seq)
 
@@ -426,11 +421,12 @@
                     :weight 0.6
                     }]}])
 
+
+
+
   (def id "cliff@yetanalytics.com")
 
-
-
-  (get-actor-alignments id "group1" "bombadier" alignments)
+  (get-actor-alignments alignments id "group1" "bombadier")
 
   (clojure.pprint/pprint alignments)
 
