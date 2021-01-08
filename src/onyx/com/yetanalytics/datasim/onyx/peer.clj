@@ -14,6 +14,8 @@
                 peer-config
                 launch-config]
          {:keys [n-vpeers]} :launch-config} (config/get-config)
+
+        env (onyx.api/start-env env-config)
         ;; start peer group
         peer-group (onyx.api/start-peer-group peer-config)
 
@@ -23,4 +25,5 @@
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread. ^Runnable #(do
                                             (onyx.api/shutdown-peers v-peers)
-                                            (onyx.api/shutdown-peer-group peer-group))))))
+                                            (onyx.api/shutdown-peer-group peer-group)
+                                            (onyx.api/shutdown-env env))))))
