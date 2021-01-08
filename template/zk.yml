@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Launches a simple zk deployment
+
+Parameters:
+  Subnet:
+    Type: AWS::EC2::Subnet::Id
+  VpcId:
+    Description: VPC associated with the provided subnets
+    Type: AWS::EC2::VPC::Id
+  InstanceSshCidr:
+    Description: SSH access cidr for dev
+    Type: String
+  InstanceAmiId:
+    Description: AMI (image) to use on EC2 instances.
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+  InstanceKeyName:
+    Description: Name of an EC2 key pair that can be used to connect to instances
+    Type: String
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ZK Instances
+      VpcId:
+        Ref: VpcId
+      SecurityGroupIngress:
+        # TODO: Dev, remove
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref InstanceSshCidr
+      # - IpProtocol: tcp
+      #   FromPort: '8181'
+      #   ToPort: '8181'
+      #   SourceSecurityGroupId:
+      #     Ref: LbSecurityGroup
+      # - IpProtocol: tcp
+      #   FromPort: '2181'
+      #   ToPort: '2181'
+      #   SourceSecurityGroupId:
+      #     Ref: ClientSecurityGroup
+      # - IpProtocol: tcp
+      #   FromPort: '2888'
+      #   ToPort: '2888'
+      #   SourceSecurityGroupId:
+      #     Ref: ClientSecurityGroup
+      # - IpProtocol: tcp
+      #   FromPort: '3888'
+      #   ToPort: '3888'
+      #   SourceSecurityGroupId:
+      #     Ref: ClientSecurityGroup
+  InstanceSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId:
+        Ref: InstanceSecurityGroup
+      IpProtocol: "-1"
+      FromPort: '0'
+      ToPort: '65535'
+      SourceSecurityGroupId:
+        Ref: InstanceSecurityGroup
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+        - PolicyName: allow-describe-tags
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: 'ec2:DescribeTags'
+                Resource: '*'
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref InstanceRole
+
+  ENI0:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      # SourceDestCheck: 'false'
+      GroupSet:
+        - !Ref InstanceSecurityGroup
+      SubnetId: !Ref Subnet
+  ENI1:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !Ref InstanceSecurityGroup
+      SubnetId: !Ref Subnet
+  ENI2:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      GroupSet:
+        - !Ref InstanceSecurityGroup
+      SubnetId: !Ref Subnet
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Arn: !GetAtt InstanceProfile.Arn
+        ImageId: !Ref InstanceAmiId
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref InstanceKeyName
+        # SecurityGroupIds:
+        #   - !Ref InstanceSecurityGroup
+        UserData:
+          Fn::Base64: !Sub |
+              #!/bin/bash -xe
+              amazon-linux-extras install corretto8
+              mkdir /tmp/zk
+              cd /tmp/zk
+              wget https://archive.apache.org/dist/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
+              tar -xvzf zookeeper-3.4.14.tar.gz -C /
+              cd /zookeeper-3.4.14
+              mkdir -p /var/lib/zookeeper
+
+              echo 'Setting zk id'
+
+              INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+              LOGICAL_NAME=$(aws ec2 describe-tags \
+                --filters "Name=resource-id,Values=$INSTANCE_ID" \
+                          "Name=key,Values=aws:cloudformation:logical-id" \
+                --region=${AWS::Region} \
+                --output=text | cut -f5)
+              /opt/aws/bin/cfn-get-metadata \
+                -s ${AWS::StackName} \
+                -r $LOGICAL_NAME \
+                --region ${AWS::Region} \
+                -k zookeeper.myid > /var/lib/zookeeper/myid
+
+              echo 'Writing config...'
+
+              echo 'tickTime=2000'                                      >> conf/zoo.cfg
+              echo 'dataDir=/var/lib/zookeeper'                         >> conf/zoo.cfg
+              echo 'clientPort=2181'                                    >> conf/zoo.cfg
+              echo 'initLimit=5'                                        >> conf/zoo.cfg
+              echo 'syncLimit=2'                                        >> conf/zoo.cfg
+              echo 'server.1=${ENI0.PrimaryPrivateIpAddress}:2888:3888' >> conf/zoo.cfg
+              echo 'server.2=${ENI1.PrimaryPrivateIpAddress}:2888:3888' >> conf/zoo.cfg
+              echo 'server.3=${ENI2.PrimaryPrivateIpAddress}:2888:3888' >> conf/zoo.cfg
+
+              echo 'Starting ZK...'
+
+              bin/zkServer.sh start
+
+  Instance0:
+    Type: AWS::EC2::Instance
+    Metadata:
+      zookeeper:
+        myid: 1
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref Subnet
+
+  ENI0Attachment:
+    Type: AWS::EC2::NetworkInterfaceAttachment
+    Properties:
+      DeleteOnTermination: false
+      InstanceId:
+        Ref: Instance0
+      NetworkInterfaceId:
+        Ref: ENI0
+      DeviceIndex: 1
+
+  Instance1:
+    Type: AWS::EC2::Instance
+    Metadata:
+      zookeeper:
+        myid: 2
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref Subnet
+
+  ENI1Attachment:
+    Type: AWS::EC2::NetworkInterfaceAttachment
+    Properties:
+      DeleteOnTermination: false
+      InstanceId:
+        Ref: Instance1
+      NetworkInterfaceId:
+        Ref: ENI1
+      DeviceIndex: 1
+
+  Instance2:
+    Type: AWS::EC2::Instance
+    Metadata:
+      zookeeper:
+        myid: 3
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref Subnet
+
+  ENI2Attachment:
+    Type: AWS::EC2::NetworkInterfaceAttachment
+    Properties:
+      DeleteOnTermination: false
+      InstanceId:
+        Ref: Instance2
+      NetworkInterfaceId:
+        Ref: ENI2
+      DeviceIndex: 1
