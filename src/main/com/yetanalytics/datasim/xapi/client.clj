@@ -4,8 +4,7 @@
    [clojure.java.io :as io]
    [cheshire.core :as json]
    [org.httpkit.client :as http]
-   [clojure.core.async :as async]
-   ))
+   [clojure.core.async :as a]))
 
 (def default-http-options
   {:headers {"X-Experience-Api-Version" "1.0.3"
@@ -17,7 +16,7 @@
   [{:keys [endpoint
            batch-size
            http-options]
-    :or {batch-size 10}}
+    :or {batch-size 25}}
    statement-seq
    & {:keys [emit-ids-fn]}]
   ;; TODO: Exp backoff, etc
@@ -54,3 +53,62 @@
                                   (json/decode-stream rdr)))))}))
       {:success success
        :fail fail})))
+
+(defn post-statements-async
+  "Given LRS options and a channel with statements, send them to an LRS in async
+   batches
+
+   Returns a channel that will reciveve [:success <list of statement ids>] for
+   each batch or [:fail <failing request>]. Will stop sending on failure."
+  [{:keys [endpoint
+           batch-size
+           http-options]
+    :or {batch-size 25}}
+   statement-chan
+   & {:keys [concurrency
+             buffer-in
+             buffer-out]
+      :or {concurrency 4
+           buffer-in 100 ;; 10x default batch size
+           buffer-out 100
+           }}]
+  (let [run? (atom true)
+        in-chan (a/chan buffer-in
+                        (partition-all batch-size))
+        ;; is this.. backpressure?
+        out-chan (a/chan buffer-out)]
+    (a/pipeline-async
+     concurrency
+     out-chan
+     (fn [batch p]
+       (if @run?
+         (http/post
+          (format "%s/statements" endpoint)
+          (merge default-http-options
+                 http-options
+                 {:body (json/encode batch)
+                  :as :stream})
+          (fn [{:keys [status headers body error] :as ret}]
+            (if (or (not= 200 status)
+                    error)
+              (do
+                ;; Stop further processing
+                (swap! run? not)
+                (a/put!
+                 p
+                 [:fail ret]))
+              (a/put!
+               p
+               [:success (mapv
+                          (fn [^String id]
+                            (java.util.UUID/fromString id))
+                          (with-open [rdr (io/reader body)]
+                            (json/decode-stream rdr)))]))
+            ;; Close the return channel
+            (a/close! p)))
+         (a/close! p)))
+     in-chan)
+    ;; Pipe to in-chan
+    (a/pipe statement-chan in-chan)
+    ;; Return the out chan
+    out-chan))
