@@ -8,11 +8,36 @@ MAIN_NS ?= com.yetanalytics.datasim.main
 clean:
 	rm -rf target
 
-target/bundle:
-	clojure -A:build $(GROUP_ID) $(ARTIFACT_ID) $(VERSION)
-	chmod u+x target/$(ARTIFACT_ID)-$(VERSION)/bin/run.sh
-	chmod u+x target/$(ARTIFACT_ID)-$(VERSION)/bin/server.sh
-	mv target/$(ARTIFACT_ID)-$(VERSION) target/bundle
+target/bundle/datasim_cli.jar:
+	mkdir -p target/bundle
+	rm -f pom.xml
+	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-cli :version '"$(VERSION)"' :jar target/bundle/datasim_cli.jar :main-class com.yetanalytics.datasim.main
+	rm -f pom.xml
+
+target/bundle/datasim_server.jar: # no AOT for this one
+	mkdir -p target/bundle
+	rm -f pom.xml
+	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:server]' :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-server :version '"$(VERSION)"' :jar target/bundle/datasim_server.jar :main-class com.yetanalytics.datasim.server
+	rm -f pom.xml
+
+target/bundle/datasim_peer.jar:
+	mkdir -p target/bundle
+	rm -f pom.xml
+	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:onyx]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-peer :version '"$(VERSION)"' :jar target/bundle/datasim_peer.jar :main-class com.yetanalytics.datasim.onyx.peer
+	rm -f pom.xml
+
+target/bundle/datasim_peer_driver.jar:
+	mkdir -p target/bundle
+	rm -f pom.xml
+	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:onyx]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-peer-driver :version '"$(VERSION)"' :jar target/bundle/datasim_peer_driver.jar :main-class com.yetanalytics.datasim.onyx.aeron-media-driver
+	rm -f pom.xml
+
+target/bundle/bin:
+	mkdir -p target/bundle/bin
+	cp -r scripts/*.sh target/bundle/bin
+	chmod +x target/bundle/bin
+
+target/bundle: target/bundle/bin target/bundle/datasim_cli.jar target/bundle/datasim_server.jar target/bundle/datasim_peer.jar target/bundle/datasim_peer_driver.jar
 
 bundle: target/bundle
 
