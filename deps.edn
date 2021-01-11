@@ -74,11 +74,4 @@
   :depstar {:replace-deps ; tool usage is new in 2.x
             {seancorfield/depstar {:mvn/version "2.0.165"}}
             :ns-default hf.depstar
-            :exec-args {:no-pom true}}
-  :uberjar-cli {:main-opts ["-m" "hf.depstar.uberjar" "target/bundle/datasim_cli.jar"
-                            "-C" "-m" "com.yetanalytics.datasim.main"]}
-  :uberjar-server {:main-opts ["-m" "hf.depstar.uberjar" "target/bundle/datasim_server.jar"
-                               "-C" "-m" "com.yetanalytics.datasim.server"]}
-  :uberjar-peer {:main-opts ["-m" "hf.depstar.uberjar" "target/bundle/datasim_peer.jar"
-                             "-C" "-m" "com.yetanalytics.datasim.onyx.peer"]}
-  }}
+            :exec-args {:no-pom true}}}}
