@@ -21,7 +21,18 @@ Parameters:
   InstanceKeyName:
     Description: Name of an EC2 key pair that can be used to connect to instances
     Type: String
-
+  Instance0Ip:
+    Description: Instance 0 ip
+    Type: String
+    Default: '10.0.2.4'
+  Instance1Ip:
+    Description: Instance 0 ip
+    Type: String
+    Default: '10.0.2.5'
+  Instance2Ip:
+    Description: Instance 0 ip
+    Type: String
+    Default: '10.0.2.6'
 Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -92,26 +103,6 @@ Resources:
       Roles:
       - !Ref InstanceRole
 
-  ENI0:
-    Type: AWS::EC2::NetworkInterface
-    Properties:
-      # SourceDestCheck: 'false'
-      GroupSet:
-        - !Ref InstanceSecurityGroup
-      SubnetId: !Ref Subnet
-  ENI1:
-    Type: AWS::EC2::NetworkInterface
-    Properties:
-      GroupSet:
-        - !Ref InstanceSecurityGroup
-      SubnetId: !Ref Subnet
-  ENI2:
-    Type: AWS::EC2::NetworkInterface
-    Properties:
-      GroupSet:
-        - !Ref InstanceSecurityGroup
-      SubnetId: !Ref Subnet
-
   LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
@@ -155,9 +146,9 @@ Resources:
               echo 'clientPort=2181'                                    >> conf/zoo.cfg
               echo 'initLimit=5'                                        >> conf/zoo.cfg
               echo 'syncLimit=2'                                        >> conf/zoo.cfg
-              echo 'server.1=${ENI0.PrimaryPrivateIpAddress}:2888:3888' >> conf/zoo.cfg
-              echo 'server.2=${ENI1.PrimaryPrivateIpAddress}:2888:3888' >> conf/zoo.cfg
-              echo 'server.3=${ENI2.PrimaryPrivateIpAddress}:2888:3888' >> conf/zoo.cfg
+              echo 'server.1=${Instance0Ip}:2888:3888' >> conf/zoo.cfg
+              echo 'server.2=${Instance1Ip}:2888:3888' >> conf/zoo.cfg
+              echo 'server.3=${Instance2Ip}:2888:3888' >> conf/zoo.cfg
 
               echo 'Starting ZK...'
 
@@ -172,17 +163,12 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      SubnetId: !Ref Subnet
-
-  ENI0Attachment:
-    Type: AWS::EC2::NetworkInterfaceAttachment
-    Properties:
-      DeleteOnTermination: false
-      InstanceId:
-        Ref: Instance0
-      NetworkInterfaceId:
-        Ref: ENI0
-      DeviceIndex: 1
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          PrivateIpAddress: !Ref Instance0Ip
+          SubnetId: !Ref Subnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
 
   Instance1:
     Type: AWS::EC2::Instance
@@ -193,17 +179,12 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      SubnetId: !Ref Subnet
-
-  ENI1Attachment:
-    Type: AWS::EC2::NetworkInterfaceAttachment
-    Properties:
-      DeleteOnTermination: false
-      InstanceId:
-        Ref: Instance1
-      NetworkInterfaceId:
-        Ref: ENI1
-      DeviceIndex: 1
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          PrivateIpAddress: !Ref Instance1Ip
+          SubnetId: !Ref Subnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
 
   Instance2:
     Type: AWS::EC2::Instance
@@ -214,14 +195,9 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref LaunchTemplate
         Version: !GetAtt LaunchTemplate.LatestVersionNumber
-      SubnetId: !Ref Subnet
-
-  ENI2Attachment:
-    Type: AWS::EC2::NetworkInterfaceAttachment
-    Properties:
-      DeleteOnTermination: false
-      InstanceId:
-        Ref: Instance2
-      NetworkInterfaceId:
-        Ref: ENI2
-      DeviceIndex: 1
+      NetworkInterfaces:
+        - DeviceIndex: 0
+          PrivateIpAddress: !Ref Instance2Ip
+          SubnetId: !Ref Subnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
