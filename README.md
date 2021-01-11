@@ -35,14 +35,21 @@ Predefined xAPI Actors (upon whom the simulation will be based) are required to 
 
 #### Alignments
 
-An alignment represents a way to influence the simulation by explicitly weighting an Actor's relationship to a part of the xAPI Profile. Each actor can have alignments to multiple parts of the Profile, and the weight system ranges from -1 to 1 (with 1 being an extremely high propensity for interaction in the simulation and -1 being the opposite). During the simulation these weights factor in but do not completely predict the outcome as there is still randomness in Actor behavior. The records are a combination of Actor, IRI to align to, and weight.
+An alignment represents a way to influence the simulation by explicitly weighting an Actor's relationship to a part of the xAPI Profile. Each actor can have alignments to multiple parts of the Profile, and the weight system ranges from -1 to 1 (with 1 being an extremely high propensity for interaction in the simulation and -1 indicating that zero statements should be created for that Actor and that Profile Component). During the simulation these weights factor in but do not completely predict the outcome as there is still randomness in Actor behavior. The records are an array of objects where each object is a combination of Actor (id in IFI format), type ("Agent", "Group", or "Role") and an array of IRIs to align to, and weights for each.
 
-    {"mbox::mailto:bob@example.org":
-      {"https://example.org/activity/a": 0.5,
-       "https://example.org/activity/c": -0.2},
-     "mbox::mailto:alice@example.org":
-      {"https://example.org/activity/c": 0.7,
-       "https://example.org/activity/d": -0.02}}
+    [
+      {
+        "id": "mbox::mailto:bob@example.org",
+        "type": "Agent",
+        "alignments": [
+          {
+            "component": "https://example.org/course/1440130447",
+            "weight": -1.0
+          }
+        ]
+      }
+    ]
+
 
 #### Simulation Parameters
 
