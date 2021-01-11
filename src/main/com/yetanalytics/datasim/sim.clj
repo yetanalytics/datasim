@@ -273,7 +273,6 @@
                                                             actor-id
                                                             (xapiu/agent-id personae)
                                                             nil)
-                      debug (clojure.pprint/pprint [actor-id actor-alignment])
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -394,45 +393,6 @@
       a/merge))
 
 (comment
-
-  (def alignments
-    [{:id "cliff@yetanalytics.com"
-      :type "Agent"
-      :alignments [{:component "http://www.google.com/thing1"
-                    :weight 0.6}
-                   {:component "http://www.google.com/thing5"
-                    :weight 0.3}]}
-     {:id "cliff1@yetanalytics.com"
-      :type "Agent"
-      :alignments [{:component "http://www.google.com/thing3"
-                    :weight 0.6}
-                   {:component "http://www.google.com/thing4"
-                    :weight 0.3}]}
-     {:id "group1"
-      :type "Group"
-      :alignments [{
-                    :component "http://www.google.com/thing5"
-                    :weight 0.6
-                    }]}
-     {:id "bombadier"
-      :type "Role"
-      :alignments [{
-                    :component "http://www.google.com/thing5"
-                    :weight 0.6
-                    }]}])
-
-
-
-
-  (def id "cliff@yetanalytics.com")
-
-  (get-actor-alignments alignments id "group1" "bombadier")
-
-  (clojure.pprint/pprint alignments)
-
-  (def thing {})
-  (assoc thing :a 3)
-
 
   (def i (input/from-location :input :json "dev-resources/input/simple.json"))
 
