@@ -24,15 +24,12 @@
          success 0
          fail []]
     (if-let [batch (first batches)]
-      (let [ start (. System (currentTimeMillis))
-            http-opts (merge default-http-options
-                             http-options
-                             {:body (json/encode batch)
-                              :as :stream})
-            {:keys [status body] :as response} @(http/post
+      (let [{:keys [status body] :as response} @(http/post
                                                  (format "%s/statements" endpoint)
-                                                 http-opts)]
-
+                                                 (merge default-http-options
+                                                        http-options
+                                                        {:body (json/encode batch)
+                                                         :as :stream}))]
         (if (= 200 status)
           (let [ids (map
                      (fn [^String id]
