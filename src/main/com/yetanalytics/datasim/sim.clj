@@ -303,7 +303,7 @@
 
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input
-               :optionspprint (s/keys*
+               :options (s/keys*
                          :opt-un [::select-agents]))
   :ret :skeleton/statement-seq)
 

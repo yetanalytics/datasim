@@ -29,19 +29,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(comment
-
-  (defn wait-print []
-    (async/thread
-      (Thread/sleep 3000)
-      (clojure.pprint/pprint "Go!")))
-
-  (wait-print)
-
-
-  )
-
-
 (defn get-stream
   "Given a map and a key, retrieve the content of the key as an input stream."
   [m k]
