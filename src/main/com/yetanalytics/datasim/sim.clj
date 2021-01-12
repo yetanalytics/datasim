@@ -146,26 +146,26 @@
 
 
 (defn get-actor-alignments
-     [alignments actor-id group-name role]
-     (reduce (fn [alignment-map alignment]
-               (let [iri (:component alignment)]
-                 (if (contains? alignment-map iri)
-                   (let [existing (get alignment-map iri)
-                         existing-count (:count existing)
-                         count (+ existing-count 1)
-                         weight (/ (+ (* existing-count (:weight existing))
-                                      (:weight alignment))
-                                   count)]
-                     (assoc alignment-map iri {:weight weight
-                                               :count count}))
-                   (assoc alignment-map iri
-                          {:weight (:weight alignment)
-                           :count 1}))))
-             {}
-             (for [{alignments :alignments :as actor-alignment} alignments
-                   :when (contains? #{actor-id group-name role} (:id actor-alignment))
-                   alignment alignments]
-               alignment)))
+  [alignments actor-id group-name role]
+  (reduce (fn [alignment-map alignment]
+            (let [iri (:component alignment)]
+              (if (contains? alignment-map iri)
+                (let [existing (get alignment-map iri)
+                      existing-count (:count existing)
+                      count (+ existing-count 1)
+                      weight (/ (+ (* existing-count (:weight existing))
+                                   (:weight alignment))
+                                count)]
+                  (assoc alignment-map iri {:weight weight
+                                            :count count}))
+                (assoc alignment-map iri
+                       {:weight (:weight alignment)
+                        :count 1}))))
+          {}
+          (for [{alignments :alignments :as actor-alignment} alignments
+                :when (contains? (set [actor-id group-name role]) (:id actor-alignment))
+                alignment alignments]
+            alignment)))
 
 
 (s/def ::skeleton
@@ -187,7 +187,7 @@
             timezone seed]
      ?from-stamp :from} :parameters
     profiles :profiles
-    alignments :alignments
+    {alignments :alignment-vector} :alignments
     :as input}]
   (let [^ZoneRegion zone (t/zone-id timezone)
         actors (:member personae)

@@ -35,31 +35,34 @@
                    ::type
                    ::alignments]))
 
-;;Actor-Alignments: Collection of Actor-Alignment
+;;Alignment-vector: Collection of Actor-Alignment
 
-(s/def ::actor-alignments
+(s/def ::alignment-vector
   (s/every ::actor-alignment))
 
+;;Alignment input
+(s/def ::alignments-input
+  (s/keys :req-un [::alignment-vector]))
+(comment
 
 
+  )
 
-(defrecord Alignments [id
-                       type
-                       alignments]
+(defrecord Alignments [alignment-vector]
   p/FromInput
   (validate [this]
-    (s/explain-data ::actor-alignments
+    (s/explain-data ::alignments-input
                     this))
   p/JSONRepresentable
   (read-key-fn [this k]
     (keyword nil (name k)))
   (read-body-fn [this json-result]
     (map->Alignments
-     json-result))
+     {:alignment-vector json-result}))
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]
-    (into {} this)))
+    alignment-vector))
 
 
 (comment
@@ -85,6 +88,12 @@
                          })
 
   (def alignments-example [actor-alignment1 actor-alignment2])
+
+
+  (s/explain-data ::actor-alignments alignments-example)
+
+  (satisfies? p/FromInput alignments-example)
+
 
   (s/valid? ::alignment alignment1)
   (s/valid? ::alignment alignment2)

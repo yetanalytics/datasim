@@ -19,8 +19,7 @@
   ::personae/personae)
 
 (s/def ::alignments
-  (s/every ::alignments/actor-alignment
-           :into []))
+  ::alignments/alignments-input)
 
 (s/def ::parameters
   ::params/parameters)
@@ -138,7 +137,7 @@
                          (get subobject-constructors type-k))]
     (case fmt-k
       ;; currently only JSON
-      :json (if (contains? #{:alignments :profiles} type-k)
+      :json (if (= type-k :profiles)
               (dio/read-loc-array (constructor {}) location)
               (dio/read-loc-json (constructor {}) location)))
     (throw (ex-info (format "Unknown key %s" type-k)
