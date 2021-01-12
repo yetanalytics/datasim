@@ -43,10 +43,6 @@
 ;;Alignment input
 (s/def ::alignments-input
   (s/keys :req-un [::alignment-vector]))
-(comment
-
-
-  )
 
 (defrecord Alignments [alignment-vector]
   p/FromInput
