@@ -33,6 +33,14 @@ Parameters:
     Description: Instance 0 ip
     Type: String
     Default: '10.0.2.6'
+  Version:
+    Description: Version of ZK to pull
+    Type: String
+    Default: '3.5.3-beta'
+  MaxClients:
+    Description: Max clients, should be at least <n peers> * <n vpeers>
+    Type: Number
+    Default: 30
 Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -120,9 +128,9 @@ Resources:
               amazon-linux-extras install corretto8
               mkdir /tmp/zk
               cd /tmp/zk
-              wget https://archive.apache.org/dist/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
-              tar -xvzf zookeeper-3.4.14.tar.gz -C /
-              cd /zookeeper-3.4.14
+              wget https://archive.apache.org/dist/zookeeper/zookeeper-${Version}/zookeeper-${Version}.tar.gz
+              tar -xvf zookeeper-${Version}.tar.gz -C /
+              cd /zookeeper-${Version}
               mkdir -p /var/lib/zookeeper
 
               echo 'Setting zk id'
@@ -141,11 +149,12 @@ Resources:
 
               echo 'Writing config...'
 
-              echo 'tickTime=2000'                                      >> conf/zoo.cfg
-              echo 'dataDir=/var/lib/zookeeper'                         >> conf/zoo.cfg
-              echo 'clientPort=2181'                                    >> conf/zoo.cfg
-              echo 'initLimit=5'                                        >> conf/zoo.cfg
-              echo 'syncLimit=2'                                        >> conf/zoo.cfg
+              echo 'tickTime=2000'                     >> conf/zoo.cfg
+              echo 'dataDir=/var/lib/zookeeper'        >> conf/zoo.cfg
+              echo 'clientPort=2181'                   >> conf/zoo.cfg
+              echo 'initLimit=5'                       >> conf/zoo.cfg
+              echo 'syncLimit=2'                       >> conf/zoo.cfg
+              echo 'maxClientCnxns=${MaxClients}'      >> conf/zoo.cfg
               echo 'server.1=${Instance0Ip}:2888:3888' >> conf/zoo.cfg
               echo 'server.2=${Instance1Ip}:2888:3888' >> conf/zoo.cfg
               echo 'server.3=${Instance2Ip}:2888:3888' >> conf/zoo.cfg
