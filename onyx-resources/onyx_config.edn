@@ -24,7 +24,7 @@
   :onyx.messaging.aeron/embedded-driver? #profile {:default true
                                                    :prod false}
   :onyx.log/config #profile {:default nil
-                             :docker {:level :info}}}
+                             :prod {:level :info}}}
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
                        6]}}
