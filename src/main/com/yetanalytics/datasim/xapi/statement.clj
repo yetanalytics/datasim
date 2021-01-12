@@ -6,7 +6,7 @@
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.input :as input]
-            com.yetanalytics.datasim.input.alignments
+            [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.personae :as personae]
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.random :as random]
@@ -30,7 +30,7 @@
                    ::end-ms]))
 
 (s/def ::alignment
-  :alignment-map/actor-alignment)
+  ::alignments/alignment)
 
 (s/def ::sim-t pos-int?)
 

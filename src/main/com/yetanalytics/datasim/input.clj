@@ -18,7 +18,8 @@
 (s/def ::personae
   ::personae/personae)
 
-(s/def ::alignments ::alignments/alignments)
+(s/def ::alignments
+  ::alignments/alignments-input)
 
 (s/def ::parameters
   ::params/parameters)

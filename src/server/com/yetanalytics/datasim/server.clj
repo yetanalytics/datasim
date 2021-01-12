@@ -1,5 +1,6 @@
 (ns com.yetanalytics.datasim.server
   (:require [clojure.java.io                        :refer [writer input-stream]]
+            [clojure.core.async                     :as async]
             [io.pedestal.log                        :as log]
             [io.pedestal.http                       :as http]
             [io.pedestal.http.route                 :as route]
@@ -16,6 +17,7 @@
             [environ.core                           :refer [env]]
             [com.yetanalytics.datasim.sim           :as sim]
             [com.yetanalytics.datasim.input         :as sinput]
+            [com.yetanalytics.datasim.xapi.client   :as xapi-client]
             [com.yetanalytics.pan.errors            :as errors]
             [clojure.spec.alpha                     :as s]
             [com.yetanalytics.datasim.util.sequence :as su])
@@ -25,6 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Datasim fns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn get-stream
   "Given a map and a key, retrieve the content of the key as an input stream."
@@ -47,15 +50,14 @@
                                                          (get-stream input "alignments"))
                         :parameters (sinput/from-location :parameters :json
                                                           (get-stream input "parameters"))}
-        debug3         (clojure.pprint/pprint (:profiles data))
         send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
                          (read-string send-to-lrs)
                          false)
-        input          (sinput/map->Input data)
+        sim-input      (sinput/map->Input data)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
         api-secret-key (get input "api-secret-key")
-        spec-errors    (sinput/validate input)]
+        spec-errors    (sinput/validate sim-input)]
     (if (not-empty spec-errors)
       (errors/expound-error-map spec-errors)
       ;;(log/info :msg "Run Simulation")
@@ -66,27 +68,32 @@
           ;; Write them wrapped in a list
           (.write w "[\n")
           (try
-            (doseq [s (sim/sim-seq input)]
-              (try
-                (when send-to-lrs
-                  ;; Stream statement to an LRS
-                  (client/post (str endpoint "/statements")
-                               {:basic-auth
-                                [api-key api-secret-key]
-                                :headers
-                                {"X-Experience-API-Version" "1.0.3"
-                                 "Content-Type"             "application/json;"}
-                                :body
-                                (c/generate-string s)
-                                :throw-entire-message? true}))
-                (catch Exception e
-                  (log/error :msg (str "Error Sending to LRS: "
-                                       (c/generate-string s))
-                             :e   (.getMessage e)))
-                (finally
-                  ;; Write each statement to the stream, pad with newline at end.
-                  (c/generate-stream s w)
-                  (.write w "\n"))))
+            (let [statements (sim/sim-seq sim-input)]
+
+              (when send-to-lrs
+                (let [post-options (cond-> {:endpoint endpoint
+                                            :batch-size 20}
+                                     (and api-key api-secret-key)
+                                     (assoc-in [:http-options :basic-auth] [api-key api-secret-key]))
+                      {:keys [success ;; Count of successfully transacted statements
+                              fail ;; list of failed requests
+                              ]
+                       :as post-results} (xapi-client/post-statements
+                                          post-options
+                                          statements
+                                          :emit-ids-fn
+                                          (fn [ids]
+                                            (doseq [^java.util.UUID id ids]
+                                              (printf "%s\n" (.toString id))
+                                              (flush))))]
+                  (if (not-empty fail)
+                    (for [{:keys [status error]} fail]
+                      (log/error :msg
+                                 (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
+                                         status (or (some-> error ex-message) "<none>")))))))
+              (doseq [s (sim/sim-seq sim-input)]
+                (c/generate-stream s w)
+                (.write w "\n")))
             (catch Exception e
               (log/error :msg "Error Building Simulation Skeleton"
                          :e   (.getMessage e)))
