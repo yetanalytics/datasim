@@ -2,7 +2,7 @@
   {
     "id": "mbox::mailto:bob@example.org",
     "type": "Agent",
-    "alignments": {
+    "alignments": [
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
         "weight": 0.5
@@ -263,12 +263,12 @@
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
         "weight": -1.0
       }
-    }
+    ]
   },
   {
     "id": "mbox::mailto:phil@example.org",
     "type": "Agent",
-    "alignments": {
+    "alignments": [
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
         "weight": 0.75
@@ -529,12 +529,12 @@
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
         "weight": 0.5
       }
-    }
+    ]
   },
   {
     "id": "mbox::mailto:sally@example.org",
     "type": "Agent",
-    "alignments": {
+    "alignments": [
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
         "weight": 0.25
@@ -795,12 +795,12 @@
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
         "weight": 1.0
       }
-    }
+    ]
   },
   {
     "id": "mbox::mailto:steve@example.org",
     "type": "Agent",
-    "alignments": {
+    "alignments": [
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
         "weight": 1.0
@@ -1061,12 +1061,12 @@
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
         "weight": 0.75
       }
-    }
+    ]
   },
   {
     "id": "mbox::mailto:fred@example.org",
     "type": "Agent",
-    "alignments": {
+    "alignments": [
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
         "weight": -1.0
@@ -1327,12 +1327,12 @@
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
         "weight": -1.0
       }
-    }
+    ]
   },
   {
     "id": "mbox::mailto:alice@example.org",
     "type": "Agent",
-    "alignments": {
+    "alignments": [
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
         "weight": 0.0
@@ -1593,6 +1593,6 @@
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
         "weight": -1.0
       }
-    }
+    ]
   }
 ]
