@@ -32,7 +32,6 @@ Parameters:
   ZooKeeperGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Zookeeper instance security group
-    Default: sg-02cb94e7f766837bc
 
   # App Code artifacts
   ArtifactBucketName:
@@ -289,13 +288,13 @@ Resources:
             - 03_restart_amazon-cloudwatch-agent
             - 04_ds_install
             - 05_ds_enable
-            #- 06_ds_start
+            - 06_ds_start
           UpdateEnvironment:
             - 02_config-amazon-cloudwatch-agent
             - 03_restart_amazon-cloudwatch-agent
           UpdateDS:
             - 04_ds_install
-            #- 07_ds_restart
+            - 07_ds_restart
         00_installDeps:
           packages:
             rpm:
@@ -471,7 +470,9 @@ Resources:
           commands:
             01daemon_reload:
               command: systemctl daemon-reload
-            02start_ds:
+            02restart_aeron:
+              command: systemctl restart aeron.service
+            03restart_ds:
               command: systemctl restart datasim.service
     Properties:
       ImageId: !Ref ASGInstanceAmiId
