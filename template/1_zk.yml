@@ -25,10 +25,10 @@ Parameters:
     Description: Instance 0 ip
     Type: String
   Instance1Ip:
-    Description: Instance 0 ip
+    Description: Instance 1 ip
     Type: String
   Instance2Ip:
-    Description: Instance 0 ip
+    Description: Instance 2 ip
     Type: String
   Version:
     Description: Version of ZK to pull
