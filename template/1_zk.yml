@@ -132,7 +132,7 @@ Resources:
               echo 'syncLimit=2'                                        >> conf/zoo.cfg
               echo 'maxClientCnxns=${MaxClients}'                       >> conf/zoo.cfg
               echo 'standaloneEnabled=false'                            >> conf/zoo.cfg
-              echo 'reconfigEnabled=false'                              >> conf/zoo.cfg
+              echo 'reconfigEnabled=true'                               >> conf/zoo.cfg
               echo 'server.1=${Instance0Ip}:2888:3888:participant;2181' >> conf/zoo.cfg
               echo 'server.2=${Instance1Ip}:2888:3888:participant;2181' >> conf/zoo.cfg
               echo 'server.3=${Instance2Ip}:2888:3888:participant;2181' >> conf/zoo.cfg
