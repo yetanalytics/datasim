@@ -149,15 +149,16 @@ Resources:
 
               echo 'Writing config...'
 
-              echo 'tickTime=2000'                     >> conf/zoo.cfg
-              echo 'dataDir=/var/lib/zookeeper'        >> conf/zoo.cfg
-              echo 'clientPort=2181'                   >> conf/zoo.cfg
-              echo 'initLimit=5'                       >> conf/zoo.cfg
-              echo 'syncLimit=2'                       >> conf/zoo.cfg
-              echo 'maxClientCnxns=${MaxClients}'      >> conf/zoo.cfg
-              echo 'server.1=${Instance0Ip}:2888:3888' >> conf/zoo.cfg
-              echo 'server.2=${Instance1Ip}:2888:3888' >> conf/zoo.cfg
-              echo 'server.3=${Instance2Ip}:2888:3888' >> conf/zoo.cfg
+              echo 'tickTime=2000'                                      >> conf/zoo.cfg
+              echo 'dataDir=/var/lib/zookeeper'                         >> conf/zoo.cfg
+              echo 'initLimit=5'                                        >> conf/zoo.cfg
+              echo 'syncLimit=2'                                        >> conf/zoo.cfg
+              echo 'maxClientCnxns=${MaxClients}'                       >> conf/zoo.cfg
+              echo 'standaloneEnabled=false'                            >> conf/zoo.cfg
+              echo 'reconfigEnabled=false'                              >> conf/zoo.cfg
+              echo 'server.1=${Instance0Ip}:2888:3888:participant;2181' >> conf/zoo.cfg
+              echo 'server.2=${Instance1Ip}:2888:3888:participant;2181' >> conf/zoo.cfg
+              echo 'server.3=${Instance2Ip}:2888:3888:participant;2181' >> conf/zoo.cfg
 
               echo 'Starting ZK...'
 
