@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Launches a simple zk deployment
+Description: Launches a simple zk deployment. Note that this template is for demonstration purposes only and does not provide backup or persistence of any kind.
 
 Parameters:
   Subnet:
@@ -24,15 +24,12 @@ Parameters:
   Instance0Ip:
     Description: Instance 0 ip
     Type: String
-    Default: '10.0.2.4'
   Instance1Ip:
     Description: Instance 0 ip
     Type: String
-    Default: '10.0.2.5'
   Instance2Ip:
     Description: Instance 0 ip
     Type: String
-    Default: '10.0.2.6'
   Version:
     Description: Version of ZK to pull
     Type: String
@@ -54,26 +51,6 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref InstanceSshCidr
-      # - IpProtocol: tcp
-      #   FromPort: '8181'
-      #   ToPort: '8181'
-      #   SourceSecurityGroupId:
-      #     Ref: LbSecurityGroup
-      # - IpProtocol: tcp
-      #   FromPort: '2181'
-      #   ToPort: '2181'
-      #   SourceSecurityGroupId:
-      #     Ref: ClientSecurityGroup
-      # - IpProtocol: tcp
-      #   FromPort: '2888'
-      #   ToPort: '2888'
-      #   SourceSecurityGroupId:
-      #     Ref: ClientSecurityGroup
-      # - IpProtocol: tcp
-      #   FromPort: '3888'
-      #   ToPort: '3888'
-      #   SourceSecurityGroupId:
-      #     Ref: ClientSecurityGroup
   InstanceSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
