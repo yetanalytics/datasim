@@ -1,2 +1,2 @@
 #!/bin/sh
-java -server -jar ./datasim_peer_driver.jar $@
+sh ./bin/onyx.sh start-driver $@

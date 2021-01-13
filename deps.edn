@@ -67,7 +67,12 @@
                 org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}
                 org.onyxplatform/onyx-http {:mvn/version "0.14.5.0"
                                             :exclusions [aleph
-                                                         io.netty/netty-all]}}}
+                                                         io.netty/netty-all]}
+                ;; for local repl
+                com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+                ;; for remote repl
+                nrepl/nrepl {:mvn/version "0.8.3"}
+                }}
   :onyx-dev
   {:extra-paths ["src/onyx_dev"]}
 

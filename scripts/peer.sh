@@ -1,2 +1,2 @@
 #!/bin/sh
-java -server -jar ./datasim_peer.jar $@
+sh ./bin/onyx.sh start-peer $@
