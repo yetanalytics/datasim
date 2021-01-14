@@ -107,7 +107,7 @@
               (onyx.api/await-job-completion peer-config (:job-id submission))
               (println "job complete!"))
             (clojure.pprint/pprint submission)
-            (exit 0)))
+            (exit 0 "OK")))
 
         "start-peer"
         (let [{:keys [tenancy-id
