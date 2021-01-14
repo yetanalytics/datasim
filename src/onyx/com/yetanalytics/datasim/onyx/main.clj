@@ -22,7 +22,7 @@
    ;; Peer + Submit
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
-   ["-i" "--input INPUT_LOC" "DATASIM input location"]
+   ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
    ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
