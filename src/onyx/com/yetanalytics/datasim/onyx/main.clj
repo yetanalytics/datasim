@@ -11,7 +11,8 @@
             [com.yetanalytics.datasim.onyx.repl :as repl]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
-            [nrepl.server :as nrepl])
+            [nrepl.server :as nrepl]
+            [cider.nrepl :refer [cider-nrepl-handler]])
   (:import [java.net InetAddress]))
 
 (def cli-options
@@ -118,7 +119,10 @@
             (println "Overriding number of virtual peers to " n-vpeers))
           (when nrepl-port
             (println "Starting Nrepl on port " nrepl-port)
-            (nrepl/start-server :bind nrepl-bind :port nrepl-port))
+            (nrepl/start-server
+             :bind nrepl-bind
+             :port nrepl-port
+             :handler cider-nrepl-handler))
           (peer/start-peer!
            ;; Config overrides
            (cond-> (config/get-config)

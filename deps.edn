@@ -72,6 +72,7 @@
                 com.bhauman/rebel-readline {:mvn/version "0.1.4"}
                 ;; for remote repl
                 nrepl/nrepl {:mvn/version "0.8.3"}
+                cider/cider-nrepl {:mvn/version "0.25.6"}
                 }}
   :onyx-dev
   {:extra-paths ["src/onyx_dev"]}
