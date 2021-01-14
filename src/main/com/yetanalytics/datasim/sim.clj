@@ -75,7 +75,7 @@
          :iri-map ::p/iri-map
          :activities ::activity/cosmos
          :actor ::xs/agent
-         :alignment :alignment-map/actor-alignment
+         :alignment :alignment-map/alignments
          :actor-map :skeleton/actor-map)
   :ret :skeleton/statement-seq)
 
@@ -144,6 +144,30 @@
                  :seed seed
                  :rng rng})))))))
 
+
+(defn get-actor-alignments
+  [alignments actor-id group-name role]
+  (reduce (fn [alignment-map alignment]
+            (let [iri (:component alignment)]
+              (if (contains? alignment-map iri)
+                (let [existing (get alignment-map iri)
+                      existing-count (:count existing)
+                      count (+ existing-count 1)
+                      weight (/ (+ (* existing-count (:weight existing))
+                                   (:weight alignment))
+                                count)]
+                  (assoc alignment-map iri {:weight weight
+                                            :count count}))
+                (assoc alignment-map iri
+                       {:weight (:weight alignment)
+                        :count 1}))))
+          {}
+          (for [{alignments :alignments :as actor-alignment} alignments
+                :when (contains? (set [actor-id group-name role]) (:id actor-alignment))
+                alignment alignments]
+            alignment)))
+
+
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
             :skeleton/statement-seq))
@@ -158,14 +182,15 @@
 
   Should be run once (in a single thread)
   Spooky."
-  [{{actors :member} :personae
+  [{personae :personae
     {:keys [start end
             timezone seed]
      ?from-stamp :from} :parameters
     profiles :profiles
-    {alignments :alignment-map} :alignments
+    {alignments :alignment-vector} :alignments
     :as input}]
   (let [^ZoneRegion zone (t/zone-id timezone)
+        actors (:member personae)
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
@@ -244,8 +269,10 @@
                                                    (double
                                                     (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
                                                  [actor-arma mask]))
-
-                      actor-alignment (get alignments actor-id {})
+                      actor-alignment (get-actor-alignments alignments
+                                                            actor-id
+                                                            (xapiu/agent-id personae)
+                                                            nil)
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -366,6 +393,7 @@
       a/merge))
 
 (comment
+
   (def i (input/from-location :input :json "dev-resources/input/simple.json"))
 
   (def skel
