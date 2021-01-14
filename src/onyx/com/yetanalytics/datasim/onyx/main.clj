@@ -18,8 +18,9 @@
   [;; Peer
    ["-n" "--n-vpeers N_VPEERS" "Number of VPEERS to launch. Overrides config value."
     :parse-fn #(Integer/parseInt %)]
+   ;; Peer + Submit
+   ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
-   ["-t" "--tenancy TENANCY_ID" "Onyx Tenancy ID"]
    ["-i" "--input INPUT_LOC" "DATASIM input location"]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
@@ -32,9 +33,9 @@
    ["-h" "--help"]])
 
 (defn usage [options-summary]
-  (->> ["This is my program. There are many like it, but this one is mine."
+  (->> ["DATASIM Cluster CLI"
         ""
-        "Usage: program-name [options] action"
+        "Usage: bin/onyx.sh [options] action"
         ""
         "Options:"
         options-summary
@@ -108,7 +109,8 @@
             (exit 0)))
 
         "start-peer"
-        (let [{:keys [n-vpeers
+        (let [{:keys [tenancy-id
+                      n-vpeers
                       nrepl-port
                       nrepl-bind]} options]
           (println "Preparing to start peers...")
@@ -117,7 +119,15 @@
           (when nrepl-port
             (println "Starting Nrepl on port " nrepl-port)
             (nrepl/start-server :bind nrepl-bind :port nrepl-port))
-          (peer/start-peer! n-vpeers))
+          (peer/start-peer!
+           ;; Config overrides
+           (cond-> (config/get-config)
+             tenancy-id
+             (->
+              (assoc-in [:env-config :onyx/tenancy-id] tenancy-id)
+              (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
+             n-vpeers
+             (assoc-in [:launch-config :n-vpeers] n-vpeers))))
         "start-driver"
         (driver/start-driver!)
         "repl"
