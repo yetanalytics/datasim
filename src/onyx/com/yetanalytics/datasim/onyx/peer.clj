@@ -12,7 +12,7 @@
   (let [{:keys [env-config
                 peer-config
                 launch-config]
-         {:keys [n-vpeers]} :launch-config} ((config/get-config))
+         {:keys [n-vpeers]} :launch-config} (config/get-config)
 
         env (onyx.api/start-env env-config)
         ;; start peer group
