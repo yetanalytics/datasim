@@ -29,6 +29,8 @@
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
    ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
+   [nil "--[no-]strip-ids" "Strip IDs from generated statements" :default false]
+   [nil "--[no-]remove-refs" "Filter out statement references" :default false]
    ["-b" "--[no-]block" "Block until the job is done" :default true]
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
@@ -93,7 +95,9 @@
                       username
                       password
                       block
-                      partition-size]} options]
+                      partition-size
+                      strip-ids
+                      remove-refs]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (-> (config/get-config)
                                           (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
@@ -102,6 +106,8 @@
                             (job/config
                              {:input-json (slurp input-loc)
                               :partition-size partition-size
+                              :strip-ids? strip-ids
+                              :remove-refs? remove-refs
                               :lrs {:endpoint endpoint
                                     :username username
                                     :password password

@@ -8,10 +8,14 @@
 
 (defn inject-seq [_ {input-json ::input-json
                      select-agents ::select-agents
+                     strip-ids? ::strip-ids?
+                     remove-refs? ::remove-refs?
                      {:keys [endpoint
                              batch-size
                              username
                              password]} ::lrs
+                     :or {strip-ids? false
+                          remove-refs? false}
                      :as lifecycle}]
   (let [input (u/parse-input input-json)]
     {:seq/seq
@@ -25,9 +29,16 @@
                (and username password)
                (assoc :basic-auth [username password]))})
           (partition-all batch-size
-                         (sim/sim-seq
-                          input
-                          :select-agents select-agents)))}))
+                         (cond->> (sim/sim-seq
+                                  input
+                                  :select-agents select-agents)
+                           strip-ids?
+                           (map
+                            #(dissoc % "id"))
+                           remove-refs?
+                           (remove
+                            #(= "StatementRef"
+                                (get-in % ["object" "objectType"]))))))}))
 
 (def in-calls
   {:lifecycle/before-task-start inject-seq})

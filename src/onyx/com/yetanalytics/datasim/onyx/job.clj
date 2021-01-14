@@ -10,13 +10,17 @@
            partition-size ;; How many actors per generator?
            input-json
            lrs
-           retry-params]
+           retry-params
+           strip-ids?
+           remove-refs?]
     :or {batch-size 10
          partition-size 1 ;; one actor per partition
          retry-params
          {:base-sleep-ms 200
           :max-sleep-ms 30000
-          :max-total-sleep-ms 3600000}}}]
+          :max-total-sleep-ms 3600000}
+         strip-ids? false
+         remove-refs? false}}]
 
   (assert lrs "LRS must be provided")
   (assert input-json "Input JSON must be provided")
@@ -41,7 +45,9 @@
             :lifecycles [{:lifecycle/task task-name
                           :lifecycle/calls ::dseq/in-calls
                           ::dseq/input-json input-json
-                          ::dseq/lrs lrs}
+                          ::dseq/lrs lrs
+                          ::dseq/strip-ids? strip-ids?
+                          ::dseq/remove-refs? remove-refs?}
                          {:lifecycle/task task-name
                           :lifecycle/calls :onyx.plugin.seq/reader-calls}]
             :catalog [{:onyx/name task-name
