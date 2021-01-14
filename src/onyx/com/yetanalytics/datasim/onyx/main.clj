@@ -23,6 +23,9 @@
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
    ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
+   [nil "--partition-size" "Statement actor partition size per peer."
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
    ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
@@ -89,7 +92,8 @@
                       endpoint
                       username
                       password
-                      block]} options]
+                      block
+                      partition-size]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (-> (config/get-config)
                                           (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
@@ -97,6 +101,7 @@
                             peer-config
                             (job/config
                              {:input-json (slurp input-loc)
+                              :partition-size partition-size
                               :lrs {:endpoint endpoint
                                     :username username
                                     :password password
