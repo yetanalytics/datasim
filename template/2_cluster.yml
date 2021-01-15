@@ -5,13 +5,13 @@ Parameters:
   TenancyId:
     Description: Onyx Tenancy ID
     Type: String
-    Default: foo
+    AllowedPattern: '.+'
   PeerPort:
     Description: Onyx peer coms port
     Type: Number
     Default: 40200
   VPeersCount:
-    Description: The number of virtual peers to launch on each instance
+    Description: The number of virtual peers to launch on each instance.
     Type: Number
     Default: 2
   LogRetentionInDays:
@@ -21,8 +21,8 @@ Parameters:
 
   # Zookeeper
   ZooKeeperAddress:
+    Description: Comma-separated ZooKeeper Connection address
     Type: String
-    Default: '10.0.2.4:2181,10.0.2.5:2181,10.0.2.6:2181'
   ZooKeeperPort:
     Type: Number
     Default: 2181
@@ -37,19 +37,15 @@ Parameters:
   ArtifactBucketName:
     Type: String
     Description: The S3 bucket on which the code artifacts reside.
-    Default: 'yeti-cf-ci-infra-artifactbucket-v3wdrbts7d8q'
   ArtifactBasePath:
     Type: String
     Description: Path between the bucket root and the base artifact dir.
-    Default: 'builds/yetanalytics/datasim'
   ArtifactId:
     Type: String
     Description: Id string for the artifact, should usually be 'datasim'.
-    Default: 'datasim'
   ArtifactVersion:
     Type: String
     Description: Version string for the artifact
-    Default: 'branch-DS-92_distarch'
   ArtifactEncryptionKeyArn:
     Type: String
     Description: Optional ARN of the key used to encrypt the build
@@ -59,11 +55,9 @@ Parameters:
   VPCId:
     Description: VPC in which to place DATASIM
     Type: AWS::EC2::VPC::Id
-    Default: vpc-0225241143786df33
   Subnets:
     Description: Subnets on which to run cluster instances
     Type: List<AWS::EC2::Subnet::Id>
-    Default: subnet-0e2983a71f05301cc,subnet-0fffd4d04ddd36c41
 
 # ASG-specific Settings
 
@@ -99,11 +93,9 @@ Parameters:
   EC2KeyName:
     Description: Name of an EC2 key pair that can be used to connect to instances
     Type: String
-    Default: yet-dev-access
   EC2SSHCidr:
     Description: CIDR block to grant ssh access to.
     Type: String
-    Default: 10.0.0.152/32
 
 Metadata:
   AWS::CloudFormation::Interface:
