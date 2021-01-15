@@ -216,12 +216,127 @@ This endpoint takes a set of simulation inputs, returns a file with the output d
 
     send-to-lrs: Boolean indicating whether or not to send data to the LRS if applicable
 
+#### Distributed Generation
+
+DATASIM deterministically generates streams of statements on a per-actor basis making it possible to distribute the generation of simulation data across multiple processes or physical servers.
+
+##### Onyx Peer Cluster
+
+DATASIM uses [Onyx](http://www.onyxplatform.org/) and [ZooKeeper](https://zookeeper.apache.org/) to coordinate distributed generation. One or more DATASIM _peers_ can be launched in a _cluster_.
+
+The cluster accepts DATASIM combined input files and LRS target information as input. The cluster peers will coordinate to generate data and post it to the target LRS.
+
+###### Capacity Planning
+
+In order to generate and send the data the cluster must contain enough peers to generate and execute the specified input. For each partition of simulation actors, two peers are required. Therefore:
+
+    total-required-peers = (actor-count / partition-size) * 2
+
+For example, the DATASIM "simple" example input found at `dev-resources/input/simple.json` contains 3 actors. If we choose the minimum `partition-size` of 1 then:
+
+    total-required-peers = (3 / 1) * 2 = 6
+
+This is the _maximum concurrency_ of 3 for the `input/simple.json`. If we wanted to sacrifice throughput we could run it with the _minimum concurrency_ of 1 by setting the `partition-size` to 3:
+
+    total-required-peers = (3 / 3) * 2 = 2
+
+Note that if a cluster does not have sufficient peers to execute a job it will wait until it does and complete it. Each physical instance in a cluster can run as many "virtual" peers as it has processors.
+
+##### Utility CLI
+
+DATASIM has a separate CLI for distributed operation:
+
+    bin/onyx.sh --help ## in dev, do: clojure -Monyx:onyx-dev -m com.yetanalytics.datasim.onyx.main --help
+
+    DATASIM Cluster CLI
+
+    Usage: bin/onyx.sh [options] action
+
+    Options:
+      -n, --n-vpeers N_VPEERS               Number of VPEERS to launch. Overrides config value.
+      -t, --tenancy-id TENANCY_ID           Onyx Tenancy ID
+      -i, --input-loc INPUT_LOC             DATASIM input location
+          --partition-size                  Statement actor partition size per peer.
+      -e, --endpoint ENDPOINT               xAPI LRS Endpoint like https://lrs.example.org/xapi
+      -u, --username USERNAME               xAPI LRS BASIC Auth username
+      -p, --password PASSWORD               xAPI LRS BASIC Auth password
+          --[no-]strip-ids                  Strip IDs from generated statements
+          --[no-]remove-refs                Filter out statement references
+      -b, --[no-]block                      Block until the job is done
+          --nrepl-bind NREPL_BIND  0.0.0.0  If provided on peer launch will start an nrepl server bound to this address
+          --nrepl-port NREPL_PORT           If provided on peer launch will start an nrepl server on this port
+      -h, --help
+
+    Actions:
+      start-peer    Start an onyx peer
+      start-driver  Start an aeron media driver
+      submit-job    Submit a datasim input for submission to an LRS
+      repl          Start a local repl
+
+##### AWS Deployment
+
+A set of [AWS CloudFormation](https://aws.amazon.com/cloudformation/) templates capable of deploying the cluster is included for demonstration purposes. Note that these templates should not be used for production systems.
+
+###### VPC (Optional) - `template/0_vpc.yml`
+
+To deploy the cluster you'll need an AWS VPC with at least 1 subnet. The included template will create a VPC with 4 subnets, 2 public and 2 private.
+
+###### ZooKeeper (Optional) - `template/1_zk.yml`
+
+The cluster requires a working Apache Zookeeper Ensemble version 3.5. This template creates a simple static-ip based ensemble of 3 nodes. Make sure to choose a private subnet and ensure that the chosen IPs fall within its CIDR range.
+
+###### Cluster - `template/2_cluster.yml`
+
+Make sure you've done the following (refer to the template params referenced):
+
+* Compile the project with `make clean bundle`
+* Zip the `target/bundle` directory to a file called `<ArtifactId>-<ArtifactVersion>`
+* Upload the zip to an s3 bucket with an enclosing path of your choosing like: `s3://<ArtifactBucketName>/<ArtifactBasePath>/<ArtifactId>-<ArtifactVersion>`
+
+Deploy the template to the same VPC as ZooKeeper to a subnet that can reach the ZooKeeper instances. Make sure to choose the correct security group for the ZooKeeper ensemble for `ZooKeeperGroupId`.
+
+For documentation on other parameters, see the template.
+
+###### Submitting a Job
+
+You can submit a job as follows:
+
+SSH in to a cluster node:
+
+    sudo su        # be root
+    cd /datasim    # correct working dir
+
+    # optionally get input first
+    curl https://raw.githubusercontent.com/yetanalytics/datasim/master/dev-resources/input/simple.json -o simple.json
+    # note the CloudFormation Stack params -> env
+
+    TENANCY_ID=<TenancyId> \ # optional if -t or --tenancy-id is provided below
+    ONYX_PROFILE=prod \
+    ZK_ADDRESS=<ZooKeeperAddress> \
+    ZK_SERVER_PORT=<ZooKeeperPort> \
+    ZK_TIMEOUT=<ZooKeeperTimeout> \
+    PEER_PORT=<PeerPort> \
+    N_VPEERS=<VPeersCount> \
+    LANG=en_US.UTF-8 \
+    AWS_REGION=<AWS::Region> \
+    X_RAY_ENABLED=true \
+    AWS_XRAY_CONTEXT_MISSING=LOG_ERROR \
+    AWS_XRAY_TRACING_NAME=datasim-cluster:us-east-1 \
+    BIND_ADDR=<IP of Instance> \
+    ./bin/submit_job.sh \
+      -t <override tenancy (optional)> \
+      --partition-size 1 \
+      -i simple.json \
+      -e https://lrs.example.org/xapi \
+      -u <LRS BASIC Auth Username> \
+      -p <LRS BASIC Auth Password>
+
 ## License
 
 DATASIM is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full license text
 
 THE DATASIM SOFTWARE (“SOFTWARE”) IS PUBLISHED AS OPEN SOURCE SOFTWARE TO ENABLE USERS TO TEST CERTAIN CAPABILITIES OF THEIR SYSTEMS INCLUDING THE LEVEL OR CAPACITY OF xAPI DATA THAT CAN BE HANDLED BY A USER’S SYSTEM. THE SOFTWARE IS EXPRESSLY INTENDED TO TEST CAPACITY AND SYSTEM LIMITS AND CAN CAUSE SYSTEM OUTAGES WHEN A SYSTEM’S CAPACITY IS EXCEEDED. IT MUST BE USED WITH CAUTION.
-  
+
 THE PROVIDER AND PUBLISHER OF THE SOFTWARE (“PROVIDER”) PROVIDES NO WARRANTY, EXPRESS OR IMPLIED, WITH RESPECT TO THE SOFTWARE, ITS RELATED DOCUMENTATION OR OTHERWISE. THE SOFTWARE AND DOCUMENTATION ARE PROVIDED ON AN “AS IS” BASIS WITH ALL FAULTS. THE PROVIDER HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS, EXPRESS OR IMPLIED, WRITTEN OR ORAL, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABLE QUALITY, MERCHANTABILITY AND FITNESS FOR A PARTICULAR USE OR PURPOSE, NON-INFRINGEMENT AND THOSE ARISING BY STATUTE OR FROM A COURSE OF DEALING OR USAGE OF TRADE WITH RESPECT TO THE SOFTWARE, DOCUMENTATION AND ANY SUPPORT.
 
 IN NO EVENT WILL PROVIDER OR ITS SUBSIDIARIES, OR AFFILIATES, NOR ANY OF THEIR RESPECTIVE SHAREHOLDERS, OFFICERS, DIRECTORS, EMPLOYEES, AGENTS OR REPRESENTATIVES HAVE ANY LIABILITY TO ANY USER OR TO ANY THIRD PARTY FOR ANY LOST PROFITS OR REVENUES OR FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL, COVER OR PUNITIVE DAMAGES HOWEVER CAUSED, WHETHER IN CONTRACT, TORT OR UNDER ANY OTHER THEORY OF LIABILITY, AND WHETHER OR NOT THE PROVIDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. THE FOREGOING DISCLAIMER WILL NOT APPLY ONLY TO THE EXTENT PROHIBITED BY APPLICABLE LAW.
