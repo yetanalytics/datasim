@@ -17,7 +17,7 @@ Parameters:
   InstanceType:
     Description: EC2 instance type
     Type: String
-    Default: t2.micro
+    Default: c5.large
   InstanceKeyName:
     Description: Name of an EC2 key pair that can be used to connect to instances
     Type: String
