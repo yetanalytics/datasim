@@ -23,7 +23,7 @@
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
    ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
-   [nil "--partition-size" "Statement actor partition size per peer."
+   [nil "--partition-size PARTITION_SIZE" "Statement actor partition size per peer."
     :default 1
     :parse-fn #(Integer/parseInt %)]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
