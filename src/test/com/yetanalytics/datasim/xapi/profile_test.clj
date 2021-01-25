@@ -1,9 +1,8 @@
 (ns com.yetanalytics.datasim.xapi.profile-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest testing is]]
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as stest]
-   [clojure.zip :as z]
    [com.yetanalytics.datasim.xapi.profile :as profile]
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.random :as random]))
@@ -45,6 +44,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cmi5 profile primary pattern
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: Add test for max-repeats (for oneOrMore and zeroOrMore)
 
 (defn is-cmi5-id? [verb stmt] (= (str "https://w3id.org/xapi/cmi5#" verb)
                                  (:id stmt)))
