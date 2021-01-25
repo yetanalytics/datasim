@@ -50,113 +50,113 @@
 (defn is-cmi5-id? [verb stmt] (= (str "https://w3id.org/xapi/cmi5#" verb)
                                  (:id stmt)))
 
-(s/def :cmi5/launched (partial is-cmi5-id? "launched"))
-(s/def :cmi5/initialized (partial is-cmi5-id? "initialized"))
-(s/def :cmi5/completed (partial is-cmi5-id? "completed"))
-(s/def :cmi5/passed (partial is-cmi5-id? "passed"))
-(s/def :cmi5/failed (partial is-cmi5-id? "failed"))
-(s/def :cmi5/abandoned (partial is-cmi5-id? "abandoned"))
-(s/def :cmi5/waived (partial is-cmi5-id? "waived"))
-(s/def :cmi5/terminated (partial is-cmi5-id? "terminated"))
-(s/def :cmi5/satisfied (partial is-cmi5-id? "satisfied"))
+(def cmi5-launched? (partial is-cmi5-id? "launched"))
+(def cmi5-initialized? (partial is-cmi5-id? "initialized"))
+(def cmi5-completed? (partial is-cmi5-id? "completed"))
+(def cmi5-passed? (partial is-cmi5-id? "passed"))
+(def cmi5-failed? (partial is-cmi5-id? "failed"))
+(def cmi5-abandoned? (partial is-cmi5-id? "abandoned"))
+(def cmi5-waived? (partial is-cmi5-id? "waived"))
+(def cmi5-terminated? (partial is-cmi5-id? "terminated"))
+(def cmi5-satisfied? (partial is-cmi5-id? "satisfied"))
 
-(s/def :cmi5/satisfieds (s/* :cmi5/satisfied))
-(s/def :cmi5/maybe-completed (s/? :cmi5/completed))
-(s/def :cmi5/terminated-or-abandoned
-  (s/alt :terminated :cmi5/terminated
-         :abandoned  :cmi5/abandoned))
-(s/def :cmi5/completed-then-passed
-  (s/cat :completed  :cmi5/completed
-         :satisfieds :cmi5/satisfieds
-         :passed     :cmi5/passed))
-(s/def :cmi5/passed-then-completed
-  (s/cat :passed     :cmi5/passed
-         :satisfieds :cmi5/satisfieds
-         :completed  :cmi5/completed))
-(s/def :cmi5/completed-and-passed
-  (s/alt :completed-then-passed :cmi5/completed-then-passed
-         :passed-then-completed :cmi5/passed-then-completed))
-(s/def :cmi5/maybe-completed-then-failed
-  (s/cat :maybe-completed :cmi5/maybe-completed
-         :satisfieds      :cmi5/satisfieds
-         :failed          :cmi5/failed))
-(s/def :cmi5/failed-then-maybe-completed
-  (s/cat :failed          :cmi5/failed
-         :maybe-completed :cmi5/maybe-completed))
-(s/def :cmi5/completed-and-maybe-failed
-  (s/alt :maybe-completed-then-failed :cmi5/maybe-completed-then-failed
-         :failed-then-maybe-completed :cmi5/failed-then-maybe-completed))
+(def cmi5-satisfieds? (s/* cmi5-satisfied?))
+(def cmi5-maybe-completed? (s/? cmi5-completed?))
+(def cmi5-terminated-or-abandoned?
+  (s/alt :terminated cmi5-terminated?
+         :abandoned  cmi5-abandoned?))
+(def cmi5-completed-then-passed?
+  (s/cat :completed  cmi5-completed?
+         :satisfieds cmi5-satisfieds?
+         :passed     cmi5-passed?))
+(def cmi5-passed-then-completed?
+  (s/cat :passed     cmi5-passed?
+         :satisfieds cmi5-satisfieds?
+         :completed  cmi5-completed?))
+(def cmi5-completed-and-passed?
+  (s/alt :completed-then-passed cmi5-completed-then-passed?
+         :passed-then-completed cmi5-passed-then-completed?))
+(def cmi5-maybe-completed-then-failed?
+  (s/cat :maybe-completed cmi5-maybe-completed?
+         :satisfieds      cmi5-satisfieds?
+         :failed          cmi5-failed?))
+(def cmi5-failed-then-maybe-completed?
+  (s/cat :failed          cmi5-failed?
+         :maybe-completed cmi5-maybe-completed?))
+(def cmi5-completed-and-maybe-failed?
+  (s/alt :maybe-completed-then-failed cmi5-maybe-completed-then-failed?
+         :failed-then-maybe-completed cmi5-failed-then-maybe-completed?))
 
-(s/def :cmi5/waived-session
-  (s/cat :satisfieds :cmi5/satisfieds
-         :waived     :cmi5/waived
-         :satisfieds :cmi5/satisfieds))
-(s/def :cmi5/no-result-session
-  (s/cat :launched    :cmi5/launched
-         :initialized :cmi5/initialized
+(def cmi5-waived-session?
+  (s/cat :satisfieds cmi5-satisfieds?
+         :waived     cmi5-waived?
+         :satisfieds cmi5-satisfieds?))
+(def cmi5-no-result-session?
+  (s/cat :launched    cmi5-launched?
+         :initialized cmi5-initialized?
          :terminated-or-abandoned
-         :cmi5/terminated-or-abandoned))
-(s/def :cmi5/completion-no-success-session
-  (s/cat :launched    :cmi5/launched
-         :initialized :cmi5/initialized
-         :completed   :cmi5/completed
-         :satisfieds  :cmi5/satisfieds
+         cmi5-terminated-or-abandoned?))
+(def cmi5-completion-no-success-session?
+  (s/cat :launched    cmi5-launched?
+         :initialized cmi5-initialized?
+         :completed   cmi5-completed?
+         :satisfieds  cmi5-satisfieds?
          :terminated-or-abandoned
-         :cmi5/terminated-or-abandoned))
-(s/def :cmi5/passed-session
-  (s/cat :launched    :cmi5/launched
-         :initialized :cmi5/initialized
-         :passed      :cmi5/passed
-         :satisfieds  :cmi5/satisfieds
+         cmi5-terminated-or-abandoned?))
+(def cmi5-passed-session?
+  (s/cat :launched    cmi5-launched?
+         :initialized cmi5-initialized?
+         :passed      cmi5-passed?
+         :satisfieds  cmi5-satisfieds?
          :terminated-or-abandoned
-         :cmi5/terminated-or-abandoned))
-(s/def :cmi5/completion-passed-session
-  (s/cat :launched    :cmi5/launched
-         :initialized :cmi5/initialized
+         cmi5-terminated-or-abandoned?))
+(def cmi5-completion-passed-session?
+  (s/cat :launched    cmi5-launched?
+         :initialized cmi5-initialized?
          :completed-and-passed
-         :cmi5/completed-and-passed
-         :satisfieds  :cmi5/satisfieds
+         cmi5-completed-and-passed?
+         :satisfieds  cmi5-satisfieds?
          :terminated-or-abandoned
-         :cmi5/terminated-or-abandoned))
-(s/def :cmi5/failed-session
-  (s/cat :launched    :cmi5/launched
-         :initialized :cmi5/initialized
-         :failed      :cmi5/failed
+         cmi5-terminated-or-abandoned?))
+(def cmi5-failed-session?
+  (s/cat :launched    cmi5-launched?
+         :initialized cmi5-initialized?
+         :failed      cmi5-failed?
          :terminated-or-abandoned
-         :cmi5/terminated-or-abandoned))
-(s/def :cmi5/completion-maybe-failed-session
-  (s/cat :launched    :cmi5/launched
-         :initialized :cmi5/initialized
+         cmi5-terminated-or-abandoned?))
+(def cmi5-completion-maybe-failed-session?
+  (s/cat :launched    cmi5-launched?
+         :initialized cmi5-initialized?
          :completed-and-maybe-failed
-         :cmi5/completed-and-maybe-failed
-         :satisfieds  :cmi5/satisfieds
+         cmi5-completed-and-maybe-failed?
+         :satisfieds  cmi5-satisfieds?
          :terminated-or-abandoned
-         :cmi5/terminated-or-abandoned))
+         cmi5-terminated-or-abandoned?))
 
-(s/def :cmi5/typical-session
+(def cmi5-typical-session?
   (s/alt :completion-maybe-failed-session
-         :cmi5/completion-maybe-failed-session
+         cmi5-completion-maybe-failed-session?
          :completion-passed-session
-         :cmi5/completion-passed-session
+         cmi5-completion-passed-session?
          :failed-session
-         :cmi5/failed-session
+         cmi5-failed-session?
          :no-result-session
-         :cmi5/no-result-session
+         cmi5-no-result-session?
          :passed-session
-         :cmi5/passed-session
+         cmi5-passed-session?
          :completion-no-success-session
-         :cmi5/completion-no-success-session
+         cmi5-completion-no-success-session?
          :waived-session
-         :cmi5/waived-session))
+         cmi5-waived-session?))
 
 ;; Original typical-sessions Pattern was zeroOrMore, but changed to exercise
 ;; oneOrMore.
-(s/def :cmi5/typical-sessions
-  (s/+ :cmi5/typical-session))
+(def cmi5-typical-sessions?
+  (s/+ cmi5-typical-session?))
 
-(s/def :cmi5/general-pattern
-  (s/cat :satisfieds :cmi5/satisfieds
-         :typical-sessions :cmi5/typical-sessions))
+(def cmi5-general-pattern?
+  (s/cat :satisfieds cmi5-satisfieds?
+         :typical-sessions cmi5-typical-sessions?))
 
 (defn gen-single-walk [seed]
   (->>
@@ -171,7 +171,7 @@
 
 (s/fdef gen-single-walk
         :args (s/cat :seed int?)
-        :ret :cmi5/general-pattern)
+        :ret cmi5-general-pattern?)
 
 (deftest zip-walk-test
   (testing "rand-pattern-zip followed by walk-once"
