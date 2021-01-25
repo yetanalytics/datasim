@@ -705,7 +705,7 @@
                 "en": "This pattern provides an option to use zero or more of the alernates for the Typical Session pattern."
             },
             "inScheme": "https://w3id.org/xapi/cmi5/v1.0",
-            "zeroOrMore": "https://w3id.org/xapi/cmi5#typicalsession"
+            "oneOrMore": "https://w3id.org/xapi/cmi5#typicalsession"
         },
         {
             "id": "https://w3id.org/xapi/cmi5#toplevel",

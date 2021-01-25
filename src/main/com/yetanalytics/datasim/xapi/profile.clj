@@ -99,7 +99,6 @@
        ;; We store the map in meta, which is always preserved
        (vary-meta assoc ::iri-map iri-map)))))
 
-
 (defn rand-pattern-zip
   "Building on the comprehension from pattern-zip, return a zipper that uses a
   deterministic pseudorandom walk for choosing children/paths."
