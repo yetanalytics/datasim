@@ -2,6 +2,8 @@
   "Given input, compose a simulation model"
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.core.async :as a]
+   [clojure.core.async.impl.protocols :as ap]
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
@@ -73,7 +75,7 @@
          :iri-map ::p/iri-map
          :activities ::activity/cosmos
          :actor ::xs/agent
-         :alignment :alignment-map/actor-alignment
+         :alignment :alignment-map/alignments
          :actor-map :skeleton/actor-map)
   :ret :skeleton/statement-seq)
 
@@ -142,6 +144,30 @@
                  :seed seed
                  :rng rng})))))))
 
+
+(defn get-actor-alignments
+  [alignments actor-id group-name role]
+  (reduce (fn [alignment-map alignment]
+            (let [iri (:component alignment)]
+              (if (contains? alignment-map iri)
+                (let [existing (get alignment-map iri)
+                      existing-count (:count existing)
+                      count (+ existing-count 1)
+                      weight (/ (+ (* existing-count (:weight existing))
+                                   (:weight alignment))
+                                count)]
+                  (assoc alignment-map iri {:weight weight
+                                            :count count}))
+                (assoc alignment-map iri
+                       {:weight (:weight alignment)
+                        :count 1}))))
+          {}
+          (for [{alignments :alignments :as actor-alignment} alignments
+                :when (contains? (set [actor-id group-name role]) (:id actor-alignment))
+                alignment alignments]
+            alignment)))
+
+
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
             :skeleton/statement-seq))
@@ -156,16 +182,15 @@
 
   Should be run once (in a single thread)
   Spooky."
-  [{{actors :member} :personae
-    {:keys [start from end
-            timezone seed
-
-
-            ]} :parameters
+  [{personae :personae
+    {:keys [start end
+            timezone seed]
+     ?from-stamp :from} :parameters
     profiles :profiles
-    {alignments :alignment-map} :alignments
+    {alignments :alignment-vector} :alignments
     :as input}]
   (let [^ZoneRegion zone (t/zone-id timezone)
+        actors (:member personae)
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
@@ -244,8 +269,10 @@
                                                    (double
                                                     (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
                                                  [actor-arma mask]))
-
-                      actor-alignment (get alignments actor-id {})
+                      actor-alignment (get-actor-alignments alignments
+                                                            actor-id
+                                                            (xapiu/agent-id personae)
+                                                            nil)
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -256,44 +283,118 @@
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)]]
             [actor-id
-             (statement-seq
-              input
-              iri-map
-              activities
-              actor
-              actor-alignment
-              {:seed actor-seed
-               :prob-seq actor-prob
-               :reg-seq actor-reg-seq})]))))
+             (cond->> (statement-seq
+                       input
+                       iri-map
+                       activities
+                       actor
+                       actor-alignment
+                       {:seed actor-seed
+                        :prob-seq actor-prob
+                        :reg-seq actor-reg-seq})
+               ?from-stamp
+               (drop-while
+                (let [from-ms (t/to-millis-from-epoch ^String ?from-stamp)]
+                  (fn [s]
+                    (>= from-ms (-> s meta :timestamp-ms))))))]))))
+
+(s/def ::select-agents
+  (s/every ::xapi/agent-id))
 
 (s/fdef sim-seq
-  :args (s/cat :input :com.yetanalytics.datasim/input)
+  :args (s/cat :input :com.yetanalytics.datasim/input
+               :options (s/keys*
+                         :opt-un [::select-agents]))
   :ret :skeleton/statement-seq)
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
-  [{{?max-statements :max
-     ?from-stamp     :from} :parameters
-    :as input}]
+  [{{?max-statements :max} :parameters
+    :as input}
+   & {:keys [select-agents]}]
   (-> (build-skeleton input)
+      (cond->
+        select-agents
+        (select-keys select-agents))
       ;; take the actor statement seqs
       vals
       (->> (su/seq-sort
             (comp :timestamp-ms
                   meta)))
       (cond->>
-        ?from-stamp
-        (drop-while
-         (let [from-ms (t/to-millis-from-epoch ^String ?from-stamp)]
-           (fn [s]
-             (>= from-ms (-> s meta :timestamp-ms)))))
         ?max-statements
         (take ?max-statements))))
 
+(defn- chan?
+  [x]
+  (satisfies? ap/Channel x))
+
+(s/fdef sim-chans
+  :args (s/cat :input :com.yetanalytics.datasim/input
+               :options (s/keys*
+                         :opt-un [::select-agents]))
+  :ret (s/map-of ::xapi/agent-id
+                 chan?))
+
+(defn sim-chans
+  "Given input, build a skeleton and produce a map of agent channels
+
+  Note that input.parameters.max is implemented via global budgets and may
+  have unexpected results. input.parameters.end is preferable"
+  [{{?max-statements :max} :parameters
+    :as input}
+   & {:keys [select-agents]}]
+  (let [skeleton (cond-> (build-skeleton input)
+                   select-agents
+                   (select-keys select-agents))]
+    (if ?max-statements
+      (let [budget-chan (let [c (a/chan)]
+                          (a/go-loop [s-cnt ?max-statements]
+                            (if (< 0 s-cnt)
+                              (do (a/>! c s-cnt)
+                                  (recur (dec s-cnt)))
+                              (a/close! c)))
+                          c)]
+        (reduce-kv
+         (fn [m k v]
+           (let [out-chan (a/chan 100)]
+             (a/go-loop [agent-seq v]
+               (if-let [s (and (a/<! budget-chan) ;; like a ticket at the meat counter
+                               (first agent-seq))]
+                 (do
+                   (a/>! out-chan s)
+                   (recur (rest agent-seq)))
+                 (a/close! out-chan)))
+             (assoc m k out-chan)))
+         (empty skeleton)
+         skeleton))
+      ;; Easy route
+      (reduce-kv
+       (fn [m k v]
+         (let [agent-seq v]
+           (assoc m k (a/to-chan! v))))
+       (empty skeleton)
+       skeleton))))
+
+(s/fdef sim-chan
+  :args (s/cat :input :com.yetanalytics.datasim/input
+               :options (s/keys*
+                         :opt-un [::select-agents]))
+  :ret chan?)
+
+(defn sim-chan
+  "Merged output of `sim-chans` for parallel gen"
+  [input
+   & kwargs]
+  (-> (apply sim-chans
+             input
+             kwargs)
+      vals
+      a/merge))
 
 (comment
-  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
 
+  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
 
   (def skel
     (time (build-skeleton i)))
@@ -310,7 +411,33 @@
 
   (s/explain ::xs/uuid "B73E0E16-386D-3D6D-8AE9-33B09C1C599E")
 
-  (.toString (Instant/ofEpochMilli
-   1574078559219))
+  (let [agent-chan
+        (-> (sim-chans i)
+            (get "mbox::mailto:alice@example.org"))]
+    (a/go-loop [cnt 0]
+      (when-let [s (a/<! agent-chan)]
+        (when (= 0
+                 (mod cnt 10))
+          (printf "\n%d statements\n\n" cnt)
+          (println s))
+        (recur (inc cnt)))
+      ))
+
+  (-> i :parameters clojure.pprint/pprint)
+
+  (def ii
+    (->
+     i
+     (assoc-in [:parameters :end] "2021-01-01T00:00:00.000000Z")))
+
+  (-> ii
+      sim-chan
+      (->> (a/into []))
+      a/<!!
+      count
+      time)
+
+  (time
+   (count (sim-seq ii)))
 
   )

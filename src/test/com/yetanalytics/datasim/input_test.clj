@@ -30,7 +30,7 @@
    #(assoc % :member []) ;; groups need members
 
    "Actor Alignments" :alignments "dev-resources/alignments/simple.json"
-   #(assoc-in % [:alignment-map "notanid"] "bar") ;; alignments are a map of strings to maps...
+   #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}]) ;;alignments are a vector of maps containing a vector of maps
 
    "Simulation Parameters" :parameters "dev-resources/parameters/simple.json"
    #(assoc % :seed "hey") ;; seed is a number

@@ -154,14 +154,18 @@
   (let [even-odds (/ 1 (count coll))]
     (apply max-key
            (fn [el]
-             (rand-gauss
-              rng
-              (+ even-odds (* sd (get weights el 0.0)))
-              sd))
+             (let [weight (get-in weights [el :weight] 0.0)]
+               (if (<= weight -1.0)
+                 -1.0
+                 (rand-gauss
+                  rng
+                  (+ even-odds (* sd weight))
+                  sd))))
            coll)))
 
 
 (comment
+
   #_(use '(incanter core stats charts io))
 
   (let [rng (seed-rng 42)

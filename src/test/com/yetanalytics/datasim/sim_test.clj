@@ -63,4 +63,13 @@
                                           :from]
                                          (get s0 "timestamp")))]
       (is (not= s0 s1'))
-      (is (= s1 s1')))))
+      (is (= s1 s1'))))
+  (testing "respects agent selection"
+    (let [ret (sim-seq (assoc-in valid-input [:parameters :max] 3)
+                       ;; specify we only want the given agent(s)
+                       :select-agents
+                       ["mbox::mailto:bob@example.org"])]
+      (is (every?
+           #(= "mailto:bob@example.org"
+               (get-in % ["actor" "mbox"]))
+           ret)))))

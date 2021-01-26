@@ -23,6 +23,26 @@
                           :location loc}
                          e)))))
 
+(defn read-loc-array
+  "Reads from a stream but assumes an array with the members of the record type passed to it"
+  [record loc]
+  (try (with-open [r (io/reader loc)]
+         (try
+           (let [input-coll (json/parse-stream r (partial p/read-key-fn record))]
+             (mapv (fn [input]
+                     (p/read-body-fn record input))
+                   input-coll))
+           (catch Exception e
+             (throw (ex-info "Parse Error"
+                             {:type ::parse-error
+                              :location loc}
+                             e)))))
+       (catch java.io.IOException e
+         (throw (ex-info "I/O Error"
+                         {:type ::io-error
+                          :location loc}
+                         e)))))
+
 
 (defn- write-json!
   [record loc w]

@@ -1,0 +1,556 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  # general app settings
+  TenancyId:
+    Description: Onyx Tenancy ID
+    Type: String
+    AllowedPattern: '.+'
+  PeerPort:
+    Description: Onyx peer coms port
+    Type: Number
+    Default: 40200
+  VPeersCount:
+    Description: The number of virtual peers to launch on each instance.
+    Type: Number
+    Default: 2
+  LogRetentionInDays:
+    Description: How long to retain Cloudwatch Logs
+    Type: Number
+    Default: 7
+
+  # Zookeeper
+  ZooKeeperAddress:
+    Description: Comma-separated ZooKeeper Connection address
+    Type: String
+  ZooKeeperPort:
+    Type: Number
+    Default: 2181
+  ZooKeeperTimeout:
+    Type: Number
+    Default: 1000
+  ZooKeeperGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Zookeeper instance security group
+
+  # App Code artifacts
+  ArtifactBucketName:
+    Type: String
+    Description: The S3 bucket on which the code artifacts reside.
+  ArtifactBasePath:
+    Type: String
+    Description: Path between the bucket root and the base artifact dir.
+  ArtifactId:
+    Type: String
+    Description: Id string for the artifact, should usually be 'datasim'.
+  ArtifactVersion:
+    Type: String
+    Description: Version string for the artifact
+  ArtifactEncryptionKeyArn:
+    Type: String
+    Description: Optional ARN of the key used to encrypt the build
+    Default: ''
+
+  # Network Settings
+  VPCId:
+    Description: VPC in which to place DATASIM
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Description: Subnets on which to run cluster instances
+    Type: List<AWS::EC2::Subnet::Id>
+
+# ASG-specific Settings
+
+  ASGMinSize:
+    Type: Number
+    Default: 1
+    Description: Minimum number of instances to launch in the autoscaling group.
+  ASGDesiredSize:
+    Type: Number
+    Description: Desired number of instances to launch in the autoscaling group.
+    Default: 1
+  ASGMaxSize:
+    Type: Number
+    Description: Maximum number of instances to launch in the autoscaling group.
+    Default: 2
+  ASGInstanceType:
+    Type: String
+    Description: EC2 Instance Type to launch in autoscaling group.
+    Default: c5.large
+    AllowedValues:
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+  ASGCPUPolicyTargetValue:
+    Type: String # according to docs a Double
+    Description: Target CPU utilization of instances. Leave blank to disable CPU autoscaling.
+    Default: '' # '60.0'
+  ASGInstanceAmiId:
+    Description: AMI (image) to use on EC2 instances.
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  EC2KeyName:
+    Description: Name of an EC2 key pair that can be used to connect to instances
+    Type: String
+  EC2SSHCidr:
+    Description: CIDR block to grant ssh access to.
+    Type: String
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: 'Application Settings'
+        Parameters:
+          - TenancyId
+          - PeerPort
+          - VPeersCount
+          - LogRetentionInDays
+      - Label:
+          default: 'ZooKeeper Settings'
+        Parameters:
+          - ZooKeeperAddress
+          - ZooKeeperPort
+          - ZooKeeperGroupId
+      - Label:
+          default: 'Code Source Settings'
+        Parameters:
+          - ArtifactBucketName
+          - ArtifactBasePath
+          - ArtifactId
+          - ArtifactVersion
+          - ArtifactEncryptionKeyArn
+      - Label:
+          default: 'Network Settings'
+        Parameters:
+          - VPCId
+          - Subnets
+      - Label:
+          default: 'ASG (Backend) Settings'
+        Parameters:
+          - ASGDesiredSize
+          - ASGMinSize
+          - ASGMaxSize
+          - ASGInstanceType
+          - ASGCPUPolicyTargetValue
+          - ASGInstanceAmiId
+          - EC2KeyName
+          - EC2SSHCidr
+
+Conditions:
+  ArtifactEncryptionKeyArnProvided:
+    !Not [!Equals [!Ref ArtifactEncryptionKeyArn, '']]
+  ASGCPUPolicyTargetValueProvided:
+    !Not [!Equals [!Ref ASGCPUPolicyTargetValue, '']]
+  EC2SSHEnabled:
+    !Not [!Equals [!Ref EC2SSHCidr, '']]
+  EC2KeyNameProvided:
+    !Not [!Equals [!Ref EC2KeyName, '']]
+
+Resources:
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/yet/datasim/${AWS::StackName}'
+      RetentionInDays: !Ref LogRetentionInDays
+
+  LogPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Description: IAM Policy that allows DATASIM instances to write to the log group.
+    Properties:
+      ManagedPolicyName: !Sub '${AWS::StackName}-${AWS::Region}-datasim-log-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'logs:DescribeLogGroups'
+            Resource:
+              - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+          - Effect: Allow
+            Action:
+              - 'logs:DescribeLogGroups'
+              - 'logs:CreateLogStream'
+              - 'logs:DescribeLogStreams'
+              - 'logs:PutLogEvents'
+            Resource:
+              - !GetAtt LogGroup.Arn
+
+  # Policy
+  InstancePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Description: IAM Policy for an Instance.
+    Properties:
+      ManagedPolicyName: !Sub '${AWS::StackName}-${AWS::Region}-datasim-instance-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # Allow access to code artifacts for instance bootstrap
+          - Effect: Allow
+            Action:
+              - 's3:GetObject'
+            Resource:
+              - !Sub 'arn:aws:s3:::${ArtifactBucketName}/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          # Allow tags for various cloud things
+          - Effect: Allow
+            Action: 'ec2:DescribeTags'
+            Resource: '*'
+          # CW log errors if you don't allow this
+          - Effect: Allow
+            Action: 'cloudwatch:PutMetricData'
+            Resource: '*'
+          - !If
+            - ArtifactEncryptionKeyArnProvided
+            - Effect: Allow
+              Action:
+                - "kms:Decrypt"
+                - "kms:DescribeKey"
+              Resource:
+                - !Ref ArtifactEncryptionKeyArn
+            - !Ref AWS::NoValue
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+        - !Ref InstancePolicy
+        - !Ref LogPolicy
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess # allow x-ray writes
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles: [!Ref InstanceRole]
+
+  InstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to Instances
+      VpcId: !Ref VPCId
+      SecurityGroupIngress: !If
+        - EC2SSHEnabled
+        - - IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: !Ref EC2SSHCidr
+        - !Ref AWS::NoValue
+
+  # Enable cluster instance access to other instances via aeron
+  InstanceSelfIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId:
+        Ref: InstanceSG
+      IpProtocol: udp
+      FromPort: !Ref PeerPort
+      ToPort: !Ref PeerPort
+      SourceSecurityGroupId:
+        Ref: InstanceSG
+
+  # Enable cluster instance access to ZK
+  ZooKeeperSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId:
+        Ref: ZooKeeperGroupId
+      IpProtocol: tcp
+      FromPort: !Ref ZooKeeperPort
+      ToPort: !Ref ZooKeeperPort
+      SourceSecurityGroupId:
+        Ref: InstanceSG
+
+  Instances:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Authentication:
+        S3AccessCreds:
+          type: 'S3'
+          roleName: !Ref InstanceRole
+          buckets:
+            - !Ref ArtifactBucketName
+      # The cfn-init helper script processes these configuration sections in the following order: packages, groups, users, sources, files, commands, and then services.
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+            - 00_installDeps
+            - 01_setupCfnHup
+            - 02_config-amazon-cloudwatch-agent
+            - 03_restart_amazon-cloudwatch-agent
+            - 04_ds_install
+            - 05_ds_enable
+            - 06_ds_start
+          UpdateEnvironment:
+            - 02_config-amazon-cloudwatch-agent
+            - 03_restart_amazon-cloudwatch-agent
+          UpdateDS:
+            - 04_ds_install
+            - 07_ds_restart
+        00_installDeps:
+          packages:
+            rpm:
+              xray: https://s3.us-east-2.amazonaws.com/aws-xray-assets.us-east-2/xray-daemon/aws-xray-daemon-3.x.rpm
+              amazon-cloudwatch-agent: https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+          commands:
+            00_install_platform_deps:
+              command: amazon-linux-extras install -y java-openjdk11
+        # Cfn-hup setting, it is to monitor the change of metadata.
+        # When there is change in the contents of json file in the metadata section, cfn-hup will call cfn-init to restart the AmazonCloudWatchAgent.
+        01_setupCfnHup:
+          files:
+             '/etc/cfn/cfn-hup.conf':
+               content: !Sub |
+                 [main]
+                 stack=${AWS::StackId}
+                 region=${AWS::Region}
+                 interval=1
+               mode: '000400'
+               owner: root
+               group: root
+             '/etc/cfn/hooks.d/amazon-cloudwatch-agent-auto-reloader.conf':
+               content: !Sub |
+                 [cfn-auto-reloader-hook]
+                 triggers=post.update
+                 path=Resources.Instances.Metadata.AWS::CloudFormation::Init.02_config-amazon-cloudwatch-agent
+                 action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instances --region ${AWS::Region} --configsets UpdateEnvironment
+                 runas=root
+               mode: '000400'
+               owner: root
+               group: root
+             "/lib/systemd/system/cfn-hup.service":
+                content: !Sub |
+                  [Unit]
+                  Description=cfn-hup daemon
+                  [Service]
+                  Type=simple
+                  ExecStart=/opt/aws/bin/cfn-hup
+                  Restart=always
+                  [Install]
+                  WantedBy=multi-user.target
+          commands:
+            01enable_cfn_hup:
+              command: !Sub |
+                systemctl enable cfn-hup.service
+            02start_cfn_hup:
+              command: !Sub |
+                systemctl start cfn-hup.service
+        # Definition of json configuration of AmazonCloudWatchAgent, you can change the configuration below.
+        02_config-amazon-cloudwatch-agent:
+          files:
+            '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json':
+              content: !Sub |
+                {
+                  "metrics": {
+                    "append_dimensions": {
+                      "AutoScalingGroupName": "${!aws:AutoScalingGroupName}",
+                      "ImageId": "${!aws:ImageId}",
+                      "InstanceId": "${!aws:InstanceId}",
+                      "InstanceType": "${!aws:InstanceType}"
+                    },
+                    "metrics_collected": {
+                      "cpu": {
+                        "measurement": [
+                          "usage_active",
+                          "usage_nice",
+                          "usage_system",
+                          "usage_user"
+                        ]
+                      },
+                      "mem": {
+                        "measurement": [
+                          "mem_used_percent"
+                        ]
+                      },
+                      "swap": {
+                        "measurement": [
+                          "swap_used_percent"
+                        ]
+                      }
+                    }
+                  },
+                  "logs":{
+                    "logs_collected": {
+                      "files":{
+                        "collect_list": [
+                          {
+                            "file_path": "/var/log/datasim/*.log",
+                            "auto_removal": true,
+                            "log_group_name": "${LogGroup}",
+                            "log_stream_name": "datasim-instance-{instance_id}"
+                          }
+                        ]
+                      }
+                    },
+                    "log_stream_name": "datasim-instance-{instance_id}"
+                  }
+                }
+        # Invoke amazon-cloudwatch-agent-ctl to restart the AmazonCloudWatchAgent.
+        03_restart_amazon-cloudwatch-agent:
+          commands:
+            01_stop_service:
+              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop
+            02_start_service:
+              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+        04_ds_install:
+          sources:
+            '/datasim': !Sub 'https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          # App Service File
+          files:
+            '/lib/systemd/system/datasim.env':
+              content: !Sub |
+                TENANCY_ID=${TenancyId}
+                ONYX_PROFILE=prod
+                ZK_ADDRESS=${ZooKeeperAddress}
+                ZK_SERVER_PORT=${ZooKeeperPort}
+                ZK_TIMEOUT=${ZooKeeperTimeout}
+                PEER_PORT=${PeerPort}
+                N_VPEERS=${VPeersCount}
+                LANG=en_US.UTF-8
+                AWS_REGION=${AWS::Region}
+                X_RAY_ENABLED=true
+                AWS_XRAY_CONTEXT_MISSING=LOG_ERROR
+                AWS_XRAY_TRACING_NAME=${AWS::StackName}:${AWS::Region}
+            '/lib/systemd/system/aeron.service':
+              content: !Sub |
+                [Unit]
+                Description=Aeron Media Driver
+                [Service]
+                User=root
+                # The configuration file application.properties should be here:
+                WorkingDirectory=/datasim
+                ExecStart=/datasim/bin/peer_driver.sh
+                SuccessExitStatus=143
+                TimeoutStopSec=10
+                Restart=on-failure
+                RestartSec=5
+                StandardOutput=syslog
+                StandardError=syslog
+                SyslogIdentifier=aeron
+                [Install]
+                WantedBy=multi-user.target
+            '/lib/systemd/system/datasim.service':
+              content: !Sub |
+                [Unit]
+                Description=Datasim Cluster Peer
+                Requires=aeron.service
+                [Service]
+                User=root
+                # The configuration file application.properties should be here:
+                WorkingDirectory=/datasim
+                EnvironmentFile=/lib/systemd/system/datasim.env
+                ExecStart=/datasim/bin/peer.sh
+                SuccessExitStatus=143
+                TimeoutStopSec=10
+                Restart=on-failure
+                RestartSec=5
+                StandardOutput=syslog
+                StandardError=syslog
+                SyslogIdentifier=datasim
+                [Install]
+                WantedBy=multi-user.target
+            '/etc/rsyslog.d/aeron.conf':
+              content: |
+                if $programname == 'aeron' then /var/log/datasim/aeron.log
+                & stop
+            '/etc/rsyslog.d/datasim.conf':
+              content: |
+                if $programname == 'datasim' then /var/log/datasim/datasim.log
+                & stop
+          commands:
+            01set_bind_addr:
+              command: echo "BIND_ADDR=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)" >> /lib/systemd/system/datasim.env
+            02make_logs_dir:
+              command: mkdir -p /var/log/datasim
+            03restart_rsyslog:
+              command: systemctl restart rsyslog
+        05_ds_enable:
+          commands:
+            01enable_aeron:
+              command: systemctl enable aeron.service
+            02enable_ds:
+              command: systemctl enable datasim.service
+        06_ds_start:
+          commands:
+            01start_aeron:
+              command: systemctl start aeron.service
+            02start_ds:
+              command: systemctl start datasim.service
+        07_ds_restart:
+          commands:
+            01daemon_reload:
+              command: systemctl daemon-reload
+            02restart_aeron:
+              command: systemctl restart aeron.service
+            03restart_ds:
+              command: systemctl restart datasim.service
+    Properties:
+      ImageId: !Ref ASGInstanceAmiId
+      SecurityGroups:
+        - !Ref InstanceSG
+      InstanceType: !Ref ASGInstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !If
+        - EC2KeyNameProvided
+        - !Ref EC2KeyName
+        - !Ref AWS::NoValue
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Refer to anything that should trigger an ASG update
+          echo 'DATASIM ${ArtifactVersion} from https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          # initialize from metadata
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instances --region ${AWS::Region} --configsets default
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+
+  # Autoscaling Policies
+
+  # Average CPU utilization of instances
+  ASGCPUPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Condition: ASGCPUPolicyTargetValueProvided
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: !Ref ASGCPUPolicyTargetValue
+
+  # ASG infra
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: !Ref Subnets
+      LaunchConfigurationName: !Ref Instances
+      MinSize: !Ref ASGMinSize
+      MaxSize: !Ref ASGMaxSize
+      DesiredCapacity: !Ref ASGDesiredSize
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 120
+      # Enable Group Metrics Collection
+      MetricsCollection:
+        - Granularity: '1Minute'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: '1'
+        MaxBatchSize: '1'
+        PauseTime: PT15M
+        WaitOnResourceSignals: 'true'
+        SuspendProcesses:
+          - HealthCheck
+          - ReplaceUnhealthy
+          - AZRebalance
+          - AlarmNotification
+          - ScheduledActions
