@@ -2,7 +2,8 @@
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.xapi :as xapi])
+            [com.yetanalytics.datasim.xapi :as xapi]
+            [com.yetanalytics.datasim.util :as u])
   (:import [java.io Reader Writer]))
 
 
@@ -23,14 +24,7 @@
 ;; An open-validating group spec, ignores extra nils
 (s/def ::personae
   (s/and
-   (s/conformer (fn [x]
-                        (reduce-kv
-                         (fn [m k v]
-                           (if (nil? v)
-                             m
-                             (assoc m k v)))
-                         {}
-                         x)))
+   (s/conformer u/remove-nil-vals)
    ::xs/group))
 
 
@@ -55,10 +49,4 @@
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]
-    (reduce-kv
-     (fn [m k v]
-       (if (nil? v)
-         m
-         (assoc m k v)))
-     {}
-     this)))
+    (u/remove-nil-vals this)))

@@ -1,0 +1,23 @@
+{
+  "id" : "https://xapinet.org/xapi/yet/minimal",
+  "definition" : {
+    "en" : "This xAPI Profile demonstrates the minimal required properties of an xAPI profile"
+  },
+  "@context" : "https://w3id.org/xapi/profiles/context",
+  "prefLabel" : {
+    "en" : "Minimal - Experimental xAPI Profile"
+  },
+  "type" : "Profile",
+  "author" : {
+    "url" : "https://www.yetanalytics.com/",
+    "name" : "Yet Analytics",
+    "type" : "Organization"
+  },
+  "conformsTo" : "https://w3id.org/xapi/profiles#1.0",
+  "versions" : [
+    {
+      "id" : "https://xapinet.org/xapi/yet/minimal/v1",
+      "generatedAtTime" : "2020-03-25T15:45:31.907Z"
+    }
+  ]
+}

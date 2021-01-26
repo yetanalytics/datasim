@@ -4,7 +4,8 @@
             [clojure.string :as cs]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [clojure.walk :as w])
+            [clojure.walk :as w]
+            [com.yetanalytics.datasim.util :as u])
   (:import [java.io Reader Writer]))
 
 ;; Spec overrides for Kelivin's lib:
@@ -31,7 +32,7 @@
                     patterns]
   p/FromInput
   (validate [this]
-    (s/explain-data ::profile/profile this))
+    (s/explain-data ::profile/profile (u/remove-nil-vals this)))
 
   p/JSONRepresentable
   (read-key-fn [this k]
@@ -49,4 +50,4 @@
         "@context"
         nn)))
   (write-body-fn [this]
-    this))
+    (u/remove-nil-vals this)))

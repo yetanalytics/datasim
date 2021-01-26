@@ -9,10 +9,17 @@
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]
-            [clojure.walk :as w]))
+            [clojure.walk :as w]
+            [com.yetanalytics.datasim.util :as u]))
 
 (s/def ::profiles
-  (s/every ::ps/profile :min-count 1
+  (s/every (s/and (s/conformer (fn [x]
+                                 ;; Only operate on maps, or invalidator tests
+                                 ;; get an unhandled error
+                                 (if (map? x)
+                                   (u/remove-nil-vals x)
+                                   x)))
+                  ::ps/profile) :min-count 1
            :into []))
 
 (s/def ::personae
