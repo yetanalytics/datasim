@@ -75,7 +75,7 @@ The simulation specification is a single object containing of all of the above. 
 
 Java (JDK 8+, OpenJDK or Oracle)
 
-Clojure (1.10.1+)
+[Clojure CLI (1.10.2+)](https://clojure.org/guides/getting_started#_clojure_installer_and_cli_tools)
 
 ### Deployment Models
 
