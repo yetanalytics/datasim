@@ -4,11 +4,11 @@
         org.clojure/core.memoize {:mvn/version "0.8.2"}
         com.yetanalytics/xapi-schema
         {:git/url "https://github.com/yetanalytics/xapi-schema"
-         :sha "e2c517e7adcedc7f3012b90bce274e2c33cdbcc1"
+         :sha "0e552227e74913d1b35dfa648407b9a9ac4b6b00"
          :exclusions [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
         {:git/url "https://github.com/yetanalytics/project-pan"
-         :sha "40f6135b012ff2ef90df2173b247ac56e33181fc"
+         :sha "abc26a7a2c30be9e26009e945a402f913842e8d3"
          :exclusions [org.clojure/clojurescript
                       org.clojure/test.check]}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
