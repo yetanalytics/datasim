@@ -4,22 +4,22 @@
         org.clojure/core.memoize {:mvn/version "0.8.2"}
         com.yetanalytics/xapi-schema
         {:git/url "https://github.com/yetanalytics/xapi-schema"
-         :sha "e2c517e7adcedc7f3012b90bce274e2c33cdbcc1"
+         :sha "0e552227e74913d1b35dfa648407b9a9ac4b6b00"
          :exclusions [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
         {:git/url "https://github.com/yetanalytics/project-pan"
-         :sha "40f6135b012ff2ef90df2173b247ac56e33181fc"
+         :sha "abc26a7a2c30be9e26009e945a402f913842e8d3"
          :exclusions [org.clojure/clojurescript
                       org.clojure/test.check]}
-        clojure.java-time {:mvn/version "0.3.2"}
+        clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
         ;; org.threeten/threeten-extra {:mvn/version "1.4"}
         org.apache.jena/jena-iri {:mvn/version "3.13.1"}
         ;; JSON Path Parser built with
         org.blancas/kern {:mvn/version "1.1.0"}
         org.clojure/test.check {:mvn/version "1.0.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
-        cheshire {:mvn/version "5.10.0"}
-        http-kit {:mvn/version "2.5.0"}}
+        cheshire/cheshire {:mvn/version "5.10.0"}
+        http-kit/http-kit {:mvn/version "2.5.0"}}
  :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
@@ -27,10 +27,9 @@
                                             :sha "c84e20639257d05b46583db73e203cc0cc275d64"}}}
   :run {:main-opts ["-m" "com.yetanalytics.datasim.main"]}
   :dev {:extra-paths ["dev-resources" "src/dev"]
-        :extra-deps {
-                     incanter/incanter-core {:mvn/version "1.9.3"}
+        :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
                      incanter/incanter-charts {:mvn/version "1.9.3"}
-                     criterium {:mvn/version "0.4.5"}}}
+                     criterium/criterium {:mvn/version "0.4.5"}}}
   :test {:extra-paths ["src/test"]}
   :runner
   {:extra-deps {com.cognitect/test-runner
@@ -46,12 +45,12 @@
                  {:mvn/version "0.5.7"}
                  org.slf4j/slf4j-simple
                  {:mvn/version "1.7.28"}
-                 clj-http
+                 clj-http/clj-http
                  {:mvn/version "3.10.0"}
                  buddy/buddy-auth
                  {:mvn/version "2.2.0"
-                  :exclusions [cheshire]}
-                 environ
+                  :exclusions [cheshire/cheshire]}
+                 environ/environ
                  {:mvn/version "1.1.0"}}
    :main-opts   ["-m" "com.yetanalytics.datasim.server"]}
   :onyx
@@ -62,11 +61,11 @@
                                        [org.clojure/clojure
                                         org.clojure/core.async
                                         org.slf4j/slf4j-nop]}
-                aleph {:mvn/version "0.4.7-alpha7"}
+                aleph/aleph {:mvn/version "0.4.7-alpha7"}
                 com.fzakaria/slf4j-timbre {:mvn/version "0.3.20"}
                 org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}
                 org.onyxplatform/onyx-http {:mvn/version "0.14.5.0"
-                                            :exclusions [aleph
+                                            :exclusions [aleph/aleph
                                                          io.netty/netty-all]}
                 ;; for local repl
                 com.bhauman/rebel-readline {:mvn/version "0.1.4"}
