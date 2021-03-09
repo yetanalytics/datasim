@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.input-test
   (:require [clojure.test :refer :all]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input :refer :all]
+            [com.yetanalytics.datasim.input :refer [from-location validate validate-throw]]
             [clojure.template :as t]))
 
 ;; simple property test to cover the input types

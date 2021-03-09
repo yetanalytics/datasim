@@ -2,6 +2,7 @@
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
+            [com.yetanalytics.pan :refer [validate-profile]]
             [com.yetanalytics.pan.objects.profile :as ps]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.profile :as profile]
@@ -12,15 +13,32 @@
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u]))
 
+(defn- valid-profile-cosmos?
+  "Given a seq of profiles, check if all relations between Patterns and
+   Statement Templates (not Concepts) are valid. Links to objects
+   outside this \"cosmos\" are considered invalid."
+  [profiles]
+  (let [mega-profile ; Hack on project-pan's graph validation!
+        (reduce (fn [acc {:keys [templates patterns]}]
+                  (let [templates ; Exclude template relations to concepts
+                        (mapv
+                         #(select-keys % [:id :type :inScheme :prefLabel :definition])
+                         templates)]
+                    (-> acc
+                        (update :templates concat templates)
+                        (update :patterns concat patterns))))
+                {:templates  []
+                 :patterns   []}
+                profiles)]
+    (nil? (validate-profile mega-profile
+                            :syntax? false
+                            :print-errs? false
+                            :relations? true))))
+
 (s/def ::profiles
-  (s/every (s/and (s/conformer (fn [x]
-                                 ;; Only operate on maps, or invalidator tests
-                                 ;; get an unhandled error
-                                 (if (map? x)
-                                   (u/remove-nil-vals x)
-                                   x)))
-                  ::ps/profile) :min-count 1
-           :into []))
+       (s/and
+        (s/every ::ps/profile :min-count 1 :into [])
+        valid-profile-cosmos?))
 
 (s/def ::personae
   ::personae/personae)
