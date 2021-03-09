@@ -1,7 +1,10 @@
 (ns com.yetanalytics.datasim.input-test
   (:require [clojure.test :refer :all]
+            [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input :refer [from-location validate validate-throw]]
+            [com.yetanalytics.datasim.input 
+             :refer [from-location validate validate-throw]
+             :as input]
             [clojure.template :as t]))
 
 ;; simple property test to cover the input types
@@ -38,6 +41,19 @@
    "Combined Input Spec" :input "dev-resources/input/simple.json"
    #(update % :profiles first) ;; profiles are a vector
    ))
+
+(deftest profile-cosmos-validation-test
+  (testing "input is valid if all template refs are valid"
+    (is (nil? (s/explain-data
+               ::input/profiles
+               (-> (from-location :input :json "dev-resources/input/simple.json")
+                   :profiles)))))
+  (testing "input is invalid if invalid template ref iri exists"
+    (is (some? (s/explain-data
+                ::input/profiles
+                (-> (from-location :input :json "dev-resources/input/simple.json")
+                    :profiles
+                    (assoc-in [0 :patterns 0 :zeroOrMore] "https://w3id.org/xapi/cmi5#bad-template")))))))
 
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
