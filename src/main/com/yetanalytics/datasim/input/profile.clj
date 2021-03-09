@@ -10,7 +10,7 @@
 ;; NOTE: Do not include optional args seeAlso, concepts, templates, and patterns
 ;; The record constructor will populate these properties with nils if they're
 ;; missing, causing the Profile to fail validation. (The vanilla Profile
-;; defrecord serves as the supertype for all possible Profile anyways.)
+;; defrecord serves as the supertype for all possible Profiles anyways.)
 
 ;; NOTE: Do not include the type property, as it would conflict and be annoying.
 ;; It is static anyhow.

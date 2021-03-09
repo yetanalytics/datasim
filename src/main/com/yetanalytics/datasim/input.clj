@@ -2,8 +2,8 @@
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.pan :refer [validate-profile]]
             [com.yetanalytics.pan.objects.profile :as ps]
+            [com.yetanalytics.pan.objects.pattern :as pat]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.input.personae :as personae]
@@ -13,32 +13,26 @@
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u]))
 
-(defn- valid-profile-cosmos?
-  "Given a seq of profiles, check if all relations between Patterns and
-   Statement Templates (not Concepts) are valid. Links to objects
-   outside this \"cosmos\" are considered invalid."
+(defn- profiles->pedges
   [profiles]
-  (let [mega-profile ; Hack on project-pan's graph validation!
-        (reduce (fn [acc {:keys [templates patterns]}]
+  (let [[templates patterns]
+        (reduce (fn [[ts ps] {:keys [templates patterns]}]
                   (let [templates ; Exclude template relations to concepts
                         (mapv
                          #(select-keys % [:id :type :inScheme :prefLabel :definition])
                          templates)]
-                    (-> acc
-                        (update :templates concat templates)
-                        (update :patterns concat patterns))))
-                {:templates  []
-                 :patterns   []}
+                    [(concat ts templates) (concat ps patterns)]))
+                [[] []]
                 profiles)]
-    (nil? (validate-profile mega-profile
-                            :syntax? false
-                            :print-errs? false
-                            :relations? true))))
+    (pat/get-edges (pat/create-graph templates patterns))))
 
 (s/def ::profiles
-       (s/and
-        (s/every ::ps/profile :min-count 1 :into [])
-        valid-profile-cosmos?))
+  (s/and
+   (s/every ::ps/profile :min-count 1 :into [])
+   ;; Validate that all edges with a Pattern src ends up at a Pattern or
+   ;; Template dest that is also in the profile cosmos.
+   (s/conformer profiles->pedges)
+   ::pat/valid-edges))
 
 (s/def ::personae
   ::personae/personae)
