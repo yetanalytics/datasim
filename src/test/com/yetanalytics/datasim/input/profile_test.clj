@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.input.profile-test
   (:require [clojure.test :refer :all]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input.profile :refer :all]
+            [com.yetanalytics.datasim.input.profile :refer [map->Profile]]
             [com.yetanalytics.pan.objects.profile :as profile]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.io :as dio]
