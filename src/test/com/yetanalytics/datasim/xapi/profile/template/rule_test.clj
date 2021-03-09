@@ -1,13 +1,13 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule-test
   (:require
    [clojure.test :refer :all]
-   [com.yetanalytics.datasim.xapi.profile.template.rule :refer :all :as r]
+   [com.yetanalytics.datasim.xapi.profile.template.rule
+    :refer [parse-rule apply-rules-gen follows-rule?] :as r]
    [com.yetanalytics.datasim.input :as input]
    [clojure.java.io :as io]
    [cheshire.core :as json]
    [clojure.spec.alpha :as s]
-   [xapi-schema.spec :as xs]
-   ))
+   [xapi-schema.spec :as xs]))
 
 ;; we can pull some actual rules from cmi5
 (def cmi5-templates
@@ -53,11 +53,11 @@
             (is (nil? (s/explain-data ::xs/statement processed))))))))
   (testing "various cases"
     (are [case-name statement rules]
-        (let [processed (apply-rules-gen simple-statement rules :seed 42)]
-          (and (every? (partial follows-rule? processed) (map parse-rule
-                                                              rules))
-               (is (nil? (s/explain-data ::xs/statement processed)))
-               case-name))
+         (let [processed (apply-rules-gen simple-statement rules :seed 42)]
+           (and (every? (partial follows-rule? processed) (map parse-rule
+                                                               rules))
+                (is (nil? (s/explain-data ::xs/statement processed)))
+                case-name))
       "group as actor" simple-statement [;; TODO: Right now this will only apply the second rule if the first is present
                                          ;; the path->spec function can't resolve ["actor" "member"]
                                          {:location "$.actor.objectType"
