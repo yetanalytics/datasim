@@ -8,11 +8,14 @@
   (:import [java.io Reader Writer]))
 
 ;; NOTE: Do not include optional args seeAlso, concepts, templates, and patterns
-;; The record constructor will populate these properties with nils, causing
-;; the Profile to fail validation.
+;; The record constructor will populate these properties with nils if they're
+;; missing, causing the Profile to fail validation. (The vanilla Profile
+;; defrecord serves as the supertype for all possible Profile anyways.)
+
+;; NOTE: Do not include the type property, as it would conflict and be annoying.
+;; It is static anyhow.
 
 (defrecord Profile [id
-                    ;; type ;; that would conflict and be annoying, it's static anyhow
                     _context
                     conformsTo
                     prefLabel
@@ -21,21 +24,16 @@
                     author]
   p/FromInput
   (validate [this]
-    (s/explain-data ::profile/profile this))
+            (s/explain-data ::profile/profile this))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
-    (let [kn (name k)]
-      (keyword nil
-               (if (= "@context" kn)
-                 "_context"
-                 kn))))
-  (read-body-fn [this json-result]
-    (map->Profile json-result))
-  (write-key-fn [this k]
-    (let [nn (name k)]
-      (if (= nn "_context")
-        "@context"
-        nn)))
+  (read-key-fn [_this k]
+               (let [kn (name k)]
+                 (keyword nil (if (= "@context" kn) "_context" kn))))
+  (read-body-fn [_this json-result]
+                (map->Profile json-result))
+  (write-key-fn [_this k]
+                (let [nn (name k)]
+                  (if (= nn "_context") "@context" nn)))
   (write-body-fn [this]
-    this))
+                 this))
