@@ -54,6 +54,19 @@
                              "https://w3id.org/xapi/cmi5#bad-template"))]
               (s/explain-data ::input/profiles)
               ::s/problems
+              count)))
+    ;; XXX: If we replaced satisfiedbad3 with satisfiedbad2, we only get a count
+    ;; of 2 errors, not 3.
+    (is (= 3 (->>
+              [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                   (assoc-in [:patterns 0 :zeroOrMore]
+                             "https://w3id.org/xapi/cmi5#satisfiedbad1")
+                   (assoc-in [:patterns 1 :sequence 0]
+                             "https://w3id.org/xapi/cmi5#satisfiedbad2")
+                   (assoc-in [:patterns 1 :sequence 2]
+                             "https://w3id.org/xapi/cmi5#satisfiedbad3"))]
+              (s/explain-data ::input/profiles)
+              ::s/problems
               count))))
   (testing "validation works for multi-profile cosmos"
     (is (nil? (s/explain-data
