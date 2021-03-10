@@ -3,6 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as ps]
+            [com.yetanalytics.pan.objects.pattern :as pat]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.input.personae :as personae]
@@ -12,15 +13,22 @@
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u]))
 
+(defn- profiles->pedges
+  [profiles]
+  (let [[templates patterns]
+        (reduce (fn [[ts ps] {:keys [templates patterns]}]
+                  [(concat ts templates) (concat ps patterns)])
+                [[] []]
+                profiles)]
+    (pat/get-edges (pat/create-graph templates patterns))))
+
 (s/def ::profiles
-  (s/every (s/and (s/conformer (fn [x]
-                                 ;; Only operate on maps, or invalidator tests
-                                 ;; get an unhandled error
-                                 (if (map? x)
-                                   (u/remove-nil-vals x)
-                                   x)))
-                  ::ps/profile) :min-count 1
-           :into []))
+  (s/and
+   (s/every ::ps/profile :min-count 1 :into [])
+   ;; Validate that all edges with a Pattern src ends up at a Pattern or
+   ;; Template dest that is also in the profile cosmos.
+   (s/conformer profiles->pedges)
+   ::pat/valid-edges))
 
 (s/def ::personae
   ::personae/personae)
