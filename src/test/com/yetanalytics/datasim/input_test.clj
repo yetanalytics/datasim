@@ -48,11 +48,13 @@
                ::input/profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")]))))
   (testing "input is invalid if invalid template ref iri exists"
-    (is (some? (s/explain-data
-                ::input/profiles
-                [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
-                     (assoc-in [:patterns 0 :zeroOrMore]
-                               "https://w3id.org/xapi/cmi5#bad-template"))]))))
+    (is (= 1 (->>
+              [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                   (assoc-in [:patterns 0 :zeroOrMore]
+                             "https://w3id.org/xapi/cmi5#bad-template"))]
+              (s/explain-data ::input/profiles)
+              ::s/problems
+              count))))
   ;; Both the cmi5 and video profiles have Patterns
   ;; So does the tc3 profile, but it violates the "alternates MUST NOT contain zeroOrMore" spec
   (testing "validation works for multi-profile cosmos"
@@ -70,12 +72,14 @@
                               "https://w3id.org/xapi/cmi5#terminated")
                     (assoc-in [:patterns 1 :alternates 6]
                               "https://w3id.org/xapi/cmi5#completed"))])))
-    (is (some? (s/explain-data
-                ::input/profiles
-                [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
-                     (assoc-in [:patterns 0 :zeroOrMore]
-                               "https://w3id.org/xapi/cmi5#bad-template"))
-                 (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")])))))
+    (is (= 1 (->>
+              [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                   (assoc-in [:patterns 0 :zeroOrMore]
+                             "https://w3id.org/xapi/cmi5#bad-template"))
+               (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")]
+              (s/explain-data ::input/profiles)
+              ::s/problems
+              count)))))
 
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
