@@ -55,14 +55,12 @@
               (s/explain-data ::input/profiles)
               ::s/problems
               count))))
-  ;; Both the cmi5 and video profiles have Patterns
-  ;; So does the tc3 profile, but it violates the "alternates MUST NOT contain zeroOrMore" spec
   (testing "validation works for multi-profile cosmos"
     (is (nil? (s/explain-data
                ::input/profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
                 (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")])))
-    (is (nil? (s/explain-data
+    (is (nil? (s/explain-data ; Add connections between Profiles
                ::input/profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
                 (-> (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")
@@ -79,7 +77,22 @@
                (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")]
               (s/explain-data ::input/profiles)
               ::s/problems
-              count)))))
+              count))))
+  ;; Following tests exist to point out flaws in Profiles
+  (testing "invalid profiles"
+    ;; AcrossX and ActivityStreams violate spec:
+    ;; "related MUST only be used on deprecated Concepts"
+    (is (not (s/valid?
+              ::input/profiles
+              [(from-location :profile :json "dev-resources/profiles/acrossx/profile.jsonld")])))
+    (is (not (s/valid?
+              ::input/profiles
+              [(from-location :profile :json "dev-resources/profiles/activity_streams/profile.jsonld")])))
+    ;; TC3 Profile violates spec:
+    ;; "alternates Pattern MUST NOT contain zeroOrMore"
+    (is (not (s/valid?
+              ::input/profiles
+              [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
 
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
