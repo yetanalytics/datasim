@@ -17,11 +17,7 @@
   [profiles]
   (let [[templates patterns]
         (reduce (fn [[ts ps] {:keys [templates patterns]}]
-                  (let [templates ; Exclude template relations to concepts
-                        (mapv
-                         #(select-keys % [:id :type :inScheme :prefLabel :definition])
-                         templates)]
-                    [(concat ts templates) (concat ps patterns)]))
+                  [(concat ts templates) (concat ps patterns)])
                 [[] []]
                 profiles)]
     (pat/get-edges (pat/create-graph templates patterns))))
