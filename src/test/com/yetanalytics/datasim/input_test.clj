@@ -46,21 +46,36 @@
   (testing "input is valid if all template refs are valid"
     (is (nil? (s/explain-data
                ::input/profiles
-               (-> (from-location :input :json "dev-resources/input/simple.json")
-                   :profiles)))))
+               [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")]))))
   (testing "input is invalid if invalid template ref iri exists"
     (is (some? (s/explain-data
                 ::input/profiles
-                (-> (from-location :input :json "dev-resources/input/simple.json")
-                    :profiles
-                    (assoc-in [0 :patterns 0 :zeroOrMore] "https://w3id.org/xapi/cmi5#bad-template"))))))
+                [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                     (assoc-in [:patterns 0 :zeroOrMore]
+                               "https://w3id.org/xapi/cmi5#bad-template"))]))))
   ;; Both the cmi5 and video profiles have Patterns
   ;; So does the tc3 profile, but it violates the "alternates MUST NOT contain zeroOrMore" spec
   (testing "validation works for multi-profile cosmos"
     (is (nil? (s/explain-data
                ::input/profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
-                (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")])))))
+                (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")])))
+    (is (nil? (s/explain-data
+               ::input/profiles
+               [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                (-> (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")
+                    (assoc-in [:patterns 0 :sequence 0]
+                              "https://w3id.org/xapi/cmi5#initialized")
+                    (assoc-in [:patterns 0 :sequence 2]
+                              "https://w3id.org/xapi/cmi5#terminated")
+                    (assoc-in [:patterns 1 :alternates 6]
+                              "https://w3id.org/xapi/cmi5#completed"))])))
+    (is (some? (s/explain-data
+                ::input/profiles
+                [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                     (assoc-in [:patterns 0 :zeroOrMore]
+                               "https://w3id.org/xapi/cmi5#bad-template"))
+                 (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")])))))
 
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
