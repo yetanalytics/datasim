@@ -190,7 +190,7 @@
     {alignments :alignment-vector} :alignments
     :as input}]
   (let [^ZoneRegion zone (t/zone-id timezone)
-        actors (:member personae)
+        actors (->> personae :member (mapv #(dissoc % :role))) ; `role` is not an Actor property
         t-zero (.toEpochMilli (t/instant start))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
