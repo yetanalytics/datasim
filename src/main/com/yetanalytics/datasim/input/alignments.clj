@@ -19,21 +19,25 @@
   (s/keys :req-un [::component
                    ::weight]))
 
-;;Actor-Alignment: Map of Actor to collection of Alignments
+;; Actor-Alignment: Map of Actor to collection of Alignments
 
-(s/def ::id
-  ::xapi/agent-id)
+(s/def ::id string?)
 
-(s/def ::type
-  #{"Agent" "Group" "Role"})
+(s/def ::type #{"Agent" "Group" "Role"})
 
-(s/def ::alignments
-  (s/every ::alignment))
+(s/def ::alignments (s/every ::alignment))
+
+(defmulti actor-alignment? :type)
+
+(defmethod actor-alignment? "Agent" [_]
+  (fn [align] (->> align :id (s/valid? ::xapi/agent-id))))
+
+(defmethod actor-alignment? :default [_] ; "Group" and "Role"
+  (constantly true))
 
 (s/def ::actor-alignment
-  (s/keys :req-un [::id
-                   ::type
-                   ::alignments]))
+  (s/and (s/keys :req-un [::id ::type ::alignments])
+         (s/multi-spec actor-alignment? :type)))
 
 ;;Alignment-vector: Collection of Actor-Alignment
 
@@ -59,7 +63,6 @@
     (name k))
   (write-body-fn [this]
     alignment-vector))
-
 
 (comment
 
