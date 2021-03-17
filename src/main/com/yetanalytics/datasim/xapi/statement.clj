@@ -117,6 +117,8 @@
 ;;    -> subregistration extension key
 ;;    -> only necessary when a primary pattern contains another primary pattern
 
+(def is-rule-override-ref (atom false)) ; TODO: Find better solution
+
 (defn generate-statement
   [{{:keys [profiles]} :input
     iri-map :iri-map
@@ -157,6 +159,15 @@
                     {"id" "http://adlnet.gov/expapi/verbs/experienced"
                      "display" {"en" "experienced"}})
         stmt-obj   (or
+                    ;; object override is present in the alignment
+                    (and (not-empty alignment)
+                         (when-let [obj-override (->> alignment
+                                                      keys
+                                                      (random/choose rng alignment)
+                                                      (get alignment)
+                                                      :object-override)]
+                           (swap! is-rule-override-ref (constantly true))
+                           obj-override))
                     ;; quick scan rules for "$.object.id"
                     ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
                     ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
@@ -198,7 +209,9 @@
         ;; addition of `:spec` key to 0 or more `template-rules`
         template-rules! (ext/derive-generation-hint profiles rng template-rules)]
     (with-meta
-      (rule/apply-rules-gen base-stmt template-rules! :seed (random/rand-long rng))
+      (if-not (deref is-rule-override-ref)
+        (rule/apply-rules-gen base-stmt template-rules! :seed (random/rand-long rng))
+        base-stmt)
       ;; The duration in MS so we can continue the sim
       {
        ;; The time (in millis since the epoch) after which the actor can

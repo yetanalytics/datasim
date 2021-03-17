@@ -166,7 +166,6 @@
                   sd))))
            coll)))
 
-
 (comment
 
   #_(use '(incanter core stats charts io))
