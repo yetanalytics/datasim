@@ -140,9 +140,12 @@
 (s/def ::sd
   (s/double-in :min 0.0 :infinite? false :NaN? false))
 
+(s/def ::weight
+  (s/double-in -1.0 1.0))
+
 (s/fdef choose
   :args (s/cat :rng ::rng
-               :weights (s/map-of any? (s/double-in -1.0 1.0))
+               :weights (s/map-of any? (s/keys :req-un [::weight]))
                :coll (s/every any? :min-count 1)
                :options (s/keys*
                          :opt-un [::sd])))
