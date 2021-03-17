@@ -117,8 +117,6 @@
 ;;    -> subregistration extension key
 ;;    -> only necessary when a primary pattern contains another primary pattern
 
-(def is-rule-override-ref (atom false)) ; TODO: Find better solution
-
 (defn generate-statement
   [{{:keys [profiles]} :input
     iri-map :iri-map
@@ -136,7 +134,13 @@
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
-  (let [rng        (random/seed-rng seed)
+  (let [rng          (random/seed-rng seed)
+        obj-override (when (not-empty alignment)
+                       (->> alignment
+                            keys
+                            (random/choose rng alignment)
+                            (get alignment)
+                            :object-override))
         ;; components of `base-stmt`
         stmt-id    (random/rand-uuid rng)
         stmt-actor (w/stringify-keys actor)
@@ -159,15 +163,9 @@
                     {"id" "http://adlnet.gov/expapi/verbs/experienced"
                      "display" {"en" "experienced"}})
         stmt-obj   (or
-                    ;; object override is present in the alignment
-                    (and (not-empty alignment)
-                         (when-let [obj-override (->> alignment
-                                                      keys
-                                                      (random/choose rng alignment)
-                                                      (get alignment)
-                                                      :object-override)]
-                           (swap! is-rule-override-ref (constantly true))
-                           obj-override))
+                    ;; object override is valid for the template
+                    ;; and is present in the alignment
+                    (when obj-override obj-override)
                     ;; quick scan rules for "$.object.id"
                     ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
                     ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
@@ -209,12 +207,14 @@
         ;; addition of `:spec` key to 0 or more `template-rules`
         template-rules! (ext/derive-generation-hint profiles rng template-rules)]
     (with-meta
-      (if-not (deref is-rule-override-ref)
-        (rule/apply-rules-gen base-stmt template-rules! :seed (random/rand-long rng))
-        base-stmt)
+      (let [stmt (rule/apply-rules-gen base-stmt
+                                       template-rules!
+                                       :seed (random/rand-long rng))]
+        ;; Need to override object again, in case object is changed
+        ;; by the Template rules.
+        (if obj-override (assoc stmt "object" obj-override) stmt))
       ;; The duration in MS so we can continue the sim
-      {
-       ;; The time (in millis since the epoch) after which the actor can
+      {;; The time (in millis since the epoch) after which the actor can
        ;; continue activity
        :end-ms (+ sim-t
                   (long
@@ -225,5 +225,4 @@
        ;; it's up to you. For the stub we just make it sim-t
        :timestamp-ms sim-t
        ;; Return the template, useful for a bunch of things
-       :template template
-       })))
+       :template template})))
