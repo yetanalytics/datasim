@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.statement-test
   (:require
    [clojure.test :refer :all]
+   [clojure.walk :as w]
    [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.random :as random]
@@ -58,11 +59,11 @@
                     (repeatedly 100 #(generate-statement valid-args))))))
       (testing "object override works"
         (let [new-object
-              {"objectType" "Activity"
-               "id" "https://www.whatever.com/activities#course1"
-               "definition" {"name" {"en-US" "Course 1"}
-                             "description" {"en-US" "Course Description 1"}
-                             "type" "http://adlnet.gov/expapi/activities/course"}}
+              {:objectType "Activity"
+               :id "https://www.whatever.com/activities#course1"
+               :definition {:name {:en-US "Course 1"}
+                            :description {:en-US "Course Description 1"}
+                            :type "http://adlnet.gov/expapi/activities/course"}}
               valid-args'
               (-> valid-args
                   (assoc-in
@@ -71,4 +72,6 @@
                   (update-in [:alignment] dissoc "https://example.org/activity/c"))]
           (is (s/valid? ::xs/statement (generate-statement valid-args')))
           (is (= new-object
-                 (get (generate-statement valid-args') "object"))))))))
+                 (-> (generate-statement valid-args')
+                     (get "object")
+                     w/keywordize-keys))))))))

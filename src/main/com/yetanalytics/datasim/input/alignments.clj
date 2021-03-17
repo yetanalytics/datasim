@@ -1,9 +1,13 @@
 (ns com.yetanalytics.datasim.input.alignments
   (:require [clojure.spec.alpha :as s]
+            [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.xapi :as xapi]))
+
+;; TODO: Object overrides
+;; Due to limitations of keywords, we cannot have IRI keys, so no extensions
 
 ;;Alignment: Map of Component and Weight
 
@@ -53,8 +57,11 @@
   (read-key-fn [this k]
     (keyword nil (name k)))
   (read-body-fn [this json-result]
-    (map->Alignments
-     {:alignment-vector json-result}))
+    (let [av (map->Alignments {:alignment-vector json-result})]
+      (mapv (fn [alignment]
+              (mapv #(update % :objectOverride w/stringify-keys)
+                    (:alignments alignment)))
+            av)))
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]

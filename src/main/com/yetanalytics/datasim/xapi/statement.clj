@@ -3,6 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [clojure.string :as string]
+            [clojure.walk :as w]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.input :as input]
@@ -11,7 +12,6 @@
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.random :as random]
             [xapi-schema.spec :as xs]
-            [clojure.walk :as w]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
             [com.yetanalytics.datasim.json.schema :as j-schema]
             [com.yetanalytics.datasim.xapi.extensions :as ext])
@@ -140,7 +140,8 @@
                             keys
                             (random/choose rng alignment)
                             (get alignment)
-                            :object-override))
+                            :object-override
+                            w/stringify-keys))
         ;; components of `base-stmt`
         stmt-id    (random/rand-uuid rng)
         stmt-actor (w/stringify-keys actor)
