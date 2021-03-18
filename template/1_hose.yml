@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: APIGW -> Firehose - adapted from https://jens.dev/assets/api-to-firehose-cf.yml
+
+Resources:
+
+  DataBucket:
+    Type: AWS::S3::Bucket
+
+  KinesisRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - firehose.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: KinesisRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - s3:AbortMultipartUpload
+                - s3:GetBucketLocation
+                - s3:GetObject
+                - s3:ListBucket
+                - s3:ListBucketMultipartUploads
+                - s3:PutObject
+              Resource:
+                - !GetAtt DataBucket.Arn
+                - !Sub "${DataBucket.Arn}/*"
+
+  EventFirehose:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      S3DestinationConfiguration:
+        BucketARN:
+          Fn::GetAtt: [ DataBucket, Arn ]
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 10
+        CompressionFormat: GZIP
+        Prefix: events/
+        RoleARN:
+          Fn::GetAtt: [ KinesisRole, Arn ]
+
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub "${AWS::StackName}-api"
+
+  ApiGatewayPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: true #to secure my API I used a simple API key. Otherwise my Firehose would be open to the internet.
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        Type: AWS #signal that we want to use an internal AWS service
+        Credentials: !GetAtt GatewayRole.Arn # role for the API to actually invoke the firehose
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:firehose:action/PutRecord" # this URI basically describes the service and action I want to invoke.
+        IntegrationHttpMethod: POST #for kinesis using POST is required
+        RequestTemplates:
+          application/json: !Sub |
+            #set( $key = $context.identity.apiKey )
+            #set( $keyname = "apiKey" )
+            #set( $traceidval = $input.params().get("header").get("X-Amzn-Trace-Id"))
+            #set( $bodyname = "body" )
+            #set( $traceid = "traceid")
+            #set( $body = $input.body )
+            #set( $quote = '"' )
+            #set( $b64 = $util.base64Encode("{$quote$keyname$quote:$quote$key$quote,$quote$traceid$quote:$quote$traceidval$quote,$quote$bodyname$quote:$body}") )
+            {
+              "DeliveryStreamName":"${EventFirehose}",
+              "Record": { "Data":"$b64" }
+            }
+        RequestParameters: #Firehose requires the content type to not be json, but amz-json
+          integration.request.header.Content-Type: "'application/x-amz-json-1.1'"
+        IntegrationResponses:
+          - StatusCode: 200 #create a default response for the caller
+            ResponseTemplates:
+              application/json: '{"status":"OK"}'
+      MethodResponses:
+        - StatusCode: 200
+      ResourceId:
+        Fn::GetAtt: [ ApiGatewayRestApi , RootResourceId ]
+      RestApiId: !Ref ApiGatewayRestApi
+  GatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: GatewayRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - firehose:PutRecord
+              Resource: "*"
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ApiGatewayPostMethod
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: prod
