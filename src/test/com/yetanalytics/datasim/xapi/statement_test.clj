@@ -29,7 +29,7 @@
           valid-args {:input input
                       :iri-map iri-map
                       :activities activities
-                      :actor (-> input :personae :member first)
+                      :actor (-> input :personae :member first (dissoc :role))
                       :alignment (get-in input [:alignments :alignment-map "mbox::mailto:bob@example.org"])
                       :sim-t 0
                       :seed (random/rand-long top-rng)

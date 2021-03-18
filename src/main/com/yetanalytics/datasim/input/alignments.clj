@@ -19,21 +19,25 @@
   (s/keys :req-un [::component
                    ::weight]))
 
-;;Actor-Alignment: Map of Actor to collection of Alignments
+;; Actor-Alignment: Map of Actor to collection of Alignments
 
-(s/def ::id
-  ::xapi/agent-id)
+(s/def ::id string?)
 
-(s/def ::type
-  #{"Agent" "Group" "Role"})
+(s/def ::type #{"Agent" "Group" "Role"})
 
-(s/def ::alignments
-  (s/every ::alignment))
+(s/def ::alignments (s/every ::alignment))
+
+(defmulti actor-alignment? :type)
+
+(defmethod actor-alignment? "Agent" [_]
+  (fn [align] (->> align :id (s/valid? ::xapi/agent-id))))
+
+(defmethod actor-alignment? :default [_] ; "Group" and "Role"
+  (constantly true))
 
 (s/def ::actor-alignment
-  (s/keys :req-un [::id
-                   ::type
-                   ::alignments]))
+  (s/and (s/keys :req-un [::id ::type ::alignments])
+         (s/multi-spec actor-alignment? :type)))
 
 ;;Alignment-vector: Collection of Actor-Alignment
 
@@ -59,44 +63,3 @@
     (name k))
   (write-body-fn [this]
     alignment-vector))
-
-
-(comment
-
-
-
-  (def alignment1 {:component "http://www.whateveer.com/activity1"
-                   :weight 0.9})
-
-  (def alignment2 {:component "http://www.whateveer.com/activity2"
-                   :weight 0.8})
-
-  (def actor-alignment1 {
-                         :id "mbox::mailto:cliff@yetanalytics.com"
-                         :type "Agent"
-                         :alignments [alignment1 alignment2]
-                         })
-
-  (def actor-alignment2 {
-                         :id "mbox::mailto:cliff1@yetanalytics.com"
-                         :type "Agent"
-                         :alignments [alignment1 alignment2]
-                         })
-
-  (def alignments-example [actor-alignment1 actor-alignment2])
-
-
-  (s/explain-data ::actor-alignments alignments-example)
-
-  (satisfies? p/FromInput alignments-example)
-
-
-  (s/valid? ::alignment alignment1)
-  (s/valid? ::alignment alignment2)
-  (s/valid? ::actor-alignment actor-alignment1)
-  (s/valid? ::actor-alignment actor-alignment2)
-  (s/valid? ::actor-alignments alignments-example)
-
-
-
-  )
