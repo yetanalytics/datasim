@@ -6,11 +6,9 @@
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.xapi :as xapi]))
 
-;; TODO: Object overrides
-;; Due to limitations of keywords, we cannot have IRI keys, so no extensions
+;; Alignment: Map of Component, Weight, and Object Override properties
 
-;;Alignment: Map of Component and Weight
-
+;; Due to limitations of keywords, we cannot have IRI keys, limiting extensions
 (defn- no-iri-keys?
   "Returns false if there exists a key made from an IRI, e.g.
    (name :https://foo.org) => \"/foo.org\""
@@ -21,14 +19,14 @@
       (->> obj keys (some (partial re-matches #".*/.*")) not)
       false)
     (vector? obj)
-    (reduce (fn [acc x] (if (no-iri-keys? x) acc false)) true obj)
+    (every? no-iri-keys? obj)
     :else
     true))
 
 (s/def ::objectOverride
-       (s/and (s/conformer w/stringify-keys w/keywordize-keys)
-              no-iri-keys?
-              :statement/object)) ; from xapi-schema
+  (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+         no-iri-keys?
+         :statement/object)) ; from xapi-schema
 
 (s/def ::component
   iri/iri-spec)
@@ -43,7 +41,7 @@
                    ::weight]
           :opt-un [::objectOverride]))
 
-;; Actor-Alignment: Map of Actor to collection of Alignments
+;; Actor-Alignment: Map of Actor ID, Actor Type, and collection of Alignments
 
 (s/def ::id string?)
 
@@ -63,12 +61,12 @@
   (s/and (s/keys :req-un [::id ::type ::alignments])
          (s/multi-spec actor-alignment? :type)))
 
-;;Alignment-vector: Collection of Actor-Alignment
+;; Alignment-vector: Collection of Actor-Alignment
 
 (s/def ::alignment-vector
   (s/every ::actor-alignment))
 
-;;Alignment input
+;; Alignment input
 (s/def ::alignments-input
   (s/keys :req-un [::alignment-vector]))
 

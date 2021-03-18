@@ -134,14 +134,14 @@
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
-  (let [rng          (random/seed-rng seed)
-        obj-override (when (not-empty alignment)
-                       (->> alignment
-                            keys
-                            (random/choose rng alignment)
-                            (get alignment)
-                            :object-override
-                            w/stringify-keys))
+  (let [rng           (random/seed-rng seed)
+        ?obj-override (some->> alignment
+                               not-empty
+                               keys
+                               (random/choose rng alignment)
+                               (get alignment)
+                               :object-override
+                               w/stringify-keys)
         ;; components of `base-stmt`
         stmt-id    (random/rand-uuid rng)
         stmt-actor (w/stringify-keys actor)
@@ -164,9 +164,11 @@
                     {"id" "http://adlnet.gov/expapi/verbs/experienced"
                      "display" {"en" "experienced"}})
         stmt-obj   (or
-                    ;; object override is valid for the template
-                    ;; and is present in the alignment
-                    (when obj-override obj-override)
+                    ;; object override is valid for the template and is present
+                    ;; in the alignment
+                    ;; - note: ?obj-override will get overriden; we are using
+                    ;;   it as a placeholder
+                    (when ?obj-override ?obj-override)
                     ;; quick scan rules for "$.object.id"
                     ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
                     ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
@@ -213,7 +215,7 @@
                                        :seed (random/rand-long rng))]
         ;; Need to override object again, in case object is changed
         ;; by the Template rules.
-        (if obj-override (assoc stmt "object" obj-override) stmt))
+        (if ?obj-override (assoc stmt "object" ?obj-override) stmt))
       ;; The duration in MS so we can continue the sim
       {;; The time (in millis since the epoch) after which the actor can
        ;; continue activity
