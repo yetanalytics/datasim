@@ -11,6 +11,25 @@
 
 ;;Alignment: Map of Component and Weight
 
+(defn- no-iri-keys?
+  "Returns false if there exists a key made from an IRI, e.g.
+   (name :https://foo.org) => \"/foo.org\""
+  [obj]
+  (cond
+    (map? obj)
+    (if-not (->> obj vals (map no-iri-keys?) (some false?))
+      (->> obj keys (some (partial re-matches #".*/.*")) not)
+      false)
+    (vector? obj)
+    (reduce (fn [acc x] (if (no-iri-keys? x) acc false)) true obj)
+    :else
+    true))
+
+(s/def ::objectOverride
+       (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+              no-iri-keys?
+              :statement/object)) ; from xapi-schema
+
 (s/def ::component
   iri/iri-spec)
 
@@ -21,7 +40,8 @@
 
 (s/def ::alignment
   (s/keys :req-un [::component
-                   ::weight]))
+                   ::weight]
+          :opt-un [::objectOverride]))
 
 ;;Actor-Alignment: Map of Actor to collection of Alignments
 
@@ -69,8 +89,14 @@
 
 
 (comment
-
-
+  (s/explain-data
+   ::objectOverride
+   {:objectType "Activity"
+    :id "https://foo.org"
+    :definition {:name        {:en-US "Course 1"}
+                 :description {:en-US "Course Description 1"}
+                 :type        "http://adlnet.gov/expapi/activities/course"
+                 #_:extensions  #_{:https:/extension true}}})
 
   (def alignment1 {:component "http://www.whateveer.com/activity1"
                    :weight 0.9})
