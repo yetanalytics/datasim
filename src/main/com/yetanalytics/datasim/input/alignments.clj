@@ -77,11 +77,7 @@
   (read-key-fn [this k]
     (keyword nil (name k)))
   (read-body-fn [this json-result]
-    (let [av (map->Alignments {:alignment-vector json-result})]
-      (mapv (fn [alignment]
-              (mapv #(update % :objectOverride w/stringify-keys)
-                    (:alignments alignment)))
-            av)))
+    (map->Alignments {:alignment-vector json-result}))
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]
@@ -89,14 +85,13 @@
 
 
 (comment
-  (s/explain-data
-   ::objectOverride
-   {:objectType "Activity"
-    :id "https://foo.org"
-    :definition {:name        {:en-US "Course 1"}
-                 :description {:en-US "Course Description 1"}
-                 :type        "http://adlnet.gov/expapi/activities/course"
-                 #_:extensions  #_{:https:/extension true}}})
+  (no-iri-keys? ; returns false
+   {"objectType" "Activity"
+    "id" "https://foo.org"
+    "definition" {"name"        {"en-US" "Course 1"}
+                 "description" {"en-US" "Course Description 1"}
+                 "type"        "http://adlnet.gov/expapi/activities/course"
+                 "extensions" {"/extension" true}}})
 
   (def alignment1 {:component "http://www.whateveer.com/activity1"
                    :weight 0.9})
@@ -119,16 +114,18 @@
   (def alignments-example [actor-alignment1 actor-alignment2])
 
 
-  (s/explain-data ::actor-alignments alignments-example)
+  (s/explain-data ::alignment-vector alignments-example)
+  (s/explain-data ::alignments-input {:alignment-vector alignments-example})
+  (satisfies? p/FromInput {:alignment-vector alignments-example})
 
-  (satisfies? p/FromInput alignments-example)
-
+  (satisfies? p/FromInput
+              (map->Alignments {:alignment-vector alignments-example}))
 
   (s/valid? ::alignment alignment1)
   (s/valid? ::alignment alignment2)
   (s/valid? ::actor-alignment actor-alignment1)
   (s/valid? ::actor-alignment actor-alignment2)
-  (s/valid? ::actor-alignments alignments-example)
+  (s/valid? ::alignment-vector alignments-example)
 
 
 

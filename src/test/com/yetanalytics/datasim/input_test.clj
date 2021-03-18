@@ -35,9 +35,6 @@
    "Actor Alignments" :alignments "dev-resources/alignments/simple.json"
    #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}]) ;;alignments are a vector of maps containing a vector of maps
 
-  ;;  "Actor Alignments" :alignments "dev-resources/alignments/simple_overrides.json"
-  ;;  #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
-
    "Simulation Parameters" :parameters "dev-resources/parameters/simple.json"
    #(assoc % :seed "hey") ;; seed is a number
 
@@ -46,6 +43,7 @@
    ))
 
 (comment
+  (from-location :alignments :json "dev-resources/alignments/simple.json")
   (from-location :alignments :json "dev-resources/alignments/simple_overrides.json"))
 
 (deftest profile-cosmos-validation-test
