@@ -30,6 +30,49 @@
          (map parse-rule
               all-rules)))))
 
+(deftest follows-rule?-test
+  (testing "given a statement that follows the rule, it returns true"
+    (is
+     (true?
+      (follows-rule?
+       ;; statement
+       {"id" "59de1b06-bb6c-4708-a51a-b3d403c491db",
+        "actor" {"name" "Alice Faux", "mbox" "mailto:alice@example.org"},
+        "verb" {"id" "https://adlnet.gov/expapi/verbs/launched"},
+        "object"
+        {"id" "https://example.org/career/1054719918",
+         "definition"
+         {"type" "https://w3id.org/xapi/tla/activity-types/career"},
+         "objectType" "Activity"},
+        "context"
+        {"registration" "d7acfddb-f4c2-49f4-a081-ad1fb8490448"},
+        "timestamp" "2021-03-18T17:36:22.131Z"}
+       ;; rule
+       {:presence "excluded",
+        :location [#{"context"} #{"contextActivities"}]}
+       ))))
+  (testing "given a statement that doesn't follow the rule, it returns false"
+    (is
+     (false?
+      (follows-rule?
+       ;; statement
+       {"id" "59de1b06-bb6c-4708-a51a-b3d403c491db",
+        "actor" {"name" "Alice Faux", "mbox" "mailto:alice@example.org"},
+        "verb" {"id" "https://adlnet.gov/expapi/verbs/launched"},
+        "object"
+        {"id" "https://example.org/career/1054719918",
+         "definition"
+         {"type" "https://w3id.org/xapi/tla/activity-types/career"},
+         "objectType" "Activity"},
+        "context"
+        {"contextActivities"
+         {"category" [{"id" "https://w3id.org/xapi/tla/v0.13"}]},
+         "registration" "d7acfddb-f4c2-49f4-a081-ad1fb8490448"},
+        "timestamp" "2021-03-18T17:36:22.131Z"}
+       ;; rule
+       {:presence "excluded",
+        :location [#{"context"} #{"contextActivities"}]})))))
+
 (deftest apply-rules-gen-test
   (testing "individual rule application"
     (doseq [{:keys [rules]} cmi5-templates
