@@ -1,8 +1,10 @@
 {"name": "trainees",
  "objectType": "Group",
  "member": [{"name": "Bob Fakename",
-             "mbox": "mailto:bob@example.org"},
+             "mbox": "mailto:bob@example.org",
+             "role": "Lead Developer"},
             {"name": "Alice Faux",
-             "mbox": "mailto:alice@example.org"},
+             "mbox": "mailto:alice@example.org",
+             "role": "Data Engineer"},
             {"name": "Fred Ersatz",
              "mbox": "mailto:fred@example.org"}]}

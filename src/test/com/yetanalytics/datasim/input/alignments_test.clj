@@ -60,8 +60,6 @@
                                        [:definition :extensions]
                                        {(keyword "https://foo.org") true})))))))
 
-;; TODO: protocols test, e.g. (satisfies? p/FromInput alignments-example)
-
 (deftest protocols-test
   (testing "alignment protocols"
     (is (satisfies? p/FromInput (a/map->Alignments alignments-example)))
