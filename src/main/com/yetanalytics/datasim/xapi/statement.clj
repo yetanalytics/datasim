@@ -3,6 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [clojure.string :as string]
+            [clojure.walk :as w]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.input :as input]
@@ -11,7 +12,6 @@
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.random :as random]
             [xapi-schema.spec :as xs]
-            [clojure.walk :as w]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
             [com.yetanalytics.datasim.json.schema :as j-schema]
             [com.yetanalytics.datasim.xapi.extensions :as ext])
@@ -134,7 +134,14 @@
     pattern-ancestors :pattern-ancestors
     registration :registration
     ?sub-registration :sub-registration}]
-  (let [rng        (random/seed-rng seed)
+  (let [rng           (random/seed-rng seed)
+        ?obj-override (some->> alignment
+                               not-empty
+                               keys
+                               (random/choose rng alignment)
+                               (get alignment)
+                               :object-override
+                               w/stringify-keys)
         ;; components of `base-stmt`
         stmt-id    (random/rand-uuid rng)
         stmt-actor (w/stringify-keys actor)
@@ -157,6 +164,11 @@
                     {"id" "http://adlnet.gov/expapi/verbs/experienced"
                      "display" {"en" "experienced"}})
         stmt-obj   (or
+                    ;; object override is valid for the template and is present
+                    ;; in the alignment
+                    ;; - note: ?obj-override will get overriden; we are using
+                    ;;   it as a placeholder
+                    (when ?obj-override ?obj-override)
                     ;; quick scan rules for "$.object.id"
                     ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
                     ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
@@ -198,10 +210,14 @@
         ;; addition of `:spec` key to 0 or more `template-rules`
         template-rules! (ext/derive-generation-hint profiles rng template-rules)]
     (with-meta
-      (rule/apply-rules-gen base-stmt template-rules! :seed (random/rand-long rng))
+      (let [stmt (rule/apply-rules-gen base-stmt
+                                       template-rules!
+                                       :seed (random/rand-long rng))]
+        ;; Need to override object again, in case object is changed
+        ;; by the Template rules.
+        (if ?obj-override (assoc stmt "object" ?obj-override) stmt))
       ;; The duration in MS so we can continue the sim
-      {
-       ;; The time (in millis since the epoch) after which the actor can
+      {;; The time (in millis since the epoch) after which the actor can
        ;; continue activity
        :end-ms (+ sim-t
                   (long
@@ -212,5 +228,4 @@
        ;; it's up to you. For the stub we just make it sim-t
        :timestamp-ms sim-t
        ;; Return the template, useful for a bunch of things
-       :template template
-       })))
+       :template template})))

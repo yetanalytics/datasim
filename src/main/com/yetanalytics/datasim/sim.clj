@@ -155,18 +155,20 @@
                       count (+ existing-count 1)
                       weight (/ (+ (* existing-count (:weight existing))
                                    (:weight alignment))
-                                count)]
+                                count)
+                      obj-override (:object-override existing)]
                   (assoc alignment-map iri {:weight weight
-                                            :count count}))
+                                            :count count
+                                            :object-override obj-override}))
                 (assoc alignment-map iri
                        {:weight (:weight alignment)
-                        :count 1}))))
+                        :count 1
+                        :object-override (:objectOverride alignment)}))))
           {}
           (for [{alignments :alignments :as actor-alignment} alignments
                 :when (contains? (set [actor-id group-name role]) (:id actor-alignment))
                 alignment alignments]
             alignment)))
-
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id

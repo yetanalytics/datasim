@@ -118,7 +118,7 @@
                true)
              "excluded"
              (if (and (not-empty values)
-                      (not-empty (remove values #{::unmatchable})))
+                      (not-empty (remove #{::unmatchable} values)))
                false
                true)
              "recommended" true)

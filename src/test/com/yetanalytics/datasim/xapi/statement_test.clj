@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.statement-test
   (:require
    [clojure.test :refer :all]
+   [clojure.walk :as w]
    [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.random :as random]
@@ -30,7 +31,12 @@
                       :iri-map iri-map
                       :activities activities
                       :actor (-> input :personae :member first (dissoc :role))
-                      :alignment (get-in input [:alignments :alignment-map "mbox::mailto:bob@example.org"])
+                      :alignment
+                      (reduce
+                       (fn [acc {:keys [component weight objectOverride]}]
+                         (assoc acc component {:weight weight :object-override objectOverride}))
+                       {}
+                       (get-in input [:alignments :alignment-vector 0 :alignments]))
                       :sim-t 0
                       :seed (random/rand-long top-rng)
                       :template (get iri-map "https://w3id.org/xapi/cmi5#satisfied")
@@ -50,4 +56,22 @@
       (testing "is deterministic"
         (is (not
              (apply distinct?
-                    (repeatedly 100 #(generate-statement valid-args)))))))))
+                    (repeatedly 100 #(generate-statement valid-args))))))
+      (testing "object override works"
+        (let [new-object
+              {:objectType "Activity"
+               :id "https://www.whatever.com/activities#course1"
+               :definition {:name {:en-US "Course 1"}
+                            :description {:en-US "Course Description 1"}
+                            :type "http://adlnet.gov/expapi/activities/course"}}
+              valid-args'
+              (-> valid-args
+                  (assoc-in
+                   [:alignment "https://example.org/activity/a" :object-override]
+                   new-object)
+                  (update-in [:alignment] dissoc "https://example.org/activity/c"))]
+          (is (s/valid? ::xs/statement (generate-statement valid-args')))
+          (is (= new-object
+                 (-> (generate-statement valid-args')
+                     (get "object")
+                     w/keywordize-keys))))))))
