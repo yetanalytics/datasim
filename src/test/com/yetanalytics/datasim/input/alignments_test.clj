@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.input.alignments-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
+            [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.alignments :as a]))
 
 (def alignment1 {:component "http://www.whateveer.com/activity1"
@@ -18,6 +19,13 @@
                        :alignments [alignment1 alignment2]})
   
 (def alignments-example [actor-alignment1 actor-alignment2])
+
+(def object-override-example
+  {:objectType "Activity"
+   :id "https://www.whatever.com/activities#course1"
+   :definition {:name {:en-US "Course 1"}
+                :description {:en-US "Course Description 1"}
+                :type "http://adlnet.gov/expapi/activities/course"}})
 
 (deftest alignments-test
   (testing "valid alignments"
@@ -38,6 +46,24 @@
     (is (not (s/valid? ::a/actor-alignment
                        (assoc actor-alignment1 :type "FooBar"))))
     (is (not (s/valid? ::a/actor-alignment
-                       (assoc actor-alignment1 :type "FooBar" :id "qux"))))))
+                       (assoc actor-alignment1 :type "FooBar" :id "qux")))))
+  (testing "object overrides"
+    (is (s/valid? ::a/actor-alignment
+                  (assoc-in actor-alignment1
+                            [:alignments 0 :objectOverride]
+                            object-override-example)))
+    (is (not
+         (s/valid? ::a/actor-alignment
+                   (assoc-in actor-alignment1
+                             [:alignments 0 :objectOverride]
+                             (assoc-in object-override-example
+                                       [:definition :extensions]
+                                       {(keyword "https://foo.org") true})))))))
 
-;; TODO: protocols test, e.g. (satisfies? p/FromInput alignments-example)
+(deftest protocols-test
+  (testing "alignment protocols"
+    (is (satisfies? p/FromInput (a/map->Alignments alignments-example)))
+    (is (satisfies? p/FromInput (a/map->Alignments
+                                 (assoc-in alignments-example
+                                           [0 :alignments 0 :objectOverride]
+                                           object-override-example))))))

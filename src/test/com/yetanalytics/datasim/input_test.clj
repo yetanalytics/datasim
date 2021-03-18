@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input 
+            [com.yetanalytics.datasim.input
              :refer [from-location validate validate-throw]
              :as input]
             [clojure.template :as t]))
@@ -33,8 +33,11 @@
    #(assoc % :member []) ;; groups need members
 
    "Actor Alignments" :alignments "dev-resources/alignments/simple.json"
-   #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}]) ;;alignments are a vector of maps containing a vector of maps
+   #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}]) ;; alignments are a vector of maps containing a vector of maps
 
+   "Actor Alignments w/ Overrides" :alignments "dev-resources/alignments/simple_with_overrides.json"
+   #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
+   
    "Simulation Parameters" :parameters "dev-resources/parameters/simple.json"
    #(assoc % :seed "hey") ;; seed is a number
 

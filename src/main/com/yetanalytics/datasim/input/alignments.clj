@@ -1,11 +1,32 @@
 (ns com.yetanalytics.datasim.input.alignments
   (:require [clojure.spec.alpha :as s]
+            [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.xapi :as xapi]))
 
-;;Alignment: Map of Component and Weight
+;; Alignment: Map of Component, Weight, and Object Override properties
+
+;; Due to limitations of keywords, we cannot have IRI keys, limiting extensions
+(defn- no-iri-keys?
+  "Returns false if there exists a key made from an IRI, e.g.
+   (name :https://foo.org) => \"/foo.org\""
+  [obj]
+  (cond
+    (map? obj)
+    (if-not (->> obj vals (map no-iri-keys?) (some false?))
+      (->> obj keys (some (partial re-matches #".*/.*")) not)
+      false)
+    (vector? obj)
+    (every? no-iri-keys? obj)
+    :else
+    true))
+
+(s/def ::objectOverride
+  (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+         no-iri-keys?
+         :statement/object)) ; from xapi-schema
 
 (s/def ::component
   iri/iri-spec)
@@ -17,9 +38,10 @@
 
 (s/def ::alignment
   (s/keys :req-un [::component
-                   ::weight]))
+                   ::weight]
+          :opt-un [::objectOverride]))
 
-;; Actor-Alignment: Map of Actor to collection of Alignments
+;; Actor-Alignment: Map of Actor ID, Actor Type, and collection of Alignments
 
 (s/def ::id string?)
 
@@ -39,12 +61,12 @@
   (s/and (s/keys :req-un [::id ::type ::alignments])
          (s/multi-spec actor-alignment? :type)))
 
-;;Alignment-vector: Collection of Actor-Alignment
+;; Alignment-vector: Collection of Actor-Alignment
 
 (s/def ::alignment-vector
   (s/every ::actor-alignment))
 
-;;Alignment input
+;; Alignment input
 (s/def ::alignments-input
   (s/keys :req-un [::alignment-vector]))
 
@@ -57,8 +79,7 @@
   (read-key-fn [this k]
     (keyword nil (name k)))
   (read-body-fn [this json-result]
-    (map->Alignments
-     {:alignment-vector json-result}))
+    (map->Alignments {:alignment-vector json-result}))
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]
