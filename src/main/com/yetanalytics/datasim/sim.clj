@@ -191,9 +191,11 @@
     profiles :profiles
     {alignments :alignment-vector} :alignments
     :as input}]
-  (let [^ZoneRegion zone (t/zone-id timezone)
-        actors (:member personae)
+  (let [;; Set timezone and time
+        ^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
+        ;; Get actors
+        actors (:member personae)
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
                     (let [t-end (.toEpochMilli (t/instant end))]
@@ -274,7 +276,7 @@
                       actor-alignment (get-actor-alignments alignments
                                                             actor-id
                                                             (xapiu/agent-id personae)
-                                                            nil)
+                                                            (:role actor))
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -283,13 +285,16 @@
                                      profiles actor-alignment actor-reg-seed)
 
                       ;; additional seed for further gen
-                      actor-seed (.nextLong sim-rng)]]
+                      actor-seed (.nextLong sim-rng)
+                      
+                      ;; Dissoc :role since it is not an xAPI property
+                      actor-xapi (dissoc actor :role)]]
             [actor-id
              (cond->> (statement-seq
                        input
                        iri-map
                        activities
-                       actor
+                       actor-xapi
                        actor-alignment
                        {:seed actor-seed
                         :prob-seq actor-prob

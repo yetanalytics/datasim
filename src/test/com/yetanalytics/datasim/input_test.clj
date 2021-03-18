@@ -118,3 +118,14 @@
                                     (from-location
                                      :profile :json
                                      "dev-resources/profiles/minimal.jsonld")))))))
+
+(deftest input-validation-test
+  (testing "input is valid"
+    (is (nil? (p/validate
+               (from-location :input :json "dev-resources/input/simple.json"))))
+    (is (satisfies? p/FromInput
+                    (from-location :input :json "dev-resources/input/simple.json")))
+    (is (try (validate-throw
+              (from-location :input :json "dev-resources/input/simple.json"))
+             true
+             (catch Exception _ false)))))
