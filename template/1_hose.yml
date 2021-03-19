@@ -79,12 +79,13 @@ Resources:
         IntegrationResponses:
           - StatusCode: 200 #create a default response for the caller
             ResponseTemplates:
-              application/json: '{"status":"OK"}'
+              application/json: '[]' #try an empty array, at least its the right data type
       MethodResponses:
         - StatusCode: 200
       ResourceId:
         Fn::GetAtt: [ ApiGatewayRestApi , RootResourceId ]
       RestApiId: !Ref ApiGatewayRestApi
+
   GatewayRole:
     Type: AWS::IAM::Role
     Properties:
@@ -107,6 +108,7 @@ Resources:
               Action:
                 - firehose:PutRecord
               Resource: "*"
+
   ApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
