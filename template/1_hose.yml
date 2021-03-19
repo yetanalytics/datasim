@@ -69,14 +69,7 @@ Resources:
         IntegrationHttpMethod: POST #for kinesis using POST is required
         RequestTemplates:
           application/json: !Sub |
-            #set( $key = $context.identity.apiKey )
-            #set( $keyname = "apiKey" )
-            #set( $traceidval = $input.params().get("header").get("X-Amzn-Trace-Id"))
-            #set( $bodyname = "body" )
-            #set( $traceid = "traceid")
-            #set( $body = $input.body )
-            #set( $quote = '"' )
-            #set( $b64 = $util.base64Encode("{$quote$keyname$quote:$quote$key$quote,$quote$traceid$quote:$quote$traceidval$quote,$quote$bodyname$quote:$body}") )
+            #set( $b64 = $util.base64Encode($input.body) )
             {
               "DeliveryStreamName":"${EventFirehose}",
               "Record": { "Data":"$b64" }
