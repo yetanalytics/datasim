@@ -56,6 +56,13 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-api"
 
+  StatementsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: statements
+
   ApiGatewayPostMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -82,8 +89,7 @@ Resources:
               application/json: '[]' #try an empty array, at least its the right data type
       MethodResponses:
         - StatusCode: 200
-      ResourceId:
-        Fn::GetAtt: [ ApiGatewayRestApi , RootResourceId ]
+      ResourceId: !Ref StatementsResource
       RestApiId: !Ref ApiGatewayRestApi
 
   GatewayRole:
