@@ -13,7 +13,8 @@
                      {:keys [endpoint
                              batch-size
                              username
-                             password]} ::lrs
+                             password
+                             x-api-key]} ::lrs
                      :or {strip-ids? false
                           remove-refs? false}
                      :as lifecycle}]
@@ -22,8 +23,11 @@
      (map (fn [statements]
             {:url (format "%s/statements" endpoint)
              :args
-             (cond-> {:headers {"X-Experience-API-Version" "1.0.3"
-                                "Content-Type" "application/json"}
+             (cond-> {:headers (cond-> {"X-Experience-API-Version" "1.0.3"
+                                        "Content-Type" "application/json"}
+                                 ;; Amazon API Gateway key support
+                                 x-api-key
+                                 (assoc "X-API-Key" x-api-key))
                       :body (json/generate-string (into [] statements))
                       :as :json}
                (and username password)

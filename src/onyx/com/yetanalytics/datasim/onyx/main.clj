@@ -29,6 +29,7 @@
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
    ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
+   [nil "--x-api-key X_API_KEY" "API Gateway API key"]
    [nil "--[no-]strip-ids" "Strip IDs from generated statements" :default false]
    [nil "--[no-]remove-refs" "Filter out statement references" :default false]
    ["-b" "--[no-]block" "Block until the job is done" :default true]
@@ -97,7 +98,8 @@
                       block
                       partition-size
                       strip-ids
-                      remove-refs]} options]
+                      remove-refs
+                      x-api-key]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (-> (config/get-config)
                                           (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
@@ -111,6 +113,7 @@
                               :lrs {:endpoint endpoint
                                     :username username
                                     :password password
+                                    :x-api-key x-api-key
                                     :batch-size 25}}))]
             (when block
               (println "blocking...")

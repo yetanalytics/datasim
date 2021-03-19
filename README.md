@@ -260,6 +260,7 @@ DATASIM has a separate CLI for distributed operation:
       -e, --endpoint ENDPOINT               xAPI LRS Endpoint like https://lrs.example.org/xapi
       -u, --username USERNAME               xAPI LRS BASIC Auth username
       -p, --password PASSWORD               xAPI LRS BASIC Auth password
+          --x-api-key X_API_KEY             API Gateway API key
           --[no-]strip-ids                  Strip IDs from generated statements
           --[no-]remove-refs                Filter out statement references
       -b, --[no-]block                      Block until the job is done
