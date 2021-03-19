@@ -185,7 +185,7 @@
 
   Should be run once (in a single thread)
   Spooky."
-  [{:keys [profiles personaes parameters alignments]
+  [{:keys [profiles personae-array parameters alignments]
     :as   input}]
   (let [;; Input parameters and alignments
         {:keys [start end timezone seed] ?from-stamp :from} parameters
@@ -203,8 +203,8 @@
                                      m
                                      actors)))
                                 {}
-                                personaes)
-        actors (apply concat (map :member personaes))
+                                personae-array)
+        actors (apply concat (map :member personae-array))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
                     (let [t-end (.toEpochMilli (t/instant end))]

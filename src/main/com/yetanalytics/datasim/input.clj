@@ -31,10 +31,10 @@
    (s/conformer profiles->pedges)
    ::pat/valid-edges))
 
-;; It may seem odd to pluralize an already-plural word, but this is our system:
-;;   persona:   a single Agent who is a member of a Group
-;;   personae:  a Group that contains one or more Agent, i.e. persona
-;;   personaes: an array of one or more Groups
+;; This is our system:
+;;   persona: a single Agent who is a member of a Group
+;;   personae: a Group that contains one or more Agent, i.e. persona
+;;   personae-array: an array of one or more Groups
 
 (defn- distinct-member-ids?
   [personaes]
@@ -45,7 +45,7 @@
     (= (-> member-ids count)
        (-> member-ids distinct count))))
 
-(s/def ::personaes
+(s/def ::personae-array
   (s/and
    (s/every ::personae/personae :min-count 1 :into [])
    distinct-member-ids?))
@@ -59,7 +59,7 @@
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
-                   ::personaes
+                   ::personae-array
                    ::alignments
                    ::parameters]))
 
@@ -70,7 +70,7 @@
    :parameters params/map->Parameters
    ;; Hack for array-valued inputs
    :profiles profile/map->Profile
-   :personaes personae/map->Personae})
+   :personae-array personae/map->Personae})
 
 (defn realize-subobjects
   "Make subobjects from JSON into records"
@@ -87,8 +87,8 @@
              (cond->> (partial
                        p/read-body-fn
                        rec)
-               ;; for profiles and personaes, it's a vector
-               (#{:profiles :personaes} k)
+               ;; for profiles and personae-array, it's a vector
+               (#{:profiles :personae-array} k)
                (partial mapv))]
          (assoc m
                 k
@@ -122,8 +122,8 @@
               rec)
              body-fn
              (cond->> p/write-body-fn
-               ;; for profiles and persoanes, it's a vector
-               (#{:profiles :personaes} k)
+               ;; for profiles and persoane-array, it's a vector
+               (#{:profiles :personae-array} k)
                (partial mapv))]
          (assoc m
                 k
@@ -146,7 +146,7 @@
    input))
 
 (defrecord Input [profiles
-                  personaes
+                  personae-array
                   alignments
                   parameters]
   p/FromInput
@@ -171,7 +171,7 @@
                          (get subobject-constructors type-k))]
     (case fmt-k
       ;; currently only JSON
-      :json (if (#{:profiles :personaes} type-k)
+      :json (if (#{:profiles :personae-array} type-k)
               (dio/read-loc-array (constructor {}) location)
               (dio/read-loc-json (constructor {}) location)))
     (throw (ex-info (format "Unknown key %s" type-k)

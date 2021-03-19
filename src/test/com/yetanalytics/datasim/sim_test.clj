@@ -92,7 +92,7 @@
            (map #(get % "object") ret)))))
   (testing "can apply multiple personae"
     (let [per (input/from-location :personae :json "dev-resources/personae/tccc_dev.json")
-          ret (sim-seq (update valid-input :personaes conj per))
+          ret (sim-seq (update valid-input :personae-array conj per))
           ids (map #(get-in % ["actor" "mbox"]) ret)]
       (is (= #{;; simple personae
                "mailto:alicefaux@example.org"

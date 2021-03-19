@@ -121,20 +121,20 @@
               ::input/profiles
               [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
 
-(deftest personaes-validation-test
-  (testing "personaes spec"
-    (is (s/valid? ::input/personaes
+(deftest personae-array-validation-test
+  (testing "personae-array spec"
+    (is (s/valid? ::input/personae-array
                   [(from-location :personae :json "dev-resources/personae/simple.json")
                    (from-location :personae :json "dev-resources/personae/tccc_dev.json")]))
     (is (not (s/valid?
-              ::input/personaes
+              ::input/personae-array
               [(-> (from-location :personae :json "dev-resources/personae/simple.json")
                    (assoc-in [:member 0 :mbox] "not-an-email"))
                (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))
-    (is (not (s/valid? ::input/personaes []))))
+    (is (not (s/valid? ::input/personae-array []))))
   (testing "duplicate member ids across different groups"
     (is (not (s/valid?
-              ::input/personaes
+              ::input/personae-array
               [(-> (from-location :personae :json "dev-resources/personae/simple.json")
                    (assoc-in [:member 0 :mbox] "mailto:bob@example.org")
                    (assoc-in [:member 1 :mbox] "mailto:alice@example.org")

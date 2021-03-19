@@ -31,7 +31,7 @@
                 [])
     :assoc-fn conj-input]
    ["-a" "--actor-personae URI" "Actor Personae Location"
-    :id :personaes
+    :id :personae-array
     :desc "The location of an Actor Personae document indicating the actors in the sim."
     :parse-fn (partial input/from-location :personae :json)
     :validate (if validate?
@@ -141,7 +141,7 @@
           (let [sim-options (select-keys options
                                          [:input
                                           :profiles
-                                          :personaes
+                                          :personae-array
                                           :parameters
                                           :alignments])
                 {:keys [override-seed
