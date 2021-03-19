@@ -264,7 +264,6 @@
         activities (activity/derive-cosmos input (.nextLong sim-rng))
         iri-map (apply p/profiles->map profiles)]
     ;; Now, for each actor we 'initialize' what is needed for the sim
-    (println actors) ; DEBUG
     (into {}
           (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
                                                            identity)
