@@ -116,3 +116,13 @@ Resources:
     Properties:
       RestApiId: !Ref ApiGatewayRestApi
       StageName: prod
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn:
+      - ApiGatewayDeployment
+    Properties:
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref ApiGatewayRestApi
+          StageName: prod
