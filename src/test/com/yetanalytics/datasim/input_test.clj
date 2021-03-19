@@ -121,6 +121,26 @@
               ::input/profiles
               [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
 
+(deftest personaes-validation-test
+  (testing "personaes spec"
+    (is (s/valid? ::input/personaes
+                  [(from-location :personae :json "dev-resources/personae/simple.json")
+                   (from-location :personae :json "dev-resources/personae/tccc_dev.json")]))
+    (is (not (s/valid?
+              ::input/personaes
+              [(-> (from-location :personae :json "dev-resources/personae/simple.json")
+                   (assoc-in [:member 0 :mbox] "not-an-email"))
+               (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))
+    (is (not (s/valid? ::input/personaes []))))
+  (testing "duplicate member ids across different groups"
+    (is (not (s/valid?
+              ::input/personaes
+              [(-> (from-location :personae :json "dev-resources/personae/simple.json")
+                   (assoc-in [:member 0 :mbox] "mailto:bob@example.org")
+                   (assoc-in [:member 1 :mbox] "mailto:alice@example.org")
+                   (assoc-in [:member 2 :mbox] "mailto:fred@example.org"))
+               (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))))
+
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
     (is (nil? (p/validate

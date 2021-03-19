@@ -10,6 +10,7 @@
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]
+            [com.yetanalytics.datasim.util.xapi :as xapiu]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u]))
 
@@ -35,11 +36,19 @@
 ;;   personae:  a Group that contains one or more Agent, i.e. persona
 ;;   personaes: an array of one or more Groups
 
-(s/def ::personae
-  ::personae/personae)
+(defn- distinct-member-ids?
+  [personaes]
+  (let [member-ids (->> personaes
+                        (map :member)
+                        (apply concat)
+                        (map xapiu/agent-id))]
+    (= (-> member-ids count)
+       (-> member-ids distinct count))))
 
 (s/def ::personaes
-  (s/every ::personae :min-count 1 :into []))
+  (s/and
+   (s/every ::personae/personae :min-count 1 :into [])
+   distinct-member-ids?))
 
 (s/def ::alignments
   ::alignments/alignments-input)
@@ -202,3 +211,8 @@
                      :input input
                      :spec-error spec-error}))
     input))
+
+
+(comment
+  (distinct-member-ids? [(from-location :personae :json "dev-resources/personae/simple.json")
+                         (from-location :personae :json "dev-resources/personae/tccc_dev.json")]))
