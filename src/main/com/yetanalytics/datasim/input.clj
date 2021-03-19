@@ -30,8 +30,16 @@
    (s/conformer profiles->pedges)
    ::pat/valid-edges))
 
+;; It may seem odd to pluralize an already-plural word, but this is our system:
+;;   persona:   a single Agent who is a member of a Group
+;;   personae:  a Group that contains one or more Agent, i.e. persona
+;;   personaes: an array of one or more Groups
+
 (s/def ::personae
   ::personae/personae)
+
+(s/def ::personaes
+  (s/every ::personae :min-count 1 :into []))
 
 (s/def ::alignments
   ::alignments/alignments-input)
@@ -42,16 +50,18 @@
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
-                   ::personae
+                   ::personaes
                    ::alignments
                    ::parameters]))
 
 (def subobject-constructors
   {:profile profile/map->Profile
-   :profiles profile/map->Profile ;; hacky
    :personae personae/map->Personae
    :alignments alignments/map->Alignments
-   :parameters params/map->Parameters})
+   :parameters params/map->Parameters
+   ;; Hack for array-valued inputs
+   :profiles profile/map->Profile
+   :personaes personae/map->Personae})
 
 (defn realize-subobjects
   "Make subobjects from JSON into records"
@@ -68,8 +78,8 @@
              (cond->> (partial
                        p/read-body-fn
                        rec)
-               ;; for profiles, it's a vector
-               (= k :profiles)
+               ;; for profiles and personaes, it's a vector
+               (#{:profiles :personaes} k)
                (partial mapv))]
          (assoc m
                 k
@@ -103,8 +113,8 @@
               rec)
              body-fn
              (cond->> p/write-body-fn
-               ;; for profiles, it's a vector
-               (= k :profiles)
+               ;; for profiles and persoanes, it's a vector
+               (#{:profiles :personaes} k)
                (partial mapv))]
          (assoc m
                 k
@@ -127,7 +137,7 @@
    input))
 
 (defrecord Input [profiles
-                  personae
+                  personaes
                   alignments
                   parameters]
   p/FromInput
@@ -152,7 +162,7 @@
                          (get subobject-constructors type-k))]
     (case fmt-k
       ;; currently only JSON
-      :json (if (= type-k :profiles)
+      :json (if (#{:profiles :personaes} type-k)
               (dio/read-loc-array (constructor {}) location)
               (dio/read-loc-json (constructor {}) location)))
     (throw (ex-info (format "Unknown key %s" type-k)

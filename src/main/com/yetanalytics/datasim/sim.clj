@@ -184,18 +184,25 @@
 
   Should be run once (in a single thread)
   Spooky."
-  [{personae :personae
-    {:keys [start end
-            timezone seed]
-     ?from-stamp :from} :parameters
-    profiles :profiles
-    {alignments :alignment-vector} :alignments
-    :as input}]
-  (let [;; Set timezone and time
+  [{:keys [profiles personaes parameters alignments]
+    :as   input}]
+  (let [;; Input parameters and alignments
+        {:keys [start end timezone seed] ?from-stamp :from} parameters
+        {alignments :alignment-vector} alignments
+        ;; Set timezone and time
         ^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
         ;; Get actors
-        actors (:member personae)
+        actor-id-group-m (reduce
+                          (fn [m {actors :member :as personae}]
+                            (let [group-id (xapiu/agent-id personae)]
+                              (reduce
+                               (fn [m' actor-id] (assoc m' actor-id group-id))
+                               m
+                               actors)))
+                          {}
+                          personaes)
+        actors (apply concat (map :member personaes))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
                     (let [t-end (.toEpochMilli (t/instant end))]
@@ -257,6 +264,7 @@
         activities (activity/derive-cosmos input (.nextLong sim-rng))
         iri-map (apply p/profiles->map profiles)]
     ;; Now, for each actor we 'initialize' what is needed for the sim
+    (println actors) ; DEBUG
     (into {}
           (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
                                                            identity)
@@ -269,14 +277,17 @@
                                          {:seed actor-arma-seed}))
                       actor-prob (map vector
                                       min-seq
-                                      (ts/op-seq (fn [a b]
-                                                   (double
-                                                    (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
-                                                 [actor-arma mask]))
-                      actor-alignment (get-actor-alignments alignments
-                                                            actor-id
-                                                            (xapiu/agent-id personae)
-                                                            (:role actor))
+                                      (ts/op-seq
+                                       (fn [a b]
+                                         (double
+                                          (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
+                                       [actor-arma mask]))
+                      actor-alignment (get-actor-alignments
+                                       alignments
+                                       actor-id
+                                       (xapiu/agent-id
+                                        (get actor-id-group-m actor-id))
+                                       (:role actor))
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
