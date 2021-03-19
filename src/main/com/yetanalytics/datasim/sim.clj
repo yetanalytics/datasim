@@ -146,7 +146,7 @@
 
 
 (defn get-actor-alignments
-  [alignments actor-id group-name role]
+  [alignments actor-id group-id role]
   (reduce (fn [alignment-map alignment]
             (let [iri (:component alignment)]
               (if (contains? alignment-map iri)
@@ -166,7 +166,8 @@
                         :object-override (:objectOverride alignment)}))))
           {}
           (for [{alignments :alignments :as actor-alignment} alignments
-                :when (contains? (set [actor-id group-name role]) (:id actor-alignment))
+                :when (contains? (set [actor-id group-id role])
+                                 (:id actor-alignment))
                 alignment alignments]
             alignment)))
 
@@ -192,16 +193,17 @@
         ;; Set timezone and time
         ^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
-        ;; Get actors
-        actor-id-group-m (reduce
-                          (fn [m {actors :member :as personae}]
-                            (let [group-id (xapiu/agent-id personae)]
-                              (reduce
-                               (fn [m' actor-id] (assoc m' actor-id group-id))
-                               m
-                               actors)))
-                          {}
-                          personaes)
+        ;; Get actors and map actor IDs to (identified) group IDs
+        actor-id-to-group-id-m (reduce
+                                (fn [m {actors :member :as personae}]
+                                  (let [group-id (xapiu/agent-id personae)]
+                                    (reduce
+                                     (fn [m' actor]
+                                       (assoc m' (xapiu/agent-id actor) group-id))
+                                     m
+                                     actors)))
+                                {}
+                                personaes)
         actors (apply concat (map :member personaes))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
@@ -284,8 +286,7 @@
                       actor-alignment (get-actor-alignments
                                        alignments
                                        actor-id
-                                       (xapiu/agent-id
-                                        (get actor-id-group-m actor-id))
+                                       (get actor-id-to-group-id-m actor-id)
                                        (:role actor))
                       actor-reg-seed (.nextLong sim-rng)
 
@@ -458,3 +459,37 @@
    (count (sim-seq ii)))
 
   )
+
+(comment
+  (get-actor-alignments
+
+   [{:id         "mbox::mailto:bob@example.org"
+     :type       "Agent"
+     :alignments [{:component "https://example.org/activity/a"
+                   :weight    0.5}
+                  {:component "https://example.org/activity/c"
+                   :weight    -0.2}]}]
+   "mbox::mailto:bob@example.org"
+   "trainee"
+   "Lead Developer")
+
+  (reduce
+   (fn [m {actors :member :as personae}]
+     (let [group-id (:name personae)]
+       (reduce
+        (fn [m' actor] (assoc m' (xapiu/agent-id actor) group-id))
+        m
+        actors)))
+   {}
+   [{:name "trainee"
+     :objectType "Group"
+     :member [{:name "Bob Fakename"
+               :mbox "mailto:bob@example.org"
+               :role "Lead Developer"}
+              {:name "Alice Faux"
+               :mbox "mailto:alice@example.org"
+               :role "Lead Developer"}]}])
+
+  (xapiu/agent-id {:name "Bob Fakename"
+                   :mbox "mailto:bob@example.org"
+                   :role "Lead Developer"}))
