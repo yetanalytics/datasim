@@ -42,8 +42,7 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [_              (clojure.pprint/pprint "got to sim input")
-        data           {:profiles       (sinput/from-location :profiles :json
+  (let [data           {:profiles       (sinput/from-location :profiles :json
                                                               (get-stream input "profiles"))
                         :personae-array (sinput/from-location :personae-array :json
                                                               (get-stream input "personae-array"))
