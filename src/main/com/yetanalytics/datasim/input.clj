@@ -211,8 +211,3 @@
                      :input input
                      :spec-error spec-error}))
     input))
-
-
-(comment
-  (distinct-member-ids? [(from-location :personae :json "dev-resources/personae/simple.json")
-                         (from-location :personae :json "dev-resources/personae/tccc_dev.json")]))
