@@ -6,7 +6,7 @@
 
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations"
-  [{:keys [batch-size
+  [{:keys [batch-size ;; onyx batch size
            partition-size ;; How many actors per generator?
            input-json
            lrs

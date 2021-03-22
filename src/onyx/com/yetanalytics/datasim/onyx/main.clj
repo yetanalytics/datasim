@@ -26,6 +26,12 @@
    [nil "--partition-size PARTITION_SIZE" "Statement actor partition size per peer."
     :default 1
     :parse-fn #(Integer/parseInt %)]
+   [nil "--lrs-batch-size LRS_BATCH_SIZE" "Statements per LRS POST"
+    :default 100
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--onyx-batch-size ONYX_BATCH_SIZE" "Onyx internal batch size"
+    :default 10
+    :parse-fn #(Integer/parseInt %)]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
    ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
@@ -97,6 +103,8 @@
                       password
                       block
                       partition-size
+                      lrs-batch-size
+                      onyx-batch-size
                       strip-ids
                       remove-refs
                       x-api-key]} options]
@@ -108,13 +116,14 @@
                             (job/config
                              {:input-json (slurp input-loc)
                               :partition-size partition-size
+                              :batch-size onyx-batch-size
                               :strip-ids? strip-ids
                               :remove-refs? remove-refs
                               :lrs {:endpoint endpoint
                                     :username username
                                     :password password
                                     :x-api-key x-api-key
-                                    :batch-size 25}}))]
+                                    :batch-size lrs-batch-size}}))]
             (when block
               (println "blocking...")
               (flush)
