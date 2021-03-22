@@ -8,7 +8,7 @@
                 catalog]
          :as job-config} (config
                           {:input-json (slurp "dev-resources/input/mom.json")
-                           :partition-size 16
+                           :concurrency 4
                            :batch-size 10
                            :lrs {:endpoint "http://localhost:8000/xapi"
                                  :batch-size 1000
@@ -30,7 +30,7 @@
   (clojure.pprint/pprint
    (-> (config
         {:input-json (slurp "dev-resources/input/mom.json")
-         :partition-size 16
+         :concurrency 4
          :batch-size 10
          :lrs {:endpoint "http://localhost:8000/xapi"
                :batch-size 1000

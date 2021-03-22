@@ -23,7 +23,7 @@
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
    ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
-   [nil "--partition-size PARTITION_SIZE" "Statement actor partition size per peer."
+   ["-c" "--concurrency CONCURRENCY" "Desired concurrency of job."
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--lrs-batch-size LRS_BATCH_SIZE" "Statements per LRS POST"
@@ -102,7 +102,7 @@
                       username
                       password
                       block
-                      partition-size
+                      concurrency
                       lrs-batch-size
                       onyx-batch-size
                       strip-ids
@@ -115,7 +115,7 @@
                             peer-config
                             (job/config
                              {:input-json (slurp input-loc)
-                              :partition-size partition-size
+                              :concurrency concurrency
                               :batch-size onyx-batch-size
                               :strip-ids? strip-ids
                               :remove-refs? remove-refs

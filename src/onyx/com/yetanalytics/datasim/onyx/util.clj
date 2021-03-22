@@ -11,3 +11,20 @@
     :input :json
     (ByteArrayInputStream.
      (.getBytes ^String input-json "UTF-8")))))
+
+(defn round-robin
+  "Given a number of partitions/buckets and a sequence, return a set of sets
+  dividing up xs"
+  [num-parts
+   xs]
+  (set
+   (remove empty?
+           (reduce
+            (fn [vs [x idx]]
+              (update vs idx conj x))
+            (into []
+                  (repeat num-parts #{}))
+            (map
+             vector
+             xs
+             (cycle (range num-parts)))))))

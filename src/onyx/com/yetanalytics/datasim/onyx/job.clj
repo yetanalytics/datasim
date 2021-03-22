@@ -6,15 +6,15 @@
 
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations"
-  [{:keys [batch-size ;; onyx batch size
-           partition-size ;; How many actors per generator?
+  [{:keys [concurrency ;; how many simultaneous generators should run?
+           batch-size ;; onyx batch size
            input-json
            lrs
            retry-params
            strip-ids?
            remove-refs?]
-    :or {batch-size 10
-         partition-size 1 ;; one actor per partition
+    :or {concurrency 1 ;; everthing on one gen by default
+         batch-size 10
          retry-params
          {:base-sleep-ms 200
           :max-sleep-ms 30000
@@ -25,12 +25,17 @@
   (assert lrs "LRS must be provided")
   (assert input-json "Input JSON must be provided")
 
-  (let [input (u/parse-input input-json)
+  (let [{{?max :max} :parameters ;; if there's a max param, get it for part-ing
+         :as input} (u/parse-input input-json)
         actor-ids (map xapiu/agent-id
                        (get-in input [:personae :member]))
+        _ (assert (<= concurrency (count actor-ids))
+                  "Concurrency may not be higher than actor count")
 
-        _ (assert (<= partition-size (count actor-ids))
-                  "Partition size may not be higher than actor count")]
+        agent-parts (u/round-robin concurrency
+                                   actor-ids)
+        ?part-max (when ?max
+                    (quot ?max (count agent-parts)))]
     (reduce
      (partial merge-with into)
      {:workflow []
@@ -42,13 +47,14 @@
        (fn [idx ids]
          (let [task-name (keyword (format "in-%d" idx))]
            {:workflow [[task-name :out]]
-            :lifecycles [{:lifecycle/task task-name
-                          :lifecycle/calls ::dseq/in-calls
-                          ::dseq/input-json input-json
-                          ::dseq/lrs lrs
-                          ::dseq/strip-ids? strip-ids?
-                          ::dseq/remove-refs? remove-refs?
-                          ::dseq/select-agents (set ids)}
+            :lifecycles [(cond-> {:lifecycle/task task-name
+                                  :lifecycle/calls ::dseq/in-calls
+                                  ::dseq/input-json input-json
+                                  ::dseq/lrs lrs
+                                  ::dseq/strip-ids? strip-ids?
+                                  ::dseq/remove-refs? remove-refs?
+                                  ::dseq/select-agents (set ids)}
+                           ?part-max (assoc ::dseq/take-n ?part-max))
                          {:lifecycle/task task-name
                           :lifecycle/calls :onyx.plugin.seq/reader-calls}]
             :catalog [{:onyx/name task-name
@@ -59,7 +65,7 @@
                        :onyx/batch-size batch-size
                        :onyx/max-peers 1
                        :onyx/doc (format "Reads segments from seq for partition %d" idx)}]}))
-       (partition-all partition-size actor-ids))
+       agent-parts)
       [{:catalog [{:onyx/name :out
                    :onyx/plugin :onyx.plugin.http-output/output
                    :onyx/type :output
