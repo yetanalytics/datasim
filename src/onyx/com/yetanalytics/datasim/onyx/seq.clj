@@ -10,6 +10,8 @@
                      select-agents ::select-agents
                      strip-ids? ::strip-ids?
                      remove-refs? ::remove-refs?
+                     ?take-n ::take-n
+                     ?drop-n ::drop-n
                      {:keys [endpoint
                              batch-size
                              username
@@ -36,6 +38,8 @@
                          (cond->> (sim/sim-seq
                                    input
                                    :select-agents select-agents)
+                           ?drop-n (drop ?drop-n)
+                           ?take-n (take ?take-n)
                            strip-ids?
                            (map
                             #(dissoc % "id"))
