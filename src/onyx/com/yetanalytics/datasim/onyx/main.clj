@@ -32,6 +32,8 @@
    [nil "--onyx-batch-size ONYX_BATCH_SIZE" "Onyx internal batch size"
     :default 10
     :parse-fn #(Integer/parseInt %)]
+   ["-m" "--override-max OVERRIDE_MAX" "Override max statements"
+    :parse-fn #(Integer/parseInt %)]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
    ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
    ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
@@ -107,7 +109,8 @@
                       onyx-batch-size
                       strip-ids
                       remove-refs
-                      x-api-key]} options]
+                      x-api-key
+                      override-max]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                           tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
@@ -119,6 +122,7 @@
                               :batch-size onyx-batch-size
                               :strip-ids? strip-ids
                               :remove-refs? remove-refs
+                              :override-max override-max
                               :lrs {:endpoint endpoint
                                     :username username
                                     :password password

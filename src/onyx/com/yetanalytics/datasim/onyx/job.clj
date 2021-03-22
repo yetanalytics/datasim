@@ -2,7 +2,13 @@
   (:require [com.yetanalytics.datasim.onyx.seq :as dseq]
             [com.yetanalytics.datasim.util.xapi :as xapiu]
             [com.yetanalytics.datasim.onyx.util :as u]
-            [com.yetanalytics.datasim.onyx.http :as http]))
+            [com.yetanalytics.datasim.onyx.http :as http]
+            [cheshire.core :as json]))
+
+(defn- override-max!
+  [json-str mo]
+  (json/generate-string
+   (assoc-in (json/parse-string json-str) ["parameters" "max"] mo)))
 
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations"
@@ -12,7 +18,8 @@
            lrs
            retry-params
            strip-ids?
-           remove-refs?]
+           remove-refs?
+           override-max]
     :or {concurrency 1 ;; everthing on one gen by default
          batch-size 10
          retry-params
@@ -25,7 +32,9 @@
   (assert lrs "LRS must be provided")
   (assert input-json "Input JSON must be provided")
 
-  (let [{{?max :max} :parameters ;; if there's a max param, get it for part-ing
+  (let [input-json (cond-> input-json
+                     override-max (override-max! override-max))
+        {{?max :max} :parameters ;; if there's a max param, get it for part-ing
          :as input} (u/parse-input input-json)
         actor-ids (map xapiu/agent-id
                        (get-in input [:personae :member]))
