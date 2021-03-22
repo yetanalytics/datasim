@@ -44,9 +44,9 @@ Resources:
         BucketARN:
           Fn::GetAtt: [ DataBucket, Arn ]
         BufferingHints:
-          IntervalInSeconds: 60
+          IntervalInSeconds: 300
           SizeInMBs: 10
-        CompressionFormat: GZIP
+        # CompressionFormat: GZIP
         Prefix: events/
         RoleARN:
           Fn::GetAtt: [ KinesisRole, Arn ]
