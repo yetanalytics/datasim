@@ -34,8 +34,8 @@
                (assoc :basic-auth [username password]))})
           (partition-all batch-size
                          (cond->> (sim/sim-seq
-                                  input
-                                  :select-agents select-agents)
+                                   input
+                                   :select-agents select-agents)
                            strip-ids?
                            (map
                             #(dissoc % "id"))

@@ -47,7 +47,8 @@
                           ::dseq/input-json input-json
                           ::dseq/lrs lrs
                           ::dseq/strip-ids? strip-ids?
-                          ::dseq/remove-refs? remove-refs?}
+                          ::dseq/remove-refs? remove-refs?
+                          ::dseq/select-agents (set ids)}
                          {:lifecycle/task task-name
                           :lifecycle/calls :onyx.plugin.seq/reader-calls}]
             :catalog [{:onyx/name task-name
