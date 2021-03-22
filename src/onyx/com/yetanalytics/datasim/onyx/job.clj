@@ -50,7 +50,7 @@
      {:workflow []
       :lifecycles []
       :catalog []
-      :task-scheduler :onyx.task-scheduler/balanced}
+      :task-scheduler :onyx.task-scheduler/colocated}
      (concat
       (map-indexed
        (fn [idx ids]
