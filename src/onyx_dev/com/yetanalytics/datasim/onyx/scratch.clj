@@ -40,21 +40,23 @@
                peer-group
                peers]
         :as test-env} [;; n-peers
-                       12 ;; max for procs on my macbook
+                       8 ;; (64 % 16) * 2 ;;;;; 12 ;; max for procs on my macbook
                        env-config
                        peer-config
                        ]]
-      (let [batch-size 10
-            capacity 1000
-
+      (let [onyx-batch-size 10
+            lrs-batch-size 1000
+            concurrency 4
             ;; Submit the job
             submission (onyx.api/submit-job
                         peer-config
                         (-> (job/config
-                             {:input-json (slurp "dev-resources/input/simple.json")
+                             {:input-json (slurp "dev-resources/input/mom.json")
+                              :batch-size onyx-batch-size
+                              :concurrency concurrency
                               :lrs {
                                     :endpoint "http://localhost:8080/xapi"
-                                    :batch-size 25
+                                    :batch-size lrs-batch-size
                                     }
                               })
                             ;; don't do the http
@@ -70,7 +72,7 @@
                                                 :onyx/type :output
                                                 :onyx/medium :core.async
                                                 :onyx/max-peers 1
-                                                :onyx/batch-size 10 ;; batch-size
+                                                :onyx/batch-size onyx-batch-size
                                                 :onyx/doc "Writes segments to a core.async channel"}))))]
 
         ;; Wait for jorb to finish if you like
