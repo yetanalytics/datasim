@@ -101,8 +101,8 @@
                       remove-refs
                       x-api-key]} options]
           (println "Starting job...")
-          (let [{:keys [peer-config]} (-> (config/get-config)
-                                          (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
+          (let [{:keys [peer-config]} (cond-> (config/get-config)
+                                          tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
                 submission (onyx.api/submit-job
                             peer-config
                             (job/config
