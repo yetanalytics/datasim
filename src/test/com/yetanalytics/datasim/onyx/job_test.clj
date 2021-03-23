@@ -42,5 +42,47 @@
                         (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
                           (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
                           lc))
-                      ls)))))
+                       ls)))))
+
+  (let [cfg {:input-json (slurp "dev-resources/input/mom.json")
+             :concurrency 1
+             :batch-size 10
+             :lrs {:endpoint "http://localhost:8000/xapi"
+                   :batch-size 1000
+                   :username "foo"
+                   :password "bar"}}]
+    (clojure.pprint/pprint
+     (mapv
+      (fn [cfg]
+        (update cfg :lifecycles
+                (fn [ls]
+                  (mapv (fn [lc]
+                          (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
+                            (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
+                            lc))
+                        ls))))
+      (colo-configs
+       cfg))
+     #_(clojure.data/diff
+      (-> (config
+           cfg)
+          (update :lifecycles
+                  (fn [ls]
+                    (mapv (fn [lc]
+                            (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
+                              (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
+                              lc))
+                          ls))))
+      (first (mapv
+              (fn [cfg]
+                (update cfg :lifecycles
+                        (fn [ls]
+                          (mapv (fn [lc]
+                                  (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
+                                    (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
+                                    lc))
+                                ls))))
+              (colo-configs
+               cfg))))
+     ))
   )

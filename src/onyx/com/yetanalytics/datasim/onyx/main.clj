@@ -12,7 +12,8 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
             [nrepl.server :as nrepl]
-            [cider.nrepl :refer [cider-nrepl-handler]])
+            [cider.nrepl :refer [cider-nrepl-handler]]
+            [onyx.scheduling.common-task-scheduler :as cts])
   (:import [java.net InetAddress]))
 
 (def cli-options
@@ -92,6 +93,13 @@
   (println msg)
   (System/exit status))
 
+;; HACK: force colocated scheduler to respect constraints
+
+(defmethod cts/assign-capacity-constraint? :onyx.task-scheduler/colocated
+  [_ _]
+  true)
+
+
 (defn -main [& args]
   (let [{:keys [action options exit-message ok?]} (validate-args args)]
     (if exit-message
@@ -116,7 +124,7 @@
                                           tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
                 submission (onyx.api/submit-job
                             peer-config
-                            (job/config
+                            (job/config-2
                              {:input-json (slurp input-loc)
                               :concurrency concurrency
                               :batch-size onyx-batch-size
@@ -127,7 +135,9 @@
                                     :username username
                                     :password password
                                     :x-api-key x-api-key
-                                    :batch-size lrs-batch-size}}))]
+                                    :batch-size lrs-batch-size}}))
+                job-id (:job-id submission)]
+            (println "Submitted job id: " job-id)
             (when block
               (println "blocking...")
               (flush)

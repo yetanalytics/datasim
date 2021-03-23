@@ -14,6 +14,8 @@
  {:onyx/tenancy-id #ref [:env-config :onyx/tenancy-id]
   :zookeeper/address #ref [:env-config :zookeeper/address]
   :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
+  ;; allow the scheduler to do whatever it wants
+  :onyx.task-scheduler.colocated/only-send-local? false
   :onyx.peer/zookeeper-timeout #long #or [#env ZK_TIMEOUT
                                           1000]
   :onyx.messaging/impl :aeron
