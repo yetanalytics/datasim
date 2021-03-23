@@ -10,6 +10,7 @@
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]
+            [com.yetanalytics.datasim.util.xapi :as xapiu]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u]))
 
@@ -30,8 +31,24 @@
    (s/conformer profiles->pedges)
    ::pat/valid-edges))
 
-(s/def ::personae
-  ::personae/personae)
+;; This is our system:
+;;   persona: a single Agent who is a member of a Group
+;;   personae: a Group that contains one or more Agent, i.e. persona
+;;   personae-array: an array of one or more Groups
+
+(defn- distinct-member-ids?
+  [personaes]
+  (let [member-ids (->> personaes
+                        (map :member)
+                        (apply concat)
+                        (map xapiu/agent-id))]
+    (= (-> member-ids count)
+       (-> member-ids distinct count))))
+
+(s/def ::personae-array
+  (s/and
+   (s/every ::personae/personae :min-count 1 :into [])
+   distinct-member-ids?))
 
 (s/def ::alignments
   ::alignments/alignments-input)
@@ -42,16 +59,18 @@
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
-                   ::personae
+                   ::personae-array
                    ::alignments
                    ::parameters]))
 
 (def subobject-constructors
   {:profile profile/map->Profile
-   :profiles profile/map->Profile ;; hacky
    :personae personae/map->Personae
    :alignments alignments/map->Alignments
-   :parameters params/map->Parameters})
+   :parameters params/map->Parameters
+   ;; Hack for array-valued inputs
+   :profiles profile/map->Profile
+   :personae-array personae/map->Personae})
 
 (defn realize-subobjects
   "Make subobjects from JSON into records"
@@ -68,8 +87,8 @@
              (cond->> (partial
                        p/read-body-fn
                        rec)
-               ;; for profiles, it's a vector
-               (= k :profiles)
+               ;; for profiles and personae-array, it's a vector
+               (#{:profiles :personae-array} k)
                (partial mapv))]
          (assoc m
                 k
@@ -103,8 +122,8 @@
               rec)
              body-fn
              (cond->> p/write-body-fn
-               ;; for profiles, it's a vector
-               (= k :profiles)
+               ;; for profiles and persoane-array, it's a vector
+               (#{:profiles :personae-array} k)
                (partial mapv))]
          (assoc m
                 k
@@ -127,7 +146,7 @@
    input))
 
 (defrecord Input [profiles
-                  personae
+                  personae-array
                   alignments
                   parameters]
   p/FromInput
@@ -152,7 +171,7 @@
                          (get subobject-constructors type-k))]
     (case fmt-k
       ;; currently only JSON
-      :json (if (= type-k :profiles)
+      :json (if (#{:profiles :personae-array} type-k)
               (dio/read-loc-array (constructor {}) location)
               (dio/read-loc-json (constructor {}) location)))
     (throw (ex-info (format "Unknown key %s" type-k)

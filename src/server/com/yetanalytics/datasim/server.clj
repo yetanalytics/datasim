@@ -42,14 +42,14 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [data           {:profiles   (sinput/from-location :profiles :json
-                                                         (get-stream input "profiles"))
-                        :personae   (sinput/from-location :personae :json
-                                                         (get-stream input "personae"))
-                        :alignments (sinput/from-location :alignments :json
-                                                         (get-stream input "alignments"))
-                        :parameters (sinput/from-location :parameters :json
-                                                          (get-stream input "parameters"))}
+  (let [data           {:profiles       (sinput/from-location :profiles :json
+                                                              (get-stream input "profiles"))
+                        :personae-array (sinput/from-location :personae-array :json
+                                                              (get-stream input "personae-array"))
+                        :alignments     (sinput/from-location :alignments :json
+                                                              (get-stream input "alignments"))
+                        :parameters     (sinput/from-location :parameters :json
+                                                              (get-stream input "parameters"))}
         send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
                          (read-string send-to-lrs)
                          false)

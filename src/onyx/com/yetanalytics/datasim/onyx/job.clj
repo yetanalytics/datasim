@@ -26,8 +26,10 @@
   (assert input-json "Input JSON must be provided")
 
   (let [input (u/parse-input input-json)
-        actor-ids (map xapiu/agent-id
-                       (get-in input [:personae :member]))
+        actor-ids (-> input
+                      :personae-array
+                      (->> (mapcat :member)
+                           (map xapiu/agent-id)))
 
         _ (assert (<= partition-size (count actor-ids))
                   "Partition size may not be higher than actor count")]

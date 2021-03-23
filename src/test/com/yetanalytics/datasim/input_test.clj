@@ -1,49 +1,60 @@
 (ns com.yetanalytics.datasim.input-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input
              :refer [from-location validate validate-throw]
-             :as input]
-            [clojure.template :as t]))
+             :as input]))
 
 ;; simple property test to cover the input types
 
 (deftest input-objects-test
-  (t/do-template
-   [nm         ;; friendly name
-    k           ;; key
-    loc         ;; location of good json
-    invalidator ;; a function to make it invalid
-    ]
-   (testing (format "testing %s:" nm)
-     (let [x (from-location k :json loc)]
-       (testing "protocols"
-         (is (satisfies? p/FromInput x))
-         (is (satisfies? p/JSONRepresentable x)))
-       (testing "validation"
-         (is (nil? (validate x)))
-         (is (some? (validate (invalidator x))))
-         (is (thrown? clojure.lang.ExceptionInfo
-                      (validate-throw (invalidator x)))))))
-   "xAPI Profile" :profile "dev-resources/profiles/cmi5/fixed.json"
-   #(assoc % :id "foo") ;; profiles need an IRI ID
+  (are [test-name      ; friendly name
+        k              ; key
+        loc            ; location of good json input
+        invalidator-fn ; fn to make test invalid
+        ]
+       (testing (format "testing %s:" test-name)
+         (let [x (from-location k :json loc)]
+           (testing "protocols"
+             (is (satisfies? p/FromInput x))
+             (is (satisfies? p/JSONRepresentable x)))
+           (testing "validation"
+             (is (nil? (validate x)))
+             (is (some? (validate (invalidator-fn x))))
+             (is (thrown? clojure.lang.ExceptionInfo
+                          (validate-throw (invalidator-fn x)))))))
+    "xAPI Profile"
+    :profile
+    "dev-resources/profiles/cmi5/fixed.json"
+    #(assoc % :id "foo") ; profiles need an IRI ID
 
-   "Actor Personae" :personae "dev-resources/personae/simple.json"
-   #(assoc % :member []) ;; groups need members
+    "Actor Personae"
+    :personae
+    "dev-resources/personae/simple.json"
+    #(assoc % :member []) ; groups need members
 
-   "Actor Alignments" :alignments "dev-resources/alignments/simple.json"
-   #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}]) ;; alignments are a vector of maps containing a vector of maps
+    "Actor Alignments"
+    :alignments
+    "dev-resources/alignments/simple.json"
+    ;; alignments are a vector of maps containing a vector of maps
+    #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
 
-   "Actor Alignments w/ Overrides" :alignments "dev-resources/alignments/simple_with_overrides.json"
-   #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
-   
-   "Simulation Parameters" :parameters "dev-resources/parameters/simple.json"
-   #(assoc % :seed "hey") ;; seed is a number
+    "Actor Alignments w/ Overrides"
+    :alignments
+    "dev-resources/alignments/simple_with_overrides.json"
+    #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
 
-   "Combined Input Spec" :input "dev-resources/input/simple.json"
-   #(update % :profiles first) ;; profiles are a vector
-   ))
+    "Simulation Parameters"
+    :parameters
+    "dev-resources/parameters/simple.json"
+    #(assoc % :seed "hey") ; seed is a number
+
+    "Combined Input Spec"
+    :input
+    "dev-resources/input/simple.json"
+    #(update % :profiles first) ; profiles are a vector
+    ))
 
 (deftest profile-cosmos-validation-test
   (testing "input is valid if all template refs are valid"
@@ -110,14 +121,32 @@
               ::input/profiles
               [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
 
+(deftest personae-array-validation-test
+  (testing "personae-array spec"
+    (is (s/valid? ::input/personae-array
+                  [(from-location :personae :json "dev-resources/personae/simple.json")
+                   (from-location :personae :json "dev-resources/personae/tccc_dev.json")]))
+    (is (not (s/valid?
+              ::input/personae-array
+              [(-> (from-location :personae :json "dev-resources/personae/simple.json")
+                   (assoc-in [:member 0 :mbox] "not-an-email"))
+               (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))
+    (is (not (s/valid? ::input/personae-array []))))
+  (testing "duplicate member ids across different groups"
+    (is (not (s/valid?
+              ::input/personae-array
+              [(-> (from-location :personae :json "dev-resources/personae/simple.json")
+                   (assoc-in [:member 0 :mbox] "mailto:bob@example.org")
+                   (assoc-in [:member 1 :mbox] "mailto:alice@example.org")
+                   (assoc-in [:member 2 :mbox] "mailto:fred@example.org"))
+               (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))))
+
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
-    (is (nil? (p/validate (assoc-in (from-location
-                                     :input :json "dev-resources/input/simple.json")
-                                    [:profiles 0]
-                                    (from-location
-                                     :profile :json
-                                     "dev-resources/profiles/minimal.jsonld")))))))
+    (is (nil? (p/validate
+               (assoc-in (from-location :input :json "dev-resources/input/simple.json")
+                         [:profiles 0]
+                         (from-location :profile :json "dev-resources/profiles/minimal.jsonld")))))))
 
 (deftest input-validation-test
   (testing "input is valid"

@@ -12,6 +12,13 @@
   (:import [java.util Random])
   (:gen-class))
 
+(defn- conj-input
+  "Conj the input (either a Profile or a personae) to return a
+   vector of inputs, e.g. `-p profile-1 -p profile-2` becomes
+   `[profile-1 profile-2]`."
+  [opt-map id v]
+  (update opt-map id (fnil conj []) v))
+
 (defn cli-options
   "Generate CLI options, skipping validation if `validate?` is false"
   [validate?]
@@ -22,18 +29,15 @@
     :validate (if validate?
                 [input/validate-throw "Failed to validate profile."]
                 [])
-    :assoc-fn (fn [omap id v]
-                (update omap
-                        id
-                        (fnil conj [])
-                        v))]
+    :assoc-fn conj-input]
    ["-a" "--actor-personae URI" "Actor Personae Location"
-    :id :personae
+    :id :personae-array
     :desc "The location of an Actor Personae document indicating the actors in the sim."
     :parse-fn (partial input/from-location :personae :json)
     :validate (if validate?
                 [input/validate-throw "Failed to validate personae."]
-                [])]
+                [])
+    :assoc-fn conj-input]
    ["-l" "--alignments URI" "Actor Alignments Location"
     :id :alignments
     :desc "The location of an Actor Alignments Document."
@@ -137,7 +141,7 @@
           (let [sim-options (select-keys options
                                          [:input
                                           :profiles
-                                          :personae
+                                          :personae-array
                                           :parameters
                                           :alignments])
                 {:keys [override-seed
