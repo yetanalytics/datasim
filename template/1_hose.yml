@@ -115,8 +115,14 @@ Resources:
           - StatusCode: 200 #create a default response for the caller
             ResponseTemplates:
               application/json: '[]' #try an empty array, at least its the right data type
+          - StatusCode: 400
+            SelectionPattern: 4.*
+          - StatusCode: 500
+            SelectionPattern: 5.*
       MethodResponses:
         - StatusCode: 200
+        - StatusCode: 400
+        - StatusCode: 500
       ResourceId: !Ref StatementsResource
       RestApiId: !Ref ApiGatewayRestApi
 
