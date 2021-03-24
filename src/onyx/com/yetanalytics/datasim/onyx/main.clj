@@ -127,7 +127,14 @@
                                    :password password
                                    :x-api-key x-api-key
                                    :batch-size lrs-batch-size}})
-                _ (pprint {:job-config job-config})
+                _ (pprint {:job-config (update job-config
+                                               :lifecycles
+                                               (fn [ls]
+                                                 (mapv (fn [lc]
+                                                         (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
+                                                           (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
+                                                           lc))
+                                                       ls)))})
                 submission (onyx.api/submit-job
                             peer-config
                             job-config)]
