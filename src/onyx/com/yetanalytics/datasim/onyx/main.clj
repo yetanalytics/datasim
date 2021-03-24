@@ -12,7 +12,8 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
             [nrepl.server :as nrepl]
-            [cider.nrepl :refer [cider-nrepl-handler]])
+            [cider.nrepl :refer [cider-nrepl-handler]]
+            [clojure.pprint :refer [pprint]])
   (:import [java.net InetAddress]))
 
 (def cli-options
@@ -113,27 +114,31 @@
                       override-max]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
-                                          tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
+                                        tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
+                job-config (job/config
+                            {:input-json (slurp input-loc)
+                             :concurrency concurrency
+                             :batch-size onyx-batch-size
+                             :strip-ids? strip-ids
+                             :remove-refs? remove-refs
+                             :override-max override-max
+                             :lrs {:endpoint endpoint
+                                   :username username
+                                   :password password
+                                   :x-api-key x-api-key
+                                   :batch-size lrs-batch-size}})
+                _ (pprint {:job-config job-config})
                 submission (onyx.api/submit-job
                             peer-config
-                            (job/config
-                             {:input-json (slurp input-loc)
-                              :concurrency concurrency
-                              :batch-size onyx-batch-size
-                              :strip-ids? strip-ids
-                              :remove-refs? remove-refs
-                              :override-max override-max
-                              :lrs {:endpoint endpoint
-                                    :username username
-                                    :password password
-                                    :x-api-key x-api-key
-                                    :batch-size lrs-batch-size}}))]
+                            job-config)]
+            (println "submitted!")
+            (clojure.pprint/pprint submission)
             (when block
               (println "blocking...")
               (flush)
-              (onyx.api/await-job-completion peer-config (:job-id submission))
-              (println "job complete!"))
-            (clojure.pprint/pprint submission)
+              (println "job complete!"
+                       (onyx.api/await-job-completion peer-config (:job-id submission))))
+
             (exit 0 "OK")))
 
         "start-peer"
