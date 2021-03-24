@@ -123,6 +123,29 @@ Resources:
       RestApiId: !Ref ApiGatewayRestApi
       StageName: prod
 
+  ProdStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: prod
+      Description: Prod Stage
+      RestApiId: !Ref ApiGatewayRestApi
+      DeploymentId: !Ref ApiGatewayDeployment
+      TracingEnabled: true
+
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+        - ApiId: !Ref ApiGatewayRestApi
+          Stage: !Ref ProdStage
+      # Quota:
+      #   Limit: 5000
+      #   Period: MONTH
+      # Throttle:
+      #   BurstLimit: 200
+      #   RateLimit: 100
+      UsagePlanName: DATASIM
+
   ApiKey:
     Type: AWS::ApiGateway::ApiKey
     DependsOn:
@@ -132,3 +155,10 @@ Resources:
       StageKeys:
         - RestApiId: !Ref ApiGatewayRestApi
           StageName: prod
+
+  UsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
