@@ -2,10 +2,21 @@ AWSTemplateFormatVersion: '2010-09-09'
 
 Description: APIGW -> Firehose - adapted from https://jens.dev/assets/api-to-firehose-cf.yml
 
+Parameters:
+  LogRetentionInDays:
+    Type: Number
+    Default: 7
+
 Resources:
 
   DataBucket:
     Type: AWS::S3::Bucket
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/yet/datasim/firehose/${AWS::StackName}'
+      RetentionInDays: !Ref LogRetentionInDays
 
   KinesisRole:
     Type: AWS::IAM::Role
@@ -36,6 +47,19 @@ Resources:
               Resource:
                 - !GetAtt DataBucket.Arn
                 - !Sub "${DataBucket.Arn}/*"
+            - Effect: Allow
+              Action:
+                - 'logs:DescribeLogGroups'
+              Resource:
+                - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+            - Effect: Allow
+              Action:
+                - 'logs:DescribeLogGroups'
+                - 'logs:CreateLogStream'
+                - 'logs:DescribeLogStreams'
+                - 'logs:PutLogEvents'
+              Resource:
+                - !GetAtt LogGroup.Arn
 
   EventFirehose:
     Type: AWS::KinesisFirehose::DeliveryStream
@@ -44,10 +68,14 @@ Resources:
         BucketARN:
           Fn::GetAtt: [ DataBucket, Arn ]
         BufferingHints:
-          IntervalInSeconds: 300
+          IntervalInSeconds: 60
           SizeInMBs: 10
         CompressionFormat: GZIP
         Prefix: events/
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName: !Sub '/yet/datasim/firehose/${AWS::StackName}'
+          LogStreamName: s3Log
         RoleARN:
           Fn::GetAtt: [ KinesisRole, Arn ]
 
