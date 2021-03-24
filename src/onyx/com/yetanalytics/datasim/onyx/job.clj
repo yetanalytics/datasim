@@ -44,42 +44,48 @@
         agent-parts (u/round-robin concurrency
                                    actor-ids)
         ?part-max (when ?max
-                    (quot ?max (count agent-parts)))]
+                    (quot ?max (count agent-parts)))
+        part-input-json
+        (if ?part-max
+          (override-max! input-json ?part-max)
+          input-json)]
     (reduce
      (partial merge-with into)
      {:workflow []
       :lifecycles []
       :catalog []
-      :task-scheduler :onyx.task-scheduler/balanced}
-     (concat
-      (map-indexed
+      :task-scheduler :onyx.task-scheduler/balanced
+      }
+     (map-indexed
        (fn [idx ids]
-         (let [task-name (keyword (format "in-%d" idx))]
-           {:workflow [[task-name :out]]
-            :lifecycles [(cond-> {:lifecycle/task task-name
+         (let [in-name (keyword (format "in-%d" idx))
+               out-name (keyword (format "out-%d" idx))]
+           {:workflow [[in-name out-name]]
+            :lifecycles [(cond-> {:lifecycle/task in-name
                                   :lifecycle/calls ::dseq/in-calls
-                                  ::dseq/input-json input-json
+                                  ::dseq/input-json part-input-json
                                   ::dseq/lrs lrs
                                   ::dseq/strip-ids? strip-ids?
                                   ::dseq/remove-refs? remove-refs?
                                   ::dseq/select-agents (set ids)}
                            ?part-max (assoc ::dseq/take-n ?part-max))
-                         {:lifecycle/task task-name
+                         {:lifecycle/task in-name
                           :lifecycle/calls :onyx.plugin.seq/reader-calls}]
-            :catalog [{:onyx/name task-name
+            :catalog [{:onyx/name in-name
                        :onyx/plugin :onyx.plugin.seq/input
                        :onyx/type :input
                        :onyx/medium :seq
                        :seq/checkpoint? false
                        :onyx/batch-size batch-size
-                       :onyx/max-peers 1
-                       :onyx/doc (format "Reads segments from seq for partition %d" idx)}]}))
-       agent-parts)
-      [{:catalog [{:onyx/name :out
-                   :onyx/plugin :onyx.plugin.http-output/output
-                   :onyx/type :output
-                   :onyx/medium :http
-                   :http-output/success-fn ::http/post-success?
-                   :http-output/retry-params retry-params
-                   :onyx/batch-size batch-size
-                   :onyx/doc "POST statements to http endpoint"}]}]))))
+                       :onyx/n-peers 1
+                       :onyx/doc (format "Reads segments from seq for partition %d" idx)}
+                      {:onyx/name out-name
+                       :onyx/plugin :onyx.plugin.http-output/output
+                       :onyx/type :output
+                       :onyx/medium :http
+                       :http-output/success-fn ::http/post-success?
+                       :http-output/retry-params retry-params
+                       :onyx/batch-size batch-size
+                       :onyx/n-peers 1
+                       :onyx/doc "POST statements to http endpoint"}]}))
+       agent-parts))))
