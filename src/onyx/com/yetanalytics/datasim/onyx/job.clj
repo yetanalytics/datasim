@@ -23,7 +23,7 @@
     :or {concurrency 1 ;; everthing on one gen by default
          batch-size 10
          retry-params
-         {:base-sleep-ms 200
+         {:base-sleep-ms 500
           :max-sleep-ms 30000
           :max-total-sleep-ms 3600000}
          strip-ids? false

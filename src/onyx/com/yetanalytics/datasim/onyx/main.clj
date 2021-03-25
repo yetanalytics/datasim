@@ -33,6 +33,16 @@
    [nil "--onyx-batch-size ONYX_BATCH_SIZE" "Onyx internal batch size"
     :default 1 ;; we batch out own
     :parse-fn #(Integer/parseInt %)]
+   [nil "--retry-base-sleep-ms RETRY_BASE_SLEEP_MS" "Backoff retry sleep time"
+    :default 500 ;; real cool about it
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--retry-max-sleep-ms RETRY_MAX_SLEEP_MS" "Backoff retry sleep time max per retry."
+    :default 30000 ;; every 30 sec max
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--retry-max-total-sleep-ms RETRY_MAX_TOTAL_SLEEP_MS" "Backoff retry sleep time max total."
+    :default 3600000 ;; an hour, why not
+    :parse-fn #(Integer/parseInt %)]
+
    ["-m" "--override-max OVERRIDE_MAX" "Override max statements"
     :parse-fn #(Integer/parseInt %)]
    ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
@@ -111,7 +121,10 @@
                       strip-ids
                       remove-refs
                       x-api-key
-                      override-max]} options]
+                      override-max
+                      retry-base-sleep-ms
+                      retry-max-sleep-ms
+                      retry-max-total-sleep-ms]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
@@ -122,6 +135,10 @@
                              :strip-ids? strip-ids
                              :remove-refs? remove-refs
                              :override-max override-max
+                             :retry-params
+                             {:base-sleep-ms retry-base-sleep-ms
+                              :max-sleep-ms retry-max-sleep-ms
+                              :max-total-sleep-ms retry-max-total-sleep-ms}
                              :lrs {:endpoint endpoint
                                    :username username
                                    :password password
