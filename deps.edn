@@ -72,6 +72,7 @@
                 ;; for remote repl
                 nrepl/nrepl {:mvn/version "0.8.3"}
                 cider/cider-nrepl {:mvn/version "0.25.6"}
+                org.onyxplatform/onyx-peer-http-query {:mvn/version "0.14.5.1-SNAPSHOT"}
                 }}
   :onyx-dev
   {:extra-paths ["src/onyx_dev"]}

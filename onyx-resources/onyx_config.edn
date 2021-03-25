@@ -18,13 +18,18 @@
                                           1000]
   :onyx.messaging/impl :aeron
   :onyx.messaging/bind-addr #or [#env BIND_ADDR
-                                 "localhost"]
+                                 "0.0.0.0"]
   :onyx.messaging/peer-port #long #or [#env PEER_PORT
                                        40200]
   :onyx.messaging.aeron/embedded-driver? #profile {:default true
                                                    :prod false}
   :onyx.log/config #profile {:default nil
-                             :prod {:level :info}}}
+                             :prod {:level :info}}
+  :onyx.query/server? true
+  :onyx.query.server/ip #or [#env SERVER_IP
+                             "0.0.0.0"]
+  :onyx.query.server/port #long #or [#env SERVER_PORT
+                                     8080]}
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
                        6]}}

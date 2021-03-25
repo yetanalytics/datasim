@@ -13,7 +13,8 @@
             [clojure.tools.cli :refer [parse-opts]]
             [nrepl.server :as nrepl]
             [cider.nrepl :refer [cider-nrepl-handler]]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            onyx.http-query)
   (:import [java.net InetAddress]))
 
 (def cli-options
