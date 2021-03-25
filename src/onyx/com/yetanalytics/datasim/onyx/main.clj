@@ -28,10 +28,10 @@
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--lrs-batch-size LRS_BATCH_SIZE" "Statements per LRS POST"
-    :default 100
+    :default 500 ;; minimal effienct size for apiw + kinesis, at worst 260K for MOM profile
     :parse-fn #(Integer/parseInt %)]
    [nil "--onyx-batch-size ONYX_BATCH_SIZE" "Onyx internal batch size"
-    :default 10
+    :default 1 ;; we batch out own
     :parse-fn #(Integer/parseInt %)]
    ["-m" "--override-max OVERRIDE_MAX" "Override max statements"
     :parse-fn #(Integer/parseInt %)]
