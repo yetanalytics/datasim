@@ -68,10 +68,12 @@
         options-summary
         ""
         "Actions:"
-        "  start-peer    Start an onyx peer"
-        "  start-driver  Start an aeron media driver"
-        "  submit-job    Submit a datasim input for submission to an LRS"
-        "  repl          Start a local repl"
+        "  start-peer            Start an onyx peer"
+        "  start-driver          Start an aeron media driver"
+        "  submit-job            Submit a datasim input for submission to an LRS"
+        "  gc                    Trigger an onyx GC"
+        "  gc-checkpoints JOB_ID Trigger a Checkpoint GC"
+        "  repl                  Start a local repl"
         ]
        (string/join \newline)))
 
@@ -91,12 +93,13 @@
       errors ; errors => exit with description of errors
       {:exit-message (error-msg errors)}
       ;; custom validation on arguments
-      (and (= 1 (count arguments))
-           (#{"start-peer"
-              "start-driver"
-              "submit-job"
-              "repl"} (first arguments)))
-      {:action (first arguments) :options options}
+      (#{"start-peer"
+         "start-driver"
+         "submit-job"
+         "gc"
+         "gc-checkpoints"
+         "repl"} (first arguments))
+      {:action (first arguments) :action-args (rest arguments) :options options}
       :else ; failed custom validation => exit with usage summary
       {:exit-message (usage summary)})))
 
@@ -105,7 +108,7 @@
   (System/exit status))
 
 (defn -main [& args]
-  (let [{:keys [action options exit-message ok?]} (validate-args args)]
+  (let [{:keys [action action-args options exit-message ok?]} (validate-args args)]
     (if exit-message
       (exit (if ok? 0 1) exit-message)
       (case action
@@ -165,6 +168,32 @@
                        (onyx.api/await-job-completion peer-config (:job-id submission))))
 
             (exit 0 "OK")))
+        "gc"
+        (let [{:keys [tenancy-id]} options]
+          (println "Performing gc...")
+          (let [{:keys [peer-config]} (cond-> (config/get-config)
+                                        tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
+                gc-ret (onyx.api/gc peer-config)]
+            (println "gc result: " gc-ret)
+
+            (if (true? gc-ret)
+              (exit 0 "OK")
+              (exit 1 "GC FAIL"))))
+
+        "gc-checkpoints"
+        (let [{:keys [tenancy-id]} options]
+          (println "Performing gc...")
+          (if-let [job-id (some-> action-args
+                                  first
+                                  not-empty
+                                  (java.util.UUID/fromString))]
+            (let [{:keys [peer-config]} (cond-> (config/get-config)
+                                          tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
+                  gcc-ret (onyx.api/gc-checkpoints peer-config job-id)]
+              (println "gc checkpoints result: " gcc-ret)
+
+              (exit 0 "OK"))
+            (exit 1 "Job ID Required")))
 
         "start-peer"
         (let [{:keys [tenancy-id
