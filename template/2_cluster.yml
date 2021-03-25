@@ -104,7 +104,13 @@ Parameters:
   DriverJavaOpts:
     Type: String
     Default: -Xms500m -Xmx1G -XX:+UseG1GC
-
+  QueryServerPort:
+    Type: String
+    Default: 8080
+  HealthCheckThreshold:
+    Description: Onyx health check threshold arg
+    Type: String
+    Default: 1000
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -116,6 +122,8 @@ Metadata:
           - VPeersCount
           - PeerJavaOpts
           - DriverJavaOpts
+          - QueryServerPort
+          - HealthCheckThreshold
           - LogRetentionInDays
       - Label:
           default: 'ZooKeeper Settings'
@@ -549,8 +557,10 @@ Resources:
       MinSize: !Ref ASGMinSize
       MaxSize: !Ref ASGMaxSize
       DesiredCapacity: !Ref ASGDesiredSize
-      HealthCheckType: EC2
+      HealthCheckType: ELB
       HealthCheckGracePeriod: 120
+      TargetGroupARNs:
+        - !Ref TargetGroup
       # Enable Group Metrics Collection
       MetricsCollection:
         - Granularity: '1Minute'
@@ -569,3 +579,61 @@ Resources:
           - AZRebalance
           - AlarmNotification
           - ScheduledActions
+
+  # Metrics ALB
+
+  LoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the load balancer
+      VpcId: !Ref VPCId
+      SecurityGroupIngress: !If
+        - EC2SSHEnabled
+        - CidrIp: !Ref EC2SSHCidr
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+        - !Ref AWS::NoValue
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internal
+      LoadBalancerAttributes:
+      - Key: idle_timeout.timeout_seconds
+        Value: '30'
+      Subnets: !Ref Subnets
+      SecurityGroups:
+        - !Ref LoadBalancerSG
+  LoadBalancerListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn:
+      - LoadBalancer
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: 'forward'
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+  IngressFromALB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the ALB
+      GroupId: !Ref InstanceSG
+      IpProtocol: tcp
+      FromPort: !Ref QueryServerPort
+      ToPort: !Ref QueryServerPort
+      SourceSecurityGroupId: !Ref LoadBalancerSG
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: !Sub "/health?threshold=${HealthCheckThreshold}"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: !Ref QueryServerPort
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPCId
