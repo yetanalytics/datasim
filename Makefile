@@ -23,7 +23,7 @@ target/bundle/datasim_server.jar: # no AOT for this one
 target/bundle/datasim_onyx.jar:
 	mkdir -p target/bundle
 	rm -f pom.xml
-	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:onyx,:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-onyx :version '"$(VERSION)"' :jar target/bundle/datasim_onyx.jar :main-class com.yetanalytics.datasim.onyx.main
+	TIMBRE_LOG_LEVEL=:info clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:onyx,:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-onyx :version '"$(VERSION)"' :jar target/bundle/datasim_onyx.jar :main-class com.yetanalytics.datasim.onyx.main
 	rm -f pom.xml
 
 target/bundle/bin:
