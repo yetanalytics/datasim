@@ -76,7 +76,7 @@ Parameters:
   ASGInstanceType:
     Type: String
     Description: EC2 Instance Type to launch in autoscaling group.
-    Default: c5.large
+    Default: c5.xlarge
     AllowedValues:
       - c5.large
       - c5.xlarge
@@ -97,6 +97,14 @@ Parameters:
     Description: CIDR block to grant ssh access to.
     Type: String
 
+  # For the default of c5.xlarge
+  PeerJavaOpts:
+    Type: String
+    Default: -Xms6G -Xmx6G -XX:+UseG1GC
+  DriverJavaOpts:
+    Type: String
+    Default: -Xms500m -Xmx1G -XX:+UseG1GC
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -106,6 +114,8 @@ Metadata:
           - TenancyId
           - PeerPort
           - VPeersCount
+          - PeerJavaOpts
+          - DriverJavaOpts
           - LogRetentionInDays
       - Label:
           default: 'ZooKeeper Settings'
@@ -405,6 +415,9 @@ Resources:
             '/datasim': !Sub 'https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
           # App Service File
           files:
+            '/lib/systemd/system/aeron.env':
+              content: !Sub |
+                JAVA_OPTS=${DriverJavaOpts}
             '/lib/systemd/system/datasim.env':
               content: !Sub |
                 TENANCY_ID=${TenancyId}
@@ -419,6 +432,7 @@ Resources:
                 X_RAY_ENABLED=true
                 AWS_XRAY_CONTEXT_MISSING=LOG_ERROR
                 AWS_XRAY_TRACING_NAME=${AWS::StackName}:${AWS::Region}
+                JAVA_OPTS=${PeerJavaOpts}
             '/lib/systemd/system/aeron.service':
               content: !Sub |
                 [Unit]
@@ -427,6 +441,7 @@ Resources:
                 User=root
                 # The configuration file application.properties should be here:
                 WorkingDirectory=/datasim
+                EnvironmentFile=/lib/systemd/system/aeron.env
                 ExecStart=/datasim/bin/peer_driver.sh
                 SuccessExitStatus=143
                 TimeoutStopSec=10

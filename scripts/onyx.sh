@@ -1,2 +1,2 @@
 #!/bin/sh
-java -jar ./datasim_onyx.jar $@
+java -server $JAVA_OPTS -jar ./datasim_onyx.jar $@
