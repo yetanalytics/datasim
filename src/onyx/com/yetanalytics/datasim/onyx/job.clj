@@ -12,7 +12,8 @@
 
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations"
-  [{:keys [concurrency ;; how many simultaneous generators should run?
+  [{:keys [gen-concurrency
+           post-concurrency
            batch-size ;; onyx batch size
            input-json
            lrs
@@ -20,7 +21,8 @@
            strip-ids?
            remove-refs?
            override-max]
-    :or {concurrency 1 ;; everthing on one gen by default
+    :or {gen-concurrency 1
+         post-concurrency 1
          batch-size 10
          retry-params
          {:base-sleep-ms 500
@@ -38,10 +40,10 @@
          :as input} (u/parse-input input-json)
         actor-ids (map xapiu/agent-id
                        (get-in input [:personae :member]))
-        _ (assert (<= concurrency (count actor-ids))
-                  "Concurrency may not be higher than actor count")
+        _ (assert (<= gen-concurrency (count actor-ids))
+                  "Gen concurrency may not be higher than actor count")
 
-        agent-parts (u/round-robin concurrency
+        agent-parts (u/round-robin gen-concurrency
                                    actor-ids)
         ?part-max (when ?max
                     (quot ?max (count agent-parts)))
@@ -53,14 +55,21 @@
      (partial merge-with into)
      {:workflow []
       :lifecycles []
-      :catalog []
+      :catalog [{:onyx/name :out
+                 :onyx/plugin :onyx.plugin.http-output/output
+                 :onyx/type :output
+                 :onyx/medium :http
+                 :http-output/success-fn ::http/post-success?
+                 :http-output/retry-params retry-params
+                 :onyx/batch-size batch-size
+                 :onyx/n-peers post-concurrency
+                 :onyx/doc "POST statements to http endpoint"}]
       :task-scheduler :onyx.task-scheduler/balanced
       }
      (map-indexed
        (fn [idx ids]
-         (let [in-name (keyword (format "in-%d" idx))
-               out-name (keyword (format "out-%d" idx))]
-           {:workflow [[in-name out-name]]
+         (let [in-name (keyword (format "in-%d" idx))]
+           {:workflow [[in-name :out]]
             :lifecycles [(cond-> {:lifecycle/task in-name
                                   :lifecycle/calls ::dseq/in-calls
                                   ::dseq/input-json part-input-json
@@ -79,13 +88,5 @@
                        :onyx/batch-size batch-size
                        :onyx/n-peers 1
                        :onyx/doc (format "Reads segments from seq for partition %d" idx)}
-                      {:onyx/name out-name
-                       :onyx/plugin :onyx.plugin.http-output/output
-                       :onyx/type :output
-                       :onyx/medium :http
-                       :http-output/success-fn ::http/post-success?
-                       :http-output/retry-params retry-params
-                       :onyx/batch-size batch-size
-                       :onyx/n-peers 1
-                       :onyx/doc "POST statements to http endpoint"}]}))
+                      ]}))
        agent-parts))))

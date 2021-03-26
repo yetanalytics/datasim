@@ -25,7 +25,10 @@
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
    ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
-   ["-c" "--concurrency CONCURRENCY" "Desired concurrency of job."
+   ["-g" "--gen-concurrency GEN_CONCURRENCY" "Desired concurrency of generation."
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
+   ["-x" "--post-concurrency POST_CONCURRENCY" "Desired concurrency of http post."
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--lrs-batch-size LRS_BATCH_SIZE" "Statements per LRS POST"
@@ -119,7 +122,8 @@
                       username
                       password
                       block
-                      concurrency
+                      gen-concurrency
+                      post-concurrency
                       lrs-batch-size
                       onyx-batch-size
                       strip-ids
@@ -134,7 +138,8 @@
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
                 job-config (job/config
                             {:input-json (slurp input-loc)
-                             :concurrency concurrency
+                             :gen-concurrency gen-concurrency
+                             :post-concurrency post-concurrency
                              :batch-size onyx-batch-size
                              :strip-ids? strip-ids
                              :remove-refs? remove-refs

@@ -40,31 +40,34 @@
                peer-group
                peers]
         :as test-env} [;; n-peers
-                       8 ;; (64 % 16) * 2 ;;;;; 12 ;; max for procs on my macbook
+                       12 ;; (64 % 16) * 2 ;;;;; 12 ;; max for procs on my macbook
                        env-config
                        peer-config
                        ]]
-      (let [onyx-batch-size 10
-            lrs-batch-size 1000
-            concurrency 4
+      (let [onyx-batch-size 1
+            lrs-batch-size 500
+            gen-concurrency 6
+            post-concurrency 4
             ;; Submit the job
             submission (onyx.api/submit-job
                         peer-config
                         (-> (job/config
                              {:input-json (slurp "dev-resources/input/mom.json")
                               :batch-size onyx-batch-size
-                              :concurrency concurrency
+                              :gen-concurrency gen-concurrency
+                              :post-concurrency post-concurrency
+                              ;; :override-max 1000
                               :lrs {
                                     :endpoint "http://localhost:8080/xapi"
                                     :batch-size lrs-batch-size
                                     }
                               })
                             ;; don't do the http
-                            (update :lifecycles into [{:lifecycle/task :out
+                            #_(update :lifecycles into [{:lifecycle/task :out
                                                       :lifecycle/calls ::out-calls}
                                                      {:lifecycle/task :out
                                                       :lifecycle/calls :onyx.plugin.core-async/writer-calls}])
-                            (update :catalog #(conj
+                            #_(update :catalog #(conj
                                                (into []
                                                      (butlast %))
                                                {:onyx/name :out
