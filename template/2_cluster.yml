@@ -106,7 +106,7 @@ Parameters:
     Default: -Xms500m -Xmx1G -XX:+UseG1GC
   QueryServerPort:
     Type: String
-    Default: 8080
+    Default: 8888
   HealthCheckThreshold:
     Description: Onyx health check threshold arg
     Type: String
