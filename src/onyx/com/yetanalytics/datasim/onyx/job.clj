@@ -10,6 +10,23 @@
   (json/generate-string
    (assoc-in (json/parse-string json-str) ["parameters" "max"] mo)))
 
+(defn- lrs-req
+  [{:keys [endpoint
+           x-api-key
+           username
+           password]
+    :as lrs}]
+  {:url (format "%s/statements" endpoint)
+   :args
+   (cond-> {:headers (cond-> {"X-Experience-API-Version" "1.0.3"
+                              "Content-Type" "application/json"}
+                       ;; Amazon API Gateway key support
+                       x-api-key
+                       (assoc "X-API-Key" x-api-key))
+            :as :json}
+     (and username password)
+     (assoc :basic-auth [username password]))})
+
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations"
   [{:keys [gen-concurrency
@@ -50,11 +67,15 @@
         part-input-json
         (if ?part-max
           (override-max! input-json ?part-max)
-          input-json)]
+          input-json)
+        ;; form the basic LRS request
+        lrs-request (lrs-req lrs)]
     (reduce
      (partial merge-with into)
      {:workflow []
-      :lifecycles []
+      :lifecycles [{:lifecycle/task :out
+                    :lifecycle/calls ::http/out-calls
+                    ::http/lrs-request lrs-request}]
       :catalog [{:onyx/name :out
                  :onyx/plugin :onyx.plugin.http-output/output
                  :onyx/type :output
