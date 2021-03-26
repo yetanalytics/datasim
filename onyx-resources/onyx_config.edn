@@ -29,7 +29,10 @@
   :onyx.query.server/ip #or [#env SERVER_IP
                              "0.0.0.0"]
   :onyx.query.server/port #long #or [#env SERVER_PORT
-                                     8080]}
+                                     8888] ;; port change so it isn't the same as dev lrs
+  ;; don't allow short circuit locally so we know what breaks in prod
+  :onyx.messaging/allow-short-circuit? #profile {:default false
+                                                 :prod true}}
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
-                       6]}}
+                       8]}}
