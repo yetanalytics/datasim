@@ -13,7 +13,7 @@ Parameters:
   VPeersCount:
     Description: The number of virtual peers to launch on each instance.
     Type: Number
-    Default: 2
+    Default: 8
   LogRetentionInDays:
     Description: How long to retain Cloudwatch Logs
     Type: Number
@@ -76,7 +76,7 @@ Parameters:
   ASGInstanceType:
     Type: String
     Description: EC2 Instance Type to launch in autoscaling group.
-    Default: c5.xlarge
+    Default: c5.2xlarge
     AllowedValues:
       - c5.large
       - c5.xlarge
@@ -97,13 +97,13 @@ Parameters:
     Description: CIDR block to grant ssh access to.
     Type: String
 
-  # For the default of c5.xlarge
+  # For the default of c5.2xlarge
   PeerJavaOpts:
     Type: String
-    Default: -Xms6G -Xmx6G -XX:+UseG1GC
+    Default: -Xms6G -Xmx12G -XX:+UseG1GC
   DriverJavaOpts:
     Type: String
-    Default: -Xms500m -Xmx1G -XX:+UseG1GC
+    Default: -Xms1G -Xmx2G -XX:+UseG1GC
   QueryServerPort:
     Type: String
     Default: 8888
@@ -111,6 +111,16 @@ Parameters:
     Description: Onyx health check threshold arg
     Type: String
     Default: 1000
+  PeerStorageTimeout:
+    Type: String
+    Default: 120000
+  EnablePeerStorageAcceleration:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -125,12 +135,15 @@ Metadata:
           - QueryServerPort
           - HealthCheckThreshold
           - LogRetentionInDays
+          - EnablePeerStorageAcceleration
+          - PeerStorageTimeout
       - Label:
           default: 'ZooKeeper Settings'
         Parameters:
           - ZooKeeperAddress
           - ZooKeeperPort
           - ZooKeeperGroupId
+          - ZooKeeperTimeout
       - Label:
           default: 'Code Source Settings'
         Parameters:
@@ -165,16 +178,21 @@ Conditions:
     !Not [!Equals [!Ref EC2SSHCidr, '']]
   EC2KeyNameProvided:
     !Not [!Equals [!Ref EC2KeyName, '']]
+  PeerStorageAccelerationEnabled:
+    !Equals [!Ref EnablePeerStorageAcceleration, 'true']
 
 Resources:
 
   StorageBucket:
     Type: AWS::S3::Bucket
     Description: Checkpoint and other storage bucket for Onyx
-    Properties:
-      AccelerateConfiguration:
-        AccelerationStatus: Enabled
-
+    #### TODO: enable acceleration, doesn't work well with template updates
+    # Properties:
+    #   AccelerateConfiguration:
+    #     AccelerationStatus: !If
+    #       - PeerStorageAccelerationEnabled
+    #       - Enabled
+    #       - Disabled
 
   LogGroup:
     Type: AWS::Logs::LogGroup
@@ -455,6 +473,11 @@ Resources:
                 AWS_XRAY_CONTEXT_MISSING=LOG_ERROR
                 AWS_XRAY_TRACING_NAME=${AWS::StackName}:${AWS::Region}
                 JAVA_OPTS=${PeerJavaOpts}
+                PEER_STORAGE=s3
+                PEER_STORAGE_BUCKET=${StorageBucket}
+                PEER_STORAGE_PREFIX=${AWS::StackName}/${TenancyId}/
+                PEER_STORAGE_TIMEOUT=${PeerStorageTimeout}
+                PEER_STORAGE_ACCELERATION=${EnablePeerStorageAcceleration}
             '/lib/systemd/system/aeron.service':
               content: !Sub |
                 [Unit]
