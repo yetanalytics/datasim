@@ -55,12 +55,15 @@
    :main-opts   ["-m" "com.yetanalytics.datasim.server"]}
   :onyx
   {:extra-paths ["onyx-resources" "src/onyx"]
-   :extra-deps {org.onyxplatform/onyx {:mvn/version "0.14.6"
+   :extra-deps {com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.11.899"}
+                com.amazonaws/aws-java-sdk-core {:mvn/version "1.11.899"}
+                org.onyxplatform/onyx {:mvn/version "0.14.6"
                                        :exclusions
                                        ;; TODO: More exclusions probably
                                        [org.clojure/clojure
                                         org.clojure/core.async
-                                        org.slf4j/slf4j-nop]}
+                                        org.slf4j/slf4j-nop
+                                        com.amazonaws/aws-java-sdk-s3]}
                 aleph/aleph {:mvn/version "0.4.7-alpha7"}
                 com.fzakaria/slf4j-timbre {:mvn/version "0.3.20"}
                 org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}

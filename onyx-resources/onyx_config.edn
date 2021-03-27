@@ -32,7 +32,24 @@
                                      8888] ;; port change so it isn't the same as dev lrs
   ;; don't allow short circuit locally so we know what breaks in prod
   :onyx.messaging/allow-short-circuit? #profile {:default false
-                                                 :prod true}}
+                                                 :prod true}
+  :onyx.peer/storage #or [#keyword #env PEER_STORAGE
+                          :zookeeper]
+  :onyx.peer/storage.s3.bucket #env PEER_STORAGE_BUCKET
+  :onyx.peer/storage.s3.region #or [#env AWS_REGION
+                                    "us-east-1"]
+  :onyx.peer/storage.s3.prefix #or [#env PEER_STORAGE_PREFIX
+                                    #profile {:default "onyx_dev/"
+                                              :prod "onyx/"}]
+  :onyx.messaging/term-buffer-size.segment 8388608
+
+  ;; :onyx.peer/coordinator-barrier-period-ms 5000
+
+  ;; :onyx.peer/storage.timeout 360000
+  ;; need this or constant timeout
+  :onyx.peer/storage.s3.accelerate? true
+
+  }
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
-                       8]}}
+                       12]}}
