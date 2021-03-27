@@ -76,6 +76,10 @@
                 nrepl/nrepl {:mvn/version "0.8.3"}
                 cider/cider-nrepl {:mvn/version "0.25.6"}
                 org.onyxplatform/onyx-peer-http-query {:mvn/version "0.14.5.1-SNAPSHOT"}
+                org.onyxplatform/onyx-amazon-s3 {:mvn/version "0.14.5.0"
+                                                 :exclusions [org.clojure/clojure
+                                                              org.onyxplatform/onyx
+                                                              com.amazonaws/aws-java-sdk-s3]}
                 }}
   :onyx-dev
   {:extra-paths ["src/onyx_dev"]}

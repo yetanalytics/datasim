@@ -28,3 +28,10 @@
              vector
              xs
              (cycle (range num-parts)))))))
+
+(defn batch->smile
+  "Convert a batch of segments to SMILE data"
+  [segments]
+  (json/generate-smile
+   (map :statement
+        segments)))

@@ -27,7 +27,8 @@
      (and username password)
      (assoc :basic-auth [username password]))})
 
-(defn config
+;; TODO: reenable and merge LRS functionality after s3 is good
+#_(defn config
   "Build a config for distributing generation and post of DATASIM simulations"
   [{:keys [gen-concurrency
            post-concurrency
@@ -107,6 +108,98 @@
                        :onyx/medium :seq
                        :seq/checkpoint? false
                        :onyx/batch-size batch-size
+                       :onyx/n-peers 1
+                       :onyx/doc (format "Reads segments from seq for partition %d" idx)}
+                      ]}))
+       agent-parts))))
+
+(defn config
+  "Build a config for distributing generation and post of DATASIM simulations
+  Target s3"
+  [{:keys [;; SIM
+           input-json ;; TODO: change to url or file on s3
+           strip-ids?
+           remove-refs?
+           override-max
+
+           ;; JOB
+           gen-concurrency
+           gen-batch-size
+           out-concurrency
+           out-batch-size
+
+           ;; S3
+           s3-bucket
+           s3-prefix
+           s3-prefix-separator
+           s3-encryption
+           s3-max-concurrent-uploads]
+    :or {gen-concurrency 1
+         gen-batch-size 20
+         out-concurrency 1
+         out-batch-size 20
+         strip-ids? false
+         remove-refs? false}}]
+
+  (assert input-json "Input JSON must be provided")
+
+  (let [input-json (cond-> input-json
+                     override-max (override-max! override-max))
+        {{?max :max} :parameters ;; if there's a max param, get it for part-ing
+         :as input} (u/parse-input input-json)
+        actor-ids (map xapiu/agent-id
+                       (get-in input [:personae :member]))
+        _ (assert (<= gen-concurrency (count actor-ids))
+                  "Gen concurrency may not be higher than actor count")
+
+        agent-parts (u/round-robin gen-concurrency
+                                   actor-ids)
+        ?part-max (when ?max
+                    (quot ?max (count agent-parts)))
+        part-input-json
+        (if ?part-max
+          (override-max! input-json ?part-max)
+          input-json)]
+    (reduce
+     (partial merge-with into)
+     {:workflow []
+      :lifecycles [{:lifecycle/task :out
+                    :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
+      :catalog [{:onyx/name :out
+                 :onyx/plugin :onyx.plugin.s3-output/output
+                 :s3/bucket s3-bucket
+                 :s3/encryption s3-encryption
+                 :s3/serializer-fn ::u/batch->smile
+                 :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn
+                 :s3/prefix s3-prefix
+                 :s3/prefix-separator s3-prefix-separator
+                 :s3/serialize-per-element? false
+                 :s3/max-concurrent-uploads s3-max-concurrent-uploads
+                 :onyx/type :output
+                 :onyx/medium :s3
+                 :onyx/batch-size out-concurrency
+                 :onyx/doc "Writes segments to s3 files, one file per batch"}]
+      :task-scheduler :onyx.task-scheduler/balanced
+      }
+     (map-indexed
+       (fn [idx ids]
+         (let [in-name (keyword (format "in-%d" idx))]
+           {:workflow [[in-name :out]]
+            :lifecycles [(cond-> {:lifecycle/task in-name
+                                  :lifecycle/calls ::dseq/in-calls
+                                  ::dseq/input-json part-input-json
+                                  ::dseq/strip-ids? strip-ids?
+                                  ::dseq/remove-refs? remove-refs?
+                                  ::dseq/select-agents (set ids)}
+                           ?part-max (assoc ::dseq/take-n ?part-max))
+                         {:lifecycle/task in-name
+                          :lifecycle/calls :onyx.plugin.seq/reader-calls}]
+            :catalog [{:onyx/name in-name
+                       :onyx/plugin :onyx.plugin.seq/input
+                       :onyx/type :input
+                       :onyx/medium :seq
+                       :seq/checkpoint? false
+                       :onyx/batch-size gen-batch-size
                        :onyx/n-peers 1
                        :onyx/doc (format "Reads segments from seq for partition %d" idx)}
                       ]}))

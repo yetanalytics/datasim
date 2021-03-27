@@ -1,8 +1,11 @@
 (ns com.yetanalytics.datasim.onyx.main
   (:gen-class)
   (:require [onyx.plugin.http-output :as http]
+            [onyx.plugin.s3-output]
             onyx.plugin.seq
+            [cheshire.core]
             onyx.api
+            com.yetanalytics.datasim.onyx.util
             [com.yetanalytics.datasim.onyx.job :as job]
             [com.yetanalytics.datasim.onyx.seq :as dseq]
             [com.yetanalytics.datasim.onyx.config :as config]
@@ -24,19 +27,35 @@
    ;; Peer + Submit
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
+   ;; sim
    ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
+   ["-m" "--override-max OVERRIDE_MAX" "Override max statements"
+    :parse-fn #(Integer/parseInt %)]
+   ;; Gen overrides
+   [nil "--[no-]strip-ids" "Strip IDs from generated statements" :default false]
+   [nil "--[no-]remove-refs" "Filter out statement references" :default false]
+
    ["-g" "--gen-concurrency GEN_CONCURRENCY" "Desired concurrency of generation."
     :default 1
     :parse-fn #(Integer/parseInt %)]
-   ["-x" "--post-concurrency POST_CONCURRENCY" "Desired concurrency of http post."
+   [nil "--gen-batch-size GEN_BATCH_SIZE" "Generation Batch Size"
+    :default 20
+    :parse-fn #(Integer/parseInt %)]
+
+   ["-o" "--out-concurrency OUT_CONCURRENCY" "Desired concurrency of output"
     :default 1
     :parse-fn #(Integer/parseInt %)]
-   [nil "--lrs-batch-size LRS_BATCH_SIZE" "Statements per LRS POST"
-    :default 500 ;; minimal effienct size for apiw + kinesis, at worst 260K for MOM profile
+   [nil "--out-batch-size OUT_BATCH_SIZE" "Batch Size of Output"
+    :default 20
     :parse-fn #(Integer/parseInt %)]
-   [nil "--onyx-batch-size ONYX_BATCH_SIZE" "Onyx internal batch size"
-    :default 1 ;; we batch out own
-    :parse-fn #(Integer/parseInt %)]
+
+
+   ;; LRS OUT ;; TODO: reintegrate
+   #_#_#_#_#_#_#_
+   ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
+   ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
+   ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
+   [nil "--x-api-key X_API_KEY" "API Gateway API key"]
    [nil "--retry-base-sleep-ms RETRY_BASE_SLEEP_MS" "Backoff retry sleep time"
     :default 500 ;; real cool about it
     :parse-fn #(Integer/parseInt %)]
@@ -46,16 +65,22 @@
    [nil "--retry-max-total-sleep-ms RETRY_MAX_TOTAL_SLEEP_MS" "Backoff retry sleep time max total."
     :default 3600000 ;; an hour, why not
     :parse-fn #(Integer/parseInt %)]
+   ;; S3 OUT
+   [nil "--s3-bucket S3_BUCKET" "S3 out bucket"]
+   [nil "--s3-prefix S3_PREFIX" "S3 out bucket base prefix"]
+   [nil "--s3-prefix-separator S3_PREFIX_SEPARATOR" "S3 path separator, default is /"
+    :default "/"]
+   [nil "--s3-encryption S3_BUCKET_ENCRYPTION" "S3 Encryption scheme, :none (default) or :sse256"
+    :parse-fn keyword
+    :default :none]
+   [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
+    :default 20]
 
-   ["-m" "--override-max OVERRIDE_MAX" "Override max statements"
-    :parse-fn #(Integer/parseInt %)]
-   ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
-   ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
-   ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
-   [nil "--x-api-key X_API_KEY" "API Gateway API key"]
-   [nil "--[no-]strip-ids" "Strip IDs from generated statements" :default false]
-   [nil "--[no-]remove-refs" "Filter out statement references" :default false]
+
+
+   ;; Blocking (a little hard to predict)
    ["-b" "--[no-]block" "Block until the job is done" :default true]
+   ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
    [nil "--nrepl-port NREPL_PORT" "If provided on peer launch will start an nrepl server on this port"
@@ -117,33 +142,67 @@
       (case action
         "submit-job"
         (let [{:keys [tenancy-id
+
+                      block
+
                       input-loc
+                      override-max
+                      strip-ids
+                      remove-refs
+
+                      #_#_#_#_#_#_#_
                       endpoint
                       username
                       password
-                      block
-                      gen-concurrency
-                      post-concurrency
-                      lrs-batch-size
-                      onyx-batch-size
-                      strip-ids
-                      remove-refs
                       x-api-key
-                      override-max
                       retry-base-sleep-ms
                       retry-max-sleep-ms
-                      retry-max-total-sleep-ms]} options]
+                      retry-max-total-sleep-ms
+
+                      gen-concurrency
+                      gen-batch-size
+                      out-concurrency
+                      out-batch-size
+
+                      s3-bucket
+                      s3-prefix
+                      s3-prefix-separator
+                      s3-encryption
+                      s3-max-concurrent-uploads]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
                 job-config (job/config
                             {:input-json (slurp input-loc)
+                             :strip-ids? strip-ids
+                             :remove-refs? remove-refs
+                             :override-max override-max
+
+                             :gen-concurrency gen-concurrency
+                             :gen-batch-size gen-batch-size
+                             :out-concurrency out-concurrency
+                             :out-batch-size out-batch-size
+
+                             :s3-bucket s3-bucket
+                             :s3-prefix s3-prefix
+                             :s3-prefix-separator s3-prefix-separator
+                             :s3-encryption s3-encryption
+                             :s3-max-concurrent-uploads s3-max-concurrent-uploads
+                             }
+                            #_{:input-json (slurp input-loc)
                              :gen-concurrency gen-concurrency
                              :post-concurrency post-concurrency
                              :batch-size onyx-batch-size
                              :strip-ids? strip-ids
                              :remove-refs? remove-refs
                              :override-max override-max
+
+                             :s3-bucket s3-bucket
+                             :s3-prefix s3-prefix
+                             :s3-prefix-separator s3-prefix-separator
+                             :s3-encryption s3-encryption
+                             :s3-max-concurrent-uploads s3-max-concurrent-uploads
+                             ;; LRS POST
                              :retry-params
                              {:base-sleep-ms retry-base-sleep-ms
                               :max-sleep-ms retry-max-sleep-ms
