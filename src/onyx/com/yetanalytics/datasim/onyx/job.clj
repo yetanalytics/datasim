@@ -177,7 +177,8 @@
                  :s3/max-concurrent-uploads s3-max-concurrent-uploads
                  :onyx/type :output
                  :onyx/medium :s3
-                 :onyx/batch-size out-concurrency
+                 :onyx/n-peers out-concurrency
+                 :onyx/batch-size out-batch-size
                  :onyx/doc "Writes segments to s3 files, one file per batch"}]
       :task-scheduler :onyx.task-scheduler/balanced
       }
