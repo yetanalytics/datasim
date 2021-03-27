@@ -40,14 +40,17 @@
                                     "us-east-1"]
   :onyx.peer/storage.s3.prefix #or [#env PEER_STORAGE_PREFIX
                                     #profile {:default "onyx_dev/"
-                                              :prod "onyx/"}]
-  :onyx.messaging/term-buffer-size.segment 8388608
+                                              }]
+  ;; Aeron max term buffer size
+  :onyx.messaging/term-buffer-size.segment 16777216
 
   ;; :onyx.peer/coordinator-barrier-period-ms 5000
 
-  ;; :onyx.peer/storage.timeout 360000
+  :onyx.peer/storage.timeout #long #or [#env PEER_STORAGE_TIMEOUT
+                                        120000]
   ;; need this or constant timeout
-  :onyx.peer/storage.s3.accelerate? true
+  :onyx.peer/storage.s3.accelerate? #boolean #or [#env PEER_STORAGE_ACCELERATION
+                                                  "false"]
 
   }
  :launch-config
