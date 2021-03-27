@@ -8,12 +8,10 @@
                 catalog]
          :as job-config} (config
                           {:input-json (slurp "dev-resources/input/mom.json")
-                           :concurrency 4
-                           :batch-size 10
-                           :lrs {:endpoint "http://localhost:8000/xapi"
-                                 :batch-size 1000
-                                 :username "foo"
-                                 :password "bar"}})
+                           :gen-concurrency 4
+                           :gen-batch-size 3000
+                           :out-concurrency 4
+                           :out-batch-size 3000})
 
         inputs (keep :com.yetanalytics.datasim.onyx.seq/input-json lifecycles)
         parts (keep :com.yetanalytics.datasim.onyx.seq/select-agents
@@ -30,12 +28,10 @@
   (clojure.pprint/pprint
    (-> (config
         {:input-json (slurp "dev-resources/input/mom.json")
-         :concurrency 4
-         :batch-size 10
-         :lrs {:endpoint "http://localhost:8000/xapi"
-               :batch-size 1000
-               :username "foo"
-               :password "bar"}})
+         :gen-concurrency 4
+         :gen-batch-size 3000
+         :out-concurrency 4
+         :out-batch-size 3000})
        (update :lifecycles
                (fn [ls]
                  (mapv (fn [lc]
