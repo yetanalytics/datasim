@@ -168,6 +168,14 @@ Conditions:
 
 Resources:
 
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Description: Checkpoint and other storage bucket for Onyx
+    Properties:
+      AccelerateConfiguration:
+        AccelerationStatus: Enabled
+
+
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -211,6 +219,12 @@ Resources:
               - 's3:GetObject'
             Resource:
               - !Sub 'arn:aws:s3:::${ArtifactBucketName}/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          - Effect: Allow
+            Action:
+              - 's3:*'
+            Resource:
+              - !GetAtt StorageBucket.Arn
+              - !Sub "${StorageBucket.Arn}/*"
           # Allow tags for various cloud things
           - Effect: Allow
             Action: 'ec2:DescribeTags'
