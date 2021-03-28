@@ -83,4 +83,15 @@
         (onyx.api/await-job-completion peer-config (:job-id submission))
         (println 'done submission)
         )))
+
+  ;; Read smile from s3
+  (require '[clojure.java.io :as io])
+  (require '[byte-streams :as bs])
+  (-> (io/file "output")
+      file-seq
+      (->> (filter (fn [^java.io.File f] (.isFile f)))
+           (map bs/to-byte-array)
+           (mapcat json/parse-smile)
+           )
+      )
   )

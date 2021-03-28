@@ -33,5 +33,10 @@
   "Convert a batch of segments to SMILE data"
   [segments]
   (json/generate-smile
-   (map :statement
-        segments)))
+   (mapcat :statements
+           segments)))
+
+(comment
+
+  (batch->smile [{:statements []}])
+  )

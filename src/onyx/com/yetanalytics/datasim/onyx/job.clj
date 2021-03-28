@@ -3,7 +3,8 @@
             [com.yetanalytics.datasim.util.xapi :as xapiu]
             [com.yetanalytics.datasim.onyx.util :as u]
             [com.yetanalytics.datasim.onyx.http :as http]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [taoensso.timbre :as log]))
 
 (defn- override-max!
   [json-str mo]
@@ -113,6 +114,14 @@
                       ]}))
        agent-parts))))
 
+
+
+
+
+(defn noop
+  [seg]
+  (println :segment-out seg))
+
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations
   Target s3"
@@ -121,24 +130,31 @@
            strip-ids?
            remove-refs?
            override-max
-
            ;; JOB
            gen-concurrency
            gen-batch-size
-           out-concurrency
+           out-ratio
+
+           in-batch-size
+           in-batch-timeout
            out-batch-size
            out-batch-timeout
-
            ;; S3
            s3-bucket
            s3-prefix
            s3-prefix-separator
            s3-encryption
-           s3-max-concurrent-uploads]
+           s3-max-concurrent-uploads
+
+
+           ]
     :or {gen-concurrency 1
-         gen-batch-size 20
-         out-concurrency 1
+         gen-batch-size 1
+         out-ratio 8
+         in-batch-size 20
+         in-batch-timeout 50
          out-batch-size 20
+         out-batch-timeout 50
          strip-ids? false
          remove-refs? false}}]
 
@@ -156,54 +172,83 @@
         agent-parts (u/round-robin gen-concurrency
                                    actor-ids)
         ?part-max (when ?max
-                    (quot ?max (count agent-parts)))
+                    (max 1 (quot ?max (count agent-parts))))
         part-input-json
         (if ?part-max
           (override-max! input-json ?part-max)
-          input-json)]
+          input-json)
+
+        in-names (map
+                  #(keyword (format "in-%d" %))
+                  (range (count agent-parts)))
+
+        ;; The 8-1 ratio seems to be most performant
+        out-task-count (max (quot (count agent-parts)
+                                  out-ratio)
+                            1) ;; but there should be at least one!
+        out-names (map
+                   #(keyword (format "out-%d" %))
+                   (range out-task-count))]
     (reduce
      (partial merge-with into)
-     {:workflow []
-      :lifecycles [{:lifecycle/task :out
-                    :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
-      :catalog [{:onyx/name :out
-                 :onyx/plugin :onyx.plugin.s3-output/output
-                 :s3/bucket s3-bucket
-                 :s3/encryption s3-encryption
-                 :s3/serializer-fn ::u/batch->smile
-                 :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn
-                 :s3/prefix s3-prefix
-                 :s3/prefix-separator s3-prefix-separator
-                 :s3/serialize-per-element? false
-                 :s3/max-concurrent-uploads s3-max-concurrent-uploads
-                 :onyx/type :output
-                 :onyx/medium :s3
-                 :onyx/n-peers out-concurrency
-                 :onyx/batch-size out-batch-size
-                 :onyx/batch-timeout out-batch-timeout
-                 :onyx/doc "Writes segments to s3 files, one file per batch"}]
-      :task-scheduler :onyx.task-scheduler/balanced
-      }
-     (map-indexed
-       (fn [idx ids]
-         (let [in-name (keyword (format "in-%d" idx))]
-           {:workflow [[in-name :out]]
-            :lifecycles [(cond-> {:lifecycle/task in-name
-                                  :lifecycle/calls ::dseq/in-calls
-                                  ::dseq/input-json part-input-json
-                                  ::dseq/strip-ids? strip-ids?
-                                  ::dseq/remove-refs? remove-refs?
-                                  ::dseq/select-agents (set ids)}
-                           ?part-max (assoc ::dseq/take-n ?part-max))
-                         {:lifecycle/task in-name
-                          :lifecycle/calls :onyx.plugin.seq/reader-calls}]
-            :catalog [{:onyx/name in-name
-                       :onyx/plugin :onyx.plugin.seq/input
-                       :onyx/type :input
-                       :onyx/medium :seq
-                       :seq/checkpoint? false
-                       :onyx/batch-size gen-batch-size
-                       :onyx/n-peers 1
-                       :onyx/doc (format "Reads segments from seq for partition %d" idx)}
-                      ]}))
-       agent-parts))))
+     {:workflow (into []
+                      (map vector
+                           in-names
+                           (cycle out-names)))
+      :lifecycles []
+      :catalog []
+      :task-scheduler :onyx.task-scheduler/balanced}
+     (concat
+      (map
+       (fn [out-name]
+         {:lifecycles [{:lifecycle/task out-name
+                        :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
+          :catalog [#_{:onyx/name out-name
+                     :onyx/fn ::noop
+                     :onyx/plugin :onyx.peer.function/function
+                     :onyx/medium :function
+                     :onyx/type :output
+                     :onyx/n-peers 1
+                     :onyx/batch-size out-batch-size
+                     :onyx/batch-timeout out-batch-timeout}
+                    {:onyx/name out-name
+                     :onyx/plugin :onyx.plugin.s3-output/output
+                     :s3/bucket s3-bucket
+                     :s3/encryption s3-encryption
+                     :s3/serializer-fn ::u/batch->smile
+                     :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
+                     :s3/prefix s3-prefix
+                     :s3/prefix-separator s3-prefix-separator
+                     :s3/serialize-per-element? false
+                     :s3/max-concurrent-uploads s3-max-concurrent-uploads
+                     :onyx/type :output
+                     :onyx/medium :s3
+                     :onyx/n-peers 1
+                     :onyx/batch-size out-batch-size
+                     :onyx/batch-timeout out-batch-timeout
+                     :onyx/doc "Writes segments to s3 files, one file per batch"}
+                    ]})
+       out-names)
+      (map
+       (fn [in-name ids]
+         {:lifecycles [(cond-> {:lifecycle/task in-name
+                                :lifecycle/calls ::dseq/in-calls
+                                ::dseq/input-json part-input-json
+                                ::dseq/strip-ids? strip-ids?
+                                ::dseq/remove-refs? remove-refs?
+                                ::dseq/select-agents (set ids)
+                                ::dseq/batch-size gen-batch-size}
+                         ?part-max (assoc ::dseq/take-n ?part-max))
+                       {:lifecycle/task in-name
+                        :lifecycle/calls :onyx.plugin.seq/reader-calls}]
+          :catalog [{:onyx/name in-name
+                     :onyx/plugin :onyx.plugin.seq/input
+                     :onyx/type :input
+                     :onyx/medium :seq
+                     :seq/checkpoint? false
+                     :onyx/batch-size in-batch-size
+                     :onyx/n-peers 1
+                     :onyx/doc (format "Reads segments from seq for partition %s" in-name)}
+                    ]})
+       in-names
+       agent-parts)))))

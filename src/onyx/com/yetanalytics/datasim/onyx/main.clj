@@ -35,18 +35,24 @@
    [nil "--[no-]strip-ids" "Strip IDs from generated statements" :default false]
    [nil "--[no-]remove-refs" "Filter out statement references" :default false]
 
-   ["-g" "--gen-concurrency GEN_CONCURRENCY" "Desired concurrency of generation."
+   ["-c" "--gen-concurrency GEN_CONCURRENCY" "Desired concurrency of generation."
     :default 1
     :parse-fn #(Integer/parseInt %)]
-   [nil "--gen-batch-size GEN_BATCH_SIZE" "Generation Batch Size"
-    :default 1000
+   ["-b" "--gen-batch-size GEN_BATCH_SIZE" "Generate this number of statements at a time."
+    :default 1
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--out-ratio OUT_RATIO" "Ratio of inputs to outputs, defaults to 8"
+    :default 8
     :parse-fn #(Integer/parseInt %)]
 
-   ["-o" "--out-concurrency OUT_CONCURRENCY" "Desired concurrency of output"
-    :default 1
+   [nil "--in-batch-size IN_BATCH_SIZE" "Onyx input batch size"
+    :default 20
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--in-batch-timeout IN_BATCH_TIMEOUT" "Input batch timeout"
+    :default 50
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-batch-size OUT_BATCH_SIZE" "Batch Size of Output"
-    :default 3000
+    :default 20
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-batch-timeout OUT_BATCH_TIMEOUT" "Output batch timeout"
     :default 50
@@ -82,7 +88,7 @@
 
 
    ;; Blocking (a little hard to predict)
-   ["-b" "--[no-]block" "Block until the job is done" :default true]
+   [nil "--[no-]block" "Block until the job is done" :default true]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
@@ -164,7 +170,10 @@
 
                       gen-concurrency
                       gen-batch-size
-                      out-concurrency
+                      out-ratio
+
+                      in-batch-size
+                      in-batch-timeout
                       out-batch-size
                       out-batch-timeout
 
@@ -181,10 +190,13 @@
                              :strip-ids? strip-ids
                              :remove-refs? remove-refs
                              :override-max override-max
+                             :out-ratio out-ratio
 
                              :gen-concurrency gen-concurrency
                              :gen-batch-size gen-batch-size
-                             :out-concurrency out-concurrency
+
+                             :in-batch-size in-batch-size
+                             :in-batch-timeout in-batch-timeout
                              :out-batch-size out-batch-size
                              :out-batch-timeout out-batch-timeout
 
