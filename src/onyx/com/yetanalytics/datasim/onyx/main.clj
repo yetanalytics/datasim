@@ -39,7 +39,7 @@
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--gen-batch-size GEN_BATCH_SIZE" "Generation Batch Size"
-    :default 32
+    :default 1000
     :parse-fn #(Integer/parseInt %)]
 
    ["-o" "--out-concurrency OUT_CONCURRENCY" "Desired concurrency of output"
@@ -49,7 +49,7 @@
     :default 3000
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-batch-timeout OUT_BATCH_TIMEOUT" "Output batch timeout"
-    :default 1000
+    :default 50
     :parse-fn #(Integer/parseInt %)]
 
 
