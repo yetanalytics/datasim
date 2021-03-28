@@ -127,6 +127,7 @@
            gen-batch-size
            out-concurrency
            out-batch-size
+           out-batch-timeout
 
            ;; S3
            s3-bucket
@@ -179,6 +180,7 @@
                  :onyx/medium :s3
                  :onyx/n-peers out-concurrency
                  :onyx/batch-size out-batch-size
+                 :onyx/batch-timeout out-batch-timeout
                  :onyx/doc "Writes segments to s3 files, one file per batch"}]
       :task-scheduler :onyx.task-scheduler/balanced
       }
