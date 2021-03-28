@@ -39,14 +39,17 @@
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--gen-batch-size GEN_BATCH_SIZE" "Generation Batch Size"
-    :default 20
+    :default 32
     :parse-fn #(Integer/parseInt %)]
 
    ["-o" "--out-concurrency OUT_CONCURRENCY" "Desired concurrency of output"
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-batch-size OUT_BATCH_SIZE" "Batch Size of Output"
-    :default 20
+    :default 3000
+    :parse-fn #(Integer/parseInt %)]
+   [nil "--out-batch-timeout OUT_BATCH_TIMEOUT" "Output batch timeout"
+    :default 1000
     :parse-fn #(Integer/parseInt %)]
 
 
@@ -163,6 +166,7 @@
                       gen-batch-size
                       out-concurrency
                       out-batch-size
+                      out-batch-timeout
 
                       s3-bucket
                       s3-prefix
@@ -182,6 +186,7 @@
                              :gen-batch-size gen-batch-size
                              :out-concurrency out-concurrency
                              :out-batch-size out-batch-size
+                             :out-batch-timeout out-batch-timeout
 
                              :s3-bucket s3-bucket
                              :s3-prefix s3-prefix
