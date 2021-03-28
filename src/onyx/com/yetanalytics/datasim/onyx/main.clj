@@ -39,20 +39,20 @@
     :default 1
     :parse-fn #(Integer/parseInt %)]
    ["-b" "--gen-batch-size GEN_BATCH_SIZE" "Generate this number of statements at a time."
-    :default 1
+    :default 1000
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-ratio OUT_RATIO" "Ratio of inputs to outputs, defaults to 8"
-    :default 8
+    :default 1
     :parse-fn #(Integer/parseInt %)]
 
    [nil "--in-batch-size IN_BATCH_SIZE" "Onyx input batch size"
-    :default 20
+    :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--in-batch-timeout IN_BATCH_TIMEOUT" "Input batch timeout"
     :default 50
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-batch-size OUT_BATCH_SIZE" "Batch Size of Output"
-    :default 20
+    :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--out-batch-timeout OUT_BATCH_TIMEOUT" "Output batch timeout"
     :default 50
