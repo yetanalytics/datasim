@@ -199,7 +199,9 @@
                            (cycle out-names)))
       :lifecycles []
       :catalog []
-      :task-scheduler :onyx.task-scheduler/balanced}
+      :task-scheduler :onyx.task-scheduler/balanced
+      :percentage 100 ;; whole thing
+      }
      (concat
       (map
        (fn [out-name]
@@ -317,16 +319,9 @@
         out-task-count (max (quot (count agent-parts)
                                   out-ratio)
                             1) ;; but there should be at least one!
-        #_#_#_#_
-        out-names (map
-                   #(keyword (format "out-%d" %))
-                   (range out-task-count))
-
-        in-names (map
-                  #(keyword (format "in-%d" %))
-                  (range (count agent-parts)))
-
-        out-range (range out-task-count)]
+        out-range (range out-task-count)
+        out-pct (double (/ 100 out-task-count))
+        ]
     (for [[out-idx
            ins] (map vector
                      out-range
@@ -337,7 +332,8 @@
           :let [out-name (keyword (format "out-%d" out-idx))]]
       (reduce
        (partial merge-with into)
-       {:lifecycles [{:lifecycle/task out-name
+       {:percentage out-pct
+        :lifecycles [{:lifecycle/task out-name
                       :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
         :catalog [#_{:onyx/name out-name
                      :onyx/fn ::noop
