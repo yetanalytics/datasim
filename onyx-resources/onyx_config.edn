@@ -33,7 +33,7 @@
   ;; don't allow short circuit locally so we know what breaks in prod
   :onyx.messaging/allow-short-circuit? #profile {:default false
                                                  :prod true}
-  :onyx.peer/storage #or [#keyword #env PEER_STORAGE
+  :onyx.peer/storage #keyword #or [#env PEER_STORAGE
                           :zookeeper]
   :onyx.peer/storage.s3.bucket #env PEER_STORAGE_BUCKET
   :onyx.peer/storage.s3.region #or [#env AWS_REGION
