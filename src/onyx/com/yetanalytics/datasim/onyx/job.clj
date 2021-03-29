@@ -153,9 +153,9 @@
     :or {gen-concurrency 1
          gen-batch-size 1
          out-ratio 8
-         in-batch-size 20
+         in-batch-size 1
          in-batch-timeout 50
-         out-batch-size 20
+         out-batch-size 1
          out-batch-timeout 50
          strip-ids? false
          remove-refs? false}}]
@@ -287,9 +287,9 @@
     :or {gen-concurrency 1
          gen-batch-size 1
          out-ratio 8
-         in-batch-size 20
+         in-batch-size 1
          in-batch-timeout 50
-         out-batch-size 20
+         out-batch-size 1
          out-batch-timeout 50
          strip-ids? false
          remove-refs? false}}]
