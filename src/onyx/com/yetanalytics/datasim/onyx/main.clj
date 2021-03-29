@@ -44,6 +44,9 @@
    [nil "--out-ratio OUT_RATIO" "Ratio of inputs to outputs, defaults to 8"
     :default 1
     :parse-fn #(Integer/parseInt %)]
+   [nil "--percentage PERCENTAGE" "Percentage of cluster to utilize"
+    :default 100
+    :parse-fn #(Integer/parseInt %)]
 
    [nil "--in-batch-size IN_BATCH_SIZE" "Onyx input batch size"
     :default 1
@@ -174,6 +177,7 @@
                       gen-concurrency
                       gen-batch-size
                       out-ratio
+                      percentage
 
                       in-batch-size
                       in-batch-timeout
@@ -195,6 +199,7 @@
                                   :remove-refs? remove-refs
                                   :override-max override-max
                                   :out-ratio out-ratio
+                                  :percentage percentage
 
                                   :gen-concurrency gen-concurrency
                                   :gen-batch-size gen-batch-size
