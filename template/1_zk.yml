@@ -51,6 +51,10 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref InstanceSshCidr
+        - IpProtocol: tcp
+          FromPort: 2181
+          ToPort: 2181
+          CidrIp: !Ref InstanceSshCidr
   InstanceSecurityGroupIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
