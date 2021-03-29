@@ -89,6 +89,7 @@
 
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
+   [nil "--[no-]colo" "Use colocated scheduler (default)" :default true]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
@@ -154,6 +155,8 @@
 
                       block
 
+                      colo
+
                       input-loc
                       override-max
                       strip-ids
@@ -184,71 +187,88 @@
                       s3-max-concurrent-uploads]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
-                                        tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
-                job-config (job/config
-                            {:input-json (slurp input-loc)
-                             :strip-ids? strip-ids
-                             :remove-refs? remove-refs
-                             :override-max override-max
-                             :out-ratio out-ratio
+                                        tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))]
+            (if colo
+              (let [job-configs (job/colo-configs
+                                 {:input-json (slurp input-loc)
+                                  :strip-ids? strip-ids
+                                  :remove-refs? remove-refs
+                                  :override-max override-max
+                                  :out-ratio out-ratio
 
-                             :gen-concurrency gen-concurrency
-                             :gen-batch-size gen-batch-size
+                                  :gen-concurrency gen-concurrency
+                                  :gen-batch-size gen-batch-size
 
-                             :in-batch-size in-batch-size
-                             :in-batch-timeout in-batch-timeout
-                             :out-batch-size out-batch-size
-                             :out-batch-timeout out-batch-timeout
+                                  :in-batch-size in-batch-size
+                                  :in-batch-timeout in-batch-timeout
+                                  :out-batch-size out-batch-size
+                                  :out-batch-timeout out-batch-timeout
 
-                             :s3-bucket s3-bucket
-                             :s3-prefix s3-prefix
-                             :s3-prefix-separator s3-prefix-separator
-                             :s3-encryption s3-encryption
-                             :s3-max-concurrent-uploads s3-max-concurrent-uploads
-                             }
-                            #_{:input-json (slurp input-loc)
-                             :gen-concurrency gen-concurrency
-                             :post-concurrency post-concurrency
-                             :batch-size onyx-batch-size
-                             :strip-ids? strip-ids
-                             :remove-refs? remove-refs
-                             :override-max override-max
+                                  :s3-bucket s3-bucket
+                                  :s3-prefix s3-prefix
+                                  :s3-prefix-separator s3-prefix-separator
+                                  :s3-encryption s3-encryption
+                                  :s3-max-concurrent-uploads s3-max-concurrent-uploads
+                                  })
 
-                             :s3-bucket s3-bucket
-                             :s3-prefix s3-prefix
-                             :s3-prefix-separator s3-prefix-separator
-                             :s3-encryption s3-encryption
-                             :s3-max-concurrent-uploads s3-max-concurrent-uploads
-                             ;; LRS POST
-                             :retry-params
-                             {:base-sleep-ms retry-base-sleep-ms
-                              :max-sleep-ms retry-max-sleep-ms
-                              :max-total-sleep-ms retry-max-total-sleep-ms}
-                             :lrs {:endpoint endpoint
-                                   :username username
-                                   :password password
-                                   :x-api-key x-api-key
-                                   :batch-size lrs-batch-size}})
-                _ (pprint {:job-config (update job-config
-                                               :lifecycles
-                                               (fn [ls]
-                                                 (mapv (fn [lc]
-                                                         (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
-                                                           (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
-                                                           lc))
-                                                       ls)))})
-                submission (onyx.api/submit-job
-                            peer-config
-                            job-config)]
-            (println "submitted!")
-            (clojure.pprint/pprint submission)
-            (when block
-              (println "blocking...")
-              (flush)
-              (println "job complete!"
-                       (onyx.api/await-job-completion peer-config (:job-id submission))))
+                    submissions (doall
+                                 (for [job-config job-configs]
+                                   (onyx.api/submit-job
+                                    peer-config
+                                    job-config)))]
+              (println "submitted!")
+              (clojure.pprint/pprint submissions)
+              (when block
+                (println "blocking...")
+                (flush)
+                (doseq [[idx submission] (map-indexed vector submissions)]
+                  (println (format "job %d complete!" idx) " "
+                           (onyx.api/await-job-completion peer-config (:job-id submission)))))
+              (exit 0 "OK"))
 
-            (exit 0 "OK")))
+              ;; This way runs across the cluster, respects limits
+              ;; BUT is very unstable at large sizes due to comms
+              (let [job-config (job/config
+                                {:input-json (slurp input-loc)
+                                 :strip-ids? strip-ids
+                                 :remove-refs? remove-refs
+                                 :override-max override-max
+                                 :out-ratio out-ratio
+
+                                 :gen-concurrency gen-concurrency
+                                 :gen-batch-size gen-batch-size
+
+                                 :in-batch-size in-batch-size
+                                 :in-batch-timeout in-batch-timeout
+                                 :out-batch-size out-batch-size
+                                 :out-batch-timeout out-batch-timeout
+
+                                 :s3-bucket s3-bucket
+                                 :s3-prefix s3-prefix
+                                 :s3-prefix-separator s3-prefix-separator
+                                 :s3-encryption s3-encryption
+                                 :s3-max-concurrent-uploads s3-max-concurrent-uploads
+                                 })
+                    _ (pprint {:job-config (update job-config
+                                                   :lifecycles
+                                                   (fn [ls]
+                                                     (mapv (fn [lc]
+                                                             (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
+                                                               (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
+                                                               lc))
+                                                           ls)))})
+                    submission (onyx.api/submit-job
+                                peer-config
+                                job-config)]
+                (println "submitted!")
+                (clojure.pprint/pprint submission)
+                (when block
+                  (println "blocking...")
+                  (flush)
+                  (println "job complete!"
+                           (onyx.api/await-job-completion peer-config (:job-id submission))))
+
+                (exit 0 "OK")))))
         "gc"
         (let [{:keys [tenancy-id]} options]
           (println "Performing gc...")
