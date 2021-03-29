@@ -320,7 +320,7 @@
                                   out-ratio)
                             1) ;; but there should be at least one!
         out-range (range out-task-count)
-        out-pct (double (/ 100 out-task-count))
+        out-pct (int (/ 100 out-task-count))
         ]
     (for [[out-idx
            ins] (map vector
