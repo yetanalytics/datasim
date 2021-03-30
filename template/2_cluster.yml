@@ -567,6 +567,7 @@ Resources:
           #!/bin/bash -xe
           # Refer to anything that should trigger an ASG update
           echo 'DATASIM ${ArtifactVersion} from https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          echo 'Tenancy ID: ${TenancyId}'
           # initialize from metadata
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instances --region ${AWS::Region} --configsets default
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
