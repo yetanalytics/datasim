@@ -131,10 +131,10 @@ Parameters:
     Default: -Xmx6G -XX:+UseG1GC
   GenDriverJavaOpts:
     Type: String
-    Default: -Xmx1G -XX:+UseG1GC
+    Default: -Daeron.driver.timeout=20000 -Xmx1G -XX:+UseG1GC
   OutDriverJavaOpts:
     Type: String
-    Default: -Xmx1G -XX:+UseG1GC
+    Default: -Daeron.driver.timeout=20000 -Xmx1G -XX:+UseG1GC
   QueryServerPort:
     Type: String
     Default: 8888
