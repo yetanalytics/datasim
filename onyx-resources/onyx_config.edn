@@ -13,7 +13,7 @@
  :peer-config
  {:onyx/tenancy-id #ref [:env-config :onyx/tenancy-id]
   :zookeeper/address #ref [:env-config :zookeeper/address]
-  :onyx.peer/job-scheduler :onyx.job-scheduler/percentage ;; :onyx.job-scheduler/balanced
+  :onyx.peer/job-scheduler :onyx.job-scheduler/balanced
   :onyx.peer/zookeeper-timeout #long #or [#env ZK_TIMEOUT
                                           1000]
   :onyx.messaging/impl :aeron
