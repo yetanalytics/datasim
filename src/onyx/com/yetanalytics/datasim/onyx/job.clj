@@ -136,6 +136,7 @@
            gen-concurrency
            gen-batch-size
            out-ratio
+           noop
            ;;percentage
 
            in-batch-size
@@ -207,9 +208,12 @@
      (concat
       (map
        (fn [out-name]
-         {:lifecycles [{:lifecycle/task out-name
-                        :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
-          :catalog [#_{:onyx/name out-name
+         {:lifecycles (if noop
+                        []
+                        [{:lifecycle/task out-name
+                          :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}])
+          :catalog [(if noop
+                      {:onyx/name out-name
                        :onyx/fn ::noop
                        :onyx/plugin :onyx.peer.function/function
                        :onyx/medium :function
@@ -217,23 +221,23 @@
                        :onyx/n-peers 1
                        :onyx/batch-size out-batch-size
                        :onyx/batch-timeout out-batch-timeout}
-                    {:onyx/name out-name
-                     :onyx/plugin :onyx.plugin.s3-output/output
-                     :s3/bucket s3-bucket
-                     :s3/encryption s3-encryption
-                     :s3/serializer-fn ::u/batch->json
-                     :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
-                     :s3/prefix s3-prefix
-                     :s3/prefix-separator s3-prefix-separator
-                     :s3/serialize-per-element? false
-                     :s3/max-concurrent-uploads s3-max-concurrent-uploads
-                     :onyx/type :output
-                     :onyx/medium :s3
-                     :onyx/n-peers 1
-                     :onyx/batch-size out-batch-size
-                     :onyx/batch-timeout out-batch-timeout
-                     :onyx/doc "Writes segments to s3 files, one file per batch"
-                     :onyx/required-tags [:out]}
+                      {:onyx/name out-name
+                       :onyx/plugin :onyx.plugin.s3-output/output
+                       :s3/bucket s3-bucket
+                       :s3/encryption s3-encryption
+                       :s3/serializer-fn ::u/batch->json
+                       :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
+                       :s3/prefix s3-prefix
+                       :s3/prefix-separator s3-prefix-separator
+                       :s3/serialize-per-element? false
+                       :s3/max-concurrent-uploads s3-max-concurrent-uploads
+                       :onyx/type :output
+                       :onyx/medium :s3
+                       :onyx/n-peers 1
+                       :onyx/batch-size out-batch-size
+                       :onyx/batch-timeout out-batch-timeout
+                       :onyx/doc "Writes segments to s3 files, one file per batch"
+                       :onyx/required-tags [:out]})
                     ]})
        out-names)
       (map
@@ -272,6 +276,7 @@
            strip-ids?
            remove-refs?
            override-max
+           noop
            ;; JOB
            gen-concurrency
            gen-batch-size
@@ -340,9 +345,12 @@
       (reduce
        (partial merge-with into)
        {;; :percentage out-pct
-        :lifecycles [{:lifecycle/task out-name
-                      :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
-        :catalog [#_{:onyx/name out-name
+        :lifecycles (if noop
+                      []
+                      [{:lifecycle/task out-name
+                        :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}])
+        :catalog [(if noop
+                    {:onyx/name out-name
                      :onyx/fn ::noop
                      :onyx/plugin :onyx.peer.function/function
                      :onyx/medium :function
@@ -350,23 +358,23 @@
                      :onyx/n-peers 1
                      :onyx/batch-size out-batch-size
                      :onyx/batch-timeout out-batch-timeout}
-                  {:onyx/name out-name
-                   :onyx/plugin :onyx.plugin.s3-output/output
-                   :s3/bucket s3-bucket
-                   :s3/encryption s3-encryption
-                   :s3/serializer-fn ::u/batch->json
-                   :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
-                   :s3/prefix s3-prefix
-                   :s3/prefix-separator s3-prefix-separator
-                   :s3/serialize-per-element? false
-                   :s3/max-concurrent-uploads s3-max-concurrent-uploads
-                   :onyx/type :output
-                   :onyx/medium :s3
-                   :onyx/n-peers 1 ;; will be ignored, but hey
-                   :onyx/batch-size out-batch-size
-                   :onyx/batch-timeout out-batch-timeout
-                   :onyx/doc "Writes segments to s3 files, one file per batch"
-                   :onyx/required-tags [:out]}
+                    {:onyx/name out-name
+                     :onyx/plugin :onyx.plugin.s3-output/output
+                     :s3/bucket s3-bucket
+                     :s3/encryption s3-encryption
+                     :s3/serializer-fn ::u/batch->json
+                     :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
+                     :s3/prefix s3-prefix
+                     :s3/prefix-separator s3-prefix-separator
+                     :s3/serialize-per-element? false
+                     :s3/max-concurrent-uploads s3-max-concurrent-uploads
+                     :onyx/type :output
+                     :onyx/medium :s3
+                     :onyx/n-peers 1 ;; will be ignored, but hey
+                     :onyx/batch-size out-batch-size
+                     :onyx/batch-timeout out-batch-timeout
+                     :onyx/doc "Writes segments to s3 files, one file per batch"
+                     :onyx/required-tags [:out]})
                   ]
         :task-scheduler :onyx.task-scheduler/colocated}
        (map

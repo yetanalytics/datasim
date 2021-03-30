@@ -95,6 +95,7 @@
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
    [nil "--[no-]colo" "Use colocated scheduler (default)" :default false]
+   [nil "--[no-]noop" "Output to a leaf function that does nothing" :default false]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
@@ -161,6 +162,7 @@
                       block
 
                       colo
+                      noop
 
                       input-loc
                       override-max
@@ -201,6 +203,7 @@
                                   :remove-refs? remove-refs
                                   :override-max override-max
                                   :out-ratio out-ratio
+                                  :noop noop
                                   :percentage percentage
 
                                   :gen-concurrency gen-concurrency
@@ -241,7 +244,7 @@
                                  :remove-refs? remove-refs
                                  :override-max override-max
                                  :out-ratio out-ratio
-
+                                 :noop noop
                                  :gen-concurrency gen-concurrency
                                  :gen-batch-size gen-batch-size
 
