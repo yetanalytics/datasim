@@ -92,7 +92,7 @@
 
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
-   [nil "--[no-]colo" "Use colocated scheduler (default)" :default true]
+   [nil "--[no-]colo" "Use colocated scheduler (default)" :default false]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
