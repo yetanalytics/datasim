@@ -221,7 +221,7 @@
                      :onyx/plugin :onyx.plugin.s3-output/output
                      :s3/bucket s3-bucket
                      :s3/encryption s3-encryption
-                     :s3/serializer-fn ::u/batch->smile
+                     :s3/serializer-fn ::u/batch->json
                      :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
                      :s3/prefix s3-prefix
                      :s3/prefix-separator s3-prefix-separator
@@ -351,7 +351,7 @@
                    :onyx/plugin :onyx.plugin.s3-output/output
                    :s3/bucket s3-bucket
                    :s3/encryption s3-encryption
-                   :s3/serializer-fn ::u/batch->smile
+                   :s3/serializer-fn ::u/batch->json
                    :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
                    :s3/prefix s3-prefix
                    :s3/prefix-separator s3-prefix-separator

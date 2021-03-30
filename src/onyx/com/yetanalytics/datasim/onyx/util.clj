@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.onyx.util
   (:require [com.yetanalytics.datasim.input :as input]
-            [cheshire.core :as json])
+            [cheshire.core :as json]
+            [byte-streams :as bs])
   (:import [java.io ByteArrayInputStream]))
 
 (defn parse-input
@@ -31,12 +32,15 @@
 
 (defn batch->smile
   "Convert a batch of segments to SMILE data"
-  [segments]
+  ^bytes [segments]
   (json/generate-smile
    (mapcat :statements
            segments)))
 
-(comment
-
-  (batch->smile [{:statements []}])
-  )
+(defn batch->json
+  "Convert a batch of segments to JSON bytes"
+  ^bytes [segments]
+  (bs/to-byte-array
+   (json/generate-string
+    (mapcat :statements
+            segments))))
