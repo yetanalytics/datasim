@@ -95,7 +95,7 @@
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
    [nil "--[no-]colo" "Use colocated scheduler (default)" :default false]
-   [nil "--[no-]noop" "Output to a leaf function that does nothing" :default false]
+   [nil "--noop" "Output to a leaf function that does nothing" :default false]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
@@ -300,7 +300,9 @@
                                   (java.util.UUID/fromString))]
             (let [{:keys [peer-config]} (cond-> (config/get-config)
                                           tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))
-                  gcc-ret (onyx.api/gc-checkpoints peer-config job-id)]
+                  gcc-ret (onyx.api/gc-checkpoints peer-config
+                                                   (:onyx/tenancy-id peer-config)
+                                                   job-id )]
               (println "gc checkpoints result: " gcc-ret)
 
               (exit 0 "OK"))
