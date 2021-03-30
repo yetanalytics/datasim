@@ -232,7 +232,8 @@
                      :onyx/n-peers 1
                      :onyx/batch-size out-batch-size
                      :onyx/batch-timeout out-batch-timeout
-                     :onyx/doc "Writes segments to s3 files, one file per batch"}
+                     :onyx/doc "Writes segments to s3 files, one file per batch"
+                     :onyx/required-tags [:out]}
                     ]})
        out-names)
       (map
@@ -254,12 +255,13 @@
                      :seq/checkpoint? false
                      :onyx/batch-size in-batch-size
                      :onyx/n-peers 1
-                     :onyx/doc (format "Reads segments from seq for partition %s" in-name)}
+                     :onyx/doc (format "Reads segments from seq for partition %s" in-name)
+                     :onyx/required-tags [:gen]}
                     ]})
        in-names
        agent-parts)))))
 
-
+;; TODO: not working. Fix or remove
 (defn colo-configs
   "Build one or more (gen-concurrency / out-ratio) job configs for distributing generation and post of DATASIM simulations
   Specified to run in a single peeer group
@@ -363,7 +365,8 @@
                    :onyx/n-peers 1 ;; will be ignored, but hey
                    :onyx/batch-size out-batch-size
                    :onyx/batch-timeout out-batch-timeout
-                   :onyx/doc "Writes segments to s3 files, one file per batch"}
+                   :onyx/doc "Writes segments to s3 files, one file per batch"
+                   :onyx/required-tags [:out]}
                   ]
         :task-scheduler :onyx.task-scheduler/colocated}
        (map
@@ -387,6 +390,7 @@
                         :seq/checkpoint? false
                         :onyx/batch-size in-batch-size
                         :onyx/n-peers 1
-                        :onyx/doc (format "Reads segments from seq for partition %s" in-name)}
+                        :onyx/doc (format "Reads segments from seq for partition %s" in-name)
+                        :onyx/required-tags [:gen]}
                        ]}))
         ins)))))
