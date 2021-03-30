@@ -17,7 +17,9 @@
             [nrepl.server :as nrepl]
             [cider.nrepl :refer [cider-nrepl-handler]]
             [clojure.pprint :refer [pprint]]
-            onyx.http-query)
+            onyx.http-query
+            com.yetanalytics.datasim.onyx.colo ;; colo overrides
+            )
   (:import [java.net InetAddress]))
 
 (def cli-options
