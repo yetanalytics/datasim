@@ -52,6 +52,8 @@
   :onyx.peer/storage.s3.accelerate? #boolean #or [#env PEER_STORAGE_ACCELERATION
                                                   "false"]
 
+  :onyx.peer/tags [#keyword #or [#env PEER_TAG "default"]]
+
   }
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
