@@ -136,7 +136,7 @@
            gen-concurrency
            gen-batch-size
            out-ratio
-           percentage
+           ;;percentage
 
            in-batch-size
            in-batch-timeout
@@ -154,7 +154,7 @@
     :or {gen-concurrency 1
          gen-batch-size 1
          out-ratio 8
-         percentage 100
+         ;; percentage 100
          in-batch-size 1
          in-batch-timeout 50
          out-batch-size 1
@@ -202,7 +202,7 @@
       :lifecycles []
       :catalog []
       :task-scheduler :onyx.task-scheduler/balanced
-      :percentage percentage
+      ;; :percentage percentage
       }
      (concat
       (map
@@ -274,7 +274,7 @@
            gen-concurrency
            gen-batch-size
            out-ratio
-           percentage
+           ;; percentage
 
            in-batch-size
            in-batch-timeout
@@ -298,7 +298,8 @@
          out-batch-timeout 50
          strip-ids? false
          remove-refs? false
-         percentage 100}}]
+         ;; percentage 100
+         }}]
 
   (assert input-json "Input JSON must be provided")
 
@@ -324,7 +325,7 @@
                                   out-ratio)
                             1) ;; but there should be at least one!
         out-range (range out-task-count)
-        out-pct (int (/ percentage out-task-count))
+        ;; out-pct (int (/ percentage out-task-count))
         ]
     (for [[out-idx
            ins] (map vector
@@ -336,7 +337,7 @@
           :let [out-name (keyword (format "out-%d" out-idx))]]
       (reduce
        (partial merge-with into)
-       {:percentage out-pct
+       {;; :percentage out-pct
         :lifecycles [{:lifecycle/task out-name
                       :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]
         :catalog [#_{:onyx/name out-name
