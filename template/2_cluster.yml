@@ -528,9 +528,11 @@ Resources:
           commands:
             01set_bind_addr:
               command: echo "BIND_ADDR=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)" >> /lib/systemd/system/datasim.env
-            02make_logs_dir:
+            02set_peer_tag:
+              command: echo "PEER_TAG=$(curl http://169.254.169.254/latest/meta-data/instance-id)" >> /lib/systemd/system/datasim.env
+            03make_logs_dir:
               command: mkdir -p /var/log/datasim
-            03restart_rsyslog:
+            04restart_rsyslog:
               command: systemctl restart rsyslog
         05_ds_enable:
           commands:
