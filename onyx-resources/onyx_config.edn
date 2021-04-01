@@ -54,12 +54,12 @@
 
   :onyx.peer/tags #profile {:default [:gen :out]
                             :prod [#keyword #env PEER_TAG]}
-  :onyx.peer/publisher-liveness-timeout-ms 120000
-  :onyx.peer/subscriber-liveness-timeout-ms 120000
-  :onyx.peer/coordinator-max-sleep-ms 10
-  :onyx.peer/coordinator-barrier-period-ms 2000
-  :onyx.peer/heartbeat-ms 1000
+  ;; :onyx.peer/publisher-liveness-timeout-ms 120000
+  ;; :onyx.peer/subscriber-liveness-timeout-ms 120000
+  ;; :onyx.peer/coordinator-max-sleep-ms 10
+  ;; :onyx.peer/coordinator-barrier-period-ms 2000
+  ;; :onyx.peer/heartbeat-ms 1000
   }
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
-                       12]}}
+                       4]}}

@@ -2,12 +2,11 @@
   (:gen-class)
   (:require [onyx.plugin.http-output :as http]
             [onyx.plugin.s3-output]
-            onyx.plugin.seq
             [cheshire.core]
             onyx.api
             com.yetanalytics.datasim.onyx.util
             [com.yetanalytics.datasim.onyx.job :as job]
-            [com.yetanalytics.datasim.onyx.seq :as dseq]
+            [com.yetanalytics.datasim.onyx.sim :as dsim]
             [com.yetanalytics.datasim.onyx.config :as config]
             [com.yetanalytics.datasim.onyx.peer :as peer]
             [com.yetanalytics.datasim.onyx.aeron-media-driver :as driver]
@@ -43,7 +42,7 @@
    ["-b" "--gen-batch-size GEN_BATCH_SIZE" "Generate this number of statements at a time."
     :default 1000
     :parse-fn #(Integer/parseInt %)]
-   [nil "--out-ratio OUT_RATIO" "Ratio of inputs to outputs, defaults to 8"
+   ["-r" "--out-ratio OUT_RATIO" "Ratio of inputs to outputs, defaults to 8"
     :default 1
     :parse-fn #(Integer/parseInt %)]
    [nil "--percentage PERCENTAGE" "Percentage of cluster to utilize"
@@ -94,7 +93,6 @@
 
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
-   [nil "--[no-]colo" "Use colocated scheduler (default)" :default false]
    [nil "--noop" "Output to a leaf function that does nothing" :default false]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
@@ -196,49 +194,7 @@
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))]
-            (if colo
-              (let [job-configs (job/colo-configs
-                                 {:input-json (slurp input-loc)
-                                  :strip-ids? strip-ids
-                                  :remove-refs? remove-refs
-                                  :override-max override-max
-                                  :out-ratio out-ratio
-                                  :noop noop
-                                  :percentage percentage
-
-                                  :gen-concurrency gen-concurrency
-                                  :gen-batch-size gen-batch-size
-
-                                  :in-batch-size in-batch-size
-                                  :in-batch-timeout in-batch-timeout
-                                  :out-batch-size out-batch-size
-                                  :out-batch-timeout out-batch-timeout
-
-                                  :s3-bucket s3-bucket
-                                  :s3-prefix s3-prefix
-                                  :s3-prefix-separator s3-prefix-separator
-                                  :s3-encryption s3-encryption
-                                  :s3-max-concurrent-uploads s3-max-concurrent-uploads
-                                  })
-
-                    submissions (doall
-                                 (for [job-config job-configs]
-                                   (onyx.api/submit-job
-                                    peer-config
-                                    job-config)))]
-              (println "submitted!")
-              (clojure.pprint/pprint submissions)
-              (when block
-                (println "blocking...")
-                (flush)
-                (doseq [[idx submission] (map-indexed vector submissions)]
-                  (println (format "job %d complete!" idx) " "
-                           (onyx.api/await-job-completion peer-config (:job-id submission)))))
-              (exit 0 "OK"))
-
-              ;; This way runs across the cluster, respects limits
-              ;; BUT is very unstable at large sizes due to comms
-              (let [job-config (job/config
+            (let [job-config (job/config
                                 {:input-json (slurp input-loc)
                                  :strip-ids? strip-ids
                                  :remove-refs? remove-refs
@@ -263,8 +219,8 @@
                                                    :lifecycles
                                                    (fn [ls]
                                                      (mapv (fn [lc]
-                                                             (if (:com.yetanalytics.datasim.onyx.seq/input-json lc)
-                                                               (assoc lc :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
+                                                             (if (:com.yetanalytics.datasim.onyx.sim/input-json lc)
+                                                               (assoc lc :com.yetanalytics.datasim.onyx.sim/input-json "<json>")
                                                                lc))
                                                            ls)))})
                     submission (onyx.api/submit-job
@@ -278,7 +234,7 @@
                   (println "job complete!"
                            (onyx.api/await-job-completion peer-config (:job-id submission))))
 
-                (exit 0 "OK")))))
+                (exit 0 "OK"))))
         "gc"
         (let [{:keys [tenancy-id]} options]
           (println "Performing gc...")

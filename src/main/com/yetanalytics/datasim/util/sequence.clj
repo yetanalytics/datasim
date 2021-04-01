@@ -21,6 +21,17 @@
               key-fn
               (assoc seqs' idx rest-seq)))))))
 
+;; https://clojuredocs.org/clojure.core/chunk#example-5c9cebc3e4b0ca44402ef6ec
+(defn re-chunk
+  "takes a sequence (already chunked or not)
+  and produces another sequence with different chunking size."
+  [n xs]
+  (lazy-seq
+   (when-let [s (seq (take n xs))]
+     (let [cb (chunk-buffer n)]
+       (doseq [x s] (chunk-append cb x))
+       (chunk-cons (chunk cb) (re-chunk n (drop n xs)))))))
+
 (comment
   (require '[com.yetanalytics.datasim.random :as r])
 
