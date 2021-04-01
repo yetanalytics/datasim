@@ -157,7 +157,7 @@
                                 ::dsim/strip-ids? strip-ids?
                                 ::dsim/remove-refs? remove-refs?
                                 ::dsim/select-agents (set ids)
-                                ;; ::dsim/batch-size gen-batch-size
+                                ::dsim/batch-size gen-batch-size
                                 }
                          ?part-max (assoc ::dsim/take-n ?part-max))]
           :catalog [{:onyx/name in-name

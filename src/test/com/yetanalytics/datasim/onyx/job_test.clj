@@ -13,8 +13,8 @@
                            :out-concurrency 4
                            :out-batch-size 3000})
 
-        inputs (keep :com.yetanalytics.datasim.onyx.seq/input-json lifecycles)
-        parts (keep :com.yetanalytics.datasim.onyx.seq/select-agents
+        inputs (keep :com.yetanalytics.datasim.onyx.sim/input-json lifecycles)
+        parts (keep :com.yetanalytics.datasim.onyx.sim/select-agents
                     lifecycles)]
     (testing "Partitions 64 actors into 4 partitons of 16 agents each"
       (is (= 4 (count workflow)))
