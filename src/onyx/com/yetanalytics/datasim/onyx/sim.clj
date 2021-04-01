@@ -19,42 +19,40 @@
            batch-size]
     :as args}]
   (lazy-seq
-   (map
-    #(with-meta % nil)
-    (cond->> (if select-agents
-               (sim/sim-seq
-                input
-                :select-agents select-agents)
-               (sim/sim-seq
-                input))
-      drop-n (drop drop-n)
-      take-n (take take-n)
-      strip-ids?
-      (map
-       #(dissoc % "id"))
-      remove-refs?
-      (remove
-       #(= "StatementRef"
-           (get-in % ["object" "objectType"])))
-      ;; chop em up
-      batch-size
-      (->> (partition-all
-            batch-size)
-           (map-indexed
-            (fn [idx statements]
-              {:chunk-idx idx
-               :range [(-> statements
-                           first
-                           meta
-                           :timestamp-ms)
-                       (-> statements
-                           last
-                           meta
-                           :timestamp-ms)]
-               :statements (into []
-                                 (map
-                                  #(with-meta % nil)
-                                  statements))})))))))
+   (cond->> (if select-agents
+              (sim/sim-seq
+               input
+               :select-agents select-agents)
+              (sim/sim-seq
+               input))
+     drop-n (drop drop-n)
+     take-n (take take-n)
+     strip-ids?
+     (map
+      #(dissoc % "id"))
+     remove-refs?
+     (remove
+      #(= "StatementRef"
+          (get-in % ["object" "objectType"])))
+     ;; chop em up
+     batch-size
+     (partition-all batch-size)
+     batch-size
+     (map-indexed
+      (fn [idx statements]
+        {:chunk-idx idx
+         :range [(-> statements
+                     first
+                     meta
+                     :timestamp-ms)
+                 (-> statements
+                     last
+                     meta
+                     :timestamp-ms)]
+         :statements (into []
+                           (map
+                            #(with-meta % nil)
+                            statements))})))))
 
 (defn inject-sim-input [_ {input-json ::input-json
                            select-agents ::select-agents
@@ -182,8 +180,6 @@
 
   (def i (input/from-location :input :json "dev-resources/input/mom.json"))
 
-
-
-  (chunked-seq? (re-chunk 1000 (sim/sim-seq i)))
+  (first (init-seq i {:batch-size 10}))
 
  )
