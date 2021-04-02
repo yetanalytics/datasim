@@ -94,6 +94,7 @@ Parameters:
     Description: EC2 Instance Type to launch in autoscaling group.
     Default: c5.xlarge
     AllowedValues:
+      - m5.large
       - c5.large
       - c5.xlarge
       - c5.2xlarge
@@ -103,6 +104,7 @@ Parameters:
     Description: EC2 Instance Type to launch in autoscaling group.
     Default: c5.xlarge
     AllowedValues:
+      - m5.large
       - c5.large
       - c5.xlarge
       - c5.2xlarge
@@ -438,12 +440,14 @@ Resources:
               content: !Sub |
                 {
                   "metrics": {
+                    "namespace": "DATASIM Cluster Metrics",
                     "append_dimensions": {
                       "AutoScalingGroupName": "${!aws:AutoScalingGroupName}",
                       "ImageId": "${!aws:ImageId}",
                       "InstanceId": "${!aws:InstanceId}",
                       "InstanceType": "${!aws:InstanceType}"
                     },
+                    "aggregation_dimensions": [["AutoScalingGroupName"],["AutoScalingGroupName","PeerTag"]],
                     "metrics_collected": {
                       "cpu": {
                         "measurement": [
@@ -451,17 +455,34 @@ Resources:
                           "usage_nice",
                           "usage_system",
                           "usage_user"
-                        ]
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "gen"
+                        }
                       },
                       "mem": {
                         "measurement": [
                           "mem_used_percent"
-                        ]
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "gen"
+                        }
                       },
                       "swap": {
                         "measurement": [
                           "swap_used_percent"
-                        ]
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "gen"
+                        }
+                      },
+                      "net": {
+                        "measurement": [
+                          "bytes_sent", "bytes_recv"
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "gen"
+                        }
                       }
                     }
                   },
@@ -693,12 +714,14 @@ Resources:
               content: !Sub |
                 {
                   "metrics": {
+                    "namespace": "DATASIM Cluster Metrics",
                     "append_dimensions": {
                       "AutoScalingGroupName": "${!aws:AutoScalingGroupName}",
                       "ImageId": "${!aws:ImageId}",
                       "InstanceId": "${!aws:InstanceId}",
                       "InstanceType": "${!aws:InstanceType}"
                     },
+                    "aggregation_dimensions": [["AutoScalingGroupName"],["AutoScalingGroupName","PeerTag"]],
                     "metrics_collected": {
                       "cpu": {
                         "measurement": [
@@ -706,17 +729,34 @@ Resources:
                           "usage_nice",
                           "usage_system",
                           "usage_user"
-                        ]
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "out"
+                        }
                       },
                       "mem": {
                         "measurement": [
                           "mem_used_percent"
-                        ]
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "out"
+                        }
                       },
                       "swap": {
                         "measurement": [
                           "swap_used_percent"
-                        ]
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "out"
+                        }
+                      },
+                      "net": {
+                        "measurement": [
+                          "bytes_sent", "bytes_recv"
+                        ],
+                        "append_dimensions": {
+                          "PeerTag": "out"
+                        }
                       }
                     }
                   },
