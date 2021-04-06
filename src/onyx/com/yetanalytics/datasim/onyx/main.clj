@@ -17,7 +17,8 @@
             [cider.nrepl :refer [cider-nrepl-handler]]
             [clojure.pprint :refer [pprint]]
             onyx.http-query
-            com.yetanalytics.datasim.onyx.colo ;; colo overrides
+            ;; com.yetanalytics.datasim.onyx.colo ;; colo overrides
+            com.yetanalytics.datasim.onyx.scheduling.semi-colocated-task-scheduler
             )
   (:import [java.net InetAddress]))
 

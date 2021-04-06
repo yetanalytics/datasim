@@ -111,7 +111,7 @@
                            (cycle out-names)))
       :lifecycles []
       :catalog []
-      :task-scheduler :onyx.task-scheduler/balanced
+      :task-scheduler :onyx.task-scheduler/semi-colocated
       ;; :percentage percentage
       }
      (concat
@@ -145,8 +145,7 @@
                        :onyx/n-peers 1
                        :onyx/batch-size out-batch-size
                        :onyx/batch-timeout out-batch-timeout
-                       :onyx/doc "Writes segments to s3 files, one file per batch"
-                       :onyx/required-tags [:out]})
+                       :onyx/doc "Writes segments to s3 files, one file per batch"})
                     ]})
        out-names)
       (map
@@ -167,8 +166,7 @@
                      ;; :seq/checkpoint? false
                      :onyx/batch-size in-batch-size
                      :onyx/n-peers 1
-                     :onyx/doc (format "Reads segments from seq for partition %s" in-name)
-                     :onyx/required-tags [:gen]}
+                     :onyx/doc (format "Reads segments from seq for partition %s" in-name)}
                     ]})
        in-names
        agent-parts)))))

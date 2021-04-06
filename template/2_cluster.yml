@@ -10,14 +10,10 @@ Parameters:
     Description: Onyx peer coms port
     Type: Number
     Default: 40200
-  GenVPeersCount:
+  VPeersCount:
     Description: The number of virtual peers to launch on each instance.
     Type: Number
     Default: 4
-  OutVPeersCount:
-    Description: The number of virtual peers to launch on each s3 output instance
-    Type: Number
-    Default: 1
   LogRetentionInDays:
     Description: How long to retain Cloudwatch Logs
     Type: Number
@@ -65,41 +61,19 @@ Parameters:
 
 # ASG-specific Settings
 
-  GenASGMinSize:
+  ASGMinSize:
     Type: Number
     Default: 0
     Description: Minimum number of instances to launch in the autoscaling group.
-  OutASGMinSize:
-    Type: Number
-    Default: 0
-    Description: Minimum number of instances to launch in the autoscaling group.
-  GenASGDesiredSize:
+  ASGDesiredSize:
     Type: Number
     Description: Desired number of instances to launch in the autoscaling group.
     Default: 1
-  OutASGDesiredSize:
-    Type: Number
-    Description: Desired number of instances to launch in the autoscaling group.
-    Default: 1
-  GenASGMaxSize:
+  ASGMaxSize:
     Type: Number
     Description: Maximum number of instances to launch in the autoscaling group.
     Default: 2
-  OutASGMaxSize:
-    Type: Number
-    Description: Maximum number of instances to launch in the autoscaling group.
-    Default: 2
-  GenASGInstanceType:
-    Type: String
-    Description: EC2 Instance Type to launch in autoscaling group.
-    Default: c5.xlarge
-    AllowedValues:
-      - m5.large
-      - c5.large
-      - c5.xlarge
-      - c5.2xlarge
-      - c5.4xlarge
-  OutASGInstanceType:
+  ASGInstanceType:
     Type: String
     Description: EC2 Instance Type to launch in autoscaling group.
     Default: c5.xlarge
@@ -125,18 +99,14 @@ Parameters:
     Type: String
 
   # For the default of c5.2xlarge
-  GenPeerJavaOpts:
+  PeerJavaOpts:
     Type: String
     Default: -Xmx6G -XX:+UseG1GC
-  OutPeerJavaOpts:
-    Type: String
-    Default: -Xmx6G -XX:+UseG1GC
-  GenDriverJavaOpts:
+
+  DriverJavaOpts:
     Type: String
     Default: -Daeron.driver.timeout=20000 -Xmx1G -XX:+UseG1GC
-  OutDriverJavaOpts:
-    Type: String
-    Default: -Daeron.driver.timeout=20000 -Xmx1G -XX:+UseG1GC
+
   QueryServerPort:
     Type: String
     Default: 8888
@@ -162,12 +132,9 @@ Metadata:
         Parameters:
           - TenancyId
           - PeerPort
-          - GenVPeersCount
-          - OutVPeersCount
-          - GenPeerJavaOpts
-          - OutPeerJavaOpts
-          - GenDriverJavaOpts
-          - OutDriverJavaOpts
+          - VPeersCount
+          - PeerJavaOpts
+          - DriverJavaOpts
           - QueryServerPort
           - HealthCheckThreshold
           - LogRetentionInDays
@@ -196,14 +163,10 @@ Metadata:
       - Label:
           default: 'ASG (Backend) Settings'
         Parameters:
-          - GenASGDesiredSize
-          - OutASGDesiredSize
-          - GenASGMinSize
-          - OutASGMinSize
-          - GenASGMaxSize
-          - OutASGMaxSize
-          - GenASGInstanceType
-          - OutASGInstanceType
+          - ASGDesiredSize
+          - ASGMinSize
+          - ASGMaxSize
+          - ASGInstanceType
           - ASGCPUPolicyTargetValue
           - ASGInstanceAmiId
           - EC2KeyName
@@ -359,7 +322,7 @@ Resources:
       SourceSecurityGroupId:
         Ref: InstanceSG
 
-  GenInstances:
+  Instances:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
       AWS::CloudFormation::Authentication:
@@ -410,8 +373,8 @@ Resources:
                content: !Sub |
                  [cfn-auto-reloader-hook]
                  triggers=post.update
-                 path=Resources.GenInstances.Metadata.AWS::CloudFormation::Init.02_config-amazon-cloudwatch-agent
-                 action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource GenInstances --region ${AWS::Region} --configsets UpdateEnvironment
+                 path=Resources.Instances.Metadata.AWS::CloudFormation::Init.02_config-amazon-cloudwatch-agent
+                 action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instances --region ${AWS::Region} --configsets UpdateEnvironment
                  runas=root
                mode: '000400'
                owner: root
@@ -447,7 +410,7 @@ Resources:
                       "InstanceId": "${!aws:InstanceId}",
                       "InstanceType": "${!aws:InstanceType}"
                     },
-                    "aggregation_dimensions": [["AutoScalingGroupName"],["AutoScalingGroupName","PeerTag"]],
+                    "aggregation_dimensions": [["AutoScalingGroupName"]],
                     "metrics_collected": {
                       "cpu": {
                         "measurement": [
@@ -455,34 +418,22 @@ Resources:
                           "usage_nice",
                           "usage_system",
                           "usage_user"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "gen"
-                        }
+                        ]
                       },
                       "mem": {
                         "measurement": [
                           "mem_used_percent"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "gen"
-                        }
+                        ]
                       },
                       "swap": {
                         "measurement": [
                           "swap_used_percent"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "gen"
-                        }
+                        ]
                       },
                       "net": {
                         "measurement": [
                           "bytes_sent", "bytes_recv"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "gen"
-                        }
+                        ]
                       }
                     }
                   },
@@ -516,7 +467,7 @@ Resources:
           files:
             '/lib/systemd/system/aeron.env':
               content: !Sub |
-                JAVA_OPTS=${GenDriverJavaOpts}
+                JAVA_OPTS=${DriverJavaOpts}
             '/lib/systemd/system/datasim.env':
               content: !Sub |
                 TENANCY_ID=${TenancyId}
@@ -525,19 +476,18 @@ Resources:
                 ZK_SERVER_PORT=${ZooKeeperPort}
                 ZK_TIMEOUT=${ZooKeeperTimeout}
                 PEER_PORT=${PeerPort}
-                N_VPEERS=${GenVPeersCount}
+                N_VPEERS=${VPeersCount}
                 LANG=en_US.UTF-8
                 AWS_REGION=${AWS::Region}
                 X_RAY_ENABLED=true
                 AWS_XRAY_CONTEXT_MISSING=LOG_ERROR
                 AWS_XRAY_TRACING_NAME=${AWS::StackName}:${AWS::Region}
-                JAVA_OPTS=${GenPeerJavaOpts}
+                JAVA_OPTS=${PeerJavaOpts}
                 PEER_STORAGE=s3
                 PEER_STORAGE_BUCKET=${StorageBucket}
                 PEER_STORAGE_PREFIX=${AWS::StackName}/${TenancyId}/
                 PEER_STORAGE_TIMEOUT=${PeerStorageTimeout}
                 PEER_STORAGE_ACCELERATION=${EnablePeerStorageAcceleration}
-                PEER_TAG=gen
             '/lib/systemd/system/aeron.service':
               content: !Sub |
                 [Unit]
@@ -616,7 +566,7 @@ Resources:
       ImageId: !Ref ASGInstanceAmiId
       SecurityGroups:
         - !Ref InstanceSG
-      InstanceType: !Ref GenASGInstanceType
+      InstanceType: !Ref ASGInstanceType
       IamInstanceProfile: !Ref InstanceProfile
       KeyName: !If
         - EC2KeyNameProvided
@@ -628,304 +578,18 @@ Resources:
           # Refer to anything that should trigger an ASG update
           echo 'DATASIM ${ArtifactVersion} from https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
           echo 'Tenancy ID: ${TenancyId}'
-          echo 'Peer Type: :gen'
           # initialize from metadata
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource GenInstances --region ${AWS::Region} --configsets default
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource GenAutoScalingGroup --region ${AWS::Region}
-
-  OutInstances:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    Metadata:
-      AWS::CloudFormation::Authentication:
-        S3AccessCreds:
-          type: 'S3'
-          roleName: !Ref InstanceRole
-          buckets:
-            - !Ref ArtifactBucketName
-      # The cfn-init helper script processes these configuration sections in the following order: packages, groups, users, sources, files, commands, and then services.
-      AWS::CloudFormation::Init:
-        configSets:
-          default:
-            - 00_installDeps
-            - 01_setupCfnHup
-            - 02_config-amazon-cloudwatch-agent
-            - 03_restart_amazon-cloudwatch-agent
-            - 04_ds_install
-            - 05_ds_enable
-            - 06_ds_start
-          UpdateEnvironment:
-            - 02_config-amazon-cloudwatch-agent
-            - 03_restart_amazon-cloudwatch-agent
-          UpdateDS:
-            - 04_ds_install
-            - 07_ds_restart
-        00_installDeps:
-          packages:
-            rpm:
-              xray: https://s3.us-east-2.amazonaws.com/aws-xray-assets.us-east-2/xray-daemon/aws-xray-daemon-3.x.rpm
-              amazon-cloudwatch-agent: https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
-          commands:
-            00_install_platform_deps:
-              command: amazon-linux-extras install -y java-openjdk11
-        # Cfn-hup setting, it is to monitor the change of metadata.
-        # When there is change in the contents of json file in the metadata section, cfn-hup will call cfn-init to restart the AmazonCloudWatchAgent.
-        01_setupCfnHup:
-          files:
-             '/etc/cfn/cfn-hup.conf':
-               content: !Sub |
-                 [main]
-                 stack=${AWS::StackId}
-                 region=${AWS::Region}
-                 interval=1
-               mode: '000400'
-               owner: root
-               group: root
-             '/etc/cfn/hooks.d/amazon-cloudwatch-agent-auto-reloader.conf':
-               content: !Sub |
-                 [cfn-auto-reloader-hook]
-                 triggers=post.update
-                 path=Resources.OutInstances.Metadata.AWS::CloudFormation::Init.02_config-amazon-cloudwatch-agent
-                 action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource OutInstances --region ${AWS::Region} --configsets UpdateEnvironment
-                 runas=root
-               mode: '000400'
-               owner: root
-               group: root
-             "/lib/systemd/system/cfn-hup.service":
-                content: !Sub |
-                  [Unit]
-                  Description=cfn-hup daemon
-                  [Service]
-                  Type=simple
-                  ExecStart=/opt/aws/bin/cfn-hup
-                  Restart=always
-                  [Install]
-                  WantedBy=multi-user.target
-          commands:
-            01enable_cfn_hup:
-              command: !Sub |
-                systemctl enable cfn-hup.service
-            02start_cfn_hup:
-              command: !Sub |
-                systemctl start cfn-hup.service
-        # Definition of json configuration of AmazonCloudWatchAgent, you can change the configuration below.
-        02_config-amazon-cloudwatch-agent:
-          files:
-            '/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json':
-              content: !Sub |
-                {
-                  "metrics": {
-                    "namespace": "DATASIM Cluster Metrics",
-                    "append_dimensions": {
-                      "AutoScalingGroupName": "${!aws:AutoScalingGroupName}",
-                      "ImageId": "${!aws:ImageId}",
-                      "InstanceId": "${!aws:InstanceId}",
-                      "InstanceType": "${!aws:InstanceType}"
-                    },
-                    "aggregation_dimensions": [["AutoScalingGroupName"],["AutoScalingGroupName","PeerTag"]],
-                    "metrics_collected": {
-                      "cpu": {
-                        "measurement": [
-                          "usage_active",
-                          "usage_nice",
-                          "usage_system",
-                          "usage_user"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "out"
-                        }
-                      },
-                      "mem": {
-                        "measurement": [
-                          "mem_used_percent"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "out"
-                        }
-                      },
-                      "swap": {
-                        "measurement": [
-                          "swap_used_percent"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "out"
-                        }
-                      },
-                      "net": {
-                        "measurement": [
-                          "bytes_sent", "bytes_recv"
-                        ],
-                        "append_dimensions": {
-                          "PeerTag": "out"
-                        }
-                      }
-                    }
-                  },
-                  "logs":{
-                    "logs_collected": {
-                      "files":{
-                        "collect_list": [
-                          {
-                            "file_path": "/var/log/datasim/*.log",
-                            "auto_removal": true,
-                            "log_group_name": "${LogGroup}",
-                            "log_stream_name": "datasim-instance-{instance_id}"
-                          }
-                        ]
-                      }
-                    },
-                    "log_stream_name": "datasim-instance-{instance_id}"
-                  }
-                }
-        # Invoke amazon-cloudwatch-agent-ctl to restart the AmazonCloudWatchAgent.
-        03_restart_amazon-cloudwatch-agent:
-          commands:
-            01_stop_service:
-              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop
-            02_start_service:
-              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
-        04_ds_install:
-          sources:
-            '/datasim': !Sub 'https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
-          # App Service File
-          files:
-            '/lib/systemd/system/aeron.env':
-              content: !Sub |
-                JAVA_OPTS=${OutDriverJavaOpts}
-            '/lib/systemd/system/datasim.env':
-              content: !Sub |
-                TENANCY_ID=${TenancyId}
-                ONYX_PROFILE=prod
-                ZK_ADDRESS=${ZooKeeperAddress}
-                ZK_SERVER_PORT=${ZooKeeperPort}
-                ZK_TIMEOUT=${ZooKeeperTimeout}
-                PEER_PORT=${PeerPort}
-                N_VPEERS=${OutVPeersCount}
-                LANG=en_US.UTF-8
-                AWS_REGION=${AWS::Region}
-                X_RAY_ENABLED=true
-                AWS_XRAY_CONTEXT_MISSING=LOG_ERROR
-                AWS_XRAY_TRACING_NAME=${AWS::StackName}:${AWS::Region}
-                JAVA_OPTS=${OutPeerJavaOpts}
-                PEER_STORAGE=s3
-                PEER_STORAGE_BUCKET=${StorageBucket}
-                PEER_STORAGE_PREFIX=${AWS::StackName}/${TenancyId}/
-                PEER_STORAGE_TIMEOUT=${PeerStorageTimeout}
-                PEER_STORAGE_ACCELERATION=${EnablePeerStorageAcceleration}
-                PEER_TAG=out
-            '/lib/systemd/system/aeron.service':
-              content: !Sub |
-                [Unit]
-                Description=Aeron Media Driver
-                [Service]
-                User=root
-                # The configuration file application.properties should be here:
-                WorkingDirectory=/datasim
-                EnvironmentFile=/lib/systemd/system/aeron.env
-                ExecStart=/datasim/bin/peer_driver.sh
-                SuccessExitStatus=143
-                TimeoutStopSec=10
-                Restart=on-failure
-                RestartSec=5
-                StandardOutput=syslog
-                StandardError=syslog
-                SyslogIdentifier=aeron
-                [Install]
-                WantedBy=multi-user.target
-            '/lib/systemd/system/datasim.service':
-              content: !Sub |
-                [Unit]
-                Description=Datasim Cluster Peer
-                Requires=aeron.service
-                [Service]
-                User=root
-                # The configuration file application.properties should be here:
-                WorkingDirectory=/datasim
-                EnvironmentFile=/lib/systemd/system/datasim.env
-                ExecStart=/datasim/bin/peer.sh
-                SuccessExitStatus=143
-                TimeoutStopSec=10
-                Restart=on-failure
-                RestartSec=5
-                StandardOutput=syslog
-                StandardError=syslog
-                SyslogIdentifier=datasim
-                [Install]
-                WantedBy=multi-user.target
-            '/etc/rsyslog.d/aeron.conf':
-              content: |
-                if $programname == 'aeron' then /var/log/datasim/aeron.log
-                & stop
-            '/etc/rsyslog.d/datasim.conf':
-              content: |
-                if $programname == 'datasim' then /var/log/datasim/datasim.log
-                & stop
-          commands:
-            01set_bind_addr:
-              command: echo "BIND_ADDR=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)" >> /lib/systemd/system/datasim.env
-            02make_logs_dir:
-              command: mkdir -p /var/log/datasim
-            03restart_rsyslog:
-              command: systemctl restart rsyslog
-        05_ds_enable:
-          commands:
-            01enable_aeron:
-              command: systemctl enable aeron.service
-            02enable_ds:
-              command: systemctl enable datasim.service
-        06_ds_start:
-          commands:
-            01start_aeron:
-              command: systemctl start aeron.service
-            02start_ds:
-              command: systemctl start datasim.service
-        07_ds_restart:
-          commands:
-            01daemon_reload:
-              command: systemctl daemon-reload
-            02restart_aeron:
-              command: systemctl restart aeron.service
-            03restart_ds:
-              command: systemctl restart datasim.service
-    Properties:
-      ImageId: !Ref ASGInstanceAmiId
-      SecurityGroups:
-        - !Ref InstanceSG
-      InstanceType: !Ref OutASGInstanceType
-      IamInstanceProfile: !Ref InstanceProfile
-      KeyName: !If
-        - EC2KeyNameProvided
-        - !Ref EC2KeyName
-        - !Ref AWS::NoValue
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash -xe
-          # Refer to anything that should trigger an ASG update
-          echo 'DATASIM ${ArtifactVersion} from https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
-          echo 'Tenancy ID: ${TenancyId}'
-          echo 'Peer Type: :out'
-          # initialize from metadata
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource OutInstances --region ${AWS::Region} --configsets default
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource OutAutoScalingGroup --region ${AWS::Region}
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instances --region ${AWS::Region} --configsets default
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
 
   # Autoscaling Policies
 
   # Average CPU utilization of instances
-  GenASGCPUPolicy:
+  ASGCPUPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Condition: ASGCPUPolicyTargetValueProvided
     Properties:
-      AutoScalingGroupName: !Ref GenAutoScalingGroup
-      PolicyType: TargetTrackingScaling
-      TargetTrackingConfiguration:
-        PredefinedMetricSpecification:
-          PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: !Ref ASGCPUPolicyTargetValue
-
-  OutASGCPUPolicy:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Condition: ASGCPUPolicyTargetValueProvided
-    Properties:
-      AutoScalingGroupName: !Ref OutAutoScalingGroup
+      AutoScalingGroupName: !Ref AutoScalingGroup
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
@@ -933,45 +597,14 @@ Resources:
         TargetValue: !Ref ASGCPUPolicyTargetValue
 
   # ASG infra
-  GenAutoScalingGroup:
+  AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       VPCZoneIdentifier: !Ref Subnets
-      LaunchConfigurationName: !Ref GenInstances
-      MinSize: !Ref GenASGMinSize
-      MaxSize: !Ref GenASGMaxSize
-      DesiredCapacity: !Ref GenASGDesiredSize
-      HealthCheckType: ELB
-      HealthCheckGracePeriod: 120
-      TargetGroupARNs:
-        - !Ref TargetGroup
-      # Enable Group Metrics Collection
-      MetricsCollection:
-        - Granularity: '1Minute'
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT15M
-    UpdatePolicy:
-      AutoScalingRollingUpdate:
-        MinInstancesInService: '1'
-        MaxBatchSize: '1'
-        PauseTime: PT15M
-        WaitOnResourceSignals: 'true'
-        SuspendProcesses:
-          - HealthCheck
-          - ReplaceUnhealthy
-          - AZRebalance
-          - AlarmNotification
-          - ScheduledActions
-
-  OutAutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      VPCZoneIdentifier: !Ref Subnets
-      LaunchConfigurationName: !Ref OutInstances
-      MinSize: !Ref OutASGMinSize
-      MaxSize: !Ref OutASGMaxSize
-      DesiredCapacity: !Ref OutASGDesiredSize
+      LaunchConfigurationName: !Ref Instances
+      MinSize: !Ref ASGMinSize
+      MaxSize: !Ref ASGMaxSize
+      DesiredCapacity: !Ref ASGDesiredSize
       HealthCheckType: ELB
       HealthCheckGracePeriod: 120
       TargetGroupARNs:

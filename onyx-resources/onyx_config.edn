@@ -52,7 +52,7 @@
   :onyx.peer/storage.s3.accelerate? #boolean #or [#env PEER_STORAGE_ACCELERATION
                                                   "false"]
 
-  :onyx.peer/tags #profile {:default [:gen :out]
+  #_#_:onyx.peer/tags #profile {:default [:gen :out]
                             :prod [#keyword #env PEER_TAG]}
   ;; :onyx.peer/publisher-liveness-timeout-ms 120000
   ;; :onyx.peer/subscriber-liveness-timeout-ms 120000
