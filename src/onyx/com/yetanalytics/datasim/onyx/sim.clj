@@ -25,8 +25,8 @@
                :select-agents select-agents)
               (sim/sim-seq
                input))
-     drop-n (drop (* drop-n batch-size))
      take-n (take take-n)
+     drop-n (drop (* drop-n batch-size))
      strip-ids?
      (map
       #(dissoc % "id"))
