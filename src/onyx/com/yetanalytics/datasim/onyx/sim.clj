@@ -41,7 +41,7 @@
      (map-indexed
       (fn [idx statements]
         {:chunk-idx (cond-> idx
-                      drop-n (+ (* drop-n batch-size)))
+                      drop-n (+ (quot drop-n batch-size)))
          :range [(-> statements
                      first
                      meta
