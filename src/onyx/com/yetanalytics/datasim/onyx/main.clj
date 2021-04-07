@@ -88,7 +88,7 @@
     :parse-fn keyword
     :default :none]
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
-    :default 20
+    :default 10 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
     :parse-fn #(Integer/parseInt %)]
 
 
