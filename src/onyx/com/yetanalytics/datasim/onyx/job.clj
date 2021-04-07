@@ -4,7 +4,8 @@
             [com.yetanalytics.datasim.onyx.util :as u]
             [com.yetanalytics.datasim.onyx.http :as http]
             [cheshire.core :as json]
-            [taoensso.timbre :as log])
+            [taoensso.timbre :as log]
+            [clojure.string :as cs])
   (:import [java.util TimeZone]
            [java.text SimpleDateFormat]
            [java.time Instant]))
@@ -35,6 +36,9 @@
   [seg]
   nil)
 
+(defn escaped-inst ^String [^Instant instant]
+  (cs/escape  (.toString instant) {\. \_}))
+
 (defn output-naming-fn [{:keys [onyx.core/lifecycle-id
                                 onyx.core/task
                                 onyx.core/batch]
@@ -47,8 +51,8 @@
       (format
        "%s/%s_to_%s_chunk_%d_to_%d_count_%d"
        (name task)
-       (.toString range-start)
-       (.toString range-end)
+       (escaped-inst range-start)
+       (escaped-inst range-end)
        idx-start
        idx-end
        (count (mapcat :statements batch))))
