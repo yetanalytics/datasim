@@ -88,7 +88,8 @@
     :parse-fn keyword
     :default :none]
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
-    :default 20]
+    :default 20
+    :parse-fn #(Integer/parseInt %)]
 
 
 
