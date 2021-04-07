@@ -4,7 +4,10 @@
             [com.yetanalytics.datasim.onyx.util :as u]
             [com.yetanalytics.datasim.onyx.http :as http]
             [cheshire.core :as json]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log])
+  (:import [java.util TimeZone]
+           [java.text SimpleDateFormat]
+           [java.time Instant]))
 
 (defn- override-max!
   [json-str mo]
@@ -31,6 +34,30 @@
 (defn noop
   [seg]
   nil)
+
+(defn output-naming-fn [{:keys [onyx.core/lifecycle-id
+                                onyx.core/task
+                                onyx.core/batch]
+                          :as event}]
+  (try
+    (let [^Instant range-start (-> batch first :range first Instant/ofEpochMilli)
+          idx-start (-> batch first :chunk-idx)
+          ^Instant range-end (-> batch last :range peek Instant/ofEpochMilli)
+          idx-end (-> batch last :chunk-idx)]
+      (format
+       "%s/%s_to_%s_chunk_%d_to_%d_count_%d"
+       (name task)
+       (.toString range-start)
+       (.toString range-end)
+       idx-start
+       idx-end
+       (count (mapcat :statements batch))))
+    (catch Exception ex
+      (str (.format (doto (SimpleDateFormat. "yyyy-MM-dd-hh.mm.ss.SSS")
+                      (.setTimeZone (TimeZone/getTimeZone "UTC")))
+                    (java.util.Date.))
+           "_batch__naming_error_"
+           lifecycle-id))))
 
 ;; TODO this works great up to a couple mil but then the comms overhead is too much
 (defn config
@@ -59,6 +86,7 @@
            s3-encryption
            s3-max-concurrent-uploads
 
+           split-output
 
            ]
     :or {gen-concurrency 1
@@ -70,7 +98,8 @@
          out-batch-size 1
          out-batch-timeout 50
          strip-ids? false
-         remove-refs? false}}]
+         remove-refs? false
+         split-output false}}]
 
   (assert input-json "Input JSON must be provided")
 
@@ -135,7 +164,9 @@
                        :s3/bucket s3-bucket
                        :s3/encryption s3-encryption
                        :s3/serializer-fn ::u/batch->json
-                       :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn ;; TODO FIXX
+                       :s3/key-naming-fn (if split-output
+                                           ::output-naming-fn
+                                           :onyx.plugin.s3-output/default-naming-fn) ;; TODO FIXX
                        :s3/prefix s3-prefix
                        :s3/prefix-separator s3-prefix-separator
                        :s3/serialize-per-element? false

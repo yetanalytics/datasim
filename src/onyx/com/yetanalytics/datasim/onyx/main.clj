@@ -88,9 +88,9 @@
     :parse-fn keyword
     :default :none]
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
-    :default 10 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
+    :default 4 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
     :parse-fn #(Integer/parseInt %)]
-
+   [nil "--[no-]split-output" "Split the s3 output by out task " :default false]
 
 
    ;; Blocking (a little hard to predict)
@@ -192,7 +192,9 @@
                       s3-prefix
                       s3-prefix-separator
                       s3-encryption
-                      s3-max-concurrent-uploads]} options]
+                      s3-max-concurrent-uploads
+
+                      split-output]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))]
@@ -216,6 +218,7 @@
                                  :s3-prefix-separator s3-prefix-separator
                                  :s3-encryption s3-encryption
                                  :s3-max-concurrent-uploads s3-max-concurrent-uploads
+                                 :split-output split-output
                                  })
                     _ (pprint {:job-config (update job-config
                                                    :lifecycles
