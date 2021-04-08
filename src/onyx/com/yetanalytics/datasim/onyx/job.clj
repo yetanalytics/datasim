@@ -5,10 +5,7 @@
             [com.yetanalytics.datasim.onyx.http :as http]
             [cheshire.core :as json]
             [taoensso.timbre :as log]
-            [clojure.string :as cs])
-  (:import [java.util TimeZone]
-           [java.text SimpleDateFormat]
-           [java.time Instant]))
+            [clojure.string :as cs]))
 
 (defn- override-max!
   [json-str mo]
@@ -36,32 +33,39 @@
   [seg]
   nil)
 
-(defn escaped-inst ^String [^Instant instant]
-  (cs/escape  (.toString instant) {\. \_}))
-
 (defn output-naming-fn [{:keys [onyx.core/lifecycle-id
                                 onyx.core/task
-                                onyx.core/batch]
+                                onyx.core/batch
+                                onyx.core/job-id
+                                onyx.core/tenancy-id]
                           :as event}]
-  (try
-    (let [^Instant range-start (-> batch first :range first Instant/ofEpochMilli)
-          idx-start (-> batch first :chunk-idx)
-          ^Instant range-end (-> batch last :range peek Instant/ofEpochMilli)
-          idx-end (-> batch last :chunk-idx)]
-      (format
-       "%s/%s_to_%s_chunk_%d_to_%d_count_%d"
-       (name task)
-       (escaped-inst range-start)
-       (escaped-inst range-end)
-       idx-start
-       idx-end
-       (count (mapcat :statements batch))))
-    (catch Exception ex
-      (str (.format (doto (SimpleDateFormat. "yyyy-MM-dd-hh.mm.ss.SSS")
-                      (.setTimeZone (TimeZone/getTimeZone "UTC")))
-                    (java.util.Date.))
-           "_batch__naming_error_"
-           lifecycle-id))))
+  (let [range-start (-> batch first :range first)
+        idx-start (-> batch first :chunk-idx)
+        range-end (-> batch last :range peek)
+        idx-end (-> batch last :chunk-idx)]
+    (format
+     "%s_%s_%s/%d-%d_%d-%d_%d"
+     tenancy-id
+     job-id
+     (name task)
+     idx-start
+     idx-end
+     range-start
+     range-end
+     (count (mapcat :statements batch)))))
+
+(comment
+  (output-naming-fn
+   {
+    :onyx.core/task :out-1
+    :onyx.core/batch [{:range [0 0]
+                       :chunk-idx 0
+                       :statements [{}]}]
+    :onyx.core/job-id (java.util.UUID/randomUUID)
+    :onyx.core/tenancy-id "foo"}
+   ) ;; => "foo_201ede1b-5696-496b-9cbf-983294bd5e82_out-1/0-0_0-0_1"
+
+  )
 
 ;; TODO this works great up to a couple mil but then the comms overhead is too much
 (defn config

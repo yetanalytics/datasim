@@ -81,9 +81,10 @@
     :parse-fn #(Integer/parseInt %)]
    ;; S3 OUT
    [nil "--s3-bucket S3_BUCKET" "S3 out bucket"]
-   [nil "--s3-prefix S3_PREFIX" "S3 out bucket base prefix"]
+   [nil "--s3-prefix S3_PREFIX" "S3 out bucket base prefix"
+    :default ""]
    [nil "--s3-prefix-separator S3_PREFIX_SEPARATOR" "S3 path separator, default is /"
-    :default "/"]
+    :default ""]
    [nil "--s3-encryption S3_BUCKET_ENCRYPTION" "S3 Encryption scheme, :none (default) or :sse256"
     :parse-fn keyword
     :default :none]
