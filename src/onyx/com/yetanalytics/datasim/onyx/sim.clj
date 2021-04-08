@@ -8,7 +8,6 @@
             [com.yetanalytics.datasim.util.sequence :as su]
             [taoensso.timbre :refer [fatal infof debug warnf] :as timbre]))
 
-
 (defn init-seq
   [input
    {:keys [select-agents
@@ -55,7 +54,7 @@
                             #(with-meta % nil)
                             statements))})))))
 
-(defn inject-sim-input [_ {input-json ::input-json
+(defn inject-sim-input [_ {input-loc ::input-loc
                            select-agents ::select-agents
                            strip-ids? ::strip-ids?
                            remove-refs? ::remove-refs?
@@ -66,7 +65,7 @@
                                 remove-refs? false
                                 batch-size 1}
                            :as lifecycle}]
-  {:sim/input-json input-json
+  {:sim/input-loc input-loc
    :sim/args {:select-agents select-agents
               :strip-ids? strip-ids?
               :remove-refs? remove-refs?
@@ -77,9 +76,12 @@
 ;; Onyx Plugin impl lets us do what we want
 (defn plugin
   [{:keys [onyx.core/task-map
-           sim/input-json
+           sim/input-loc
            sim/args] :as event}]
-  (let [input (u/parse-input input-json)
+  (let [{?take-n :take-n} args
+        input (cond-> (input/from-location :input :json
+                                           input-loc)
+                ?take-n (u/override-max! ?take-n))
         rst (volatile! nil)
         completed? (volatile! nil)
         offset (volatile! nil)]
@@ -147,7 +149,7 @@
    (time
     (p/poll!
      (plugin
-      {:sim/input-json (slurp "dev-resources/input/mom.json")
+      {:sim/input-loc "https://raw.githubusercontent.com/yetanalytics/datasim/DS-102_return_of_colo/dev-resources/input/mom.json"
        :sim/args {:select-agents
                   #{"mbox::mailto:agent_0@example.org"}
                   :strip-ids? nil
@@ -161,7 +163,7 @@
    )
 
   (let [reader (plugin
-                {:sim/input-json (slurp "dev-resources/input/mom.json")
+                {:sim/input-loc "https://raw.githubusercontent.com/yetanalytics/datasim/DS-102_return_of_colo/dev-resources/input/mom.json"
                  :sim/args {:select-agents
                             #{"mbox::mailto:agent_0@example.org"}
                             :strip-ids? nil
@@ -172,10 +174,10 @@
                             }})]
     (p/recover! reader nil nil)
     (time
-     (dotimes [n 100000]
+     (dotimes [n 10000]
        (when-not (p/poll! reader nil nil)
          (print 'x))
-       (when (zero? (rem n 10000))
+       (when (zero? (rem n 1000))
          (println 'seg n 'checkpoint (p/checkpoint reader)))))
     )
 

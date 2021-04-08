@@ -1,16 +1,12 @@
 (ns com.yetanalytics.datasim.onyx.job
   (:require [com.yetanalytics.datasim.onyx.sim :as dsim]
+            [com.yetanalytics.datasim.input :as input]
             [com.yetanalytics.datasim.util.xapi :as xapiu]
             [com.yetanalytics.datasim.onyx.util :as u]
             [com.yetanalytics.datasim.onyx.http :as http]
             [cheshire.core :as json]
             [taoensso.timbre :as log]
             [clojure.string :as cs]))
-
-(defn- override-max!
-  [json-str mo]
-  (json/generate-string
-   (assoc-in (json/parse-string json-str) ["parameters" "max"] mo)))
 
 (defn- lrs-req
   [{:keys [endpoint
@@ -72,7 +68,7 @@
   "Build a config for distributing generation and post of DATASIM simulations
   Target s3"
   [{:keys [;; SIM
-           input-json ;; TODO: change to url or file on s3
+           input-loc
            strip-ids?
            remove-refs?
            override-max
@@ -107,14 +103,14 @@
          out-batch-timeout 50
          strip-ids? false
          remove-refs? false
-         split-output false}}]
+         split-output true}}]
 
-  (assert input-json "Input JSON must be provided")
+  (assert input-loc "Input location must be provided")
 
-  (let [input-json (cond-> input-json
-                     override-max (override-max! override-max))
-        {{?max :max} :parameters ;; if there's a max param, get it for part-ing
-         :as input} (u/parse-input input-json)
+  (let [{{?max :max} :parameters ;; if there's a max param, get it for part-ing
+         :as input}
+        (cond-> (input/from-location :input :json input-loc)
+          override-max (u/override-max! override-max))
         actor-ids (map xapiu/agent-id
                        (get-in input [:personae :member]))
         _ (assert (<= gen-concurrency (count actor-ids))
@@ -124,11 +120,6 @@
                                    actor-ids)
         ?part-max (when ?max
                     (max 1 (quot ?max (count agent-parts))))
-        part-input-json
-        (if ?part-max
-          (override-max! input-json ?part-max)
-          input-json)
-
         in-names (map
                   #(keyword (format "in-%d" %))
                   (range (count agent-parts)))
@@ -191,7 +182,7 @@
        (fn [in-name ids]
          {:lifecycles [(cond-> {:lifecycle/task in-name
                                 :lifecycle/calls ::dsim/in-calls
-                                ::dsim/input-json part-input-json
+                                ::dsim/input-loc input-loc
                                 ::dsim/strip-ids? strip-ids?
                                 ::dsim/remove-refs? remove-refs?
                                 ::dsim/select-agents (set ids)

@@ -197,6 +197,10 @@ Resources:
     #       - Enabled
     #       - Disabled
 
+  TargetBucket:
+    Type: AWS::S3::Bucket
+    Description: Bucket to write xAPI data to.
+
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -246,6 +250,8 @@ Resources:
             Resource:
               - !GetAtt StorageBucket.Arn
               - !Sub "${StorageBucket.Arn}/*"
+              - !GetAtt TargetBucket.Arn
+              - !Sub "${TargetBucket.Arn}/*"
           # Allow tags for various cloud things
           - Effect: Allow
             Action: 'ec2:DescribeTags'

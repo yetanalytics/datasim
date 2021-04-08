@@ -91,7 +91,7 @@
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
     :default 4 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
     :parse-fn #(Integer/parseInt %)]
-   [nil "--[no-]split-output" "Split the s3 output by out task " :default false]
+   [nil "--[no-]split-output" "Split the s3 output by out task " :default true]
 
 
    ;; Blocking (a little hard to predict)
@@ -200,7 +200,7 @@
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))]
             (let [job-config (job/config
-                                {:input-json (slurp input-loc)
+                                {:input-loc input-loc
                                  :strip-ids? strip-ids
                                  :remove-refs? remove-refs
                                  :override-max override-max
@@ -221,14 +221,7 @@
                                  :s3-max-concurrent-uploads s3-max-concurrent-uploads
                                  :split-output split-output
                                  })
-                    _ (pprint {:job-config (update job-config
-                                                   :lifecycles
-                                                   (fn [ls]
-                                                     (mapv (fn [lc]
-                                                             (if (:com.yetanalytics.datasim.onyx.sim/input-json lc)
-                                                               (assoc lc :com.yetanalytics.datasim.onyx.sim/input-json "<json>")
-                                                               lc))
-                                                           ls)))})
+                    _ (pprint {:job-config job-config})
                     submission (onyx.api/submit-job
                                 peer-config
                                 job-config)]
