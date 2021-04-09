@@ -6,7 +6,8 @@
             [com.yetanalytics.datasim.onyx.http :as http]
             [cheshire.core :as json]
             [taoensso.timbre :as log]
-            [clojure.string :as cs]))
+            [clojure.string :as cs])
+  (:import [java.time Instant]))
 
 (defn- lrs-req
   [{:keys [endpoint
@@ -28,6 +29,13 @@
 (defn noop
   [seg]
   nil)
+
+(defn output-naming-fn [{:keys [onyx.core/lifecycle-id]
+                         :as event}]
+  (format
+   "%s_%s.json"
+   (.toString (Instant/now))
+   lifecycle-id))
 
 ;; TODO this works great up to a couple mil but then the comms overhead is too much
 (defn config
@@ -126,7 +134,7 @@
                        :s3/bucket s3-bucket
                        :s3/encryption s3-encryption
                        :s3/serializer-fn ::u/batch->json
-                       :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn
+                       :s3/key-naming-fn ::output-naming-fn
                        :s3/prefix s3-prefix
                        :s3/prefix-separator s3-prefix-separator
                        :s3/serialize-per-element? false
