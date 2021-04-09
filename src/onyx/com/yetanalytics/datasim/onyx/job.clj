@@ -133,6 +133,7 @@
                        :s3/max-concurrent-uploads s3-max-concurrent-uploads
                        :s3/multi-upload true
                        :s3/prefix-key :task-prefix
+                       :s3/content-type "application/json"
                        :onyx/type :output
                        :onyx/medium :s3
                        :onyx/n-peers 1
