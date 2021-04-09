@@ -612,7 +612,7 @@ Resources:
       MaxSize: !Ref ASGMaxSize
       DesiredCapacity: !Ref ASGDesiredSize
       HealthCheckType: ELB
-      HealthCheckGracePeriod: 120
+      HealthCheckGracePeriod: 300
       TargetGroupARNs:
         - !Ref TargetGroup
       # Enable Group Metrics Collection
