@@ -29,33 +29,6 @@
   [seg]
   nil)
 
-(defn output-naming-fn [{:keys [onyx.core/batch]
-                          :as event}]
-  (let [range-start (-> batch first :range first)
-        idx-start (-> batch first :chunk-idx)
-        range-end (-> batch last :range peek)
-        idx-end (-> batch last :chunk-idx)]
-    (format
-     "%d-%d_%d-%d_%d.json"
-     idx-start
-     idx-end
-     range-start
-     range-end
-     (count (mapcat :statements batch)))))
-
-(comment
-  (output-naming-fn
-   {
-    :onyx.core/task :out-1
-    :onyx.core/batch [{:range [0 0]
-                       :chunk-idx 0
-                       :statements [{}]}]
-    :onyx.core/job-id (java.util.UUID/randomUUID)
-    :onyx.core/tenancy-id "foo"}
-   ) ;; => "foo_201ede1b-5696-496b-9cbf-983294bd5e82_out-1/0-0_0-0_1"
-
-  )
-
 ;; TODO this works great up to a couple mil but then the comms overhead is too much
 (defn config
   "Build a config for distributing generation and post of DATASIM simulations
@@ -82,9 +55,6 @@
            s3-prefix-separator
            s3-encryption
            s3-max-concurrent-uploads
-
-           split-output
-
            ]
     :or {gen-concurrency 1
          gen-batch-size 1
@@ -156,7 +126,7 @@
                        :s3/bucket s3-bucket
                        :s3/encryption s3-encryption
                        :s3/serializer-fn ::u/batch->json
-                       :s3/key-naming-fn ::output-naming-fn
+                       :s3/key-naming-fn :onyx.plugin.s3-output/default-naming-fn
                        :s3/prefix s3-prefix
                        :s3/prefix-separator s3-prefix-separator
                        :s3/serialize-per-element? false

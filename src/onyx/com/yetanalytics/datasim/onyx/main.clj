@@ -84,14 +84,13 @@
    [nil "--s3-prefix S3_PREFIX" "S3 out bucket base prefix"
     :default ""]
    [nil "--s3-prefix-separator S3_PREFIX_SEPARATOR" "S3 path separator, default is /"
-    :default ""]
+    :default "/"]
    [nil "--s3-encryption S3_BUCKET_ENCRYPTION" "S3 Encryption scheme, :none (default) or :sse256"
     :parse-fn keyword
     :default :none]
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
     :default 4 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
     :parse-fn #(Integer/parseInt %)]
-   [nil "--[no-]split-output" "Split the s3 output by out task " :default true]
 
 
    ;; Blocking (a little hard to predict)
@@ -193,9 +192,7 @@
                       s3-prefix
                       s3-prefix-separator
                       s3-encryption
-                      s3-max-concurrent-uploads
-
-                      split-output]} options]
+                      s3-max-concurrent-uploads]} options]
           (println "Starting job...")
           (let [{:keys [peer-config]} (cond-> (config/get-config)
                                         tenancy-id (assoc-in [:peer-config :onyx/tenancy-id] tenancy-id))]
@@ -219,7 +216,6 @@
                                  :s3-prefix-separator s3-prefix-separator
                                  :s3-encryption s3-encryption
                                  :s3-max-concurrent-uploads s3-max-concurrent-uploads
-                                 :split-output split-output
                                  })
                     _ (pprint {:job-config job-config})
                     submission (onyx.api/submit-job
