@@ -29,21 +29,14 @@
   [seg]
   nil)
 
-(defn output-naming-fn [{:keys [onyx.core/lifecycle-id
-                                onyx.core/task
-                                onyx.core/batch
-                                onyx.core/job-id
-                                onyx.core/tenancy-id]
+(defn output-naming-fn [{:keys [onyx.core/batch]
                           :as event}]
   (let [range-start (-> batch first :range first)
         idx-start (-> batch first :chunk-idx)
         range-end (-> batch last :range peek)
         idx-end (-> batch last :chunk-idx)]
     (format
-     "%s_%s_%s/%d-%d_%d-%d_%d"
-     tenancy-id
-     job-id
-     (name task)
+     "%d-%d_%d-%d_%d.json"
      idx-start
      idx-end
      range-start
@@ -163,13 +156,13 @@
                        :s3/bucket s3-bucket
                        :s3/encryption s3-encryption
                        :s3/serializer-fn ::u/batch->json
-                       :s3/key-naming-fn (if split-output
-                                           ::output-naming-fn
-                                           :onyx.plugin.s3-output/default-naming-fn) ;; TODO FIXX
+                       :s3/key-naming-fn ::output-naming-fn
                        :s3/prefix s3-prefix
                        :s3/prefix-separator s3-prefix-separator
                        :s3/serialize-per-element? false
                        :s3/max-concurrent-uploads s3-max-concurrent-uploads
+                       :s3/multi-upload true
+                       :s3/prefix-key :task-prefix
                        :onyx/type :output
                        :onyx/medium :s3
                        :onyx/n-peers 1

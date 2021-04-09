@@ -16,7 +16,9 @@
            take-n
            drop-n
            batch-size]
-    :as args}]
+    :as args}
+   task-prefix
+   ]
   (lazy-seq
    (cond->> (if select-agents
               (sim/sim-seq
@@ -39,7 +41,8 @@
      batch-size
      (map-indexed
       (fn [idx statements]
-        {:chunk-idx (cond-> idx
+        {:task-prefix task-prefix
+         :chunk-idx (cond-> idx
                       drop-n (+ (quot drop-n batch-size)))
          :range [(-> statements
                      first
@@ -77,8 +80,15 @@
 (defn plugin
   [{:keys [onyx.core/task-map
            sim/input-loc
-           sim/args] :as event}]
-  (let [{?take-n :take-n} args
+           sim/args
+           onyx.core/task
+           onyx.core/tenancy-id
+           onyx.core/job-id] :as event}]
+  (let [task-prefix (format "%s_%s_%s"
+                            tenancy-id
+                            job-id
+                            (name task))
+        {?take-n :take-n} args
         input (cond-> (input/from-location :input :json
                                            input-loc)
                 ?take-n (u/override-max! ?take-n))
@@ -106,14 +116,16 @@
             (infof "DATASIM Input starting up...")
             (vreset! rst (init-seq
                           input
-                          args))
+                          args
+                          task-prefix))
             (vreset! completed? false)
             (vreset! offset 0))
           (do
             (warnf "DATASIM recovering by dropping %d segments" checkpoint)
             (vreset! rst (init-seq
                           input
-                          (assoc args :drop-n checkpoint)))
+                          (assoc args :drop-n checkpoint)
+                          task-prefix))
             (vreset! completed? false)
             (vreset! offset checkpoint)))
         this)
@@ -156,7 +168,10 @@
                   :remove-refs? nil
                   :take-n nil
                   :drop-n nil
-                  :batch-size nil}})
+                  :batch-size nil}
+       :onyx.core/task :out-0
+       :onyx.core/tenancy-id "foo"
+       :onyx.core/job-id (java.util.UUID/randomUUID)})
      nil nil
      ))
 
@@ -171,7 +186,10 @@
                             :take-n nil
                             :drop-n nil
                             :batch-size nil
-                            }})]
+                            }
+                 :onyx.core/task :out-0
+                 :onyx.core/tenancy-id "foo"
+                 :onyx.core/job-id (java.util.UUID/randomUUID)})]
     (p/recover! reader nil nil)
     (time
      (dotimes [n 10000]
@@ -183,6 +201,6 @@
 
   (def i (input/from-location :input :json "dev-resources/input/mom.json"))
 
-  (first (init-seq i {:batch-size 10}))
+  (first (init-seq i {:batch-size 10} ""))
 
  )
