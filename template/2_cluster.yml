@@ -91,6 +91,14 @@ Parameters:
     Description: AMI (image) to use on EC2 instances.
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  ASGMinInstancesInService:
+    Type: Number
+    Description: Minimum number of instances to keep in service during updates
+    Default: 1
+  ASGMaxBatchSize:
+    Type: Number
+    Description: Maximum number of instances to update at once
+    Default: 8
   EC2KeyName:
     Description: Name of an EC2 key pair that can be used to connect to instances
     Type: String
@@ -166,6 +174,8 @@ Metadata:
           - ASGDesiredSize
           - ASGMinSize
           - ASGMaxSize
+          - ASGMinInstancesInService
+          - ASGMaxBatchSize
           - ASGInstanceType
           - ASGCPUPolicyTargetValue
           - ASGInstanceAmiId
@@ -623,8 +633,8 @@ Resources:
         Timeout: PT15M
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: '1'
-        MaxBatchSize: '1'
+        MinInstancesInService: !Ref ASGMinInstancesInService
+        MaxBatchSize: !Ref ASGMaxBatchSize
         PauseTime: PT15M
         WaitOnResourceSignals: 'true'
         SuspendProcesses:
