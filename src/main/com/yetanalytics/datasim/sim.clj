@@ -13,6 +13,7 @@
    [com.yetanalytics.datasim.util.xapi :as xapiu]
    [com.yetanalytics.datasim.util.maths :as maths]
    [com.yetanalytics.datasim.util.sequence :as su]
+   [com.yetanalytics.datasim.util.async :as au]
    [com.yetanalytics.datasim.random :as random]
    [com.yetanalytics.pan.objects.template :as template]
    [xapi-schema.spec :as xs]
@@ -336,68 +337,83 @@
   [x]
   (satisfies? ap/Channel x))
 
+;; since we divide input.parameters.max by the number of agents in the sim when
+;; generating in parallel, we can add a bit to each to get over max, or a lot to
+;; account for an imbalance in activity at the tail of the sim
+
+(s/def ::pad-chan-max
+  pos-int?)
+
 (s/fdef sim-chans
   :args (s/cat :input :com.yetanalytics.datasim/input
                :options (s/keys*
-                         :opt-un [::select-agents]))
+                         :opt-un [::select-agents
+                                  ::pad-chan-max]))
   :ret (s/map-of ::xapi/agent-id
                  chan?))
 
 (defn sim-chans
-  "Given input, build a skeleton and produce a map of agent channels
+  "Given input, build a skeleton and produce a map of agent channels.
 
-  Note that input.parameters.max is implemented via global budgets and may
+  Uses the core.async thread pool for concurrency.
+
+  Note that input.parameters.max is implemented via division and may
   have unexpected results. input.parameters.end is preferable"
   [{{?max-statements :max} :parameters
     :as input}
-   & {:keys [select-agents]}]
+   & {:keys [select-agents
+             pad-chan-max]
+      :or {pad-chan-max 1}}]
   (let [skeleton (cond-> (build-skeleton input)
                    select-agents
-                   (select-keys select-agents))]
-    (if ?max-statements
-      (let [budget-chan (let [c (a/chan)]
-                          (a/go-loop [s-cnt ?max-statements]
-                            (if (< 0 s-cnt)
-                              (do (a/>! c s-cnt)
-                                  (recur (dec s-cnt)))
-                              (a/close! c)))
-                          c)]
-        (reduce-kv
-         (fn [m k v]
-           (let [out-chan (a/chan 100)]
-             (a/go-loop [agent-seq v]
-               (if-let [s (and (a/<! budget-chan) ;; like a ticket at the meat counter
-                               (first agent-seq))]
-                 (do
-                   (a/>! out-chan s)
-                   (recur (rest agent-seq)))
-                 (a/close! out-chan)))
-             (assoc m k out-chan)))
-         (empty skeleton)
-         skeleton))
-      ;; Easy route
-      (reduce-kv
-       (fn [m k v]
-         (let [agent-seq v]
-           (assoc m k (a/to-chan! v))))
-       (empty skeleton)
-       skeleton))))
+                   (select-keys select-agents))
+        ?take-n (when ?max-statements
+                  (+ pad-chan-max
+                     (quot ?max-statements
+                           (count skeleton))))]
+
+    (reduce-kv
+     (fn [m k v]
+       (let [agent-seq v]
+         (assoc m k (cond->> (a/to-chan! v)
+                      ?take-n
+                      (a/take ?take-n)))))
+     (empty skeleton)
+     skeleton)))
+
+(s/def ::sort boolean?)
+(s/def ::buffer-size pos-int?)
 
 (s/fdef sim-chan
   :args (s/cat :input :com.yetanalytics.datasim/input
                :options (s/keys*
-                         :opt-un [::select-agents]))
+                         :opt-un [::select-agents
+                                  ::pad-chan-max
+                                  ::sort
+                                  ::buffer-size]))
   :ret chan?)
 
 (defn sim-chan
   "Merged output of `sim-chans` for parallel gen"
   [input
-   & kwargs]
-  (-> (apply sim-chans
-             input
-             kwargs)
-      vals
-      a/merge))
+   & {:keys [sort
+             buffer-size]
+      :or {sort true
+           buffer-size 100}
+      :as kwargs}]
+  (let [chan-map (apply sim-chans
+                        input
+                        (mapcat identity kwargs))]
+    (if sort
+      (au/sequence-messages
+       (a/chan buffer-size)
+       (fn [x y]
+         (compare
+          (-> x meta :timestamp-ms)
+          (-> y meta :timestamp-ms)))
+       (vals chan-map))
+      (a/merge (vals chan-map)
+               buffer-size))))
 
 (comment
 
