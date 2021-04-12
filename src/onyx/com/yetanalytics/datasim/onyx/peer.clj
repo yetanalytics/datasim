@@ -3,6 +3,7 @@
             onyx.api
             com.yetanalytics.datasim.onyx.sim
             com.yetanalytics.datasim.onyx.http
+            com.yetanalytics.datasim.onyx.job
             [com.yetanalytics.datasim.onyx.config :as config]))
 
 (defn start-peer!
