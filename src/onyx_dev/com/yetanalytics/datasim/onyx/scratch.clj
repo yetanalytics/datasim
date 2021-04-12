@@ -24,7 +24,7 @@
                peer-group
                peers]
         :as test-env} [;; n-peers
-                       2 ;; with the colocated scheduler you gotta shape the group to the sim
+                       3 ;;
                        env-config
                        peer-config
                        ]]
