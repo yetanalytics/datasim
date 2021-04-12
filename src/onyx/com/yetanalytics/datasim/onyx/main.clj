@@ -7,6 +7,7 @@
             com.yetanalytics.datasim.onyx.util
             [com.yetanalytics.datasim.onyx.job :as job]
             [com.yetanalytics.datasim.onyx.sim :as dsim]
+            com.yetanalytics.datasim.onyx.http
             [com.yetanalytics.datasim.onyx.config :as config]
             [com.yetanalytics.datasim.onyx.peer :as peer]
             [com.yetanalytics.datasim.onyx.aeron-media-driver :as driver]
@@ -62,22 +63,28 @@
     :default 50
     :parse-fn #(Integer/parseInt %)]
 
+   [nil "--out-mode OUT_MODE" "Output type, LRS or S3"
+    :parse-fn keyword
+    :validate [#{:lrs
+                 :s3
+                 :noop} "Must be LRS or S3"]
+    :default :lrs]
 
-   ;; LRS OUT ;; TODO: reintegrate
-   #_#_#_#_#_#_#_
-   ["-e" "--endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
-   ["-u" "--username USERNAME" "xAPI LRS BASIC Auth username"]
-   ["-p" "--password PASSWORD" "xAPI LRS BASIC Auth password"]
-   [nil "--x-api-key X_API_KEY" "API Gateway API key"]
-   [nil "--retry-base-sleep-ms RETRY_BASE_SLEEP_MS" "Backoff retry sleep time"
+   ;; LRS OUT
+   ["-e" "--lrs-endpoint ENDPOINT" "xAPI LRS Endpoint like https://lrs.example.org/xapi"]
+   ["-u" "--lrs-username USERNAME" "xAPI LRS BASIC Auth username"]
+   ["-p" "--lrs-password PASSWORD" "xAPI LRS BASIC Auth password"]
+   [nil "--lrs-x-api-key X_API_KEY" "AWS API Gateway API key (optional)"]
+   [nil "--lrs-retry-base-sleep-ms RETRY_BASE_SLEEP_MS" "Backoff retry sleep time"
     :default 500 ;; real cool about it
     :parse-fn #(Integer/parseInt %)]
-   [nil "--retry-max-sleep-ms RETRY_MAX_SLEEP_MS" "Backoff retry sleep time max per retry."
+   [nil "--lrs-retry-max-sleep-ms RETRY_MAX_SLEEP_MS" "Backoff retry sleep time max per retry."
     :default 30000 ;; every 30 sec max
     :parse-fn #(Integer/parseInt %)]
-   [nil "--retry-max-total-sleep-ms RETRY_MAX_TOTAL_SLEEP_MS" "Backoff retry sleep time max total."
+   [nil "--lrs-retry-max-total-sleep-ms RETRY_MAX_TOTAL_SLEEP_MS" "Backoff retry sleep time max total."
     :default 3600000 ;; an hour, why not
     :parse-fn #(Integer/parseInt %)]
+
    ;; S3 OUT
    [nil "--s3-bucket S3_BUCKET" "S3 out bucket"]
    [nil "--s3-prefix S3_PREFIX" "S3 out bucket base prefix"
@@ -88,13 +95,12 @@
     :parse-fn keyword
     :default :none]
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
-    :default 4 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
+    :default 16 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
     :parse-fn #(Integer/parseInt %)]
 
 
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
-   [nil "--noop" "Output to a leaf function that does nothing" :default false]
    [nil "--[no-]colo" "Colocate generation and output tasks on the same machine (default)" :default true]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
@@ -162,21 +168,20 @@
                       block
 
                       colo
-                      noop
 
                       input-loc
                       override-max
                       strip-ids
                       remove-refs
 
-                      #_#_#_#_#_#_#_
-                      endpoint
-                      username
-                      password
-                      x-api-key
-                      retry-base-sleep-ms
-                      retry-max-sleep-ms
-                      retry-max-total-sleep-ms
+                      out-mode
+                      lrs-endpoint
+                      lrs-username
+                      lrs-password
+                      lrs-x-api-key
+                      lrs-retry-base-sleep-ms
+                      lrs-retry-max-sleep-ms
+                      lrs-retry-max-total-sleep-ms
 
                       gen-concurrency
                       gen-batch-size
@@ -202,15 +207,25 @@
                                  :remove-refs? remove-refs
                                  :override-max override-max
                                  :out-ratio out-ratio
-                                 :noop noop
                                  :colo colo
                                  :gen-concurrency gen-concurrency
                                  :gen-batch-size gen-batch-size
 
                                  :in-batch-size in-batch-size
                                  :in-batch-timeout in-batch-timeout
+
                                  :out-batch-size out-batch-size
                                  :out-batch-timeout out-batch-timeout
+                                 :out-mode out-mode
+
+                                 :lrs-retry-params
+                                 {:base-sleep-ms lrs-retry-base-sleep-ms
+                                  :max-sleep-ms lrs-retry-max-sleep-ms
+                                  :max-total-sleep-ms lrs-retry-max-total-sleep-ms}
+                                 :lrs {:endpoint lrs-endpoint
+                                       :username lrs-username
+                                       :password lrs-password
+                                       :x-api-key lrs-x-api-key}
 
                                  :s3-bucket s3-bucket
                                  :s3-prefix s3-prefix

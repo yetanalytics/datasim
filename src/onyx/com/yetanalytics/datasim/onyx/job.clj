@@ -50,12 +50,17 @@
            gen-concurrency
            gen-batch-size
            out-ratio
-           noop
            colo
            in-batch-size
            in-batch-timeout
            out-batch-size
            out-batch-timeout
+           out-mode
+
+           ;; LRS
+           lrs-retry-params
+           lrs
+
            ;; S3
            s3-bucket
            s3-prefix
@@ -65,8 +70,18 @@
            ]
     :or {gen-concurrency 1
          gen-batch-size 1
+         out-mode :lrs
+         lrs-retry-params {:base-sleep-ms 500
+                           :max-sleep-ms 30000
+                           :max-total-sleep-ms 3600000}
+
+         s3-bucket ""
+         s3-prefix ""
+         s3-prefix-separator "/"
+         s3-encryption :none
+         s3-max-concurrent-uploads 16
+
          out-ratio 1
-         noop false
          colo true
          in-batch-size 1
          in-batch-timeout 50
@@ -120,20 +135,23 @@
      (concat
       (map
        (fn [out-name]
-         {:lifecycles (if noop
-                        []
-                        [{:lifecycle/task out-name
-                          :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}])
-          :catalog [(if noop
-                      {:onyx/name out-name
-                       :onyx/fn ::noop
-                       :onyx/plugin :onyx.peer.function/function
-                       :onyx/medium :function
+         (case out-mode
+           :lrs
+           {:catalog [{:onyx/name out-name
+                       :onyx/plugin :onyx.plugin.http-output/output
                        :onyx/type :output
-                       :onyx/n-peers 1
+                       :onyx/medium :http
+                       :http-output/success-fn ::http/post-success?
+                       :http-output/retry-params lrs-retry-params
                        :onyx/batch-size out-batch-size
-                       :onyx/batch-timeout out-batch-timeout}
-                      {:onyx/name out-name
+                       :onyx/batch-timeout out-batch-timeout
+                       :onyx/n-peers 1
+                       :onyx/doc "POST statements to http endpoint"}]
+            :lifecycles [{:lifecycle/task out-name
+                          :lifecycle/calls ::http/out-calls
+                          ::http/lrs-request (lrs-req lrs)}]}
+           :s3
+           {:catalog [{:onyx/name out-name
                        :onyx/plugin :onyx.plugin.s3-output/output
                        :s3/bucket s3-bucket
                        :s3/encryption s3-encryption
@@ -151,8 +169,19 @@
                        :onyx/n-peers 1
                        :onyx/batch-size out-batch-size
                        :onyx/batch-timeout out-batch-timeout
-                       :onyx/doc "Writes segments to s3 files, one file per batch"})
-                    ]})
+                       :onyx/doc "Writes segments to s3 files, one file per batch"}]
+            :lifecycles [{:lifecycle/task out-name
+                          :lifecycle/calls :onyx.plugin.s3-output/s3-output-calls}]}
+           :noop
+           {:catalog [{:onyx/name out-name
+                       :onyx/fn ::noop
+                       :onyx/plugin :onyx.peer.function/function
+                       :onyx/medium :function
+                       :onyx/type :output
+                       :onyx/n-peers 1
+                       :onyx/batch-size out-batch-size
+                       :onyx/batch-timeout out-batch-timeout}]
+            :lifecycles []}))
        out-names)
       (map
        (fn [in-name ids]
