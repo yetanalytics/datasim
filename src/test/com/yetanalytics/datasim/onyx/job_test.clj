@@ -7,11 +7,8 @@
                 lifecycles
                 catalog]
          :as job-config} (config
-                          {:input-loc "https://raw.githubusercontent.com/yetanalytics/datasim/DS-102_insanely_large_dataset/dev-resources/input/mom64.json"
-                           :gen-concurrency 4
-                           :gen-batch-size 3000
-                           :out-concurrency 4
-                           :out-batch-size 3000})
+                          {:input-loc "dev-resources/input/mom64.json"
+                           :gen-concurrency 4})
 
         inputs (keep :com.yetanalytics.datasim.onyx.sim/input-loc lifecycles)
         parts (keep :com.yetanalytics.datasim.onyx.sim/select-agents
@@ -21,128 +18,136 @@
       (is (= 4 (count inputs)))
       (is (apply = 16 (map count parts))))))
 
+(deftest config-test
+  (testing "produces a valid job config from input"
+    (is (= (config
+            {:input-loc "dev-resources/input/simple.json"
+             :gen-concurrency 3})
+           {:workflow [[:in-0 :out-0] [:in-1 :out-1] [:in-2 :out-2]],
+            :lifecycles
+            [#:lifecycle{:task :out-0,
+                         :calls :onyx.plugin.s3-output/s3-output-calls}
+             #:lifecycle{:task :out-1,
+                         :calls :onyx.plugin.s3-output/s3-output-calls}
+             #:lifecycle{:task :out-2,
+                         :calls :onyx.plugin.s3-output/s3-output-calls}
+             {:lifecycle/task :in-0,
+              :lifecycle/calls :com.yetanalytics.datasim.onyx.sim/in-calls,
+              :com.yetanalytics.datasim.onyx.sim/input-loc
+              "dev-resources/input/simple.json",
+              :com.yetanalytics.datasim.onyx.sim/strip-ids? false,
+              :com.yetanalytics.datasim.onyx.sim/remove-refs? false,
+              :com.yetanalytics.datasim.onyx.sim/select-agents
+              #{"mbox::mailto:bobfake@example.org"},
+              :com.yetanalytics.datasim.onyx.sim/batch-size 1}
+             {:lifecycle/task :in-1,
+              :lifecycle/calls :com.yetanalytics.datasim.onyx.sim/in-calls,
+              :com.yetanalytics.datasim.onyx.sim/input-loc
+              "dev-resources/input/simple.json",
+              :com.yetanalytics.datasim.onyx.sim/strip-ids? false,
+              :com.yetanalytics.datasim.onyx.sim/remove-refs? false,
+              :com.yetanalytics.datasim.onyx.sim/select-agents
+              #{"mbox::mailto:frederstaz@example.org"},
+              :com.yetanalytics.datasim.onyx.sim/batch-size 1}
+             {:lifecycle/task :in-2,
+              :lifecycle/calls :com.yetanalytics.datasim.onyx.sim/in-calls,
+              :com.yetanalytics.datasim.onyx.sim/input-loc
+              "dev-resources/input/simple.json",
+              :com.yetanalytics.datasim.onyx.sim/strip-ids? false,
+              :com.yetanalytics.datasim.onyx.sim/remove-refs? false,
+              :com.yetanalytics.datasim.onyx.sim/select-agents
+              #{"mbox::mailto:alicefaux@example.org"},
+              :com.yetanalytics.datasim.onyx.sim/batch-size 1}],
+            :catalog
+            [{:onyx/plugin :onyx.plugin.s3-output/output,
+              :onyx/medium :s3,
+              :onyx/batch-timeout 50,
+              :onyx/type :output,
+              :onyx/name :out-0,
+              :s3/serializer-fn :com.yetanalytics.datasim.onyx.util/batch->json,
+              :onyx/n-peers 1,
+              :s3/prefix nil,
+              :s3/prefix-key :task-prefix,
+              :s3/encryption nil,
+              :onyx/doc "Writes segments to s3 files, one file per batch",
+              :s3/content-type "application/json",
+              :s3/multi-upload true,
+              :s3/max-concurrent-uploads nil,
+              :s3/serialize-per-element? false,
+              :s3/prefix-separator nil,
+              :s3/key-naming-fn
+              :com.yetanalytics.datasim.onyx.job/output-naming-fn,
+              :onyx/batch-size 1,
+              :s3/bucket nil}
+             {:onyx/plugin :onyx.plugin.s3-output/output,
+              :onyx/medium :s3,
+              :onyx/batch-timeout 50,
+              :onyx/type :output,
+              :onyx/name :out-1,
+              :s3/serializer-fn :com.yetanalytics.datasim.onyx.util/batch->json,
+              :onyx/n-peers 1,
+              :s3/prefix nil,
+              :s3/prefix-key :task-prefix,
+              :s3/encryption nil,
+              :onyx/doc "Writes segments to s3 files, one file per batch",
+              :s3/content-type "application/json",
+              :s3/multi-upload true,
+              :s3/max-concurrent-uploads nil,
+              :s3/serialize-per-element? false,
+              :s3/prefix-separator nil,
+              :s3/key-naming-fn
+              :com.yetanalytics.datasim.onyx.job/output-naming-fn,
+              :onyx/batch-size 1,
+              :s3/bucket nil}
+             {:onyx/plugin :onyx.plugin.s3-output/output,
+              :onyx/medium :s3,
+              :onyx/batch-timeout 50,
+              :onyx/type :output,
+              :onyx/name :out-2,
+              :s3/serializer-fn :com.yetanalytics.datasim.onyx.util/batch->json,
+              :onyx/n-peers 1,
+              :s3/prefix nil,
+              :s3/prefix-key :task-prefix,
+              :s3/encryption nil,
+              :onyx/doc "Writes segments to s3 files, one file per batch",
+              :s3/content-type "application/json",
+              :s3/multi-upload true,
+              :s3/max-concurrent-uploads nil,
+              :s3/serialize-per-element? false,
+              :s3/prefix-separator nil,
+              :s3/key-naming-fn
+              :com.yetanalytics.datasim.onyx.job/output-naming-fn,
+              :onyx/batch-size 1,
+              :s3/bucket nil}
+             #:onyx{:name :in-0,
+                    :plugin :com.yetanalytics.datasim.onyx.sim/plugin,
+                    :type :input,
+                    :medium :seq,
+                    :batch-size 1,
+                    :n-peers 1,
+                    :doc "Reads segments from seq for partition :in-0"}
+             #:onyx{:name :in-1,
+                    :plugin :com.yetanalytics.datasim.onyx.sim/plugin,
+                    :type :input,
+                    :medium :seq,
+                    :batch-size 1,
+                    :n-peers 1,
+                    :doc "Reads segments from seq for partition :in-1"}
+             #:onyx{:name :in-2,
+                    :plugin :com.yetanalytics.datasim.onyx.sim/plugin,
+                    :type :input,
+                    :medium :seq,
+                    :batch-size 1,
+                    :n-peers 1,
+                    :doc "Reads segments from seq for partition :in-2"}],
+            :task-scheduler :onyx.task-scheduler/semi-colocated}))))
 
 (comment
 
   ;; to gracefully print, useful for making more tests
   (clojure.pprint/pprint
    (config
-    {:input-loc "https://raw.githubusercontent.com/yetanalytics/datasim/DS-102_insanely_large_dataset/dev-resources/input/mom64.json"
-     :gen-batch-size 1000
-     :gen-concurrency 4
-     :out-batch-size 1000}))
-
-  (require 'onyx.api)
-
-  (require '[com.yetanalytics.datasim.onyx.config :as config])
-
-  (def peer-config (:peer-config (config/get-config)))
-
-  (let [id (java.util.UUID/randomUUID)
-        {:as config} (config
-                      {:input-loc "https://raw.githubusercontent.com/yetanalytics/datasim/DS-102_insanely_large_dataset/dev-resources/input/mom64.json"
-                       :override-max 1000
-
-                       :gen-concurrency 8
-                       :gen-batch-size 250
-
-                       })]
-    (onyx.api/submit-job
-     (assoc-in peer-config [ :onyx/tenancy-id] "local")
-     config))
+    {:input-loc "dev-resources/input/simple.json"
+     :gen-concurrency 3}))
 
   )
-
-#_(deftest config-test
-  (testing "produces a valid job config from input"
-    (is (= (-> (config
-                {:input-json (slurp "dev-resources/input/simple.json")
-                 :lrs {:endpoint "http://localhost:8000/xapi"
-                       :batch-size 25
-                       :username "foo"
-                       :password "bar"}})
-               ;; dissoc long icky json
-               (update :lifecycles
-                       (fn [ls]
-                         (map
-                          #(assoc % :com.yetanalytics.datasim.onyx.seq/input-json "<json>")
-                          ls))))
-           {:workflow [[:in-0 :out] [:in-1 :out] [:in-2 :out]],
-            :lifecycles
-            [{:lifecycle/task :in-0,
-              :lifecycle/calls :com.yetanalytics.datasim.onyx.seq/in-calls,
-              :com.yetanalytics.datasim.onyx.seq/input-json "<json>",
-              :com.yetanalytics.datasim.onyx.seq/lrs
-              {:endpoint "http://localhost:8000/xapi",
-               :batch-size 25,
-               :username "foo",
-               :password "bar"},
-              :com.yetanalytics.datasim.onyx.seq/strip-ids? false,
-              :com.yetanalytics.datasim.onyx.seq/remove-refs? false}
-             {:lifecycle/task :in-0,
-              :lifecycle/calls :onyx.plugin.seq/reader-calls,
-              :com.yetanalytics.datasim.onyx.seq/input-json "<json>"}
-             {:lifecycle/task :in-1,
-              :lifecycle/calls :com.yetanalytics.datasim.onyx.seq/in-calls,
-              :com.yetanalytics.datasim.onyx.seq/input-json "<json>",
-              :com.yetanalytics.datasim.onyx.seq/lrs
-              {:endpoint "http://localhost:8000/xapi",
-               :batch-size 25,
-               :username "foo",
-               :password "bar"},
-              :com.yetanalytics.datasim.onyx.seq/strip-ids? false,
-              :com.yetanalytics.datasim.onyx.seq/remove-refs? false}
-             {:lifecycle/task :in-1,
-              :lifecycle/calls :onyx.plugin.seq/reader-calls,
-              :com.yetanalytics.datasim.onyx.seq/input-json "<json>"}
-             {:lifecycle/task :in-2,
-              :lifecycle/calls :com.yetanalytics.datasim.onyx.seq/in-calls,
-              :com.yetanalytics.datasim.onyx.seq/input-json "<json>",
-              :com.yetanalytics.datasim.onyx.seq/lrs
-              {:endpoint "http://localhost:8000/xapi",
-               :batch-size 25,
-               :username "foo",
-               :password "bar"},
-              :com.yetanalytics.datasim.onyx.seq/strip-ids? false,
-              :com.yetanalytics.datasim.onyx.seq/remove-refs? false}
-             {:lifecycle/task :in-2,
-              :lifecycle/calls :onyx.plugin.seq/reader-calls,
-              :com.yetanalytics.datasim.onyx.seq/input-json "<json>"}],
-            :catalog
-            [{:onyx/name :in-0,
-              :onyx/plugin :onyx.plugin.seq/input,
-              :onyx/type :input,
-              :onyx/medium :seq,
-              :seq/checkpoint? false,
-              :onyx/batch-size 10,
-              :onyx/max-peers 1,
-              :onyx/doc "Reads segments from seq for partition 0"}
-             {:onyx/name :in-1,
-              :onyx/plugin :onyx.plugin.seq/input,
-              :onyx/type :input,
-              :onyx/medium :seq,
-              :seq/checkpoint? false,
-              :onyx/batch-size 10,
-              :onyx/max-peers 1,
-              :onyx/doc "Reads segments from seq for partition 1"}
-             {:onyx/name :in-2,
-              :onyx/plugin :onyx.plugin.seq/input,
-              :onyx/type :input,
-              :onyx/medium :seq,
-              :seq/checkpoint? false,
-              :onyx/batch-size 10,
-              :onyx/max-peers 1,
-              :onyx/doc "Reads segments from seq for partition 2"}
-             {:onyx/name :out,
-              :onyx/plugin :onyx.plugin.http-output/output,
-              :onyx/type :output,
-              :onyx/medium :http,
-              :http-output/success-fn
-              :com.yetanalytics.datasim.onyx.http/post-success?,
-              :http-output/retry-params
-              {:base-sleep-ms 200,
-               :max-sleep-ms 30000,
-               :max-total-sleep-ms 3600000},
-              :onyx/batch-size 10,
-              :onyx/doc "POST statements to http endpoint"}],
-            :task-scheduler :onyx.task-scheduler/balanced}))))
