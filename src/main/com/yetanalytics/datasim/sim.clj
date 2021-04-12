@@ -147,7 +147,7 @@
 
 
 (defn get-actor-alignments
-  [alignments actor-id group-name role]
+  [alignments actor-id group-id role]
   (reduce (fn [alignment-map alignment]
             (let [iri (:component alignment)]
               (if (contains? alignment-map iri)
@@ -167,7 +167,8 @@
                         :object-override (:objectOverride alignment)}))))
           {}
           (for [{alignments :alignments :as actor-alignment} alignments
-                :when (contains? (set [actor-id group-name role]) (:id actor-alignment))
+                :when (contains? (set [actor-id group-id role])
+                                 (:id actor-alignment))
                 alignment alignments]
             alignment)))
 
@@ -185,18 +186,26 @@
 
   Should be run once (in a single thread)
   Spooky."
-  [{personae :personae
-    {:keys [start end
-            timezone seed]
-     ?from-stamp :from} :parameters
-    profiles :profiles
-    {alignments :alignment-vector} :alignments
-    :as input}]
-  (let [;; Set timezone and time
+  [{:keys [profiles personae-array parameters alignments]
+    :as   input}]
+  (let [;; Input parameters and alignments
+        {:keys [start end timezone seed] ?from-stamp :from} parameters
+        {alignments :alignment-vector} alignments
+        ;; Set timezone and time
         ^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))
-        ;; Get actors
-        actors (:member personae)
+        ;; Get actors and map actor IDs to (identified) group IDs
+        actor-id-to-group-id-m (reduce
+                                (fn [m {actors :member :as personae}]
+                                  (let [group-id (xapiu/agent-id personae)]
+                                    (reduce
+                                     (fn [m' actor]
+                                       (assoc m' (xapiu/agent-id actor) group-id))
+                                     m
+                                     actors)))
+                                {}
+                                personae-array)
+        actors (apply concat (map :member personae-array))
         ;; If there's an end we need to set a ?sample-n for takes
         ?sample-n (when end
                     (let [t-end (.toEpochMilli (t/instant end))]
@@ -270,14 +279,16 @@
                                          {:seed actor-arma-seed}))
                       actor-prob (map vector
                                       min-seq
-                                      (ts/op-seq (fn [a b]
-                                                   (double
-                                                    (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
-                                                 [actor-arma mask]))
-                      actor-alignment (get-actor-alignments alignments
-                                                            actor-id
-                                                            (xapiu/agent-id personae)
-                                                            (:role actor))
+                                      (ts/op-seq
+                                       (fn [a b]
+                                         (double
+                                          (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
+                                       [actor-arma mask]))
+                      actor-alignment (get-actor-alignments
+                                       alignments
+                                       actor-id
+                                       (get actor-id-to-group-id-m actor-id)
+                                       (:role actor))
                       actor-reg-seed (.nextLong sim-rng)
 
                       ;; infinite seq of maps containing registration uuid,
@@ -464,3 +475,37 @@
    (count (sim-seq ii)))
 
   )
+
+(comment
+  (get-actor-alignments
+
+   [{:id         "mbox::mailto:bob@example.org"
+     :type       "Agent"
+     :alignments [{:component "https://example.org/activity/a"
+                   :weight    0.5}
+                  {:component "https://example.org/activity/c"
+                   :weight    -0.2}]}]
+   "mbox::mailto:bob@example.org"
+   "trainee"
+   "Lead Developer")
+
+  (reduce
+   (fn [m {actors :member :as personae}]
+     (let [group-id (:name personae)]
+       (reduce
+        (fn [m' actor] (assoc m' (xapiu/agent-id actor) group-id))
+        m
+        actors)))
+   {}
+   [{:name "trainee"
+     :objectType "Group"
+     :member [{:name "Bob Fakename"
+               :mbox "mailto:bob@example.org"
+               :role "Lead Developer"}
+              {:name "Alice Faux"
+               :mbox "mailto:alice@example.org"
+               :role "Lead Developer"}]}])
+
+  (xapiu/agent-id {:name "Bob Fakename"
+                   :mbox "mailto:bob@example.org"
+                   :role "Lead Developer"}))

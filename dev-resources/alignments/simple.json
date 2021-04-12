@@ -1,5 +1,5 @@
 [{
-    "id": "mbox::mailto:bob@example.org",
+    "id": "mbox::mailto:bobfake@example.org",
     "type": "Agent",
     "alignments":
     [

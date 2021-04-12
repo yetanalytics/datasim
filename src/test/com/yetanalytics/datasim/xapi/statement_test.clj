@@ -30,7 +30,7 @@
           valid-args {:input input
                       :iri-map iri-map
                       :activities activities
-                      :actor (-> input :personae :member first (dissoc :role))
+                      :actor (-> input :personae-array first :member first (dissoc :role))
                       :alignment
                       (reduce
                        (fn [acc {:keys [component weight objectOverride]}]

@@ -20,18 +20,22 @@ The inputs to DATASIM consist of four parts, each represented by JSON. They are 
 
 A valid xAPI Profile is required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
 
-#### Actors
+#### Personae
 
-Predefined xAPI Actors (upon whom the simulation will be based) are required to run a DATASIM simulation. This takes the form of a JSON object containing an array of conformant Actors, an example of which is below:
+Predefined xAPI Actors (upon whom the simulation will be based) are required to run a DATASIM simulation. This takes the form of a JSON array of xAPI Groups, each object containing an array of conformant Actor members, an example of which is below:
 
-    {"name": "trainees",
-     "objectType": "Group",
-     "member": [{"name": "Bob Fakename",
-                 "mbox": "mailto:bob@example.org"},
-                {"name": "Alice Faux",
-                 "mbox": "mailto:alice@example.org"},
-                {"name": "Fred Ersatz",
-                 "mbox": "mailto:fred@example.org"}]}
+    [
+      {"name": "trainees1",
+       "objectType": "Group",
+       "member": [{"name": "Bob Fakename",
+                   "mbox": "mailto:bob@example.org"},
+                  {"name": "Alice Faux",
+                   "mbox": "mailto:alice@example.org"}},
+      {"name": "trainees2"
+       "objectType": "Group",
+       "member": [{"name": "Fred Ersatz",
+                   "mbox": "mailto:fred@example.org"}]}
+    ]
 
 #### Alignments
 
@@ -68,7 +72,7 @@ The simulation specification is a single object containing of all of the above. 
 
     {"profiles":[ ... ],
      "parameters": ...,
-     "personae": ...,
+     "personae-array": [ ... ],
      "alignments": ... }
 
 ### System Requirements
@@ -98,7 +102,7 @@ Now that we have this, navigate to target/bundle and run
 With no commands or `--help` it will give you the list of parameters:
 
     -p, --profile URI              The location of an xAPI profile, can be used multiple times.
-    -a, --actor-personae URI       The location of an Actor Personae document indicating the actors in the sim.
+    -a, --actor-personae URI       The location of an Actor Personae document indicating the actors in the sim, can be used multiple times.
     -l, --alignments URI           The location of an Actor Alignments Document.
     -o, --parameters URI     {...} The location of a Sim Parameters Document.
     -i, --input URI                The location of a JSON file containing a combined simulation input spec.

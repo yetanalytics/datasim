@@ -5184,268 +5184,270 @@
       }
     }
   ],
-  "personae": {
-    "member": [
-      {
-        "name": "Agent 0",
-        "mbox": "mailto:agent_0@example.org"
-      },
-      {
-        "name": "Agent 1",
-        "mbox": "mailto:agent_1@example.org"
-      },
-      {
-        "name": "Agent 2",
-        "mbox": "mailto:agent_2@example.org"
-      },
-      {
-        "name": "Agent 3",
-        "mbox": "mailto:agent_3@example.org"
-      },
-      {
-        "name": "Agent 4",
-        "mbox": "mailto:agent_4@example.org"
-      },
-      {
-        "name": "Agent 5",
-        "mbox": "mailto:agent_5@example.org"
-      },
-      {
-        "name": "Agent 6",
-        "mbox": "mailto:agent_6@example.org"
-      },
-      {
-        "name": "Agent 7",
-        "mbox": "mailto:agent_7@example.org"
-      },
-      {
-        "name": "Agent 8",
-        "mbox": "mailto:agent_8@example.org"
-      },
-      {
-        "name": "Agent 9",
-        "mbox": "mailto:agent_9@example.org"
-      },
-      {
-        "name": "Agent 10",
-        "mbox": "mailto:agent_10@example.org"
-      },
-      {
-        "name": "Agent 11",
-        "mbox": "mailto:agent_11@example.org"
-      },
-      {
-        "name": "Agent 12",
-        "mbox": "mailto:agent_12@example.org"
-      },
-      {
-        "name": "Agent 13",
-        "mbox": "mailto:agent_13@example.org"
-      },
-      {
-        "name": "Agent 14",
-        "mbox": "mailto:agent_14@example.org"
-      },
-      {
-        "name": "Agent 15",
-        "mbox": "mailto:agent_15@example.org"
-      },
-      {
-        "name": "Agent 16",
-        "mbox": "mailto:agent_16@example.org"
-      },
-      {
-        "name": "Agent 17",
-        "mbox": "mailto:agent_17@example.org"
-      },
-      {
-        "name": "Agent 18",
-        "mbox": "mailto:agent_18@example.org"
-      },
-      {
-        "name": "Agent 19",
-        "mbox": "mailto:agent_19@example.org"
-      },
-      {
-        "name": "Agent 20",
-        "mbox": "mailto:agent_20@example.org"
-      },
-      {
-        "name": "Agent 21",
-        "mbox": "mailto:agent_21@example.org"
-      },
-      {
-        "name": "Agent 22",
-        "mbox": "mailto:agent_22@example.org"
-      },
-      {
-        "name": "Agent 23",
-        "mbox": "mailto:agent_23@example.org"
-      },
-      {
-        "name": "Agent 24",
-        "mbox": "mailto:agent_24@example.org"
-      },
-      {
-        "name": "Agent 25",
-        "mbox": "mailto:agent_25@example.org"
-      },
-      {
-        "name": "Agent 26",
-        "mbox": "mailto:agent_26@example.org"
-      },
-      {
-        "name": "Agent 27",
-        "mbox": "mailto:agent_27@example.org"
-      },
-      {
-        "name": "Agent 28",
-        "mbox": "mailto:agent_28@example.org"
-      },
-      {
-        "name": "Agent 29",
-        "mbox": "mailto:agent_29@example.org"
-      },
-      {
-        "name": "Agent 30",
-        "mbox": "mailto:agent_30@example.org"
-      },
-      {
-        "name": "Agent 31",
-        "mbox": "mailto:agent_31@example.org"
-      },
-      {
-        "name": "Agent 32",
-        "mbox": "mailto:agent_32@example.org"
-      },
-      {
-        "name": "Agent 33",
-        "mbox": "mailto:agent_33@example.org"
-      },
-      {
-        "name": "Agent 34",
-        "mbox": "mailto:agent_34@example.org"
-      },
-      {
-        "name": "Agent 35",
-        "mbox": "mailto:agent_35@example.org"
-      },
-      {
-        "name": "Agent 36",
-        "mbox": "mailto:agent_36@example.org"
-      },
-      {
-        "name": "Agent 37",
-        "mbox": "mailto:agent_37@example.org"
-      },
-      {
-        "name": "Agent 38",
-        "mbox": "mailto:agent_38@example.org"
-      },
-      {
-        "name": "Agent 39",
-        "mbox": "mailto:agent_39@example.org"
-      },
-      {
-        "name": "Agent 40",
-        "mbox": "mailto:agent_40@example.org"
-      },
-      {
-        "name": "Agent 41",
-        "mbox": "mailto:agent_41@example.org"
-      },
-      {
-        "name": "Agent 42",
-        "mbox": "mailto:agent_42@example.org"
-      },
-      {
-        "name": "Agent 43",
-        "mbox": "mailto:agent_43@example.org"
-      },
-      {
-        "name": "Agent 44",
-        "mbox": "mailto:agent_44@example.org"
-      },
-      {
-        "name": "Agent 45",
-        "mbox": "mailto:agent_45@example.org"
-      },
-      {
-        "name": "Agent 46",
-        "mbox": "mailto:agent_46@example.org"
-      },
-      {
-        "name": "Agent 47",
-        "mbox": "mailto:agent_47@example.org"
-      },
-      {
-        "name": "Agent 48",
-        "mbox": "mailto:agent_48@example.org"
-      },
-      {
-        "name": "Agent 49",
-        "mbox": "mailto:agent_49@example.org"
-      },
-      {
-        "name": "Agent 50",
-        "mbox": "mailto:agent_50@example.org"
-      },
-      {
-        "name": "Agent 51",
-        "mbox": "mailto:agent_51@example.org"
-      },
-      {
-        "name": "Agent 52",
-        "mbox": "mailto:agent_52@example.org"
-      },
-      {
-        "name": "Agent 53",
-        "mbox": "mailto:agent_53@example.org"
-      },
-      {
-        "name": "Agent 54",
-        "mbox": "mailto:agent_54@example.org"
-      },
-      {
-        "name": "Agent 55",
-        "mbox": "mailto:agent_55@example.org"
-      },
-      {
-        "name": "Agent 56",
-        "mbox": "mailto:agent_56@example.org"
-      },
-      {
-        "name": "Agent 57",
-        "mbox": "mailto:agent_57@example.org"
-      },
-      {
-        "name": "Agent 58",
-        "mbox": "mailto:agent_58@example.org"
-      },
-      {
-        "name": "Agent 59",
-        "mbox": "mailto:agent_59@example.org"
-      },
-      {
-        "name": "Agent 60",
-        "mbox": "mailto:agent_60@example.org"
-      },
-      {
-        "name": "Agent 61",
-        "mbox": "mailto:agent_61@example.org"
-      },
-      {
-        "name": "Agent 62",
-        "mbox": "mailto:agent_62@example.org"
-      },
-      {
-        "name": "Agent 63",
-        "mbox": "mailto:agent_63@example.org"
-      }
-    ],
-    "objectType": "Group",
-    "name": "trainees"
-  },
+  "personae-array": [
+    {
+      "member": [
+        {
+          "name": "Agent 0",
+          "mbox": "mailto:agent_0@example.org"
+        },
+        {
+          "name": "Agent 1",
+          "mbox": "mailto:agent_1@example.org"
+        },
+        {
+          "name": "Agent 2",
+          "mbox": "mailto:agent_2@example.org"
+        },
+        {
+          "name": "Agent 3",
+          "mbox": "mailto:agent_3@example.org"
+        },
+        {
+          "name": "Agent 4",
+          "mbox": "mailto:agent_4@example.org"
+        },
+        {
+          "name": "Agent 5",
+          "mbox": "mailto:agent_5@example.org"
+        },
+        {
+          "name": "Agent 6",
+          "mbox": "mailto:agent_6@example.org"
+        },
+        {
+          "name": "Agent 7",
+          "mbox": "mailto:agent_7@example.org"
+        },
+        {
+          "name": "Agent 8",
+          "mbox": "mailto:agent_8@example.org"
+        },
+        {
+          "name": "Agent 9",
+          "mbox": "mailto:agent_9@example.org"
+        },
+        {
+          "name": "Agent 10",
+          "mbox": "mailto:agent_10@example.org"
+        },
+        {
+          "name": "Agent 11",
+          "mbox": "mailto:agent_11@example.org"
+        },
+        {
+          "name": "Agent 12",
+          "mbox": "mailto:agent_12@example.org"
+        },
+        {
+          "name": "Agent 13",
+          "mbox": "mailto:agent_13@example.org"
+        },
+        {
+          "name": "Agent 14",
+          "mbox": "mailto:agent_14@example.org"
+        },
+        {
+          "name": "Agent 15",
+          "mbox": "mailto:agent_15@example.org"
+        },
+        {
+          "name": "Agent 16",
+          "mbox": "mailto:agent_16@example.org"
+        },
+        {
+          "name": "Agent 17",
+          "mbox": "mailto:agent_17@example.org"
+        },
+        {
+          "name": "Agent 18",
+          "mbox": "mailto:agent_18@example.org"
+        },
+        {
+          "name": "Agent 19",
+          "mbox": "mailto:agent_19@example.org"
+        },
+        {
+          "name": "Agent 20",
+          "mbox": "mailto:agent_20@example.org"
+        },
+        {
+          "name": "Agent 21",
+          "mbox": "mailto:agent_21@example.org"
+        },
+        {
+          "name": "Agent 22",
+          "mbox": "mailto:agent_22@example.org"
+        },
+        {
+          "name": "Agent 23",
+          "mbox": "mailto:agent_23@example.org"
+        },
+        {
+          "name": "Agent 24",
+          "mbox": "mailto:agent_24@example.org"
+        },
+        {
+          "name": "Agent 25",
+          "mbox": "mailto:agent_25@example.org"
+        },
+        {
+          "name": "Agent 26",
+          "mbox": "mailto:agent_26@example.org"
+        },
+        {
+          "name": "Agent 27",
+          "mbox": "mailto:agent_27@example.org"
+        },
+        {
+          "name": "Agent 28",
+          "mbox": "mailto:agent_28@example.org"
+        },
+        {
+          "name": "Agent 29",
+          "mbox": "mailto:agent_29@example.org"
+        },
+        {
+          "name": "Agent 30",
+          "mbox": "mailto:agent_30@example.org"
+        },
+        {
+          "name": "Agent 31",
+          "mbox": "mailto:agent_31@example.org"
+        },
+        {
+          "name": "Agent 32",
+          "mbox": "mailto:agent_32@example.org"
+        },
+        {
+          "name": "Agent 33",
+          "mbox": "mailto:agent_33@example.org"
+        },
+        {
+          "name": "Agent 34",
+          "mbox": "mailto:agent_34@example.org"
+        },
+        {
+          "name": "Agent 35",
+          "mbox": "mailto:agent_35@example.org"
+        },
+        {
+          "name": "Agent 36",
+          "mbox": "mailto:agent_36@example.org"
+        },
+        {
+          "name": "Agent 37",
+          "mbox": "mailto:agent_37@example.org"
+        },
+        {
+          "name": "Agent 38",
+          "mbox": "mailto:agent_38@example.org"
+        },
+        {
+          "name": "Agent 39",
+          "mbox": "mailto:agent_39@example.org"
+        },
+        {
+          "name": "Agent 40",
+          "mbox": "mailto:agent_40@example.org"
+        },
+        {
+          "name": "Agent 41",
+          "mbox": "mailto:agent_41@example.org"
+        },
+        {
+          "name": "Agent 42",
+          "mbox": "mailto:agent_42@example.org"
+        },
+        {
+          "name": "Agent 43",
+          "mbox": "mailto:agent_43@example.org"
+        },
+        {
+          "name": "Agent 44",
+          "mbox": "mailto:agent_44@example.org"
+        },
+        {
+          "name": "Agent 45",
+          "mbox": "mailto:agent_45@example.org"
+        },
+        {
+          "name": "Agent 46",
+          "mbox": "mailto:agent_46@example.org"
+        },
+        {
+          "name": "Agent 47",
+          "mbox": "mailto:agent_47@example.org"
+        },
+        {
+          "name": "Agent 48",
+          "mbox": "mailto:agent_48@example.org"
+        },
+        {
+          "name": "Agent 49",
+          "mbox": "mailto:agent_49@example.org"
+        },
+        {
+          "name": "Agent 50",
+          "mbox": "mailto:agent_50@example.org"
+        },
+        {
+          "name": "Agent 51",
+          "mbox": "mailto:agent_51@example.org"
+        },
+        {
+          "name": "Agent 52",
+          "mbox": "mailto:agent_52@example.org"
+        },
+        {
+          "name": "Agent 53",
+          "mbox": "mailto:agent_53@example.org"
+        },
+        {
+          "name": "Agent 54",
+          "mbox": "mailto:agent_54@example.org"
+        },
+        {
+          "name": "Agent 55",
+          "mbox": "mailto:agent_55@example.org"
+        },
+        {
+          "name": "Agent 56",
+          "mbox": "mailto:agent_56@example.org"
+        },
+        {
+          "name": "Agent 57",
+          "mbox": "mailto:agent_57@example.org"
+        },
+        {
+          "name": "Agent 58",
+          "mbox": "mailto:agent_58@example.org"
+        },
+        {
+          "name": "Agent 59",
+          "mbox": "mailto:agent_59@example.org"
+        },
+        {
+          "name": "Agent 60",
+          "mbox": "mailto:agent_60@example.org"
+        },
+        {
+          "name": "Agent 61",
+          "mbox": "mailto:agent_61@example.org"
+        },
+        {
+          "name": "Agent 62",
+          "mbox": "mailto:agent_62@example.org"
+        },
+        {
+          "name": "Agent 63",
+          "mbox": "mailto:agent_63@example.org"
+        }
+      ],
+      "objectType": "Group",
+      "name": "trainees"
+    }
+  ],
   "alignments": [],
   "parameters": {
     "start": "2021-03-18T16:00:00.000000Z",

@@ -82,8 +82,11 @@
          :as input}
         (cond-> (input/from-location :input :json input-loc)
           override-max (u/override-max! override-max))
-        actor-ids (map xapiu/agent-id
-                       (get-in input [:personae :member]))
+        actor-ids (-> input
+                      :personae-array
+                      (->> (mapcat :member)
+                           (map xapiu/agent-id)
+                           distinct))
         _ (assert (<= gen-concurrency (count actor-ids))
                   "Gen concurrency may not be higher than actor count")
 
