@@ -174,6 +174,7 @@
                         })]
         (:allocations (reconfigure-cluster-workload new old)))))))
 
+;; TODO: this can only deploy once per machine. We just need to reduce task groups over the groups!
 
 #_(deftest semi-colocated-colocates-workflow-edges-mult-per-machine
   (testing "Semi-colocated tasks can deploy to groups multiple-times."
