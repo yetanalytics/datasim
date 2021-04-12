@@ -83,11 +83,15 @@
                                   #(get task-saturations % 1)
                                   task-group)))
                               task-groups))
-        suitable-groups (keep
-                         (fn [[g ps]]
-                           (when (<= capacity (count ps))
-                             g))
-                         groups-index)
+        suitable-groups (into {}
+                              (keep
+                               (fn [[g ps]]
+                                 (let [psc (count ps)]
+                                   (when (<= capacity psc)
+                                     [g
+                                      (quot psc
+                                            capacity)])))
+                               groups-index))
         ret
         ;; if we can cover all tasks
         (if (<=
@@ -97,7 +101,7 @@
                 (map
                  (fn [[g pvm] task-group]
                    (SplitAmong.
-                    [(vals pvm)]
+                    [(take (count task-group) (vals pvm))]
                     [(mapv
                       #(get task->node [job-id %])
                       task-group)]))

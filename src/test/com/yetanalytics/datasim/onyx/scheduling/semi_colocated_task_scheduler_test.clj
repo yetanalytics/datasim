@@ -140,34 +140,70 @@
                       })]
       (:allocations (reconfigure-cluster-workload new old))))))
 
-#_(deftest semi-colocated-colocates-workflow-edges-two-jobs
-  (is
-   (=
-    {:j1 {:in-1 [:g1-p2],
-          :out-1 [:g1-p1],
-          :out-2 [:g2-p1],
-          :in-2 [:g2-p2],
-          :out-0 [:g3-p2],
-          :in-0 [:g3-p1]}}
-    (let [old (gen-replica
-               3 ;; three physical
-               2) ;; two vpeers each
+(deftest semi-colocated-colocates-workflow-edges-extra-space
+  (testing "Semi-colocated tasks can deploy to groups with more slots available
+            than needed."
+    (is
+     (=
+      {:j1 {:in-0 [:g3-p2],
+            :out-0 [:g3-p1],
+            :in-1 [:g1-p2],
+            :out-1 [:g1-p1]
+            :in-2 [:g2-p2],
+            :out-2 [:g2-p1]}}
+      (let [old (gen-replica
+                 3 ;; three physical
+                 3) ;; three vpeers each
 
-          new (merge old
-                     {:task-schedulers {:j1 :onyx.task-scheduler/semi-colocated}
-                      :jobs [:j1]
-                      :tasks {:j1 [:in-0 :out-0
-                                   :in-1 :out-1
-                                   :in-2 :out-2]}
-                      :saturation {:j1 6}
-                      :task-saturation {:j1 {:in-0 1
-                                             :out-0 1
-                                             :in-1 1
-                                             :out-1 1
-                                             :in-2 1
-                                             :out-2 1}}
-                      :in->out {:j1 {:in-0 #{:out-0}
-                                     :in-1 #{:out-1}
-                                     :in-2 #{:out-2}}}
-                      })]
-      (:allocations (reconfigure-cluster-workload new old))))))
+            new (merge old
+                       {:task-schedulers {:j1 :onyx.task-scheduler/semi-colocated}
+                        :jobs [:j1]
+                        :tasks {:j1 [:in-0 :out-0
+                                     :in-1 :out-1
+                                     :in-2 :out-2]}
+                        :saturation {:j1 6}
+                        :task-saturation {:j1 {:in-0 1
+                                               :out-0 1
+                                               :in-1 1
+                                               :out-1 1
+                                               :in-2 1
+                                               :out-2 1}}
+                        :in->out {:j1 {:in-0 #{:out-0}
+                                       :in-1 #{:out-1}
+                                       :in-2 #{:out-2}}}
+                        })]
+        (:allocations (reconfigure-cluster-workload new old)))))))
+
+
+#_(deftest semi-colocated-colocates-workflow-edges-mult-per-machine
+  (testing "Semi-colocated tasks can deploy to groups multiple-times."
+    (is
+     (=
+      {:j1 {:in-0 [:g1-p2],
+            :out-0 [:g3-p1],
+            :in-1 [:g1-p2],
+            :out-1 [:g1-p1]
+            :in-2 [:g2-p2],
+            :out-2 [:g2-p1]}}
+      (let [old (gen-replica
+                 1 ;; three physical
+                 9) ;; three vpeers each
+
+            new (merge old
+                       {:task-schedulers {:j1 :onyx.task-scheduler/semi-colocated}
+                        :jobs [:j1]
+                        :tasks {:j1 [:in-0 :out-0
+                                     :in-1 :out-1
+                                     :in-2 :out-2]}
+                        :saturation {:j1 6}
+                        :task-saturation {:j1 {:in-0 1
+                                               :out-0 1
+                                               :in-1 1
+                                               :out-1 1
+                                               :in-2 1
+                                               :out-2 1}}
+                        :in->out {:j1 {:in-0 #{:out-0}
+                                       :in-1 #{:out-1}
+                                       :in-2 #{:out-2}}}
+                        })]
+        (:allocations (reconfigure-cluster-workload new old)))))))
