@@ -96,6 +96,7 @@
    ;; Blocking (a little hard to predict)
    [nil "--[no-]block" "Block until the job is done" :default true]
    [nil "--noop" "Output to a leaf function that does nothing" :default false]
+   [nil "--[no-]colo" "Colocate generation and output tasks on the same machine (default)" :default true]
    ;; Embedded REPL TODO: Use it!
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
@@ -203,6 +204,7 @@
                                  :override-max override-max
                                  :out-ratio out-ratio
                                  :noop noop
+                                 :colo colo
                                  :gen-concurrency gen-concurrency
                                  :gen-batch-size gen-batch-size
 

@@ -51,8 +51,7 @@
            gen-batch-size
            out-ratio
            noop
-           ;;percentage
-
+           colo
            in-batch-size
            in-batch-timeout
            out-batch-size
@@ -67,7 +66,8 @@
     :or {gen-concurrency 1
          gen-batch-size 1
          out-ratio 1
-         ;; percentage 100
+         noop false
+         colo true
          in-batch-size 1
          in-batch-timeout 50
          out-batch-size 1
@@ -113,8 +113,9 @@
                            (cycle out-names)))
       :lifecycles []
       :catalog []
-      :task-scheduler :onyx.task-scheduler/semi-colocated
-      ;; :percentage percentage
+      :task-scheduler (if colo
+                        :onyx.task-scheduler/semi-colocated
+                        :onyx.task-scheduler/balanced)
       }
      (concat
       (map
