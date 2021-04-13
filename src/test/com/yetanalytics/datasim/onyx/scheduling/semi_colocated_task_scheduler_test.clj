@@ -99,7 +99,7 @@
      :percentages {},
      :input-tasks {},
      :message-short-ids {},
-     :version 7,
+     :version 0,
      :completed-jobs [],
      :log-version "0.14.6-SNAPSHOT",
      :task-schedulers {},
@@ -174,21 +174,20 @@
                         })]
         (:allocations (reconfigure-cluster-workload new old)))))))
 
-;; TODO: this can only deploy once per machine. We just need to reduce task groups over the groups!
-
-#_(deftest semi-colocated-colocates-workflow-edges-mult-per-machine
-  (testing "Semi-colocated tasks can deploy to groups multiple-times."
+(deftest semi-colocated-colocates-workflow-edges-mult-per-machine
+  (testing "Semi-colocated tasks can deploy multiple task groups to a VM group."
     (is
      (=
-      {:j1 {:in-0 [:g1-p2],
-            :out-0 [:g3-p1],
-            :in-1 [:g1-p2],
-            :out-1 [:g1-p1]
-            :in-2 [:g2-p2],
-            :out-2 [:g2-p1]}}
+      {:j1
+       {:in-2 [:g1-p4],
+        :out-0 [:g1-p5],
+        :in-0 [:g1-p6],
+        :out-1 [:g1-p2],
+        :in-1 [:g1-p1],
+        :out-2 [:g1-p3]}}
       (let [old (gen-replica
-                 1 ;; three physical
-                 9) ;; three vpeers each
+                 1 ;; one physical
+                 6) ;; six vpeers
 
             new (merge old
                        {:task-schedulers {:j1 :onyx.task-scheduler/semi-colocated}
@@ -204,6 +203,52 @@
                                                :in-2 1
                                                :out-2 1}}
                         :in->out {:j1 {:in-0 #{:out-0}
+                                       :in-1 #{:out-1}
+                                       :in-2 #{:out-2}}}
+                        })]
+        (:allocations (reconfigure-cluster-workload new old)))))))
+
+;; TODO: Semi-colo cannot currently be used with multiple jobs, reconfigure does not work!
+#_(deftest semi-colocated-colocates-workflow-edges-two-jobs
+  (testing "Semi-colocated tasks can share a vm group."
+    (is
+     (=
+      {:j1
+       {}
+       :j2
+       {}}
+      (let [old (gen-replica
+                 2 ;; one physical
+                 6) ;; twelve vpeers
+
+            new (merge old
+                       {:task-schedulers {:j1 :onyx.task-scheduler/semi-colocated
+                                          :j2 :onyx.task-scheduler/semi-colocated}
+                        :jobs [:j1 :j2]
+                        :tasks {:j1 [:in-0 :out-0
+                                     :in-1 :out-1
+                                     :in-2 :out-2]
+                                :j2 [:in-0 :out-0
+                                     :in-1 :out-1
+                                     :in-2 :out-2]}
+                        :saturation {:j1 6
+                                     :j2 6}
+                        :task-saturation {:j1 {:in-0 1
+                                               :out-0 1
+                                               :in-1 1
+                                               :out-1 1
+                                               :in-2 1
+                                               :out-2 1}
+                                          :j2 {:in-0 1
+                                               :out-0 1
+                                               :in-1 1
+                                               :out-1 1
+                                               :in-2 1
+                                               :out-2 1}}
+                        :in->out {:j1 {:in-0 #{:out-0}
+                                       :in-1 #{:out-1}
+                                       :in-2 #{:out-2}}
+                                  :j2 {:in-0 #{:out-0}
                                        :in-1 #{:out-1}
                                        :in-2 #{:out-2}}}
                         })]
