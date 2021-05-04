@@ -108,26 +108,27 @@
 ;; Reach into the environment and grab all of the user credentials from there
 ;;  that will be used in basic auth.
 (defonce users
-  (let [credentials (env :credentials "")
-        users       (clojure.string/split credentials #",")]
-    (if (not= [""] users)
-      ;; Create a map of every allowed credential
-      (reduce (fn [m cred]
-                (let [[user pass] (clojure.string/split cred #":")]
-                  (assoc m
-                         user
-                         {:username user
-                          :password pass})))
-              {}
-              users)
-      (do
-        (log/info :msg "No Basic-Auth Credentials were set.")
-        {}))))
+  (delay
+    (let [credentials (env :credentials "")
+          users'       (clojure.string/split credentials #",")]
+      (if (not= [""] users')
+        ;; Create a map of every allowed credential
+        (reduce (fn [m cred]
+                  (let [[user pass] (clojure.string/split cred #":")]
+                    (assoc m
+                           user
+                           {:username user
+                            :password pass})))
+                {}
+                users')
+        (do
+          (log/info :msg "No Basic-Auth Credentials were set.")
+          {})))))
 
 (defn auth-fn
   "This function will ensure that the creds from Basic Auth are authenticated."
   [request {:keys [username password]}]
-  (when-let [user (get users username)]
+  (when-let [user (get @users username)]
     (when (= password (:password user))
       username)))
 
