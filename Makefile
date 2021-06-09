@@ -17,7 +17,7 @@ target/bundle/datasim_cli.jar:
 target/bundle/datasim_server.jar: # no AOT for this one
 	mkdir -p target/bundle
 	rm -f pom.xml
-	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:server]' :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-server :version '"$(VERSION)"' :jar target/bundle/datasim_server.jar :main-class com.yetanalytics.datasim.server
+	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:server]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-server :version '"$(VERSION)"' :jar target/bundle/datasim_server.jar :main-class com.yetanalytics.datasim.server
 	rm -f pom.xml
 
 target/bundle/datasim_onyx.jar:
