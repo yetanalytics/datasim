@@ -25,12 +25,33 @@
              :gen-concurrency 3})
            {:workflow [[:in-0 :out-0] [:in-1 :out-1] [:in-2 :out-2]],
             :lifecycles
-            [#:lifecycle{:task :out-0,
-                         :calls :onyx.plugin.s3-output/s3-output-calls}
-             #:lifecycle{:task :out-1,
-                         :calls :onyx.plugin.s3-output/s3-output-calls}
-             #:lifecycle{:task :out-2,
-                         :calls :onyx.plugin.s3-output/s3-output-calls}
+            [{:lifecycle/task :out-0,
+              :lifecycle/calls :com.yetanalytics.datasim.onyx.http/out-calls,
+              :com.yetanalytics.datasim.onyx.http/lrs-request
+              {:url "null/statements",
+               :args
+               {:headers
+                {"X-Experience-API-Version" "1.0.3",
+                 "Content-Type" "application/json"},
+                :as :json}}}
+             {:lifecycle/task :out-1,
+              :lifecycle/calls :com.yetanalytics.datasim.onyx.http/out-calls,
+              :com.yetanalytics.datasim.onyx.http/lrs-request
+              {:url "null/statements",
+               :args
+               {:headers
+                {"X-Experience-API-Version" "1.0.3",
+                 "Content-Type" "application/json"},
+                :as :json}}}
+             {:lifecycle/task :out-2,
+              :lifecycle/calls :com.yetanalytics.datasim.onyx.http/out-calls,
+              :com.yetanalytics.datasim.onyx.http/lrs-request
+              {:url "null/statements",
+               :args
+               {:headers
+                {"X-Experience-API-Version" "1.0.3",
+                 "Content-Type" "application/json"},
+                :as :json}}}
              {:lifecycle/task :in-0,
               :lifecycle/calls :com.yetanalytics.datasim.onyx.sim/in-calls,
               :com.yetanalytics.datasim.onyx.sim/input-loc
@@ -59,66 +80,48 @@
               #{"mbox::mailto:alicefaux@example.org"},
               :com.yetanalytics.datasim.onyx.sim/batch-size 1}],
             :catalog
-            [{:onyx/plugin :onyx.plugin.s3-output/output,
-              :onyx/medium :s3,
+            [{:http-output/retry-params
+              {:base-sleep-ms 500,
+               :max-sleep-ms 30000,
+               :max-total-sleep-ms 3600000},
+              :onyx/plugin :onyx.plugin.http-output/output,
+              :onyx/medium :http,
               :onyx/batch-timeout 50,
               :onyx/type :output,
               :onyx/name :out-0,
-              :s3/serializer-fn :com.yetanalytics.datasim.onyx.util/batch->json,
               :onyx/n-peers 1,
-              :s3/prefix nil,
-              :s3/prefix-key :task-prefix,
-              :s3/encryption nil,
-              :onyx/doc "Writes segments to s3 files, one file per batch",
-              :s3/content-type "application/json",
-              :s3/multi-upload true,
-              :s3/max-concurrent-uploads nil,
-              :s3/serialize-per-element? false,
-              :s3/prefix-separator nil,
-              :s3/key-naming-fn
-              :com.yetanalytics.datasim.onyx.job/output-naming-fn,
-              :onyx/batch-size 1,
-              :s3/bucket nil}
-             {:onyx/plugin :onyx.plugin.s3-output/output,
-              :onyx/medium :s3,
+              :onyx/doc "POST statements to http endpoint",
+              :http-output/success-fn
+              :com.yetanalytics.datasim.onyx.http/post-success?,
+              :onyx/batch-size 1}
+             {:http-output/retry-params
+              {:base-sleep-ms 500,
+               :max-sleep-ms 30000,
+               :max-total-sleep-ms 3600000},
+              :onyx/plugin :onyx.plugin.http-output/output,
+              :onyx/medium :http,
               :onyx/batch-timeout 50,
               :onyx/type :output,
               :onyx/name :out-1,
-              :s3/serializer-fn :com.yetanalytics.datasim.onyx.util/batch->json,
               :onyx/n-peers 1,
-              :s3/prefix nil,
-              :s3/prefix-key :task-prefix,
-              :s3/encryption nil,
-              :onyx/doc "Writes segments to s3 files, one file per batch",
-              :s3/content-type "application/json",
-              :s3/multi-upload true,
-              :s3/max-concurrent-uploads nil,
-              :s3/serialize-per-element? false,
-              :s3/prefix-separator nil,
-              :s3/key-naming-fn
-              :com.yetanalytics.datasim.onyx.job/output-naming-fn,
-              :onyx/batch-size 1,
-              :s3/bucket nil}
-             {:onyx/plugin :onyx.plugin.s3-output/output,
-              :onyx/medium :s3,
+              :onyx/doc "POST statements to http endpoint",
+              :http-output/success-fn
+              :com.yetanalytics.datasim.onyx.http/post-success?,
+              :onyx/batch-size 1}
+             {:http-output/retry-params
+              {:base-sleep-ms 500,
+               :max-sleep-ms 30000,
+               :max-total-sleep-ms 3600000},
+              :onyx/plugin :onyx.plugin.http-output/output,
+              :onyx/medium :http,
               :onyx/batch-timeout 50,
               :onyx/type :output,
               :onyx/name :out-2,
-              :s3/serializer-fn :com.yetanalytics.datasim.onyx.util/batch->json,
               :onyx/n-peers 1,
-              :s3/prefix nil,
-              :s3/prefix-key :task-prefix,
-              :s3/encryption nil,
-              :onyx/doc "Writes segments to s3 files, one file per batch",
-              :s3/content-type "application/json",
-              :s3/multi-upload true,
-              :s3/max-concurrent-uploads nil,
-              :s3/serialize-per-element? false,
-              :s3/prefix-separator nil,
-              :s3/key-naming-fn
-              :com.yetanalytics.datasim.onyx.job/output-naming-fn,
-              :onyx/batch-size 1,
-              :s3/bucket nil}
+              :onyx/doc "POST statements to http endpoint",
+              :http-output/success-fn
+              :com.yetanalytics.datasim.onyx.http/post-success?,
+              :onyx/batch-size 1}
              #:onyx{:name :in-0,
                     :plugin :com.yetanalytics.datasim.onyx.sim/plugin,
                     :type :input,
