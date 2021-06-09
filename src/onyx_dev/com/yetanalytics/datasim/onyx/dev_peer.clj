@@ -2,8 +2,9 @@
   (:gen-class)
   (:require onyx.plugin.http-output
             onyx.plugin.seq
+            onyx.plugin.s3-output
             onyx.api
-            com.yetanalytics.datasim.onyx.seq
+            com.yetanalytics.datasim.onyx.sim
             com.yetanalytics.datasim.onyx.http
             [com.yetanalytics.datasim.onyx.config :as config]))
 

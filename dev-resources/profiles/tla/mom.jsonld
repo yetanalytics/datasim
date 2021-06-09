@@ -1,0 +1,2904 @@
+{
+    "id": "https://w3id.org/xapi/tla",
+    "@context": "https://w3id.org/xapi/profiles/context",
+    "type": "Profile",
+    "conformsTo": "https://w3id.org/xapi/profiles#1.0",
+    "prefLabel": {
+        "en": "TLA Profile"
+    },
+    "definition": {
+        "en": "The TLA profile includes Verbs, Activity Types, Extensions, and xAPI document definitions used to represent distributed learning experiences in xAPI."
+    },
+    "versions": [
+        {
+            "id": "https://w3id.org/xapi/tla/v0.13",
+            "generatedAtTime": "2020-11-05T18:40:02.955Z"
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/v0.14",
+            "generatedAtTime": "2020-11-05T18:40:02.955Z"
+        }
+    ],
+    "author": {
+        "type": "Organization",
+        "name": "MOM",
+        "url": "https://github.com/adlnet/MasterObjectModel"
+    },
+    "concepts": [
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/deselected",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "deselected"
+            },
+            "definition": {
+                "en": "Indicates the actor removed specific goal or task"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/organized",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "organized"
+            },
+            "definition": {
+                "en": "Indicates the actor filtered content that aligns to specific goal"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/prioritized",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "prioritized"
+            },
+            "definition": {
+                "en": "Indicates the actor has set a learning goal"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/projected",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "projected"
+            },
+            "definition": {
+                "en": "Indicates the actor received list of goal recommendations over time, based on selected goal with recursive depth, what set of content can achieve mastery in the ordered sub-goals"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/recommended",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "recommended"
+            },
+            "definition": {
+                "en": "Indicates the learner received the recommendation to follow a career path, work towards a learning objective, or perform a learning activity from the actor"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/planned",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "planned"
+            },
+            "definition": {
+                "en": "Indicates that the actor assigned themselves a new learning goal, without needing approval"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/approved",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "approved"
+            },
+            "definition": {
+                "en": "Indicates an OICS approved a requested activity for the given learner"
+            },
+            "relatedMatch": [
+                "https://w3id.org/xapi/dod-isd/verbs/approved"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/explored",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "explored"
+            },
+            "definition": {
+                "en": "Indicates the actor searched active learning goals related to specific content, viewing what other content may trigger related goals, based on active goal and recently completed content"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/clarified",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "clarified"
+            },
+            "definition": {
+                "en": "Indicates the actor queried what other content may also reinforce the current learning goal, after completing content"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/directed",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "directed"
+            },
+            "definition": {
+                "en": "Indicates the actor assigned a learning goal to a learner"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/scheduled",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "scheduled"
+            },
+            "definition": {
+                "en": "Indicates the actor scheduled an activity or lesson"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/evaluated",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "evaluated"
+            },
+            "definition": {
+                "en": "Indicates the learner(s) appeared in a Measure of Effectiveness (MOE) search (Learner competency state vs readiness)"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/tracked",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "tracked"
+            },
+            "definition": {
+                "en": "Indicates the learner(s) appeared in a competency search based on their competency state"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/surveyed",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "surveyed"
+            },
+            "definition": {
+                "en": "Indicates the learner(s) appeared in a Measure of Performance (MOP) search (learner grade in assessment)"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/assessed",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "assessed"
+            },
+            "definition": {
+                "en": "Indicates the actor completed assessments in a way that will cause a change in their authoritative learner state"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/contextualized",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "contextualized"
+            },
+            "definition": {
+                "en": "Indicates the user performed a number of connected learning activities that should result in a change in their authoritative learner state"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/located",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "located"
+            },
+            "definition": {
+                "en": "Indicates the actor's competency state needs to be updated based on completed content"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/socialized",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "socialized"
+            },
+            "definition": {
+                "en": "Indicates the learner interacted with \"Wild\" (out of network) content in a social environment"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/captured",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "captured"
+            },
+            "definition": {
+                "en": "Indicates the learner interacted with \"Wild\" (out of network) content"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/asserted",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "asserted"
+            },
+            "definition": {
+                "en": "Indicates the learner has provided sufficient evidence to update the learner's measure of competence in a given competency"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/validated",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "validated"
+            },
+            "definition": {
+                "en": "Indicates an OICS approved a change to a competency framework within the TLA that will affect the learners’ states"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/inferred",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "inferred"
+            },
+            "definition": {
+                "en": "Indicates an authoritative source changed a learner's competency assertions based on a valid competency framework change"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/qualified",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "qualified"
+            },
+            "definition": {
+                "en": "Indicates the learner meets all the requirements for a badge, but hasn't been awarded the badge yet"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/conferred",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "conferred"
+            },
+            "definition": {
+                "en": "Indicates the OICS conferred a badge to the learner in the learner context extension"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/certified",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "certified"
+            },
+            "definition": {
+                "en": "Indicates the learner received an accreditation by an authoritative source to perform a given job or task"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/verified",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "verified"
+            },
+            "definition": {
+                "en": "Indicates the authoritative source verified evidence of learning from a non-authoritative source as reliable data"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/recruited",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "recruited"
+            },
+            "definition": {
+                "en": "Indicates the actor recruited the learner to join the ecosystem"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/appraised",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "appraised"
+            },
+            "definition": {
+                "en": "Indicates the learner met entry criteria for jobs and assigned a career trajectory"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/detailed",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "detailed"
+            },
+            "definition": {
+                "en": "OICS detailed the learner to a specific job"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/mobilized",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "mobilized"
+            },
+            "definition": {
+                "en": "OICS mobilized the learner to a state of on duty"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/employed",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "employed"
+            },
+            "definition": {
+                "en": "Indicates OICS employs the actor such that they started work doing their job"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/schooled",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "schooled"
+            },
+            "definition": {
+                "en": "Indicates OICS has enrolled the learner in a schooling system"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/promoted",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "promoted"
+            },
+            "definition": {
+                "en": "Indicates OICS has changed a learner’s rank, either up or down"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/screened",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "screened"
+            },
+            "definition": {
+                "en": "Indicates OICS screened learner for a potentially narrower career trajectory, and passed through a \"gate\" within their career trajectory"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/selected",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "selected"
+            },
+            "definition": {
+                "en": "Indicates OICS selected learner based on criteria for a potentially wider career trajectory, opening up new career possibilities"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/transitioned",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "transitioned"
+            },
+            "definition": {
+                "en": "Indicates the actor changed career paths, putting them on a completely different and brand new career trajectory"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/released",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "released"
+            },
+            "definition": {
+                "en": "Indicates OICS released the learner from the learning environment"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/verbs/restricted",
+            "type": "Verb",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "restricted"
+            },
+            "definition": {
+                "en": "Indicates OICS temporarily restricted the learner from some (possibly all) participation within the learning environment"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/competency",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "competency"
+            },
+            "definition": {
+                "en": "A knowledge, skill, ability, or other object needed to perform in a given task"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/activity",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "activity"
+            },
+            "definition": {
+                "en": "Any generic activity an actor can interact with, that is not an assessment"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/assessment",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "assessment"
+            },
+            "definition": {
+                "en": "Any generic exercise that assesses the user's level of competence."
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/content_set",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "content set"
+            },
+            "definition": {
+                "en": "Any generic collection of activities and/or assessment activities"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/badge",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "badge"
+            },
+            "definition": {
+                "en": "An online badge that is earned after achieving multiple related competencies"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/credential",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "credential"
+            },
+            "definition": {
+                "en": "An authrotative statement that the recipient can perform a task"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/career",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "career"
+            },
+            "definition": {
+                "en": "An outline of jobs and their requirements in a career, usually used to outline the expected learning path"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/career_state",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "career state"
+            },
+            "definition": {
+                "en": "An attribute of one service that has distinct competency requirements, levels of mastery, training requirements associated with it"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+            "type": "ActivityType",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "job/duty/gig"
+            },
+            "definition": {
+                "en": "An outline of the duties and requirements to perform these duties for a given position"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/instance",
+            "type": "ActivityExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "instance"
+            },
+            "definition": {
+                "en": "the instance of the goal that was deselected"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/confidence",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "confidence"
+            },
+            "definition": {
+                "en": "The measure of a learner's acquisition of a competency according to the asserting authority"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/asserted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/evidence",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "evidence"
+            },
+            "definition": {
+                "en": "An array of the evidence to support an assertion"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/asserted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/due_date",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "due date"
+            },
+            "definition": {
+                "en": "The ISO time stamp that an activity is due"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/scheduled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/permanent_change_of_station",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "permanent change of station"
+            },
+            "definition": {
+                "en": "A boolean marking if this is a PCS or a different detail event"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/detailed"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/unit_identification_code",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "unit identification code"
+            },
+            "definition": {
+                "en": "A unique code for the learner's unit"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/detailed",
+                "https://w3id.org/xapi/tla/verbs/mobilized",
+                "https://w3id.org/xapi/tla/verbs/employed",
+                "https://w3id.org/xapi/tla/verbs/schooled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/location",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "location"
+            },
+            "definition": {
+                "en": "The physical location of the statement's object"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/detailed",
+                "https://w3id.org/xapi/tla/verbs/mobilized",
+                "https://w3id.org/xapi/tla/verbs/employed",
+                "https://w3id.org/xapi/tla/verbs/schooled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/expiration",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "expiration"
+            },
+            "definition": {
+                "en": "The date the screening or selection expires"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/selected",
+                "https://w3id.org/xapi/tla/verbs/screened"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/reason",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "reason"
+            },
+            "definition": {
+                "en": "The reason the learner has left the learning environment"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/released"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/restriction",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "restriction reason"
+            },
+            "definition": {
+                "en": "The reason the learner is restricted"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/restricted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/DEP",
+            "type": "ContextExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "DEP"
+            },
+            "definition": {
+                "en": "A boolean indicating if the user is performing learning activities while in DEP"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/extensions/recommendation_order",
+            "type": "ResultExtension",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "recommendation order"
+            },
+            "definition": {
+                "en": "The order of recommendations within a curated or projected event"
+            },
+            "recommendedVerbs": [
+                "https://w3id.org/xapi/tla/verbs/projected"
+            ]
+        }
+    ],
+    "templates": [
+        {
+            "id": "https://w3id.org/xapi/tla#generalrestrictions",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "General restrictions"
+            },
+            "definition": {
+                "en": "Restrictions for all tla-defined Statements"
+            },
+            "rules": [
+                {
+                    "location": "$.actor",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.authority",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.timestamp",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#deselected",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "deselected"
+            },
+            "definition": {
+                "en": "Indicates the actor removed specific goal or task"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/deselected",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.extensions['https://w3id.org/xapi/tla/extensions/instance']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+                        "https://w3id.org/xapi/tla/activity-types/competency",
+                        "https://w3id.org/xapi/tla/activity-types/activity"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/v0.10/templates#waived",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "waived"
+            },
+            "definition": {
+                "en": "Indicates that the learning activity requirements were met by means other than completing the activity. A waived statement is used to indicate that the activity may be skipped by the actor"
+            },
+            "verb": "https://w3id.org/xapi/adl/verbs/waived",
+            "rules": [
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#launched",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "launched"
+            },
+            "definition": {
+                "en": "Indicates the actor attempted to start up an activity"
+            },
+            "verb": "https://adlnet.gov/expapi/verbs/launched",
+            "rules": [
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.context.contextActivities",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "recommended",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#completed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "completed"
+            },
+            "definition": {
+                "en": "Indicates the actor finished or concluded the activity normally"
+            },
+            "verb": "https://adlnet.gov/expapi/verbs/completed",
+            "rules": [
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "included",
+                    "all": [
+                        true
+                    ]
+                },
+                {
+                    "location": "$.result.success",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.result.duration",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#passed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "passed"
+            },
+            "definition": {
+                "en": "Indicates the actor completed an activity to standard"
+            },
+            "verb": "https://adlnet.gov/expapi/verbs/passed",
+            "rules": [
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.result.score.scaled",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.success",
+                    "presence": "included",
+                    "all": [
+                        true
+                    ]
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "included",
+                    "all": [
+                        true
+                    ]
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#failed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "failed"
+            },
+            "definition": {
+                "en": "Indicates the actor did not complete an activity to standard"
+            },
+            "verb": "https://adlnet.gov/expapi/verbs/failed",
+            "rules": [
+                {
+                    "location": "$.authority",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.result.score",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.score.scaled",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.success",
+                    "presence": "included",
+                    "all": [
+                        false
+                    ]
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "included",
+                    "all": [
+                        true
+                    ]
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla/v0.10/templates#satisfied",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "satisfied"
+            },
+            "definition": {
+                "en": "Indicates that the authority or activity provider determined the actor has fulfilled the criteria of the object or activity by means other than completing the activity"
+            },
+            "verb": "https://w3id.org/xapi/adl/verbs/satisfied",
+            "rules": [
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#abandoned",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "abandoned"
+            },
+            "definition": {
+                "en": "Indicates that the AU session was abnormally terminated by a learner's action (or due to a system failure)"
+            },
+            "verb": "https://w3id.org/xapi/adl/verbs/abandoned",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "included",
+                    "all": [
+                        false
+                    ]
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#terminated",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "terminated"
+            },
+            "definition": {
+                "en": "Indicates the actor has completed their session normally"
+            },
+            "verb": "https://adlnet.gov/expapi/verbs/terminated",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#initialized",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "initialized"
+            },
+            "definition": {
+                "en": "Indicates that the activity was started."
+            },
+            "verb": "https://adlnet.gov/expapi/verbs/initialized",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "Activity"
+                    ]
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#recommended",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "recommended"
+            },
+            "definition": {
+                "en": "Indicates the learner received the recommendation to follow a career path, work towards a learning objective, or perform a learning activity from the actor"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/recommended",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "recommended",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/content_set",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#organized",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "organized"
+            },
+            "definition": {
+                "en": "Indicates the actor filtered content that aligns to specific goal"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/organized",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "recommended",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/content_set"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#prioritized",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "prioritized"
+            },
+            "definition": {
+                "en": "Indicates the actor has set a learning goal"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/prioritized",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#projected",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "projected"
+            },
+            "definition": {
+                "en": "Indicates the actor received a list of goal recommendations over time, based on selected goal with recursive depth, what set of content can achieve mastery in the ordered sub-goals"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/projected",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.extensions['https://w3id.org/xapi/tla/extensions/recommendation_order']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#planned",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "planned"
+            },
+            "definition": {
+                "en": "Indicates that the actor assigned themselves a new learning goal, without needing approval"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/planned",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#voided",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "voided"
+            },
+            "definition": {
+                "en": "Indicates that the actor has done something to void a previous event"
+            },
+            "verb": "http://adlnet.gov/expapi/verbs/voided",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.objectType",
+                    "presence": "included",
+                    "all": [
+                        "StatementRef"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#requested",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "requested"
+            },
+            "definition": {
+                "en": "Indicates the actor needed or demanded an object or another actor. Requested indicates a comment that is shared with peers as a group or Coach as a trainer. The request for coaching or help prompts users to respond giving them coaching credit"
+            },
+            "verb": "https://w3id.org/xapi/adb/verbs/requested",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/content_set"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#approved",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "approved"
+            },
+            "definition": {
+                "en": "Indicates an OICS approved a requested activity for the given learner"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/approved",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/content_set"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#explored",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "explored"
+            },
+            "definition": {
+                "en": "Indicates the actor searched active learning goals related to specific content, viewing what other content may trigger related goals, based on active goal and recently completed content"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/explored",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#clarified",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "clarified"
+            },
+            "definition": {
+                "en": "Indicates the actor queried what other content may also reinforce the current learning goal, after completing content"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/clarified",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#directed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "directed"
+            },
+            "definition": {
+                "en": "Indicates the actor assigned a learning goal to a learner"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/directed",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig",
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#scheduled",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "scheduled"
+            },
+            "definition": {
+                "en": "Indicates the actor scheduled an activity or lesson"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/scheduled",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/content_set"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/due_date']",
+                    "presence": "recommended"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#evaluated",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "evaluated"
+            },
+            "definition": {
+                "en": "Indicates the learner(s) appeared in a Measure of Effectiveness (MOE) search"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/evaluated",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/content_set"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#tracked",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "tracked"
+            },
+            "definition": {
+                "en": "Indicates the learner(s) appeared in a competency search"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/tracked",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#surveyed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "surveyed"
+            },
+            "definition": {
+                "en": "Indicates the learner(s) appeared in a Measure of Performance (MOP) search"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/surveyed",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity",
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#assessed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "assessed"
+            },
+            "definition": {
+                "en": "Indicates the actor completed assessments in a way that will cause a change in their authoritative learner state"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/assessed",
+            "rules": [
+                {
+                    "location": "$.result.duration",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.completion",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.result.score.scaled",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.result.success",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#contextualized",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "contextualized"
+            },
+            "definition": {
+                "en": "Indicates the user performed several connected learning activities that should result in a change in their authoritative learner state"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/contextualized",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "all": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#located",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "located"
+            },
+            "definition": {
+                "en": "Indicates the actor's competency state needs to be updated based on completed content changes in the Competency Framework"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/located",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "all": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#socialized",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "socialized"
+            },
+            "definition": {
+                "en": "Indicates the learner interacted with \"Wild\" (unscheduled) content in a social environment"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/socialized",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/content_set",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#captured",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "captured"
+            },
+            "definition": {
+                "en": "Indicates the learner interacted with \"Wild\" (out of network) content"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/captured",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/content_set",
+                        "https://w3id.org/xapi/tla/activity-types/assessment",
+                        "https://w3id.org/xapi/tla/activity-types/activity"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#asserted",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "asserted"
+            },
+            "definition": {
+                "en": "Indicates the learner has provided sufficient evidence to update the learner's measure of competence in a given competency"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/asserted",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#validated",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "validated"
+            },
+            "definition": {
+                "en": "Indicates an OICS approved a change to a competency framework within the TLA that will affect the learners’ states"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/validated",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#inferred",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "inferred"
+            },
+            "definition": {
+                "en": "Indicates an authoritative source changed a learner's competency assertions based on a valid competency framework change"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/inferred",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#qualified",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "qualified"
+            },
+            "definition": {
+                "en": "Indicates the learner meets all the requirements for a badge, but hasn't been awarded the badge yet"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/qualified",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/badge"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#certified",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "certified"
+            },
+            "definition": {
+                "en": "Indicates the learner was accredited by an authoritative source to perform a given job or task"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/certified",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#verified",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "verified"
+            },
+            "definition": {
+                "en": "Indicates the authoritative source verified evidence of learning from a non-authoritative source as reliable data"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/verified",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#conferred",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "conferred"
+            },
+            "definition": {
+                "en": "Indicates the OICS conferred a badge to the learner in the learner context extension"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/conferred",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/confidence']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#recruited",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "recruited"
+            },
+            "definition": {
+                "en": "Indicates the actor recruited the learner to join the ecosystem"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/recruited",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#appraised",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "appraised"
+            },
+            "definition": {
+                "en": "Indicates the learner met entry criteria for jobs and assigned a career trajectory"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/appraised",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#detailed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "detailed"
+            },
+            "definition": {
+                "en": "OICS detailed the learner to a specific job"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/detailed",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career_state"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/location']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/permanent_change_of_station']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/unit_identification_code']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#mobilized",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "mobilized"
+            },
+            "definition": {
+                "en": "OICS mobilized the learner to a state of on duty"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/mobilized",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career_state"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/location']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/unit_identification_code']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#employed",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "employed"
+            },
+            "definition": {
+                "en": "Indicates OICS employs the actor such that they started work doing their job"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/employed",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career_state"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/location']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/unit_identification_code']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#schooled",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "schooled"
+            },
+            "definition": {
+                "en": "Indicates OICS has enrolled the learner in a schooling system"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/schooled",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/competency",
+                        "https://w3id.org/xapi/tla/activity-types/career",
+                        "https://w3id.org/xapi/tla/activity-types/badge",
+                        "https://w3id.org/xapi/tla/activity-types/credential",
+                        "https://w3id.org/xapi/tla/activity-types/job_duty_gig"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/location']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/unit_identification_code']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#promoted",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "promoted"
+            },
+            "definition": {
+                "en": "Indicates OICS has changed a learner’s rank, either up or down"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/promoted",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/rank"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#screened",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "screened"
+            },
+            "definition": {
+                "en": "Indicates OICS screened learner for a potentially narrower career trajectory, and passed through a \"gate\" within their career trajectory"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/screened",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/expiration']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#selected",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "selected"
+            },
+            "definition": {
+                "en": "Indicates OICS selected learner based on criteria for a potentially wider career trajectory, opening up new career possibilities"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/selected",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/evidence']",
+                    "presence": "recommended"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/expiration']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#transitioned",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "transitioned"
+            },
+            "definition": {
+                "en": "Indicates the actor changed career paths, putting them on a completely different and brand new career trajectory"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/transitioned",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career_state"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#released",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "released"
+            },
+            "definition": {
+                "en": "Indicates the actor has left the learning environment"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/released",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career_state"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/reason']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#restricted",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "restricted"
+            },
+            "definition": {
+                "en": "Indicates OICS temporarily restricted the learner from some (possibly all) participation within the learning environment"
+            },
+            "verb": "https://w3id.org/xapi/tla/verbs/restricted",
+            "rules": [
+                {
+                    "location": "$.result",
+                    "presence": "excluded"
+                },
+                {
+                    "location": "$.object.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "any": [
+                        "https://w3id.org/xapi/tla/activity-types/career_state"
+                    ]
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/restriction']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/expiration']",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.context.extensions['https://w3id.org/xapi/tla/extensions/learner']",
+                    "presence": "included"
+                }
+            ]
+        }
+    ],
+    "patterns": [
+        {
+            "id": "https://w3id.org/xapi/tla#completed_session",
+            "type": "Pattern",
+            "primary": true,
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "completed session"
+            },
+            "definition": {
+                "en": "This pattern describes the sequence of statements sent over the an entire course registration."
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#launched",
+                "https://w3id.org/xapi/tla#initialized",
+                "https://w3id.org/xapi/tla#completed",
+                "https://w3id.org/xapi/tla#terminated"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#passed_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "completed session - passed"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#launched",
+                "https://w3id.org/xapi/tla#initialized",
+                "https://w3id.org/xapi/tla#completed",
+                "https://w3id.org/xapi/tla#passed",
+                "https://w3id.org/xapi/tla#terminated"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#failed_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "completed session - failed"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#launched",
+                "https://w3id.org/xapi/tla#initialized",
+                "https://w3id.org/xapi/tla#completed",
+                "https://w3id.org/xapi/tla#failed",
+                "https://w3id.org/xapi/tla#terminated"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#approval_process",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "approved activity"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#requested",
+                "https://w3id.org/xapi/tla#approved",
+                "https://w3id.org/xapi/tla#scheduled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#assessment_verification",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "manual assessment verification"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#assessed",
+                "https://w3id.org/xapi/tla#verified",
+                "https://w3id.org/xapi/tla#asserted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#contextualization_verification",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "manual contextualization verification"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#contextualized",
+                "https://w3id.org/xapi/tla#verified",
+                "https://w3id.org/xapi/tla#asserted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#approved_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A requested activity was approved"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#requested",
+                "https://w3id.org/xapi/tla#approved",
+                "https://w3id.org/xapi/tla#scheduled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#socialized_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner socialized content, and an OICS upodated learner state bc of it"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#socialized",
+                "https://w3id.org/xapi/tla#located",
+                "https://w3id.org/xapi/tla#asserted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#captured_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner interacted with content in the wild, and an OICS upodated learner state bc of it"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#captured",
+                "https://w3id.org/xapi/tla#located",
+                "https://w3id.org/xapi/tla#asserted"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#recommended_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner schedules a learning event based on a reccomendation"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#recommended",
+                "https://w3id.org/xapi/tla#scheduled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#recruiting_session",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner has been recruited into the ecosystem. Expected to create a new learner profile."
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#recruited",
+                "https://w3id.org/xapi/tla#appraised",
+                "https://w3id.org/xapi/tla#detailed"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#detailed_to_school",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner has been sent to a schoolhose."
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#detailed",
+                "https://w3id.org/xapi/tla#schooled"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#detailed_to_work",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner has been assigned for a new operational asignment (PCS)"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#detailed",
+                "https://w3id.org/xapi/tla#employed"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#detailed_to_transitioned",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner has been chosen for a change of profession"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#detailed",
+                "https://w3id.org/xapi/tla#transitioned",
+                "https://w3id.org/xapi/tla#appraised",
+                "https://w3id.org/xapi/tla#detailed"
+            ]
+        },
+        {
+            "id": "https://w3id.org/xapi/tla#detailed_to_released",
+            "type": "Pattern",
+            "inScheme": "https://w3id.org/xapi/tla/v0.13",
+            "prefLabel": {
+                "en": "A learner has been released from the learning environment"
+            },
+            "definition": {
+                "en": ""
+            },
+            "sequence": [
+                "https://w3id.org/xapi/tla#detailed",
+                "https://w3id.org/xapi/tla#employed"
+            ]
+        }
+    ]
+}

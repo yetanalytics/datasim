@@ -1,4 +1,4 @@
-.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci server test-bundle-output
+.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci server test-bundle-output validate-template
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
@@ -23,7 +23,7 @@ target/bundle/datasim_server.jar: # no AOT for this one
 target/bundle/datasim_onyx.jar:
 	mkdir -p target/bundle
 	rm -f pom.xml
-	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:onyx,:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-onyx :version '"$(VERSION)"' :jar target/bundle/datasim_onyx.jar :main-class com.yetanalytics.datasim.onyx.main
+	TIMBRE_LOG_LEVEL=:info clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:onyx,:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-onyx :version '"$(VERSION)"' :jar target/bundle/datasim_onyx.jar :main-class com.yetanalytics.datasim.onyx.main
 	rm -f pom.xml
 
 target/bundle/bin:
@@ -52,8 +52,13 @@ test-cli-output:
 test-bundle-output: bundle
 	cd target/bundle; bin/run.sh -i ../../dev-resources/input/simple.json generate
 
+validate-template:
+	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/0_vpc.yml
+	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/1_hose.yml
+	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/1_zk.yml
+	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/2_cluster.yml
 
-ci: test-unit test-cli
+ci: test-unit test-cli validate-template
 
 server:
 	clojure -A:server

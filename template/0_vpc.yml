@@ -27,6 +27,8 @@ Parameters:
     Default: '10.0.3.0/24'
 
 Resources:
+  # TODO: Add s3 endpoint + route table association
+
   # VPC in which containers will be networked.
   # It has two public subnets, and two private subnets.
   # We distribute the subnets across the first two available subnets

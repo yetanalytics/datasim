@@ -18,13 +18,48 @@
                                           1000]
   :onyx.messaging/impl :aeron
   :onyx.messaging/bind-addr #or [#env BIND_ADDR
-                                 "localhost"]
+                                 "0.0.0.0"]
   :onyx.messaging/peer-port #long #or [#env PEER_PORT
                                        40200]
   :onyx.messaging.aeron/embedded-driver? #profile {:default true
                                                    :prod false}
   :onyx.log/config #profile {:default nil
-                             :prod {:level :info}}}
+                             :prod {:level :info}}
+  :onyx.query/server? true
+  :onyx.query.server/ip #or [#env SERVER_IP
+                             "0.0.0.0"]
+  :onyx.query.server/port #long #or [#env SERVER_PORT
+                                     8888] ;; port change so it isn't the same as dev lrs
+  ;; do allow short circuit locally, so the default colo works
+  :onyx.messaging/allow-short-circuit? #profile {:default true
+                                                 :prod true}
+  :onyx.peer/storage #keyword #or [#env PEER_STORAGE
+                                   :zookeeper]
+  :onyx.peer/storage.s3.bucket #or [#env PEER_STORAGE_BUCKET
+                                    ""]
+  :onyx.peer/storage.s3.region #or [#env AWS_REGION
+                                    "us-east-1"]
+  :onyx.peer/storage.s3.prefix #or [#env PEER_STORAGE_PREFIX
+                                    #profile {:default "onyx_dev/"}]
+  ;; Aeron max term buffer size
+  :onyx.messaging/term-buffer-size.segment 16777216
+
+  ;; :onyx.peer/coordinator-barrier-period-ms 5000
+
+  :onyx.peer/storage.timeout #long #or [#env PEER_STORAGE_TIMEOUT
+                                        120000]
+  ;; need this or constant timeout
+  :onyx.peer/storage.s3.accelerate? #boolean #or [#env PEER_STORAGE_ACCELERATION
+                                                  "false"]
+
+  #_#_:onyx.peer/tags #profile {:default [:gen :out]
+                            :prod [#keyword #env PEER_TAG]}
+  ;; :onyx.peer/publisher-liveness-timeout-ms 120000
+  ;; :onyx.peer/subscriber-liveness-timeout-ms 120000
+  ;; :onyx.peer/coordinator-max-sleep-ms 10
+  ;; :onyx.peer/coordinator-barrier-period-ms 2000
+  ;; :onyx.peer/heartbeat-ms 1000
+  }
  :launch-config
  {:n-vpeers #long #or [#env N_VPEERS
-                       6]}}
+                       4]}}

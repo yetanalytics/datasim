@@ -232,17 +232,23 @@ The cluster accepts DATASIM combined input files and LRS target information as i
 
 ###### Capacity Planning
 
-In order to generate and send the data the cluster must contain enough peers to generate and execute the specified input. For each partition of simulation actors, two peers are required. Therefore:
+In order to generate and send the data the cluster must contain enough peers to generate and execute the specified input.
 
-    total-required-peers = (actor-count / partition-size) * 2
+The user specifies desired concurrency by use of the `-c` option. This option must be a positive integer not greater than the number of actors in the simulation.
 
-For example, the DATASIM "simple" example input found at `dev-resources/input/simple.json` contains 3 actors. If we choose the minimum `partition-size` of 1 then:
+DATASIM will evenly partition the data into as many "buckets" as specified and attempt to send them simultaneously.
 
-    total-required-peers = (3 / 1) * 2 = 6
+For each partition of simulation actors, two peers are required. Therefore:
 
-This is the _maximum concurrency_ of 3 for the `input/simple.json`. If we wanted to sacrifice throughput we could run it with the _minimum concurrency_ of 1 by setting the `partition-size` to 3:
+    total-required-peers = concurrency * 2
 
-    total-required-peers = (3 / 3) * 2 = 2
+For example, the DATASIM "simple" example input found at `dev-resources/input/simple.json` contains 3 actors. If we choose the maximum concurrency of 3 then:
+
+    total-required-peers = 3 * 2 = 6
+
+If we wanted to sacrifice throughput we could run it with the _minimum concurrency_ of 1:
+
+    total-required-peers = 1 * 2 = 2
 
 Note that if a cluster does not have sufficient peers to execute a job it will wait until it does and complete it. Each physical instance in a cluster can run as many "virtual" peers as it has processors.
 
@@ -260,10 +266,11 @@ DATASIM has a separate CLI for distributed operation:
       -n, --n-vpeers N_VPEERS               Number of VPEERS to launch. Overrides config value.
       -t, --tenancy-id TENANCY_ID           Onyx Tenancy ID
       -i, --input-loc INPUT_LOC             DATASIM input location
-          --partition-size                  Statement actor partition size per peer.
+      -c, --concurrency                     Desired concurrency of job.
       -e, --endpoint ENDPOINT               xAPI LRS Endpoint like https://lrs.example.org/xapi
       -u, --username USERNAME               xAPI LRS BASIC Auth username
       -p, --password PASSWORD               xAPI LRS BASIC Auth password
+          --x-api-key X_API_KEY             API Gateway API key
           --[no-]strip-ids                  Strip IDs from generated statements
           --[no-]remove-refs                Filter out statement references
       -b, --[no-]block                      Block until the job is done
@@ -329,7 +336,7 @@ SSH in to a cluster node:
     BIND_ADDR=<IP of Instance> \
     ./bin/submit_job.sh \
       -t <override tenancy (optional)> \
-      --partition-size 1 \
+      --concurrency 3 \
       -i simple.json \
       -e https://lrs.example.org/xapi \
       -u <LRS BASIC Auth Username> \

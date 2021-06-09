@@ -1,9 +1,9 @@
 (ns com.yetanalytics.datasim.onyx.peer
   (:require onyx.plugin.http-output
-            onyx.plugin.seq
             onyx.api
-            com.yetanalytics.datasim.onyx.seq
+            com.yetanalytics.datasim.onyx.sim
             com.yetanalytics.datasim.onyx.http
+            com.yetanalytics.datasim.onyx.job
             [com.yetanalytics.datasim.onyx.config :as config]))
 
 (defn start-peer!

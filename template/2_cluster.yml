@@ -13,7 +13,7 @@ Parameters:
   VPeersCount:
     Description: The number of virtual peers to launch on each instance.
     Type: Number
-    Default: 2
+    Default: 4
   LogRetentionInDays:
     Description: How long to retain Cloudwatch Logs
     Type: Number
@@ -63,7 +63,7 @@ Parameters:
 
   ASGMinSize:
     Type: Number
-    Default: 1
+    Default: 0
     Description: Minimum number of instances to launch in the autoscaling group.
   ASGDesiredSize:
     Type: Number
@@ -76,8 +76,9 @@ Parameters:
   ASGInstanceType:
     Type: String
     Description: EC2 Instance Type to launch in autoscaling group.
-    Default: c5.large
+    Default: c5.xlarge
     AllowedValues:
+      - m5.large
       - c5.large
       - c5.xlarge
       - c5.2xlarge
@@ -90,12 +91,46 @@ Parameters:
     Description: AMI (image) to use on EC2 instances.
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  ASGMinInstancesInService:
+    Type: Number
+    Description: Minimum number of instances to keep in service during updates
+    Default: 1
+  ASGMaxBatchSize:
+    Type: Number
+    Description: Maximum number of instances to update at once
+    Default: 8
   EC2KeyName:
     Description: Name of an EC2 key pair that can be used to connect to instances
     Type: String
   EC2SSHCidr:
     Description: CIDR block to grant ssh access to.
     Type: String
+
+  # For the default of c5.2xlarge
+  PeerJavaOpts:
+    Type: String
+    Default: -Xmx6G -XX:+UseG1GC
+
+  DriverJavaOpts:
+    Type: String
+    Default: -Daeron.driver.timeout=20000 -Xmx1G -XX:+UseG1GC
+
+  QueryServerPort:
+    Type: String
+    Default: 8888
+  HealthCheckThreshold:
+    Description: Onyx health check threshold arg
+    Type: String
+    Default: 1000
+  PeerStorageTimeout:
+    Type: String
+    Default: 120000
+  EnablePeerStorageAcceleration:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -106,13 +141,20 @@ Metadata:
           - TenancyId
           - PeerPort
           - VPeersCount
+          - PeerJavaOpts
+          - DriverJavaOpts
+          - QueryServerPort
+          - HealthCheckThreshold
           - LogRetentionInDays
+          - EnablePeerStorageAcceleration
+          - PeerStorageTimeout
       - Label:
           default: 'ZooKeeper Settings'
         Parameters:
           - ZooKeeperAddress
           - ZooKeeperPort
           - ZooKeeperGroupId
+          - ZooKeeperTimeout
       - Label:
           default: 'Code Source Settings'
         Parameters:
@@ -132,6 +174,8 @@ Metadata:
           - ASGDesiredSize
           - ASGMinSize
           - ASGMaxSize
+          - ASGMinInstancesInService
+          - ASGMaxBatchSize
           - ASGInstanceType
           - ASGCPUPolicyTargetValue
           - ASGInstanceAmiId
@@ -147,8 +191,25 @@ Conditions:
     !Not [!Equals [!Ref EC2SSHCidr, '']]
   EC2KeyNameProvided:
     !Not [!Equals [!Ref EC2KeyName, '']]
+  PeerStorageAccelerationEnabled:
+    !Equals [!Ref EnablePeerStorageAcceleration, 'true']
 
 Resources:
+
+  StorageBucket:
+    Type: AWS::S3::Bucket
+    Description: Checkpoint and other storage bucket for Onyx
+    #### TODO: enable acceleration, doesn't work well with template updates
+    # Properties:
+    #   AccelerateConfiguration:
+    #     AccelerationStatus: !If
+    #       - PeerStorageAccelerationEnabled
+    #       - Enabled
+    #       - Disabled
+
+  TargetBucket:
+    Type: AWS::S3::Bucket
+    Description: Bucket to write xAPI data to.
 
   LogGroup:
     Type: AWS::Logs::LogGroup
@@ -193,6 +254,14 @@ Resources:
               - 's3:GetObject'
             Resource:
               - !Sub 'arn:aws:s3:::${ArtifactBucketName}/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          - Effect: Allow
+            Action:
+              - 's3:*'
+            Resource:
+              - !GetAtt StorageBucket.Arn
+              - !Sub "${StorageBucket.Arn}/*"
+              - !GetAtt TargetBucket.Arn
+              - !Sub "${TargetBucket.Arn}/*"
           # Allow tags for various cloud things
           - Effect: Allow
             Action: 'ec2:DescribeTags'
@@ -350,12 +419,14 @@ Resources:
               content: !Sub |
                 {
                   "metrics": {
+                    "namespace": "DATASIM Cluster Metrics",
                     "append_dimensions": {
                       "AutoScalingGroupName": "${!aws:AutoScalingGroupName}",
                       "ImageId": "${!aws:ImageId}",
                       "InstanceId": "${!aws:InstanceId}",
                       "InstanceType": "${!aws:InstanceType}"
                     },
+                    "aggregation_dimensions": [["AutoScalingGroupName"]],
                     "metrics_collected": {
                       "cpu": {
                         "measurement": [
@@ -373,6 +444,11 @@ Resources:
                       "swap": {
                         "measurement": [
                           "swap_used_percent"
+                        ]
+                      },
+                      "net": {
+                        "measurement": [
+                          "bytes_sent", "bytes_recv"
                         ]
                       }
                     }
@@ -405,6 +481,9 @@ Resources:
             '/datasim': !Sub 'https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
           # App Service File
           files:
+            '/lib/systemd/system/aeron.env':
+              content: !Sub |
+                JAVA_OPTS=${DriverJavaOpts}
             '/lib/systemd/system/datasim.env':
               content: !Sub |
                 TENANCY_ID=${TenancyId}
@@ -419,6 +498,12 @@ Resources:
                 X_RAY_ENABLED=true
                 AWS_XRAY_CONTEXT_MISSING=LOG_ERROR
                 AWS_XRAY_TRACING_NAME=${AWS::StackName}:${AWS::Region}
+                JAVA_OPTS=${PeerJavaOpts}
+                PEER_STORAGE=s3
+                PEER_STORAGE_BUCKET=${StorageBucket}
+                PEER_STORAGE_PREFIX=${AWS::StackName}/${TenancyId}/
+                PEER_STORAGE_TIMEOUT=${PeerStorageTimeout}
+                PEER_STORAGE_ACCELERATION=${EnablePeerStorageAcceleration}
             '/lib/systemd/system/aeron.service':
               content: !Sub |
                 [Unit]
@@ -427,6 +512,7 @@ Resources:
                 User=root
                 # The configuration file application.properties should be here:
                 WorkingDirectory=/datasim
+                EnvironmentFile=/lib/systemd/system/aeron.env
                 ExecStart=/datasim/bin/peer_driver.sh
                 SuccessExitStatus=143
                 TimeoutStopSec=10
@@ -507,6 +593,7 @@ Resources:
           #!/bin/bash -xe
           # Refer to anything that should trigger an ASG update
           echo 'DATASIM ${ArtifactVersion} from https://${ArtifactBucketName}.s3.amazonaws.com/${ArtifactBasePath}/${ArtifactId}-${ArtifactVersion}'
+          echo 'Tenancy ID: ${TenancyId}'
           # initialize from metadata
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instances --region ${AWS::Region} --configsets default
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
@@ -534,8 +621,10 @@ Resources:
       MinSize: !Ref ASGMinSize
       MaxSize: !Ref ASGMaxSize
       DesiredCapacity: !Ref ASGDesiredSize
-      HealthCheckType: EC2
-      HealthCheckGracePeriod: 120
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      TargetGroupARNs:
+        - !Ref TargetGroup
       # Enable Group Metrics Collection
       MetricsCollection:
         - Granularity: '1Minute'
@@ -544,8 +633,8 @@ Resources:
         Timeout: PT15M
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: '1'
-        MaxBatchSize: '1'
+        MinInstancesInService: !Ref ASGMinInstancesInService
+        MaxBatchSize: !Ref ASGMaxBatchSize
         PauseTime: PT15M
         WaitOnResourceSignals: 'true'
         SuspendProcesses:
@@ -554,3 +643,64 @@ Resources:
           - AZRebalance
           - AlarmNotification
           - ScheduledActions
+
+  # Metrics ALB
+
+  LoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Access to the load balancer
+      VpcId: !Ref VPCId
+      SecurityGroupIngress: !If
+        - EC2SSHEnabled
+        - CidrIp: !Ref EC2SSHCidr
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+        - !Ref AWS::NoValue
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internal
+      LoadBalancerAttributes:
+      - Key: idle_timeout.timeout_seconds
+        Value: '30'
+      Subnets: !Ref Subnets
+      SecurityGroups:
+        - !Ref LoadBalancerSG
+
+  LoadBalancerListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn:
+      - LoadBalancer
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroup
+          Type: 'forward'
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  IngressFromALB:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Ingress from the ALB
+      GroupId: !Ref InstanceSG
+      IpProtocol: tcp
+      FromPort: !Ref QueryServerPort
+      ToPort: !Ref QueryServerPort
+      SourceSecurityGroupId: !Ref LoadBalancerSG
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: !Sub "/health?threshold=${HealthCheckThreshold}"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: !Ref QueryServerPort
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPCId
