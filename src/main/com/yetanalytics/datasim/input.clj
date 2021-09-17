@@ -29,7 +29,7 @@
    ;; Validate that all edges with a Pattern src ends up at a Pattern or
    ;; Template dest that is also in the profile cosmos.
    (s/conformer profiles->pedges)
-   ::pat/valid-edges))
+   ::pat/pattern-edges))
 
 ;; This is our system:
 ;;   persona: a single Agent who is a member of a Group

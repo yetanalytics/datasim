@@ -7,10 +7,12 @@
          :sha        "5cb168a1af2e0d4e465db067ba2e44bcde71bdc9"
          :exclusions [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
-        {:git/url "https://github.com/yetanalytics/project-pan"
-         :sha "abc26a7a2c30be9e26009e945a402f913842e8d3"
+        {:git/url    "https://github.com/yetanalytics/project-pan"
+         :sha        "ffd2bd624648ff195907d5f0e8c914e1b7f30887"
          :exclusions [org.clojure/clojurescript
-                      org.clojure/test.check]}
+                      ;; pan's version of xapi-schema is slightly outdated
+                      ;; which is fine for pan, but not for DS
+                      com.yetanalytics/xapi-schema]}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
         ;; org.threeten/threeten-extra {:mvn/version "1.4"}
         org.apache.jena/jena-iri {:mvn/version "3.13.1"}
@@ -20,7 +22,6 @@
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
         cheshire/cheshire {:mvn/version "5.10.0"}
         http-kit/http-kit {:mvn/version "2.5.0"}}
- :mvn/repos {"jitpack" {:url "https://jitpack.io"}} ;; there's a wack repo in project pan
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:git/url "https://github.com/clojure/tools.cli"
