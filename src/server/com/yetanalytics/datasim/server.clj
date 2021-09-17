@@ -59,7 +59,7 @@
         api-secret-key (get input "api-secret-key")
         spec-errors    (sinput/validate sim-input)]
     (if (not-empty spec-errors)
-      (errors/expound-errors spec-errors)
+      (errors/expound-error spec-errors "Profile Syntax Errors")
       ;;(log/info :msg "Run Simulation")
       ;; Anon fn that accepts the output stream for the response body.
       (fn [^ServletOutputStream os]
