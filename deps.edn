@@ -1,10 +1,10 @@
 {:paths ["resources" "src/main"]
- :deps {org.clojure/clojure {:mvn/version "1.10.2"}
-        org.clojure/core.async {:mvn/version "1.3.610"}
+ :deps {org.clojure/clojure      {:mvn/version "1.10.2"}
+        org.clojure/core.async   {:mvn/version "1.3.610"}
         org.clojure/core.memoize {:mvn/version "0.8.2"}
         com.yetanalytics/xapi-schema
-        {:git/url "https://github.com/yetanalytics/xapi-schema"
-         :sha "0e552227e74913d1b35dfa648407b9a9ac4b6b00"
+        {:git/url    "https://github.com/yetanalytics/xapi-schema"
+         :sha        "5cb168a1af2e0d4e465db067ba2e44bcde71bdc9"
          :exclusions [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
         {:git/url "https://github.com/yetanalytics/project-pan"
