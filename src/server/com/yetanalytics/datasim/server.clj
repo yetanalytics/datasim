@@ -17,6 +17,7 @@
             [environ.core                           :refer [env]]
             [com.yetanalytics.datasim.sim           :as sim]
             [com.yetanalytics.datasim.input         :as sinput]
+            [com.yetanalytics.datasim.protocols     :as p]
             [com.yetanalytics.datasim.xapi.client   :as xapi-client]
             [com.yetanalytics.pan.errors            :as errors]
             [clojure.spec.alpha                     :as s]
@@ -42,64 +43,96 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [data           {:profiles       (sinput/from-location :profiles :json
-                                                              (get-stream input "profiles"))
-                        :personae-array (sinput/from-location :personae-array :json
-                                                              (get-stream input "personae-array"))
-                        :alignments     (sinput/from-location :alignments :json
-                                                              (get-stream input "alignments"))
-                        :parameters     (sinput/from-location :parameters :json
-                                                              (get-stream input "parameters"))}
-        send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
-                         (read-string send-to-lrs)
-                         false)
-        sim-input      (sinput/map->Input data)
-        endpoint       (get input "lrs-endpoint")
-        api-key        (get input "api-key")
-        api-secret-key (get input "api-secret-key")
-        spec-errors    (sinput/validate sim-input)]
-    (if (not-empty spec-errors)
-      (errors/expound-error spec-errors "Profile Syntax Errors")
-      ;;(log/info :msg "Run Simulation")
-      ;; Anon fn that accepts the output stream for the response body.
-      (fn [^ServletOutputStream os]
-        (with-open [w (writer os)]
-          ;; Iterate over the entire input skeleton, generate statements.
-          ;; Write them wrapped in a list
-          (.write w "[\n")
-          (try
-            (let [statements (sim/sim-seq sim-input)]
+  (let [prf-data  (sinput/from-location :profiles :json
+                                        (get-stream input "profiles"))
+        per-data  (sinput/from-location :personae-array :json
+                                        (get-stream input "personae-array"))
+        ali-data  (sinput/from-location :alignments :json
+                                        (get-stream input "alignments"))
+        prm-data  (sinput/from-location :parameters :json
+                                        (get-stream input "parameters"))
+        prf-errs  (->> prf-data (map p/validate) (filter some?))
+        per-errs  (->> per-data (map p/validate) (filter some?))
+        ali-errs  (p/validate ali-data)
+        prm-errs  (p/validate prm-data)
+        spec-errs (cond-> []
+                    (not-empty prf-errs)
+                    (concat (map-indexed
+                             (fn [idx prf-err]
+                               {:path [:profile idx]
+                                :text (with-out-str
+                                        (errors/expound-error
+                                         prf-err
+                                         "Profile Syntax Errors!"))})
+                             prf-errs))
+                    (not-empty per-errs)
+                    (concat (map-indexed
+                             (fn [idx per-err]
+                               {:path [:personae idx]
+                                :text (with-out-str (s/explain-out per-err))})
+                             per-errs))
+                    (not-empty ali-errs)
+                    (conj {:path [:alignments]
+                           :text (with-out-str (s/explain-out ali-errs))})
+                    (not-empty prm-errs)
+                    (conj {:path [:parameters]
+                           :text (with-out-str (s/explain-out prm-errs))}))]
+    (if (not-empty spec-errs)
+      (vec spec-errs)
+      (let [data           {:profiles       prf-data
+                            :personae-array per-data
+                            :alignments     ali-data
+                            :parameters     prm-data}
+            send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
+                             (read-string send-to-lrs)
+                             false)
+            sim-input      (sinput/map->Input data)
+            endpoint       (get input "lrs-endpoint")
+            api-key        (get input "api-key")
+            api-secret-key (get input "api-secret-key")]
+        ;;(log/info :msg "Run Simulation")
+        ;; Anon fn that accepts the output stream for the response body.
+        (fn [^ServletOutputStream os]
+          (with-open [w (writer os)]
+            ;; Iterate over the entire input skeleton, generate statements.
+            ;; Write them wrapped in a list
+            (.write w "[\n")
+            (try
+              (let [statements (sim/sim-seq sim-input)]
 
-              (when send-to-lrs
-                (let [post-options (cond-> {:endpoint endpoint
-                                            :batch-size 20}
-                                     (and api-key api-secret-key)
-                                     (assoc-in [:http-options :basic-auth] [api-key api-secret-key]))
-                      {:keys [success ;; Count of successfully transacted statements
-                              fail ;; list of failed requests
-                              ]
-                       :as post-results} (xapi-client/post-statements
-                                          post-options
-                                          statements
-                                          :emit-ids-fn
-                                          (fn [ids]
-                                            (doseq [^java.util.UUID id ids]
-                                              (printf "%s\n" (.toString id))
-                                              (flush))))]
-                  (if (not-empty fail)
-                    (for [{:keys [status error]} fail]
-                      (log/error :msg
-                                 (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-                                         status (or (some-> error ex-message) "<none>")))))))
-              (doseq [s (sim/sim-seq sim-input)]
-                (c/generate-stream s w)
-                (.write w "\n")))
-            (catch Exception e
-              (log/error :msg "Error Building Simulation Skeleton"
-                         :e   (.getMessage e)))
-            (finally
-              (log/info :msg "Finish Simulation")
-              (.write w "]"))))))))
+                (when send-to-lrs
+                  (let [post-options
+                        (cond-> {:endpoint   endpoint
+                                 :batch-size 20}
+                          (and api-key api-secret-key)
+                          (assoc-in [:http-options :basic-auth]
+                                    [api-key api-secret-key]))
+                        {:keys [success ;; Count of successfully transacted statements
+                                fail ;; list of failed requests
+                                ]
+                         :as   post-results}
+                        (xapi-client/post-statements
+                         post-options
+                         statements
+                         :emit-ids-fn
+                         (fn [ids]
+                           (doseq [^java.util.UUID id ids]
+                             (printf "%s\n" (.toString id))
+                             (flush))))]
+                    (if (not-empty fail)
+                      (for [{:keys [status error]} fail]
+                        (log/error :msg
+                                   (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
+                                           status (or (some-> error ex-message) "<none>")))))))
+                (doseq [s (sim/sim-seq sim-input)]
+                  (c/generate-stream s w)
+                  (.write w "\n")))
+              (catch Exception e
+                (log/error :msg "Error Building Simulation Skeleton"
+                           :e   (.getMessage e)))
+              (finally
+                (log/info :msg "Finish Simulation")
+                (.write w "]")))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Auth data and fns
