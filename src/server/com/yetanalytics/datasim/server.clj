@@ -59,7 +59,11 @@
         api-secret-key (get input "api-secret-key")
         spec-errors    (sinput/validate sim-input)]
     (if (not-empty spec-errors)
-      (errors/expound-error spec-errors "Profile Syntax Errors")
+      ;; Return a map that is acceptable to the Datasim UI
+      [{:path    []
+        :text    (with-out-str (s/explain-out spec-errors))
+        :id      ""
+        :visible false}]
       ;;(log/info :msg "Run Simulation")
       ;; Anon fn that accepts the output stream for the response body.
       (fn [^ServletOutputStream os]
