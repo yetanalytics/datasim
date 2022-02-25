@@ -3,9 +3,8 @@
         org.clojure/core.async   {:mvn/version "1.3.610"}
         org.clojure/core.memoize {:mvn/version "0.8.2"}
         com.yetanalytics/xapi-schema
-        {:git/url    "https://github.com/yetanalytics/xapi-schema"
-         :sha        "5cb168a1af2e0d4e465db067ba2e44bcde71bdc9"
-         :exclusions [org.clojure/clojurescript]}
+        {:mvn/version "1.2.0"
+         :exclusions  [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
         {:git/url    "https://github.com/yetanalytics/project-pan"
          :sha        "ffd2bd624648ff195907d5f0e8c914e1b7f30887"
