@@ -2,6 +2,7 @@
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
+            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.pan.objects.profile :as ps]
             [com.yetanalytics.pan.objects.pattern :as pat]
             [xapi-schema.spec :as xs]
@@ -14,14 +15,21 @@
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u]))
 
+;; TODO: Ideally we want to use the top-level Pan API functions (which now
+;; support multiple profiles).
+;; We apply this kludgey patch simply to minimize breakage.
+
 (defn- profiles->pedges
   [profiles]
-  (let [[templates patterns]
-        (reduce (fn [[ts ps] {:keys [templates patterns]}]
-                  [(concat ts templates) (concat ps patterns)])
-                [[] []]
-                profiles)]
-    (pat/get-edges (pat/create-graph templates patterns))))
+  (let [combined-profile
+        (->> profiles
+             (reduce (fn [m {:keys [templates patterns]}]
+                       (-> m
+                           (update :templates concat templates)
+                           (update :patterns concat patterns)))
+                     {:templates []
+                      :patterns  []}))]
+    (pat/get-edges (pat/create-graph combined-profile))))
 
 (s/def ::profiles
   (s/and

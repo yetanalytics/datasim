@@ -6,7 +6,10 @@
         {:mvn/version "1.2.0"
          :exclusions  [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
-        {:git/url    "https://github.com/yetanalytics/project-pan"
+        {:mvn/version "0.4.1"
+         :exclusions [org.clojure/clojurescript
+                      com.yetanalytics./xapi-schema]}
+        #_{:git/url    "https://github.com/yetanalytics/project-pan"
          :sha        "ffd2bd624648ff195907d5f0e8c914e1b7f30887"
          :exclusions [org.clojure/clojurescript
                       ;; pan's version of xapi-schema is slightly outdated
