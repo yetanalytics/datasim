@@ -30,6 +30,8 @@
                       :patterns  []}))]
     (pat/get-edges (pat/create-graph combined-profile))))
 
+;; ::profiles is unused, but needs to stay or else tests will break
+
 (s/def ::profiles
   (s/and
    (s/every ::ps/profile :min-count 1 :into [])
@@ -210,8 +212,7 @@
                 (validate-alignments (:alignments this))
                 (validate-parameters (:parameters this)))
         vec
-        not-empty)
-    #_(s/explain-data :com.yetanalytics.datasim/input this))
+        not-empty))
 
   p/JSONRepresentable
   (read-key-fn [this k]
