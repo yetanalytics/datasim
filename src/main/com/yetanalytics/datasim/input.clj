@@ -68,30 +68,12 @@
 (defn- validate-profiles
   [profile-coll]
   (if (vector? profile-coll)
-    (let [etype-epath-estr-ms
-          (pan/validate-profile-coll profile-coll
-                                     :syntax? true
-                                     :pattern-rels? true
-                                     :result :type-path-string)]
-      (->> etype-epath-estr-ms
-           (map (fn [{profile-id :id} etype-epath-estr-m]
-                  [profile-id etype-epath-estr-m])
-                profile-coll)
-           (reduce (fn [acc [prof-id etype-epath-estr-m]]
-                     (reduce-kv (fn [acc* etype epath-estr-m]
-                                  (reduce-kv (fn [acc** epath estr]
-                                               (let [epath* (into [prof-id etype]
-                                                                  epath)]
-                                                 (conj acc**
-                                                       {:path epath*
-                                                        :text estr
-                                                        :id   epath*})))
-                                             acc*
-                                             epath-estr-m))
-                                acc
-                                etype-epath-estr-m))
-                   [])
-           not-empty))
+    (let [prof-errs (pan/validate-profile-coll profile-coll
+                                               :syntax? true
+                                               :pattern-rels? true
+                                               :result :type-path-string)]
+      (errs/type-path-string-ms->map-coll (map :id profile-coll)
+                                          prof-errs))
     ;; TODO: Something more solid/less hacky, particularly in the Pan lib itself
     [{:path [::profiles]
       :text "Profiles must be a vector!"
