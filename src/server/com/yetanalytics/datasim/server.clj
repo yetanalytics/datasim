@@ -61,21 +61,37 @@
         spec-errors    (sinput/validate sim-input)]
     (if (not-empty spec-errors)
       ;; Return a map that is acceptable to the Datasim UI
-      (let [type-path-str-m (errors/errors->type-path-str-m spec-errors)]
-        (reduce (fn [acc [type path-str-m]]
-                  (reduce (fn [acc* [path error-str]]
-                            (conj acc* {:type type
-                                        :path path
-                                        :text error-str}))
-                          acc
-                          path-str-m))
-                []
-                type-path-str-m))
-      ;; [{:path    []
-      ;;   :text    (with-out-str (s/explain-out spec-errors))
-      ;;   :id      ""
-      ;;   :visible false}]
-      ;;(log/info :msg "Run Simulation")
+      (let [profile-errs
+            (try (reduce (fn [acc type-path-str-m]
+                           (reduce (fn [acc* [err-type path-str-m]]
+                                     (reduce (fn [acc** [err-path err-str]]
+                                               (conj acc** {:path    err-path
+                                                            :text    err-str
+                                                            :id      err-type
+                                                            :visible true}))
+                                             acc*
+                                             path-str-m)
+                                     acc
+                                     type-path-str-m)))
+                         []
+                         (map errors/errors->type-path-str-m
+                              (:profile-errors-coll spec-errors)))
+                 (catch Exception e
+                   (log/info :msg (.getMessage e))))
+            #_other-errs
+            #_(reduce (fn [acc [id path-str-m]]
+                        (reduce (fn [acc* [path error-str]]
+                                  (conj acc* {:path path
+                                              :text error-str
+                                              :id id
+                                              :visible true}))
+                                acc
+                                path-str-m))
+                      []
+                      (errors/errors->type-path-str-m
+                       (dissoc spec-errors :profile-errors-coll)))]
+        profile-errs
+        #_(concat profile-errs other-errs))
       ;; Anon fn that accepts the output stream for the response body.
       (fn [^ServletOutputStream os]
         (with-open [w (writer os)]

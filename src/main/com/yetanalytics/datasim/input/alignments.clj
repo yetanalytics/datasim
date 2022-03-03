@@ -75,6 +75,7 @@
   (validate [this]
     (when-some [ed (s/explain-data ::alignments-input this)]
       {:alignments-errors ed}))
+
   p/JSONRepresentable
   (read-key-fn [this k]
     (keyword nil (name k)))

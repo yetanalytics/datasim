@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
+            [io.pedestal.log                        :as log]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan :as pan]
             [com.yetanalytics.pan.objects.profile :as ps]
@@ -66,9 +67,10 @@
 
 (defn- validate-profiles
   [profile-coll]
-  (pan/validate-profile-coll profile-coll
-                             :syntax? true
-                             :pattern-rels? true))
+  (when-some [errs (pan/validate-profile-coll profile-coll
+                                              :syntax? true
+                                              :pattern-rels? true)]
+    {:profile-errors-coll errs}))
 
 (defn- validate-personae-array
   [personae-array]

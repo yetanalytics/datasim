@@ -25,10 +25,10 @@
                     author]
   p/FromInput
   (validate [this]
-    (when-some [err-map (pan/validate-profile this
-                                              :syntax? true
-                                              :pattern-rels? true)]
-      err-map))
+    (when-some [errs (pan/validate-profile this
+                                           :syntax? true
+                                           :pattern-rels? true)]
+      {:profile-errors errs}))
 
   p/JSONRepresentable
   (read-key-fn [_this k]
