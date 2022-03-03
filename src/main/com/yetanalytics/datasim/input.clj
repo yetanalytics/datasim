@@ -258,7 +258,8 @@
     :json (dio/write-loc-json record *err*)))
 
 (defn validate
-  "Validate input using the FromInput protocol. Does no handling on result"
+  "Validate input using the FromInput protocol. Does no handling on result.
+   Returns a coll of maps on failure, `nil` on success."
   [input]
   (p/validate input))
 

@@ -57,13 +57,8 @@
         sim-input      (sinput/map->Input data)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
-        api-secret-key (get input "api-secret-key")
-        spec-errors    (try (sinput/validate sim-input)
-                            (catch Exception e
-                              (log/error :msg (.getMessage e))
-                              []))
-        _ (log/info :msg (pr-str spec-errors))]
-    (if (some? (not-empty spec-errors))
+        api-secret-key (get input "api-secret-key")]
+    (if-some [spec-errors (sinput/validate sim-input)]
       ;; Return a coll of maps that are acceptable to the Datasim UI
       (mapv #(assoc % :visible true) spec-errors)
       ;; Anon fn that accepts the output stream for the response body.

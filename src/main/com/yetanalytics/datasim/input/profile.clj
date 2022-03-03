@@ -30,15 +30,16 @@
                                 :syntax? true
                                 :pattern-rels? true
                                 :result :type-path-string)]
-      (not-empty (reduce-kv (fn [acc etype epath-estr-m]
-                              (reduce-kv (fn [acc* epath estr]
-                                           (conj acc* {:path (into [id epath])
-                                                       :text estr
-                                                       :id   etype}))
-                                         acc
-                                         epath-estr-m))
-                            []
-                            etype-epath-estr-m))))
+      (not-empty
+       (reduce-kv (fn [acc etype epath-estr-m]
+                    (reduce-kv (fn [acc* epath estr]
+                                 (conj acc* {:path (into [id epath])
+                                             :text estr
+                                             :id   etype}))
+                               acc
+                               epath-estr-m))
+                  []
+                  etype-epath-estr-m))))
 
   p/JSONRepresentable
   (read-key-fn [_this k]
