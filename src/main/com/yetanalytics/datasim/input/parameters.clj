@@ -3,7 +3,8 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [xapi-schema.spec :as xs]
-            [java-time :as t])
+            [java-time :as t]
+            [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.time.zone ZoneRulesException]
            [java.time Instant]
            [java.util Random]))
@@ -85,7 +86,7 @@
   p/FromInput
   (validate [this]
     (when-some [ed (s/explain-data ::parameters this)]
-      {:parameters-errors ed}))
+      (errs/explain-to-map-coll ::parameters ed)))
 
   p/JSONRepresentable
   (read-key-fn [this k]

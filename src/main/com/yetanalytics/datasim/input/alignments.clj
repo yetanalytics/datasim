@@ -4,7 +4,8 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.xapi :as xapi]))
+            [com.yetanalytics.datasim.xapi :as xapi]
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; Alignment: Map of Component, Weight, and Object Override properties
 
@@ -74,7 +75,7 @@
   p/FromInput
   (validate [this]
     (when-some [ed (s/explain-data ::alignments-input this)]
-      {:alignments-errors ed}))
+      (errs/explain-to-map-coll ::alignments-input ed)))
 
   p/JSONRepresentable
   (read-key-fn [this k]

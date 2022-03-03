@@ -4,7 +4,8 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.xapi :as xapi]
-            [com.yetanalytics.datasim.util :as u])
+            [com.yetanalytics.datasim.util :as u]
+            [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.io Reader Writer]))
 
 
@@ -67,7 +68,7 @@
   p/FromInput
   (validate [this]
     (when-some [ed (s/explain-data ::personae this)]
-      {:personae-errors ed}))
+      (errs/explain-to-map-coll ::personae ed)))
 
   p/JSONRepresentable
   (read-key-fn [this k]

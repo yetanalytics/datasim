@@ -1,20 +1,18 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
-            [io.pedestal.log                        :as log]
+            [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan :as pan]
             [com.yetanalytics.pan.objects.profile :as ps]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.input.personae :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.util.xapi :as xapiu]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.util :as u]))
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; TODO: Ideally we want to use the top-level Pan API functions (which now
 ;; support multiple profiles).
@@ -67,25 +65,47 @@
 
 (defn- validate-profiles
   [profile-coll]
-  (when-some [errs (pan/validate-profile-coll profile-coll
-                                              :syntax? true
-                                              :pattern-rels? true)]
-    {:profile-errors-coll errs}))
+  (when-some [etype-epath-estr-ms
+              (pan/validate-profile-coll profile-coll
+                                         :syntax? true
+                                         :pattern-rels? true
+                                         :result :type-path-string)]
+    (->> etype-epath-estr-ms
+         (map (fn [{profile-id :id} etype-epath-estr-m]
+                [profile-id etype-epath-estr-m])
+              profile-coll)
+         (reduce (fn [acc [prof-id etype-epath-estr-m]]
+                   (reduce-kv (fn [acc* etype epath-estr-m]
+                                (reduce-kv (fn [acc** epath estr]
+                                             (let [epath* (into [prof-id etype]
+                                                                epath)]
+                                               (conj acc**
+                                                     {:path epath*
+                                                      :text estr
+                                                      :id   epath*})))
+                                           acc*
+                                           epath-estr-m))
+                              acc
+                              etype-epath-estr-m))
+                 []))))
+
+;; TODO: Dedupe common code
+;; TODO: Use Expound lib
 
 (defn- validate-personae-array
   [personae-array]
   (when-some [ed (s/explain-data ::personae-array personae-array)]
-    {:personae-array-errors ed}))
+    (errs/explain-to-map-coll ::personae-array ed)))
 
 (defn- validate-alignments
   [alignments]
   (when-some [ed (s/explain-data ::alignments alignments)]
-    {:alignments-errors ed}))
+    (errs/explain-to-map-coll ::alignments ed)))
 
 (defn- validate-parameters
   [parameters]
   (when-some [ed (s/explain-data ::parameters parameters)]
-    {:parameters-errors ed}))
+    (errs/explain-to-map-coll ::parameters ed)))
 
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
@@ -182,10 +202,10 @@
                   parameters]
   p/FromInput
   (validate [this]
-    (merge (validate-profiles (:profiles this))
-           (validate-personae-array (:personae-array this))
-           (validate-alignments (:alignments this))
-           (validate-parameters (:parameters this)))      
+    (vec (concat (validate-profiles (:profiles this))
+                 (validate-personae-array (:personae-array this))
+                 (validate-alignments (:alignments this))
+                 (validate-parameters (:parameters this))))      
     #_(s/explain-data :com.yetanalytics.datasim/input this))
 
   p/JSONRepresentable
