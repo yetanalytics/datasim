@@ -66,8 +66,8 @@
                      account]
   p/FromInput
   (validate [this]
-    (s/explain-data ::personae
-                    this))
+    (when-some [ed (s/explain-data ::personae this)]
+      {:personae-errors ed}))
 
   p/JSONRepresentable
   (read-key-fn [this k]

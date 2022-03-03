@@ -64,6 +64,27 @@
 (s/def ::parameters
   ::params/parameters)
 
+(defn- validate-profiles
+  [profile-coll]
+  (pan/validate-profile-coll profile-coll
+                             :syntax? true
+                             :pattern-rels? true))
+
+(defn- validate-personae-array
+  [personae-array]
+  (when-some [ed (s/explain-data ::personae-array personae-array)]
+    {:personae-array-errors ed}))
+
+(defn- validate-alignments
+  [alignments]
+  (when-some [ed (s/explain-data ::alignments alignments)]
+    {:alignments-errors ed}))
+
+(defn- validate-parameters
+  [parameters]
+  (when-some [ed (s/explain-data ::parameters parameters)]
+    {:parameters-errors ed}))
+
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
@@ -159,7 +180,11 @@
                   parameters]
   p/FromInput
   (validate [this]
-    (s/explain-data :com.yetanalytics.datasim/input this))
+    (merge (validate-profiles (:profiles this))
+           (validate-personae-array (:personae-array this))
+           (validate-alignments (:alignments this))
+           (validate-parameters (:parameters this)))      
+    #_(s/explain-data :com.yetanalytics.datasim/input this))
 
   p/JSONRepresentable
   (read-key-fn [this k]

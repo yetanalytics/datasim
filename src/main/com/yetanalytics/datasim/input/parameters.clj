@@ -84,7 +84,8 @@
                        seed]
   p/FromInput
   (validate [this]
-    (s/explain-data ::parameters this))
+    (when-some [ed (s/explain-data ::parameters this)]
+      {:parameters-errors ed}))
 
   p/JSONRepresentable
   (read-key-fn [this k]

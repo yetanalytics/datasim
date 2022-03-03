@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]
+            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.pan.objects.profile :as profile]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.util :as u])
@@ -24,16 +25,19 @@
                     author]
   p/FromInput
   (validate [this]
-            (s/explain-data ::profile/profile this))
+    (when-some [err-map (pan/validate-profile this
+                                              :syntax? true
+                                              :pattern-rels? true)]
+      err-map))
 
   p/JSONRepresentable
   (read-key-fn [_this k]
-               (let [kn (name k)]
-                 (keyword nil (if (= "@context" kn) "_context" kn))))
+    (let [kn (name k)]
+      (keyword nil (if (= "@context" kn) "_context" kn))))
   (read-body-fn [_this json-result]
-                (map->Profile json-result))
+    (map->Profile json-result))
   (write-key-fn [_this k]
-                (let [nn (name k)]
-                  (if (= nn "_context") "@context" nn)))
+    (let [nn (name k)]
+      (if (= nn "_context") "@context" nn)))
   (write-body-fn [this]
-                 this))
+    this))
