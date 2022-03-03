@@ -6,9 +6,7 @@
         {:mvn/version "1.2.0"
          :exclusions  [org.clojure/clojurescript]}
         com.yetanalytics/project-pan
-        {;:mvn/version "0.4.1"
-         :git/url "https://github.com/yetanalytics/project-pan.git"
-         :git/sha "6c7d42e6eb2efc92b1f30493f34d591e7987ffc4"
+        {:mvn/version "0.4.2"
          :exclusions [org.clojure/clojurescript
                       com.yetanalytics./xapi-schema]}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
