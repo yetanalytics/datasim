@@ -37,7 +37,6 @@
              (json/read-str
               (slurp tf)
               :key-fn
-              (partial p/read-key-fn minimal-profile))
-             :pattern-rels? true)))
+              (partial p/read-key-fn minimal-profile)))))
           (finally
             (.delete tf)))))))
