@@ -5,17 +5,19 @@
   "Convert spec error data for personae, alignments, and parameters
    into a map coll acceptable to the Datasim UI."
   [spec-kw spec-ed]
-  (mapv
-   (fn [problem]
-     (let [epath (into [spec-kw] (:in problem))
-           estr  (-> problem
-                     (assoc ::s/problems [problem])
-                     s/explain-printer
-                     with-out-str)]
-       {:path epath
-        :text estr
-        :id   epath}))
-   (::s/problems spec-ed)))
+  (->> (::s/problems spec-ed)
+       (map-indexed
+        (fn [idx problem]
+          (let [epath (into [spec-kw] (:in problem))
+                estr  (-> problem
+                          (assoc ::s/problems [problem])
+                          s/explain-printer
+                          with-out-str)
+                eid   (str (name spec-kw) "-" idx)]
+            {:path epath
+             :text estr
+             :id   eid})))
+       vec))
 
 (defn type-path-string-m->map-coll
   "Convert Pan's `type-path-string-map`, using `profile-id`, into a
@@ -27,11 +29,13 @@
                     (reduce-kv (fn [acc* epath estr]
                                  (conj acc* {:path (into [profile-id etype]
                                                          epath)
-                                             :text estr
-                                             :id   etype}))
+                                             :text estr}))
                                acc
                                epath-estr-m))
                   [])
+       (map-indexed (fn [idx emap]
+                      (assoc emap :id (str "profile-" idx))))
+       vec
        not-empty))
 
 (defn type-path-string-ms->map-coll
@@ -50,11 +54,13 @@
                                                               epath)]
                                              (conj acc**
                                                    {:path epath*
-                                                    :text estr
-                                                    :id   epath*})))
+                                                    :text estr})))
                                          acc*
                                          epath-estr-m))
                             acc
                             etype-epath-estr-m))
                [])
+       (map-indexed (fn [idx emap]
+                      (assoc emap :id (str "profiles-" idx))))
+       vec
        not-empty))
