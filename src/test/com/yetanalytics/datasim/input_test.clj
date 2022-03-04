@@ -1,6 +1,5 @@
 (ns com.yetanalytics.datasim.input-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input
              :refer [from-location validate validate-throw]
@@ -58,16 +57,14 @@
 
 (deftest profile-cosmos-validation-test
   (testing "input is valid if all template refs are valid"
-    (is (nil? (s/explain-data
-               ::input/profiles
+    (is (nil? (input/validate-profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")]))))
   (testing "input is invalid if invalid template ref iri exists"
     (is (= 1 (->>
               [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
                    (assoc-in [:patterns 0 :zeroOrMore]
                              "https://w3id.org/xapi/cmi5#bad-template"))]
-              (s/explain-data ::input/profiles)
-              ::s/problems
+              input/validate-profiles
               count)))
     ;; XXX: If we replaced satisfiedbad3 with satisfiedbad2, we only get a count
     ;; of 2 errors, not 3.
@@ -79,16 +76,14 @@
                              "https://w3id.org/xapi/cmi5#satisfiedbad2")
                    (assoc-in [:patterns 1 :sequence 2]
                              "https://w3id.org/xapi/cmi5#satisfiedbad3"))]
-              (s/explain-data ::input/profiles)
-              ::s/problems
+              input/validate-profiles
               count))))
   (testing "validation works for multi-profile cosmos"
-    (is (nil? (s/explain-data
-               ::input/profiles
+    (is (nil? (input/validate-profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
                 (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")])))
-    (is (nil? (s/explain-data ; Add connections between Profiles
-               ::input/profiles
+    ;; Add connections between Profiles
+    (is (nil? (input/validate-profiles
                [(from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
                 (-> (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")
                     (assoc-in [:patterns 0 :sequence 0]
@@ -97,49 +92,42 @@
                               "https://w3id.org/xapi/cmi5#terminated")
                     (assoc-in [:patterns 1 :alternates 6]
                               "https://w3id.org/xapi/cmi5#completed"))])))
-    (is (= 1 (->>
-              [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
-                   (assoc-in [:patterns 0 :zeroOrMore]
-                             "https://w3id.org/xapi/cmi5#bad-template"))
-               (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")]
-              (s/explain-data ::input/profiles)
-              ::s/problems
-              count))))
+    (is (= 1 (->> [(-> (from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")
+                       (assoc-in [:patterns 0 :zeroOrMore]
+                                 "https://w3id.org/xapi/cmi5#bad-template"))
+                   (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")]
+                  input/validate-profiles
+                  count))))
   ;; Following tests exist to point out flaws in Profiles
   (testing "invalid profiles"
     ;; AcrossX and ActivityStreams violate spec:
     ;; "related MUST only be used on deprecated Concepts"
-    (is (not (s/valid?
-              ::input/profiles
-              [(from-location :profile :json "dev-resources/profiles/acrossx/profile.jsonld")])))
-    (is (not (s/valid?
-              ::input/profiles
-              [(from-location :profile :json "dev-resources/profiles/activity_streams/profile.jsonld")])))
+    (is (some? (input/validate-profiles
+                [(from-location :profile :json "dev-resources/profiles/acrossx/profile.jsonld")])))
+    (is (some? (input/validate-profiles
+                [(from-location :profile :json "dev-resources/profiles/activity_streams/profile.jsonld")])))
     ;; TC3 Profile violates spec:
     ;; "alternates Pattern MUST NOT contain zeroOrMore"
-    (is (not (s/valid?
-              ::input/profiles
-              [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
+    (is (some? (input/validate-profiles
+                [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
 
 (deftest personae-array-validation-test
   (testing "personae-array spec"
-    (is (s/valid? ::input/personae-array
-                  [(from-location :personae :json "dev-resources/personae/simple.json")
-                   (from-location :personae :json "dev-resources/personae/tccc_dev.json")]))
-    (is (not (s/valid?
-              ::input/personae-array
-              [(-> (from-location :personae :json "dev-resources/personae/simple.json")
-                   (assoc-in [:member 0 :mbox] "not-an-email"))
-               (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))
-    (is (not (s/valid? ::input/personae-array []))))
+    (is (nil? (input/validate-personae-array
+               [(from-location :personae :json "dev-resources/personae/simple.json")
+                (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))
+    (is (some? (input/validate-personae-array
+                [(-> (from-location :personae :json "dev-resources/personae/simple.json")
+                     (assoc-in [:member 0 :mbox] "not-an-email"))
+                 (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))
+    (is (some? (input/validate-personae-array []))))
   (testing "duplicate member ids across different groups"
-    (is (not (s/valid?
-              ::input/personae-array
-              [(-> (from-location :personae :json "dev-resources/personae/simple.json")
-                   (assoc-in [:member 0 :mbox] "mailto:bob@example.org")
-                   (assoc-in [:member 1 :mbox] "mailto:alice@example.org")
-                   (assoc-in [:member 2 :mbox] "mailto:fred@example.org"))
-               (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))))
+    (is (some? (input/validate-personae-array
+                [(-> (from-location :personae :json "dev-resources/personae/simple.json")
+                     (assoc-in [:member 0 :mbox] "mailto:bob@example.org")
+                     (assoc-in [:member 1 :mbox] "mailto:alice@example.org")
+                     (assoc-in [:member 2 :mbox] "mailto:fred@example.org"))
+                 (from-location :personae :json "dev-resources/personae/tccc_dev.json")])))))
 
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"

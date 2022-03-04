@@ -4,8 +4,6 @@
             [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.pan.objects.profile :as ps]
-            [com.yetanalytics.pan.objects.pattern :as pat]
             [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.input.personae :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
@@ -13,32 +11,6 @@
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.util.xapi :as xapiu]
             [com.yetanalytics.datasim.util.errors :as errs]))
-
-;; TODO: Ideally we want to use the top-level Pan API functions (which now
-;; support multiple profiles).
-;; We apply this kludgey patch simply to minimize breakage.
-
-(defn- profiles->pedges
-  [profiles]
-  (let [combined-profile
-        (->> profiles
-             (reduce (fn [m {:keys [templates patterns]}]
-                       (-> m
-                           (update :templates concat templates)
-                           (update :patterns concat patterns)))
-                     {:templates []
-                      :patterns  []}))]
-    (pat/get-edges (pat/create-graph combined-profile))))
-
-;; ::profiles is unused, but needs to stay or else tests will break
-
-(s/def ::profiles
-  (s/and
-   (s/every ::ps/profile :min-count 1 :into [])
-   ;; Validate that all edges with a Pattern src ends up at a Pattern or
-   ;; Template dest that is also in the profile cosmos.
-   (s/conformer profiles->pedges)
-   ::pat/pattern-edges))
 
 ;; This is our system:
 ;;   persona: a single Agent who is a member of a Group
@@ -65,7 +37,7 @@
 (s/def ::parameters
   ::params/parameters)
 
-(defn- validate-profiles
+(defn validate-profiles
   [profile-coll]
   (if (vector? profile-coll)
     (let [prof-errs (pan/validate-profile-coll profile-coll
@@ -79,17 +51,17 @@
       :text "Profiles must be a vector!"
       :id   [::profiles]}]))
 
-(defn- validate-personae-array
+(defn validate-personae-array
   [personae-array]
   (when-some [ed (s/explain-data ::personae-array personae-array)]
     (errs/explain-to-map-coll ::personae-array ed)))
 
-(defn- validate-alignments
+(defn validate-alignments
   [alignments]
   (when-some [ed (s/explain-data ::alignments alignments)]
     (errs/explain-to-map-coll ::alignments ed)))
 
-(defn- validate-parameters
+(defn validate-parameters
   [parameters]
   (when-some [ed (s/explain-data ::parameters parameters)]
     (errs/explain-to-map-coll ::parameters ed)))
