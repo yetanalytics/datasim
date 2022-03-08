@@ -1,13 +1,10 @@
 (ns com.yetanalytics.datasim.input.profile-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest testing is]]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.profile :refer [map->Profile]]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [clojure.spec.alpha :as s]
+            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.datasim.io :as dio]
-            [clojure.data.json :as json]
-            [clojure.java.io :as io]
-            [clojure.template :as t])
+            [clojure.data.json :as json])
   (:import [java.io File]))
 
 (deftest minimal-profile-test
@@ -36,10 +33,10 @@
           (dio/write-loc-json minimal-profile tf)
           (is
            (nil?
-            (s/explain-data ::profile/profile
-                            (json/read-str
-                             (slurp tf)
-                             :key-fn
-                             (partial p/read-key-fn minimal-profile)))))
+            (pan/validate-profile
+             (json/read-str
+              (slurp tf)
+              :key-fn
+              (partial p/read-key-fn minimal-profile)))))
           (finally
             (.delete tf)))))))

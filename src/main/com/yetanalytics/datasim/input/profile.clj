@@ -2,9 +2,11 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [clojure.string :as cs]
+            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.pan.objects.profile :as profile]
             [clojure.walk :as w]
-            [com.yetanalytics.datasim.util :as u])
+            [com.yetanalytics.datasim.util :as u]
+            [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.io Reader Writer]))
 
 ;; NOTE: Do not include optional args seeAlso, concepts, templates, and patterns
@@ -24,16 +26,21 @@
                     author]
   p/FromInput
   (validate [this]
-            (s/explain-data ::profile/profile this))
+    ;; TODO: We need to validate the Profile's relations
+    ;; to internal and external Patterns.
+    (let [prof-errs (pan/validate-profile this
+                                          :syntax? true
+                                          :result :type-path-string)]
+      (errs/type-path-string-m->map-coll id prof-errs)))
 
   p/JSONRepresentable
   (read-key-fn [_this k]
-               (let [kn (name k)]
-                 (keyword nil (if (= "@context" kn) "_context" kn))))
+    (let [kn (name k)]
+      (keyword nil (if (= "@context" kn) "_context" kn))))
   (read-body-fn [_this json-result]
-                (map->Profile json-result))
+    (map->Profile json-result))
   (write-key-fn [_this k]
-                (let [nn (name k)]
-                  (if (= nn "_context") "@context" nn)))
+    (let [nn (name k)]
+      (if (= nn "_context") "@context" nn)))
   (write-body-fn [this]
-                 this))
+    this))

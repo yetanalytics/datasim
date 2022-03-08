@@ -18,6 +18,8 @@
             [com.yetanalytics.datasim.sim           :as sim]
             [com.yetanalytics.datasim.input         :as sinput]
             [com.yetanalytics.datasim.xapi.client   :as xapi-client]
+            [com.yetanalytics.pan.objects.profile   :as pan-prof]
+            [com.yetanalytics.pan.objects.pattern   :as pan-pat]
             [com.yetanalytics.pan.errors            :as errors]
             [clojure.spec.alpha                     :as s]
             [com.yetanalytics.datasim.util.sequence :as su])
@@ -27,7 +29,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Datasim fns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn get-stream
   "Given a map and a key, retrieve the content of the key as an input stream."
@@ -56,11 +57,10 @@
         sim-input      (sinput/map->Input data)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
-        api-secret-key (get input "api-secret-key")
-        spec-errors    (sinput/validate sim-input)]
-    (if (not-empty spec-errors)
-      (errors/expound-error-map spec-errors)
-      ;;(log/info :msg "Run Simulation")
+        api-secret-key (get input "api-secret-key")]
+    (if-some [spec-errors (sinput/validate sim-input)]
+      ;; Return a coll of maps that are acceptable to the Datasim UI
+      (mapv #(assoc % :visible true) spec-errors)
       ;; Anon fn that accepts the output stream for the response body.
       (fn [^ServletOutputStream os]
         (with-open [w (writer os)]

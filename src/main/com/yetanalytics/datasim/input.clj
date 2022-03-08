@@ -1,35 +1,16 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
+            [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.pan.objects.profile :as ps]
-            [com.yetanalytics.pan.objects.pattern :as pat]
-            [xapi-schema.spec :as xs]
+            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.input.personae :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.util.xapi :as xapiu]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.util :as u]))
-
-(defn- profiles->pedges
-  [profiles]
-  (let [[templates patterns]
-        (reduce (fn [[ts ps] {:keys [templates patterns]}]
-                  [(concat ts templates) (concat ps patterns)])
-                [[] []]
-                profiles)]
-    (pat/get-edges (pat/create-graph templates patterns))))
-
-(s/def ::profiles
-  (s/and
-   (s/every ::ps/profile :min-count 1 :into [])
-   ;; Validate that all edges with a Pattern src ends up at a Pattern or
-   ;; Template dest that is also in the profile cosmos.
-   (s/conformer profiles->pedges)
-   ::pat/valid-edges))
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; This is our system:
 ;;   persona: a single Agent who is a member of a Group
@@ -55,6 +36,35 @@
 
 (s/def ::parameters
   ::params/parameters)
+
+(defn validate-profiles
+  [profile-coll]
+  (if (vector? profile-coll)
+    (let [prof-errs (pan/validate-profile-coll profile-coll
+                                               :syntax? true
+                                               :pattern-rels? true
+                                               :result :type-path-string)]
+      (errs/type-path-string-ms->map-coll (map :id profile-coll)
+                                          prof-errs))
+    ;; TODO: Something more solid/less hacky, particularly in the Pan lib itself
+    [{:path [::profiles]
+      :text "Profiles must be a vector!"
+      :id   [::profiles]}]))
+
+(defn validate-personae-array
+  [personae-array]
+  (when-some [ed (s/explain-data ::personae-array personae-array)]
+    (errs/explain-to-map-coll ::personae-array ed)))
+
+(defn validate-alignments
+  [alignments]
+  (when-some [ed (s/explain-data ::alignments alignments)]
+    (errs/explain-to-map-coll ::alignments ed)))
+
+(defn validate-parameters
+  [parameters]
+  (when-some [ed (s/explain-data ::parameters parameters)]
+    (errs/explain-to-map-coll ::parameters ed)))
 
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
@@ -151,7 +161,12 @@
                   parameters]
   p/FromInput
   (validate [this]
-    (s/explain-data :com.yetanalytics.datasim/input this))
+    (-> (concat (validate-profiles (:profiles this))
+                (validate-personae-array (:personae-array this))
+                (validate-alignments (:alignments this))
+                (validate-parameters (:parameters this)))
+        vec
+        not-empty))
 
   p/JSONRepresentable
   (read-key-fn [this k]
@@ -197,7 +212,8 @@
     :json (dio/write-loc-json record *err*)))
 
 (defn validate
-  "Validate input using the FromInput protocol. Does no handling on result"
+  "Validate input using the FromInput protocol. Does no handling on result.
+   Returns a coll of maps on failure, `nil` on success."
   [input]
   (p/validate input))
 
