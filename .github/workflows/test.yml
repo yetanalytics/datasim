@@ -23,10 +23,11 @@ jobs:
   validate-template:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_ACCESS_KEY_ID: DummyKey
-      AWS_SECRET_ACCESS_KEY: DummySecret
-      AWS_REGION: us-east-1
+    # These permissions are needed by configure-aws-credentials in order
+    # to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write # required to use OIDC authentication
+      contents: read  # required to checkout the code from the repo
 
     steps:
     - name: Checkout Repository
@@ -34,6 +35,13 @@ jobs:
     
     - name: Setup CI environment
       uses: yetanalytics/actions/setup-env@v0.0.2
-    
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.CF_VALIDATE_TEMPLATE_ROLE_ARN }}
+        role-duration-seconds: 600
+        aws-region: us-east-1
+
     - name: Run Makefile Target validate-template
       run: make validate-template
