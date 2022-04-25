@@ -25,5 +25,5 @@ jobs:
       if: ${{ github.ref_type == 'branch' }}
       uses: actions/upload-artifact@v2
       with:
-        name: datasim-artifact${{ github.sha }}
+        name: datasim-artifact-${{ github.sha }}
         path: datasim.zip
