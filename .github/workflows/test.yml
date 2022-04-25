@@ -40,7 +40,7 @@ jobs:
       uses: aws-actions/configure-aws-credentials@v1
       with:
         role-to-assume: ${{ secrets.CF_VALIDATE_TEMPLATE_ROLE_ARN }}
-        role-duration-seconds: 600
+        role-duration-seconds: 900 # 15 min; minimal duration possible
         aws-region: us-east-1
 
     - name: Run Makefile Target validate-template
