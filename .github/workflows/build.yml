@@ -1,0 +1,29 @@
+name: CD
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    - name: Build Bundle
+      run: make bundle
+
+    - name: Compress Bundle
+      run: | # Need to cd so that the zip file doesn't contain the parent dirs
+        cd target/bundle
+        zip -r ../../datasim.zip ./
+
+    - name: Archive Bundle (Branch Pushes)
+      if: ${{ github.ref_type == 'branch' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: datasim-artifact-${{ github.sha }}
+        path: datasim.zip

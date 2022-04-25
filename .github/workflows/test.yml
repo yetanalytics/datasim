@@ -1,0 +1,47 @@
+name: CI
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target: [test-unit, test-cli]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    - name: Run Makefile Target ${{ matrix.target }}
+      run: make ${{ matrix.target }}
+
+  validate-template:
+    runs-on: ubuntu-latest
+
+    # These permissions are needed by configure-aws-credentials in order
+    # to interact with GitHub's OIDC Token endpoint.
+    permissions:
+      id-token: write # required to use OIDC authentication
+      contents: read  # required to checkout the code from the repo
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.CF_VALIDATE_TEMPLATE_ROLE_ARN }}
+        role-duration-seconds: 900 # 15 min; minimal duration possible
+        aws-region: us-east-1
+
+    - name: Run Makefile Target validate-template
+      run: make validate-template
