@@ -9,7 +9,25 @@ jobs:
     strategy:
       matrix:
         target: [test-unit, test-cli]
-    
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    - name: Run Makefile Target ${{ matrix.target }}
+      run: make ${{ matrix.target }}
+
+  validate-template:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: DummyKey
+      AWS_SECRET_ACCESS_KEY: DummySecret
+      AWS_REGION: us-east-1
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -17,5 +35,5 @@ jobs:
     - name: Setup CI environment
       uses: yetanalytics/actions/setup-env@v0.0.2
     
-    - name: Run Makefile Target ${{ matrix.target }}
-      run: make ${{ matrix.target }}
+    - name: Run Makefile Target validate-template
+      run: make validate-template
