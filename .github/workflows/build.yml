@@ -1,0 +1,24 @@
+name: CD
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    needs: build_jre
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    - name: Build Bundle
+      run: make bundle
+    
+    - name: Archive Bundle (Branch Pushes)
+      if: ${{ github.ref_type == 'branch' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: datasim-artifact${{ github.sha }}
+        path: datasim.zip
