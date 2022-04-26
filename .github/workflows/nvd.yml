@@ -2,7 +2,7 @@ name: Periodic NVD Scan
 
 on:
   schedule:
-    - cron: '0 8 * * *' # Every day at 8:00 AM
+    - cron: '0 8 * * 1-5' # Every weekday at 8:00 AM
 
 jobs:
   nvd-scan:
