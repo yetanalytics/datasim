@@ -257,10 +257,10 @@
   []
   (http/create-server
    {::http/routes          routes
-    ::http/type            :immutant
+    ::http/type            :jetty
     ::http/allowed-origins ["https://yetanalytics.github.io"
                             "http://localhost:9091"]
-    ::http/host "0.0.0.0"
+    ::http/host            "0.0.0.0"
     ::http/port            9090
     ::http/join?           false}))
 
