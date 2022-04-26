@@ -23,7 +23,7 @@ jobs:
       with:
         payload: |
           {
-            "run_id": ${{ github.run_id }}
+            "run_link": "https://github.com/yetanalytics/datasim/actions/runs/${{ github.run_id }}"
           }
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
