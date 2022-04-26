@@ -21,11 +21,10 @@ jobs:
         cd target/bundle
         zip -r ../../datasim.zip ./
 
-    - name: Archive Bundle (Branch Pushes)
-      if: ${{ github.ref_type == 'branch' }}
+    - name: Archive Bundle
       uses: actions/upload-artifact@v2
       with:
-        name: datasim-artifact-${{ github.sha }}
+        name: datasim-build-artifact-${{ github.sha }}
         path: datasim.zip
 
   deploy:
