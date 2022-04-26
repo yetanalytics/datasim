@@ -6,9 +6,24 @@ on:
     - cron: '* * * * *'
 
 jobs:
-  nvd_scan:
+  nvd-scan:
     uses: yetanalytics/actions/.github/workflows/nvd-scan.yml@v0.0.3
     with:
       nvd-clojure-version: '2.0.0'
       classpath-command: 'clojure -Spath -A:cli:server'
       # nvd-config-filename: '.nvd/config.json'
+
+  notify-slack:
+    needs: [nvd-scan]
+    if: ${{ always() && (needs.nvd-scan.result == 'failure') }}
+    steps:
+    - name: Notify Slack DATASIM NVD Scan Reporter 
+      id: slack
+      uses: slackapi/slack-github-action@v1.18.0
+      with:
+        payload: |
+          {
+            "run_id": ${{ github.run_id }}
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
