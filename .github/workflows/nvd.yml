@@ -13,6 +13,7 @@ jobs:
       # nvd-config-filename: '.nvd/config.json'
 
   notify-slack:
+    runs-on: ubuntu-latest
     needs: [nvd-scan]
     if: ${{ always() && (needs.nvd-scan.result == 'failure') }}
     steps:
