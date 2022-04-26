@@ -27,3 +27,29 @@ jobs:
       with:
         name: datasim-artifact-${{ github.sha }}
         path: datasim.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    # if: ${{ github.ref_type == 'tag' }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    # - name: Extract version
+    #   id: version
+    #   run: echo ::set-output name=VERSION::${GITHUB_REF#refs\/tags\/v}
+    
+    - name: Build and deploy to Clojars
+      uses: yetanalytics/actions/deploy-clojars@v0.0.2
+      with:
+        artifact-id: 'datasim'
+        version: '0.1.3-SNAPSHOT'
+        resource-dirs: '[]'
+        clojars-username: ${{ secrets.CLOJARS_USERNAME }}
+        clojars-password: ${{ secrets.CLOJARS_PASSWORD }}
+        publish: false # TEMP
