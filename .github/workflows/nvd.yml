@@ -18,7 +18,6 @@ jobs:
     if: ${{ always() && (needs.nvd-scan.result == 'failure') }}
     steps:
     - name: Notify Slack DATASIM NVD Scan Reporter 
-      id: slack
       uses: slackapi/slack-github-action@v1.18.0
       with:
         payload: |
