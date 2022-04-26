@@ -1,0 +1,14 @@
+name: Periodic NVD Scan
+
+on:
+  schedule:
+    # - cron: '0 8 * * *' # Every day at 8:00 AM
+    - cron: '* * * * *'
+
+jobs:
+  nvd_scan:
+    uses: yetanalytics/actions/.github/workflows/nvd-scan.yml@v0.0.3
+    with:
+      nvd-clojure-version: '2.0.0'
+      classpath-command: 'clojure -Spath -A:cli:server'
+      # nvd-config-filename: '.nvd/config.json'
