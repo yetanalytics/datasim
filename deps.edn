@@ -10,6 +10,8 @@
          :exclusions [org.clojure/clojurescript
                       com.yetanalytics./xapi-schema]}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
+        ;; org.threeten/threeten-extra {:mvn/version "1.4"}
+        org.apache.jena/jena-iri {:mvn/version "3.13.1"}
         ;; JSON Path Parser built with
         org.blancas/kern {:mvn/version "1.1.0"}
         org.clojure/test.check {:mvn/version "1.0.0"}
