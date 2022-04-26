@@ -10,14 +10,27 @@
          :exclusions [org.clojure/clojurescript
                       com.yetanalytics./xapi-schema]}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
-        ;; org.threeten/threeten-extra {:mvn/version "1.4"}
-        org.apache.jena/jena-iri {:mvn/version "3.13.1"}
+        org.apache.jena/jena-iri {:mvn/version "4.4.0"}
         ;; JSON Path Parser built with
         org.blancas/kern {:mvn/version "1.1.0"}
         org.clojure/test.check {:mvn/version "1.0.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
-        cheshire/cheshire {:mvn/version "5.10.0"}
-        http-kit/http-kit {:mvn/version "2.5.0"}}
+        http-kit/http-kit {:mvn/version "2.5.0"}
+        ;; Include Jackson to avoid CVE
+        cheshire/cheshire
+        {:mvn/version "5.10.2"
+         :exclusions [com.fasterxml.jackson.core/jackson-core
+                      com.fasterxml.jackson.dataformat/jackson-dataformat-smile
+                      com.fasterxml.jackson.dataformat/jackson-dataformat-cbor
+                      com.fasterxml.jackson.core/jackson-databind]}
+        com.fasterxml.jackson.core/jackson-core
+        {:mvn/version "2.13.2"}
+        com.fasterxml.jackson.dataformat/jackson-dataformat-smile
+        {:mvn/version "2.13.2"}
+        com.fasterxml.jackson.dataformat/jackson-dataformat-cbor
+        {:mvn/version "2.13.2"}
+        com.fasterxml.jackson.core/jackson-databind
+        {:mvn/version "2.13.2.1"}}
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:git/url "https://github.com/clojure/tools.cli"
@@ -37,15 +50,15 @@
   :server
   {:extra-paths ["src/server"]
    :extra-deps  {io.pedestal/pedestal.service
-                 {:mvn/version "0.5.7"}
-                 io.pedestal/pedestal.immutant
-                 {:mvn/version "0.5.7"}
+                 {:mvn/version "0.5.10"}
+                 io.pedestal/pedestal.jetty
+                 {:mvn/version "0.5.10"}
                  org.slf4j/slf4j-simple
                  {:mvn/version "1.7.28"}
                  clj-http/clj-http
-                 {:mvn/version "3.10.0"}
+                 {:mvn/version "3.12.3"}
                  buddy/buddy-auth
-                 {:mvn/version "2.2.0"
+                 {:mvn/version "3.0.323"
                   :exclusions [cheshire/cheshire]}
                  environ/environ
                  {:mvn/version "1.1.0"}}
