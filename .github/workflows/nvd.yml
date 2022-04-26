@@ -10,7 +10,7 @@ jobs:
     with:
       nvd-clojure-version: '2.0.0'
       classpath-command: 'clojure -Spath -A:cli:server'
-      # nvd-config-filename: '.nvd/config.json'
+      nvd-config-filename: '.nvd/config.json'
 
   notify-slack:
     runs-on: ubuntu-latest
