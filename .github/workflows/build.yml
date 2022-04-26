@@ -1,6 +1,11 @@
 name: CD
 
-on: push
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - 'v*.*.*' # Enforce Semantic Versioning
 
 jobs:
   build:
@@ -19,11 +24,35 @@ jobs:
     - name: Compress Bundle
       run: | # Need to cd so that the zip file doesn't contain the parent dirs
         cd target/bundle
-        zip -r ../../datasim.zip ./
+        zip -r ../../datasim-bundle.zip ./
 
-    - name: Archive Bundle (Branch Pushes)
-      if: ${{ github.ref_type == 'branch' }}
+    - name: Archive Bundle
       uses: actions/upload-artifact@v2
       with:
-        name: datasim-artifact-${{ github.sha }}
-        path: datasim.zip
+        name: datasim-bundle-artifact-${{ github.sha }}
+        path: datasim-bundle.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    if: ${{ github.ref_type == 'tag' }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    
+    - name: Setup CI environment
+      uses: yetanalytics/actions/setup-env@v0.0.2
+
+    - name: Extract version
+      id: version
+      run: echo ::set-output name=VERSION::${GITHUB_REF#refs\/tags\/v}
+    
+    - name: Build and deploy to Clojars
+      uses: yetanalytics/actions/deploy-clojars@v0.0.2
+      with:
+        artifact-id: 'datasim'
+        version: ${{ steps.version.outputs.VERSION }}
+        resource-dirs: '[]'
+        clojars-username: ${{ secrets.CLOJARS_USERNAME }}
+        clojars-deploy-token: ${{ secrets.CLOJARS_PASSWORD }}
