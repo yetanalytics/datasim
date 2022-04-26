@@ -1,8 +1,8 @@
 name: Periodic NVD Scan
 
-on: push
-  # schedule:
-    # - cron: '0 8 * * *' # Every day at 8:00 AM
+on:
+  schedule:
+    - cron: '0 8 * * *' # Every day at 8:00 AM
 
 jobs:
   nvd-scan:
