@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.1.3] - 2022-04-26
+- Add GitHub Actions CI and CD for testing, bundle building, and vulnerability scanning.
+- Update dependencies to patch vulnerabilities (see [here](https://github.com/yetanalytics/datasim/pull/67) for more information).
+
 ## [0.1.2] - 2022-03-04
 - Update xAPI-Schema and Pan libraries to their latest versions. ([Details](https://github.com/yetanalytics/datasim/pull/65))
 - Change error output to be compatible with new Pan version, as well as DATASIM UI.

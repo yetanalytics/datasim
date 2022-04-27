@@ -10,6 +10,20 @@ DATASIM is funded by the Advanced Distributed Learning Initiative at US DoD.
 
 This documentation and repository refer to the simulation engine of DATASIM, which will run as a standalone CLI, and may also be deployed as a REST API. For the User Interface (which interacts with the API) please see https://github.com/yetanalytics/datasim-ui.
 
+## Installation
+
+To use the core DATASIM library in your project, use the following dependency in your `deps.edn` file:
+
+```clojure
+com.yetanalytics/datasim {:mvn/version "0.1.3"}
+```
+
+If you wish to install DATASIM as an application with features such as CLI or the webserver, perform the following steps:
+1. Clone the DATASIM GitHub repo
+2. Execute the `make bundle` command
+
+See [Deployment Models](#deployment-models) for more information about the differences between using DATASIM as a library and as an app.
+
 ## Usage
 
 ### Simulation Inputs
