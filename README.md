@@ -167,12 +167,16 @@ Build:
 
     make clean bundle && docker build -t yetanalytics/datasim:latest .
 
-Run:
+Run (CLI):
 
     docker run -v "$(pwd)"/dev-resources:/dev-resources  \
                -i yetanalytics/datasim:latest \
                -i /dev-resources/input/simple.json \
                generate
+
+Run (API):
+
+    docker run -it --entrypoint bin/server.sh yetanalytics/datasim:latest
 
 #### Library
 
