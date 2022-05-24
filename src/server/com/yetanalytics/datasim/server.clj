@@ -241,26 +241,38 @@
 ;; Routes and server configs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- assert-valid-root-path
+  [root-path]
+  (when (not-empty root-path)
+    (when-not (str/starts-with? root-path "/")
+      (throw (ex-info "API_ROOT_PATH must start with /"
+                      {:type      ::invalid-root-path
+                       :root-path root-path})))
+    (when (str/ends-with? root-path "/")
+      (throw (ex-info "API_ROOT_PATH must not end with /"
+                      {:type      ::invalid-root-path
+                       :root-path root-path})))))
+
+(defn- env-config
+  [env]
+  (let [root-path (get env :api-root-path "")]
+    (assert-valid-root-path root-path)
+    {:root-path       root-path
+     :host            (get env :api-host
+                           "0.0.0.0")
+     :port            (or (some-> env :api-port Long/parseLong)
+                          9090)
+     :allowed-origins (if-let [allowed-str (:api-allowed-origins env)]
+                        (str/split allowed-str #",")
+                        ["https://yetanalytics.github.io"
+                         "http://localhost:9091"])}))
+
 (defn create-server
   []
-  (let [root-path       (get env :api-root-path "")
-        _               (when (not-empty root-path)
-                          (when-not (str/starts-with? root-path "/")
-                            (throw (ex-info "API_ROOT_PATH must start with /"
-                                            {:type      ::invalid-root-path
-                                             :root-path root-path})))
-                          (when (str/ends-with? root-path "/")
-                            (throw (ex-info "API_ROOT_PATH must not end with /"
-                                            {:type      ::invalid-root-path
-                                             :root-path root-path}))))
-        host            (get env :api-host
-                             "0.0.0.0")
-        port            (or (some-> env :api-port Long/parseLong)
-                            9090)
-        allowed-origins (if-let [allowed-str (:api-allowed-origins env)]
-                          (str/split allowed-str #",")
-                          ["https://yetanalytics.github.io"
-                           "http://localhost:9091"])]
+  (let [{:keys [root-path
+                host
+                port
+                allowed-origins]} (env-config env)]
     (log/info :msg "Starting DATASIM API..."
               :root-path root-path
               :host host
