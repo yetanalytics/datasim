@@ -7,7 +7,7 @@ RUN apk update \
         && apk upgrade \
         && apk add ca-certificates \
         && update-ca-certificates \
-        && apk add --no-cache openjdk11 \
+        && apk add --no-cache openjdk11-jre \
         && rm -rf /var/cache/apk/*
 
 WORKDIR /bundle
