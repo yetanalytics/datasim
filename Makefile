@@ -2,7 +2,7 @@
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
-VERSION ?= 0.1.3
+VERSION ?= 0.1.5
 MAIN_NS ?= com.yetanalytics.datasim.main
 
 clean:
