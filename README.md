@@ -1,5 +1,7 @@
 #  Data and Training Analytics Simulated Input Modeler (DATASIM)
 
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/yetanalytics/datasim?label=docker&style=plastic&color=blue)](https://hub.docker.com/r/yetanalytics/datasim)
+
 ## What is DATASIM?
 
 DATASIM is an open source R&D project designed to provide specifications and a reference model application for the purpose of generating simulated xAPI data at scale.
@@ -165,12 +167,16 @@ Build:
 
     make clean bundle && docker build -t yetanalytics/datasim:latest .
 
-Run:
+Run (CLI):
 
     docker run -v "$(pwd)"/dev-resources:/dev-resources  \
                -i yetanalytics/datasim:latest \
                -i /dev-resources/input/simple.json \
                generate
+
+Run (API):
+
+    docker run -it --entrypoint bin/server.sh yetanalytics/datasim:latest
 
 #### Library
 
