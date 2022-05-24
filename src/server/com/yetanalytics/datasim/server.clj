@@ -22,7 +22,8 @@
             [com.yetanalytics.pan.objects.pattern   :as pan-pat]
             [com.yetanalytics.pan.errors            :as errors]
             [clojure.spec.alpha                     :as s]
-            [com.yetanalytics.datasim.util.sequence :as su])
+            [com.yetanalytics.datasim.util.sequence :as su]
+            [clojure.string                         :as str])
   (:import [javax.servlet ServletOutputStream])
   (:gen-class))
 
@@ -240,29 +241,60 @@
 ;; Routes and server configs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def routes
-  (route/expand-routes
-   #{["/health"
-      :get        health
-      :route-name :datasim.route/health]
-     ["/api/v1/generate"
-      :post (into common-interceptors
-                  [(multipart-params)
-                   generate])]
-     ["/api/v1/download-url"
-      :get  (into common-interceptors
-                  [download-url])]}))
+(defn- assert-valid-root-path
+  [root-path]
+  (when (not-empty root-path)
+    (when-not (str/starts-with? root-path "/")
+      (throw (ex-info "API_ROOT_PATH must start with /"
+                      {:type      ::invalid-root-path
+                       :root-path root-path})))
+    (when (str/ends-with? root-path "/")
+      (throw (ex-info "API_ROOT_PATH must not end with /"
+                      {:type      ::invalid-root-path
+                       :root-path root-path})))))
+
+(defn- env-config
+  [env]
+  (let [root-path (get env :api-root-path "")]
+    (assert-valid-root-path root-path)
+    {:root-path       root-path
+     :host            (get env :api-host
+                           "0.0.0.0")
+     :port            (or (some-> env :api-port Long/parseLong)
+                          9090)
+     :allowed-origins (if-let [allowed-str (:api-allowed-origins env)]
+                        (str/split allowed-str #",")
+                        ["https://yetanalytics.github.io"
+                         "http://localhost:9091"])}))
 
 (defn create-server
   []
-  (http/create-server
-   {::http/routes          routes
-    ::http/type            :jetty
-    ::http/allowed-origins ["https://yetanalytics.github.io"
-                            "http://localhost:9091"]
-    ::http/host            "0.0.0.0"
-    ::http/port            9090
-    ::http/join?           false}))
+  (let [{:keys [root-path
+                host
+                port
+                allowed-origins]} (env-config env)]
+    (log/info :msg "Starting DATASIM API..."
+              :root-path root-path
+              :host host
+              :port port
+              :allowed-origins allowed-origins)
+    (http/create-server
+     {::http/routes          (route/expand-routes
+                              #{[(str root-path "/health")
+                                 :get        health
+                                 :route-name :datasim.route/health]
+                                [(str root-path "/api/v1/generate")
+                                 :post (into common-interceptors
+                                             [(multipart-params)
+                                              generate])]
+                                [(str root-path "/api/v1/download-url")
+                                 :get  (into common-interceptors
+                                             [download-url])]})
+      ::http/type            :jetty
+      ::http/allowed-origins allowed-origins
+      ::http/host            host
+      ::http/port            port
+      ::http/join?           false})))
 
 (defn start
   []

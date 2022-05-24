@@ -194,19 +194,17 @@ By default the server starts at http://localhost:9090
 
 ##### API Config
 
-There are two main ways you may want to add additional configuration to the API. The first is the Basic Authentication credentials required to call the API endpoints. Currently on startup the application looks for an Environment Variable called "credentials" in the form of "username:password". So if the username were datasim, and the password were datasim it would be "datasim:datasim". You can set this before launching by setting a local env variable on your machine.
+The API is configurable with the following runtime environment variables:
 
-The second is the port and allowed-origins if running from a browser. You can edit **http/allowed-origins** and **http/port** the following object in */src/server/com/yetanalytics/datasim/server.clj* to do so:
+| Variable            | Default                                                                                          | Notes                                                                                                  | Example           |
+|---------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-------------------|
+| CREDENTIALS         | <none>                                                                                           | Basic Authentication credentials required to call the API endpoints in the form of `username:password` | `datasim:datasim` |
+| API_ROOT_PATH       | <none>                                                                                           | Root path to prefix API routes. Must begin with a `/`, cannot end with a `/`.                          | `/foo`            |
+| API_HOST            | `0.0.0.0`                                                                                        | Host on which to bind the API server.                                                                  | `localhost`       |
+| API_PORT            | `9090`                                                                                           | Port on which to bind the API server.                                                                  | `8080`            |
+| API_ALLOWED_ORIGINS | <details>`https://yetanalytics.github.io,http://localhost:9091`<summary>(URLs)</summary></details> | CORS allowed origins for the API server, separated by commas.                                          | `*`               |
 
-    {::http/routes          routes
-     ::http/type            :immutant
-     ::http/allowed-origins ["https://yetanalytics.github.io"
-                         "http://localhost:9091"]
-     ::http/host "0.0.0.0"
-     ::http/port            9090
-     ::http/join?           false}
-
-Currently they are both configured to work with the default settings in the DATASIM-UI project locally.
+Currently defaults are configured to work with the default settings in the DATASIM-UI project locally.
 
 ##### API Endpoints
 
