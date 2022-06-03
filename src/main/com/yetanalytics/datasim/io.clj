@@ -11,7 +11,8 @@
          (try
            (p/read-body-fn
             record
-            (json/parse-stream r (partial p/read-key-fn record)))
+            (doall ;; Force eager parsing of the entire file
+             (json/parse-stream r (partial p/read-key-fn record))))
            (catch Exception e
              (throw (ex-info "Parse Error"
                              {:type ::parse-error

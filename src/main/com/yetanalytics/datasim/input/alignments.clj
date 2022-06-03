@@ -81,7 +81,7 @@
   (read-key-fn [this k]
     (keyword nil (name k)))
   (read-body-fn [this json-result]
-    (map->Alignments {:alignment-vector json-result}))
+    (map->Alignments {:alignment-vector (into [] json-result)}))
   (write-key-fn [this k]
     (name k))
   (write-body-fn [this]
