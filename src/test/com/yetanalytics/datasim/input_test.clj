@@ -39,6 +39,12 @@
     ;; alignments are a vector of maps containing a vector of maps
     #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
 
+    ;; Fails if JSON parsing is lazy
+    "Actor Alignments, Long"
+    :alignments
+    "dev-resources/alignments/tccc_dev.json"
+    #(assoc % :alignment-vector [{:id "notanid" :alignments [{:component "notaniri" :weight "bar"}]}])
+
     "Actor Alignments w/ Overrides"
     :alignments
     "dev-resources/alignments/simple_with_overrides.json"
