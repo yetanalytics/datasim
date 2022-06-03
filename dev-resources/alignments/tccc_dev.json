@@ -1201,7 +1201,7 @@
       },
       {
         "component": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
-        "weight": 0
+        "weight": 0.0
       },
       {
         "component": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
