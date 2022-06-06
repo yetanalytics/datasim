@@ -221,9 +221,9 @@
   "Validate input using the FromInput protocol. Throw an exception if the input
    isn't valid."
   [input]
-  (if-let [spec-error (p/validate input)]
-    (throw (ex-info (pr-str spec-error)
+  (if-let [errors (not-empty (p/validate input))]
+    (throw (ex-info "Validation Errors"
                     {:type ::invalid-input
                      :input input
-                     :spec-error spec-error}))
+                     :errors errors}))
     input))

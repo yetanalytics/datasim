@@ -5,7 +5,11 @@
 (defprotocol FromInput
   "Things that come from the user and must be validated."
   (validate [this]
-    "Validate the input, which must be read in first. Returns the output of `s/explain-data`"))
+    "Validate the input, which must be read in first. Returns nil if the input
+     is valid, or a vector of error maps each containing:
+       :id - Generated unique ID for error
+       :path - Path of error in input
+       :text - Error message/text"))
 
 (defprotocol JSONRepresentable
   "Things that can be represented as JSON"
