@@ -28,6 +28,11 @@
     "dev-resources/profiles/cmi5/fixed.json"
     #(assoc % :id "foo") ; profiles need an IRI ID
 
+    "xAPI Profile with External Concepts"
+    :profile
+    "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld"
+    #(assoc % :id "foo")
+
     "Actor Personae"
     :personae
     "dev-resources/personae/simple.json"
