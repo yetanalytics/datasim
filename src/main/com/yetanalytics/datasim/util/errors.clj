@@ -64,3 +64,18 @@
                       (assoc emap :id (str "profiles-" idx))))
        vec
        not-empty))
+
+(def bar
+  (apply str (repeat 80 \=)))
+
+(defn map-coll->strs
+  "Form a list of CLI error strings from an error map coll."
+  [map-coll]
+  (for [{:keys [id path text]} map-coll]
+    (format
+     "%s\nINPUT ERROR: %s\n%s\npath: %s\n\n%s"
+     bar
+     id
+     bar
+     (pr-str path)
+     text)))

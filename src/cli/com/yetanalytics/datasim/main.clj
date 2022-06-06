@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [clojure.core.async :as a]
             [com.yetanalytics.datasim.input :as input]
-            [expound.alpha :as expound]
+            [com.yetanalytics.datasim.util.errors :as errors]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.runtime :as runtime]
             [com.yetanalytics.datasim.sim :as sim]
@@ -152,9 +152,8 @@
                                   (if (= -1 override-seed)
                                     (.nextLong (Random.))
                                     override-seed)))]
-            (if-let [spec-error (input/validate input)]
-              (bail! [(binding [s/*explain-out* expound/printer]
-                        (expound/explain-result-str spec-error))])
+            (if-let [errors (not-empty (input/validate input))]
+              (bail! (errors/map-coll->strs errors))
               (if ?command
                 (case ?command
                   ;; Where the CLI will actually perform generation
