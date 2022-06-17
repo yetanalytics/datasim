@@ -110,12 +110,18 @@
     ;; "related MUST only be used on deprecated Concepts"
     (is (some? (input/validate-profiles
                 [(from-location :profile :json "dev-resources/profiles/acrossx/profile.jsonld")])))
+    (is (nil? (input/validate-profiles
+               [(from-location :profile :json "dev-resources/profiles/acrossx/fixed.jsonld")])))
     (is (some? (input/validate-profiles
                 [(from-location :profile :json "dev-resources/profiles/activity_streams/profile.jsonld")])))
+    (is (nil? (input/validate-profiles
+               [(from-location :profile :json "dev-resources/profiles/activity_streams/fixed.jsonld")])))
     ;; TC3 Profile violates spec:
     ;; "alternates Pattern MUST NOT contain zeroOrMore"
     (is (some? (input/validate-profiles
-                [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))))
+                [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))
+    (is (nil? (input/validate-profiles
+               [(from-location :profile :json "dev-resources/profiles/tccc/fixed.jsonld")])))))
 
 (deftest personae-array-validation-test
   (testing "personae-array spec"
