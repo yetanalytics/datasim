@@ -182,9 +182,9 @@
       "prefLabel" : {
         "en" : "Intro Video: After Branch Prior Completion"
       },
-      "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-pause"
+        "alternates" : [
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-any-time-after-init-but-before-termination",
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -394,9 +394,9 @@
       "prefLabel" : {
         "en" : "Cat Self Looped: After Branch Prior Completion"
       },
-      "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-pause"
+        "alternates" : [
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-any-time-after-init-but-before-termination",
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-looped-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -606,9 +606,9 @@
       "prefLabel" : {
         "en" : "Cat Self Routed: After Branch Prior Completion"
       },
-      "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-pause"
+        "alternates" : [
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-any-time-after-init-but-before-termination",
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -818,9 +818,9 @@
       "prefLabel" : {
         "en" : "Cat Buddy Routed: After Branch Prior Completion"
       },
-      "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-pause"
+        "alternates" : [
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-any-time-after-init-but-before-termination",
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-buddy-routed-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -1031,8 +1031,8 @@
         "en" : "Soft Self Looped: After Branch Prior Completion"
       },
       "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-pause"
+          "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-any-time-after-init-but-before-termination",
+          "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-looped-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -1243,8 +1243,8 @@
         "en" : "Soft Self Routed: After Branch Prior Completion"
       },
       "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-pause"
+          "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-any-time-after-init-but-before-termination",
+          "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -1454,9 +1454,9 @@
       "prefLabel" : {
         "en" : "Soft Buddy Looped: After Branch Prior Completion"
       },
-      "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-pause"
+        "alternates" : [
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-any-time-after-init-but-before-termination",
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-looped-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -1666,9 +1666,9 @@
       "prefLabel" : {
         "en" : "Soft Buddy Routed: After Branch Prior Completion"
       },
-      "alternates" : [
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-maybe-any-time",
-        "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-pause"
+        "alternates" : [
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-any-time-after-init-but-before-termination",
+            "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-pause"
       ],
       "type" : "Pattern",
       "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
@@ -2655,7 +2655,29 @@
     "name" : "Yet Analytics",
     "type" : "Organization"
   },
-  "concepts" : [
+    "concepts" : [
+        {
+        "id" : "http://adlnet.gov/expapi/activities/cmi.interaction",
+        "type" : "ActivityType",
+        "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
+        "prefLabel" : {
+            "en" : "CMI Interaction"
+        },
+        "definition" : {
+            "en" : "Activity Type from xAPI Specification for Interaction activities, not defined in any other profile"
+        }
+    },
+        {
+        "id" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/concepts#activity-type:survey",
+        "type" : "ActivityType",
+        "inScheme" : "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1",
+        "prefLabel" : {
+            "en" : "Survey"
+        },
+        "definition" : {
+            "en" : "Activity Type for Activities representing information gathering via answering specific Questions"
+        }
+    },
     {
       "id" : "https://books.allogy.com/web/tenant/8/books/24235853-a054-4b29-8094-a37267cd458b/#id04cd6c39-0c76-4db8-acba-2e21d641ab37",
       "type" : "Activity",
