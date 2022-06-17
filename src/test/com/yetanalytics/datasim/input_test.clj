@@ -104,24 +104,21 @@
                    (from-location :profile :json "dev-resources/profiles/video/profile.jsonld")]
                   input/validate-profiles
                   count))))
+  (testing "fixed / valid profiles"
+    (is (nil? (input/validate-profiles
+               [(from-location :profile :json "dev-resources/profiles/acrossx/fixed.jsonld")])))
+    (is (nil? (input/validate-profiles
+               [(from-location :profile :json "dev-resources/profiles/activity_streams/fixed.jsonld")])))
+    (is (nil? (input/validate-profiles
+               [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")]))))
   ;; Following tests exist to point out flaws in Profiles
   (testing "invalid profiles"
     ;; AcrossX and ActivityStreams violate spec:
     ;; "related MUST only be used on deprecated Concepts"
     (is (some? (input/validate-profiles
                 [(from-location :profile :json "dev-resources/profiles/acrossx/profile.jsonld")])))
-    (is (nil? (input/validate-profiles
-               [(from-location :profile :json "dev-resources/profiles/acrossx/fixed.jsonld")])))
     (is (some? (input/validate-profiles
-                [(from-location :profile :json "dev-resources/profiles/activity_streams/profile.jsonld")])))
-    (is (nil? (input/validate-profiles
-               [(from-location :profile :json "dev-resources/profiles/activity_streams/fixed.jsonld")])))
-    ;; TC3 Profile violates spec:
-    ;; "alternates Pattern MUST NOT contain zeroOrMore"
-    (is (some? (input/validate-profiles
-                [(from-location :profile :json "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")])))
-    (is (nil? (input/validate-profiles
-               [(from-location :profile :json "dev-resources/profiles/tccc/fixed.jsonld")])))))
+                [(from-location :profile :json "dev-resources/profiles/activity_streams/profile.jsonld")])))))
 
 (deftest personae-array-validation-test
   (testing "personae-array spec"
