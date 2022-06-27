@@ -3,6 +3,8 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.protocols :as p]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.pan.objects.profile :as prof]
+            [com.yetanalytics.pan.objects.pattern :as pat]
             [java-time :as t]
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.time.zone ZoneRulesException]
@@ -44,6 +46,14 @@
 (s/def ::max
   pos-int?)
 
+;; Restrict Generation to these profile IDs
+(s/def ::gen-profiles
+  (s/every ::prof/id))
+
+;; Restrict Generation to these pattern IDs
+(s/def ::gen-patterns
+  (s/every ::pat/id))
+
 (s/def ::parameters
   (s/and
    (s/keys :req-un [::start
@@ -51,7 +61,9 @@
                     ::seed]
            :opt-un [::end
                     ::from
-                    ::max])
+                    ::max
+                    ::gen-profiles
+                    ::gen-patterns])
    (fn [{:keys [start from end]}]
      (when end
        (assert (t/before? (t/instant start)
