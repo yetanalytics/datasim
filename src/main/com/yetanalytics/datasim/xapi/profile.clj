@@ -2,6 +2,7 @@
   "Understanding elements of xAPI profiles
   Generate Profile walks"
   (:require [clojure.spec.alpha :as s]
+            [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.pan.objects.profile :as profile]
@@ -11,9 +12,12 @@
             [clojure.zip :as z])
   (:import [java.util Random]))
 
+(s/def ::_profile-id ::profile/id)
 
 (s/def ::iri-map
   (s/map-of iri/iri-spec
+            ;; TODO: using s/and or s/merge to add ::_profile-id won't work
+            ;; It will be present and should be expected
             (s/or :concept ::concept/concept
                   :pattern ::pattern/pattern
                   :template ::template/template)))
@@ -27,10 +31,13 @@
   [profiles]
   (assert (seq profiles) "At least one profile is required.")
   (into {}
-        (for [profile profiles
+        (for [{profile-id :id
+               :as profile} profiles
               [_ things] (select-keys profile [:concepts :patterns :templates])
               {:keys [id] :as thing} things]
-          [id thing])))
+          [id (assoc thing
+                     ::_profile-id
+                     profile-id)])))
 
 (defn loc-iri-map
   "Given a zipper loc, get the map of profile subobjects by IRI"
@@ -197,6 +204,36 @@
        (registration-seq
         root-loc
         rng))))))
+
+(s/fdef select-primary-patterns
+  :args (s/cat :iri-map ::iri-map
+               :params ::params/parameters)
+  :ret ::iri-map)
+
+(defn select-primary-patterns
+  "Given an iri-map and params, select primary patterns for generation"
+  [iri-map
+   {:keys [gen-profiles
+           gen-patterns]}]
+  (let [?profile-set (some-> gen-profiles not-empty set)
+        ?pattern-set (some-> gen-patterns not-empty set)]
+    (reduce-kv
+     (fn [m k {obj-type :type
+               profile-id ::_profile-id
+               :keys [id primary]
+               :as v}]
+       (assoc m k
+              (cond-> v
+                (and (= obj-type "Pattern")
+                     primary)
+                (assoc :primary
+                       (and
+                        (or (nil? ?profile-set)
+                            (contains? ?profile-set profile-id))
+                        (or (nil? ?pattern-set)
+                            (contains? ?pattern-set id)))))))
+     (empty iri-map)
+     iri-map)))
 
 (comment
 

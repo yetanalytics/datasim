@@ -265,7 +265,9 @@
                          lunch-hour-seq])
         ;; activities used in the sim
         activities (activity/derive-cosmos input (.nextLong sim-rng))
-        iri-map (p/profiles->map profiles)]
+        iri-map (-> (p/profiles->map profiles)
+                    ;; Select which primary patterns to generate from
+                    (p/select-primary-patterns parameters))]
     ;; Now, for each actor we 'initialize' what is needed for the sim
     (into {}
           (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id

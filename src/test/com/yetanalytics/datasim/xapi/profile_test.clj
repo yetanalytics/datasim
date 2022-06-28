@@ -178,3 +178,47 @@
     (let [{total :total check-passed :check-passed}
           (stest/summarize-results (stest/check `gen-single-walk))]
       (is (= total check-passed)))))
+
+(deftest select-primary-patterns-test
+  (let [iri-map (profile/profiles->map
+                 [(input/from-location :profile :json
+                                       "dev-resources/profiles/cmi5/fixed.json")
+                  (input/from-location :profile :json
+                                       "dev-resources/profiles/tla/mom.jsonld")])]
+    (testing "with no params, returns iri map"
+      (is (= iri-map
+             (profile/select-primary-patterns
+              iri-map {}))))
+    (testing "profile selection implies patterns"
+      (is (= iri-map
+             (profile/select-primary-patterns
+              iri-map
+              {:gen-profiles ["https://w3id.org/xapi/cmi5"
+                              "https://w3id.org/xapi/tla"]})))
+      (testing "unless also specified"
+        (is (not= iri-map
+                  (profile/select-primary-patterns
+                   iri-map
+                   {:gen-profiles ["https://w3id.org/xapi/cmi5"
+                                   "https://w3id.org/xapi/tla"]
+                    :gen-patterns ["https://w3id.org/xapi/cmi5#toplevel"]})))))
+    (testing "filters by profile"
+      (is (= ["https://w3id.org/xapi/cmi5#toplevel"]
+             (-> (profile/select-primary-patterns
+                  iri-map
+                  {:gen-profiles ["https://w3id.org/xapi/cmi5"]})
+                 vals
+                 (->>
+                  (keep (fn [{:keys [id primary]}]
+                          (when primary
+                            id))))))))
+    (testing "filters by pattern"
+      (is (= ["https://w3id.org/xapi/cmi5#toplevel"]
+             (-> (profile/select-primary-patterns
+                  iri-map
+                  {:gen-patterns ["https://w3id.org/xapi/cmi5#toplevel"]})
+                 vals
+                 (->>
+                  (keep (fn [{:keys [id primary]}]
+                          (when primary
+                            id))))))))))
