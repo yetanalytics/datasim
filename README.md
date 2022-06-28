@@ -32,9 +32,11 @@ See [Deployment Models](#deployment-models) for more information about the diffe
 
 The inputs to DATASIM consist of four parts, each represented by JSON. They are as follows:
 
-#### xAPI Profile
+#### xAPI Profile(s)
 
-A valid xAPI Profile is required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
+One or more valid xAPI Profiles are required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
+
+Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `gen-profiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `gen-patterns` option by supplying one or more pattern IDs.
 
 #### Personae
 
@@ -131,8 +133,8 @@ With no commands or `--help` it will give you the list of parameters:
     -C, --concurrency CONC    4    The max concurrency of the LRS POST pipeline
     -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
     -A, --[no-]async               Async operation. Use --no-async if statements must be sent to server in timestamp order.
-    --gen-profile IRI              Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
-    --gen-pattern IRI              Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
+        --gen-profile IRI          Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
+        --gen-pattern IRI          Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
     -h, --help                     Show this list.
 
 For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:
