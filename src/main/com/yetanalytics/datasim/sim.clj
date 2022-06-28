@@ -265,7 +265,7 @@
                          lunch-hour-seq])
         ;; activities used in the sim
         activities (activity/derive-cosmos input (.nextLong sim-rng))
-        iri-map (apply p/profiles->map profiles)]
+        iri-map (p/profiles->map profiles)]
     ;; Now, for each actor we 'initialize' what is needed for the sim
     (into {}
           (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
@@ -294,11 +294,11 @@
                       ;; infinite seq of maps containing registration uuid,
                       ;; statement template, and a seed for generation
                       actor-reg-seq (p/registration-seq
-                                     profiles actor-alignment actor-reg-seed)
+                                     iri-map actor-alignment actor-reg-seed)
 
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)
-                      
+
                       ;; Dissoc :role since it is not an xAPI property
                       actor-xapi (dissoc actor :role)]]
             [actor-id

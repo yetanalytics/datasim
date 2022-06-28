@@ -25,7 +25,7 @@
     (let [top-seed 42
           top-rng (random/seed-rng top-seed)
           input (input/from-location :input :json "dev-resources/input/simple.json")
-          iri-map (apply profile/profiles->map (:profiles input))
+          iri-map (profile/profiles->map (:profiles input))
           activities (activity/derive-cosmos input (random/rand-long top-rng))
           valid-args {:input input
                       :iri-map iri-map

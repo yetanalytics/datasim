@@ -20,14 +20,14 @@
     (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)
            (-> test-input
                :profiles
-               first
+               profile/profiles->map
                profile/pattern-zip
                meta
                keys)))
     (is (s/valid? ::profile/iri-map
                   (-> test-input
                       :profiles
-                      first
+                      profile/profiles->map
                       profile/pattern-zip
                       profile/loc-iri-map
                       (dissoc ::profile/root))))
@@ -36,7 +36,7 @@
             :alternates ["https://w3id.org/xapi/cmi5#toplevel"]}
            (-> test-input
                :profiles
-               first
+               profile/profiles->map
                profile/pattern-zip
                profile/loc-iri-map
                ::profile/root)))))
@@ -161,7 +161,7 @@
 (defn gen-single-walk [seed]
   (->>
    (profile/rand-pattern-zip
-    (:profiles test-input)
+    (profile/profiles->map (:profiles test-input))
     (:alignments test-input)
     (random/seed-rng seed))
    profile/walk-once

@@ -19,12 +19,12 @@
                   :template ::template/template)))
 
 (s/fdef profiles->map
-  :args (s/cat :profiles (s/+ ::profile/profile))
+  :args (s/cat :profiles (s/every ::profile/profile))
   :ret ::iri-map)
 
 (defn profiles->map
   "Given any number of profiles, return all IRIs mapped to what they reference"
-  [& profiles]
+  [profiles]
   (assert (seq profiles) "At least one profile is required.")
   (into {}
         (for [profile profiles
@@ -50,9 +50,8 @@
   "Given one or more profiles, create a zipper that traverses the patterns and
   templates. Root is a special keyword ::root with the primary patterns as
   `alternates` children."
-  [& profiles]
-  (let [iri-map' (apply profiles->map profiles)
-        primary-pattern-iris
+  [iri-map']
+  (let [primary-pattern-iris
         (keep
          (fn [{id :id
                node-type :type
@@ -102,12 +101,12 @@
 (defn rand-pattern-zip
   "Building on the comprehension from pattern-zip, return a zipper that uses a
   deterministic pseudorandom walk for choosing children/paths."
-  [profiles
+  [iri-map'
    alignment
    ^Random rng
    & {:keys [repeat-max]
       :or {repeat-max 5}}]
-  (let [pzip (apply pattern-zip profiles)
+  (let [pzip (pattern-zip iri-map')
         iri-map (::iri-map (meta pzip))]
     (vary-meta pzip
                assoc
@@ -165,12 +164,12 @@
   `:registration` is a string uuid
   `:template` is a statement template
   `:seed` is a derived seed for generating the statement."
-  ([profiles
+  ([iri-map
     alignment
     seed]
    (lazy-seq
     (let [^Random rng (random/seed-rng seed)
-          root-loc (rand-pattern-zip profiles alignment rng)]
+          root-loc (rand-pattern-zip iri-map alignment rng)]
       (registration-seq root-loc rng))))
   ([root-loc
     ^Random rng]
@@ -217,20 +216,20 @@
 
   ;; traverse randomly
   (-> (rand-pattern-zip
-       {} (Random. ) #_(random/seed-rng 2)
-       [p])
+       (profiles->map [p]) {} (Random. ) #_(random/seed-rng 2)
+        )
       walk-once
       (->> (map z/node))
       last
       )
-  (->> (registration-seq [p] {} 42)
+  (->> (registration-seq (profiles->map [p]) {} 42)
        first
        clojure.pprint/pprint
        )
 
 
   (def loc (atom (rand-pattern-zip
-                  [p] {} (random/seed-rng 45)
+                  (profiles->map [p]) {} (random/seed-rng 45)
                   )))
 
 
