@@ -131,6 +131,8 @@ With no commands or `--help` it will give you the list of parameters:
     -C, --concurrency CONC    4    The max concurrency of the LRS POST pipeline
     -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
     -A, --[no-]async               Async operation. Use --no-async if statements must be sent to server in timestamp order.
+    --gen-profile IRI              Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
+    --gen-pattern IRI              Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
     -h, --help                     Show this list.
 
 For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:
