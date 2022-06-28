@@ -26,12 +26,10 @@
                     author]
   p/FromInput
   (validate [this]
-    ;; TODO: We need to validate the Profile's relations
-    ;; to internal and external Patterns.
-    (let [prof-errs (pan/validate-profile this
-                                          :syntax? true
-                                          :pattern-rels? true
-                                          :result :type-path-string)]
+    (let [prof-errs (pan/validate-profile
+                     this
+                     :syntax? true
+                     :result :type-path-string)]
       (errs/type-path-string-m->map-coll id prof-errs)))
 
   p/JSONRepresentable
