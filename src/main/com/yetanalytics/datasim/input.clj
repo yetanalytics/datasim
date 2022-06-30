@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
+            [clojure.string :as cs]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan :as pan]
@@ -65,6 +66,35 @@
   [parameters]
   (when-some [ed (s/explain-data ::parameters parameters)]
     (errs/explain-to-map-coll ::parameters ed)))
+
+(defn validate-pattern-filters
+  [{{:keys [gen-profiles
+            gen-patterns]} :parameters
+    :keys                  [profiles]}]
+  (let [profile-idset (into #{}
+                            (map :id profiles))
+        pattern-idset (into #{}
+                            (keep (fn [{:keys [id primary]}]
+                                    (when (and primary)
+                                      id))
+                                  (mapcat :patterns profiles)))]
+    (concat
+     (for [[idx profile-id] (map-indexed vector gen-profiles)
+           :when            (not (contains? profile-idset profile-id))]
+       {:id   (str "parameters-gen-profiles-" idx)
+        :path [:parameters :gen-profiles idx]
+        :text (format "Profile ID %s is not one of provided profiles: %s"
+                      profile-id
+                      (cs/join \, profile-idset))})
+     (for [[idx pattern-id] (map-indexed vector gen-patterns)
+           :when            (not (contains? pattern-idset pattern-id))]
+       {:id   (str "parameters-gen-patterns-" idx)
+        :path [:parameters :gen-patterns idx]
+        :text
+        (format
+         "Pattern ID %s is not among primary patterns in provided profiles: %s"
+         pattern-id
+         (cs/join \, pattern-idset))}))))
 
 (s/def :com.yetanalytics.datasim/input
   ;; "Comprehensive input spec"
@@ -164,7 +194,8 @@
     (-> (concat (validate-profiles (:profiles this))
                 (validate-personae-array (:personae-array this))
                 (validate-alignments (:alignments this))
-                (validate-parameters (:parameters this)))
+                (validate-parameters (:parameters this))
+                (validate-pattern-filters this))
         vec
         not-empty))
 
