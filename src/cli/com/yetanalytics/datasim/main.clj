@@ -19,6 +19,11 @@
   [opt-map id v]
   (update opt-map id (fnil conj []) v))
 
+(defn- conj-param-input
+  "Add a parameter named by id."
+  [opt-map id v]
+  (update-in opt-map [:parameters id] (fnil conj []) v))
+
 (defn cli-options
   "Generate CLI options, skipping validation if `validate?` is false"
   [validate?]
@@ -102,6 +107,12 @@
    ["-A" "--[no-]async" "Async operation. Use --no-async if statements must be sent to server in timestamp order."
     :id :async
     :default true]
+   [nil "--gen-profile IRI" "Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles."
+    :id :gen-profiles
+    :assoc-fn conj-param-input]
+   [nil "--gen-pattern IRI" "Only generate based on the given primary pattern. May be given multiple times to include multiple patterns."
+    :id :gen-patterns
+    :assoc-fn conj-param-input]
 
    ["-h" "--help"]])
 

@@ -62,6 +62,51 @@
                                          (get s0 "timestamp")))]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
+  (testing "multiple profiles"
+    (let [double-input (update valid-input
+                               :profiles
+                               conj
+                               (input/from-location
+                                :profile
+                                :json
+                                "dev-resources/profiles/tla/mom.jsonld"))]
+      (testing "respects gen-profiles param"
+        (is (= [[{"id" "https://w3id.org/xapi/cmi5/v1.0"}]
+                [{"id" "https://w3id.org/xapi/cmi5/context/categories/moveon"}]]
+               (-> double-input
+                   (update :parameters
+                           assoc
+                           :gen-profiles
+                           ["https://w3id.org/xapi/cmi5"])
+                   sim-seq
+                   (->> (map #(get-in % ["context" "contextActivities" "category"])))
+                   distinct))))
+      (testing "respects gen-patterns param"
+        (is (= [nil [{"id" "https://w3id.org/xapi/tla/v0.13"}]]
+               (-> double-input
+                   (update :parameters
+                           assoc
+                           :gen-patterns
+                           ["https://w3id.org/xapi/tla#completed_session"])
+                   sim-seq
+                   (->> (map #(get-in % ["context" "contextActivities" "category"])))
+                   distinct))))
+      (testing "allows referential use of non-gen profiles"
+        (is (= [nil [{"id" "https://w3id.org/xapi/tla/v0.13"}]]
+               (-> double-input
+                   (update :profiles
+                           conj
+                           (input/from-location
+                            :profile
+                            :json
+                            "dev-resources/profiles/referential.jsonld"))
+                   (update :parameters
+                           assoc
+                           :gen-patterns
+                           ["https://xapinet.org/xapi/yet/referential#completed_session"])
+                   sim-seq
+                   (->> (map #(get-in % ["context" "contextActivities" "category"])))
+                   distinct))))))
   (testing "respects agent selection"
     (let [ret (sim-seq (assoc-in valid-input [:parameters :max] 3)
                        ;; specify we only want the given agent(s)

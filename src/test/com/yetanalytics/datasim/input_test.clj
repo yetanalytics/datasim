@@ -154,4 +154,21 @@
     (is (try (validate-throw
               (from-location :input :json "dev-resources/input/simple.json"))
              true
-             (catch Exception _ false)))))
+             (catch Exception _ false))))
+  (testing "input is invalid"
+    (testing "with invalid gen-profiles"
+      (is (try
+            (validate-throw
+             (assoc-in (from-location :input :json "dev-resources/input/simple.json")
+                       [:parameters :gen-profiles]
+                       ["http://example.com/nonexistent.jsonld"]))
+            false
+            (catch Exception _ true))))
+    (testing "with invalid gen-patterns"
+      (is (try
+            (validate-throw
+             (assoc-in (from-location :input :json "dev-resources/input/simple.json")
+                       [:parameters :gen-patterns]
+                       ["http://example.com/nonexistent#pattern"]))
+            false
+            (catch Exception _ true))))))

@@ -1,0 +1,43 @@
+{
+  "id" : "https://xapinet.org/xapi/yet/referential",
+  "definition" : {
+    "en" : "Test Profile that refers to another"
+  },
+  "@context" : "https://w3id.org/xapi/profiles/context",
+  "prefLabel" : {
+    "en" : "REFERENTIAL xAPI Profile"
+  },
+  "type" : "Profile",
+  "author" : {
+    "url" : "https://www.yetanalytics.com/",
+    "name" : "Yet Analytics",
+    "type" : "Organization"
+  },
+  "conformsTo" : "https://w3id.org/xapi/profiles#1.0",
+  "versions" : [
+    {
+      "id" : "https://xapinet.org/xapi/yet/referential/v0.0.0",
+      "generatedAtTime" : "2022-06-27T20:34:27.823870Z"
+    }
+  ],
+  "patterns" : [
+    {
+      "id": "https://xapinet.org/xapi/yet/referential#completed_session",
+      "type": "Pattern",
+      "primary": true,
+      "inScheme": "https://xapinet.org/xapi/yet/referential/v0.0.0",
+      "prefLabel": {
+        "en": "completed session"
+      },
+      "definition": {
+        "en": "This pattern describes the sequence of statements sent over the an entire course registration."
+      },
+      "sequence": [
+        "https://w3id.org/xapi/tla#launched",
+        "https://w3id.org/xapi/tla#initialized",
+        "https://w3id.org/xapi/tla#completed",
+        "https://w3id.org/xapi/tla#terminated"
+      ]
+    }
+  ]
+}
