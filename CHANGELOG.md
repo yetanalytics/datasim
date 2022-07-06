@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.1.9] - 2022-07-06
+- Removed Import by URL functionality (GET /api/v1/download-url) from API (see [here](https://github.com/yetanalytics/datasim/pull/80))
+
 ## [0.1.3] - 2022-04-26
 - Add GitHub Actions CI and CD for testing, bundle building, and vulnerability scanning.
 - Update dependencies to patch vulnerabilities (see [here](https://github.com/yetanalytics/datasim/pull/67) for more information).
