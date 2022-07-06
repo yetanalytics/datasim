@@ -218,10 +218,6 @@ When launched as a REST API webapp, it has a few endpoints to allow dataset gene
 
 This endpoint is simply a health check for the API. It should return a 200-OK if the app is up and running.
 
-###### GET /api/v1/download-url
-
-This endpoint is a convenience for the frontend to retrieve web resources like xAPI Profiles and is unlikely to be useful to anything else. This takes a single GET parameter, url, which contains a url-encoded string of the destination IRI.
-
 ###### POST /api/v1/generate
 
 This endpoint takes a set of simulation inputs, returns a file with the output dataset and optionally pushes the data to an LRS. It accepts the inputs in the Content Type multipart/form-data of the following fields:
