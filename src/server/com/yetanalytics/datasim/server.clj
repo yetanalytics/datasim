@@ -195,32 +195,7 @@
                        {:status 401
                         :body   "No Authorization"}))))})
 
-(def download-url
-  {:name  :datasim.route/download-url
-   :enter (fn [context]
-            (assoc context
-                   :response
-                   (try
-                     {:status 200
-                      :body   (-> context
-                                  :request
-                                  :query-params
-                                  :url
-                                  codec/url-decode
-                                  client/get
-                                  :body)}
-                     (catch java.net.MalformedURLException e
-                       {:status 400
-                        :body   "malformed"})
-                     (catch org.apache.http.client.ClientProtocolException e
-                       {:status 406
-                        :body   "client"})
-                     (catch java.net.UnknownHostException e
-                       {:status 404
-                        :body   "unknown"})
-                     (catch Exception e
-                       {:status 501
-                        :body   "other"}))))})
+
 
 (def common-interceptors
   [authentication-interceptor
@@ -286,10 +261,7 @@
                                 [(str root-path "/api/v1/generate")
                                  :post (into common-interceptors
                                              [(multipart-params)
-                                              generate])]
-                                [(str root-path "/api/v1/download-url")
-                                 :get  (into common-interceptors
-                                             [download-url])]})
+                                              generate])]})
       ::http/type            :jetty
       ::http/allowed-origins allowed-origins
       ::http/host            host
