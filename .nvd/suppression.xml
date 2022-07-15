@@ -22,7 +22,6 @@
         <packageUrl regex="true">^pkg:maven/tailrecursion/cljs\-priority\-map@.*$</packageUrl>
         <cpe>cpe:/a:priority-software:priority</cpe>
     </suppress>
-
     <suppress>
         <notes><![CDATA[
         file name: data.priority-map-1.1.0.jar
