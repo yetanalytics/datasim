@@ -8,7 +8,7 @@ jobs:
   nvd-scan:
     uses: yetanalytics/actions/.github/workflows/nvd-scan.yml@v0.0.3
     with:
-      nvd-clojure-version: '2.0.0'
+      nvd-clojure-version: '2.9.0'
       classpath-command: 'clojure -Spath -A:cli:server'
       nvd-config-filename: '.nvd/config.json'
 
