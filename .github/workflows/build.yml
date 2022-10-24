@@ -72,13 +72,13 @@ jobs:
 
     - name: Extract version
       id: version
-      run: echo ::set-output name=VERSION::${GITHUB_REF#refs\/tags\/v}
+      run: version=${GITHUB_REF#refs\/tags\/v} >> $GITHUB_OUTPUT
 
     - name: Build and deploy to Clojars
       uses: yetanalytics/actions/deploy-clojars@v0.0.4
       with:
         artifact-id: 'datasim'
-        version: ${{ steps.version.outputs.VERSION }}
+        version: ${{ steps.version.outputs.version }}
         resource-dirs: '[]'
         clojars-username: ${{ secrets.CLOJARS_USERNAME }}
         clojars-deploy-token: ${{ secrets.CLOJARS_PASSWORD }}
