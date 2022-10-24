@@ -24,13 +24,13 @@
                       com.fasterxml.jackson.dataformat/jackson-dataformat-cbor
                       com.fasterxml.jackson.core/jackson-databind]}
         com.fasterxml.jackson.core/jackson-core
-        {:mvn/version "2.13.4"}
+        {:mvn/version "2.13.2"}
         com.fasterxml.jackson.dataformat/jackson-dataformat-smile
-        {:mvn/version "2.13.4"}
+        {:mvn/version "2.13.2"}
         com.fasterxml.jackson.dataformat/jackson-dataformat-cbor
-        {:mvn/version "2.13.4"}
+        {:mvn/version "2.13.2"}
         com.fasterxml.jackson.core/jackson-databind
-        {:mvn/version "2.13.4.2"}}
+        {:mvn/version "2.13.2.1"}}
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:git/url "https://github.com/clojure/tools.cli"
