@@ -18,8 +18,7 @@ jobs:
     if: ${{ always() && (needs.nvd-scan.result == 'failure') }}
     steps:
     - name: Notify Slack DATASIM NVD Scan Reporter 
-      # TODO: Update to version that removes deprecation warning
-      uses: slackapi/slack-github-action@v1.18.0
+      uses: slackapi/slack-github-action@v1.23.0
       with:
         payload: |
           {
