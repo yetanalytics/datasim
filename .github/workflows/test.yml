@@ -45,7 +45,7 @@ jobs:
       uses: yetanalytics/actions/setup-env@v0.0.4
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1 # TODO: Update
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         role-to-assume: ${{ secrets.CF_VALIDATE_TEMPLATE_ROLE_ARN }}
         role-duration-seconds: 900 # 15 min; minimal duration possible
