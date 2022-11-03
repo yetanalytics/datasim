@@ -4,7 +4,7 @@ on: push
 
 jobs:
   nvd-scan:
-    uses: yetanalytics/actions/.github/workflows/nvd-scan.yml@v0.0.3
+    uses: yetanalytics/actions/.github/workflows/nvd-scan.yml@v0.0.4
     with:
       nvd-clojure-version: '2.9.0'
       # onyx dep is outdated and abandoned so don't bother scanning
@@ -20,10 +20,10 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup CI environment
-      uses: yetanalytics/actions/setup-env@v0.0.2
+      uses: yetanalytics/actions/setup-env@v0.0.4
 
     - name: Run Makefile Target ${{ matrix.target }}
       run: make ${{ matrix.target }}
@@ -39,13 +39,13 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     
     - name: Setup CI environment
-      uses: yetanalytics/actions/setup-env@v0.0.2
+      uses: yetanalytics/actions/setup-env@v0.0.4
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         role-to-assume: ${{ secrets.CF_VALIDATE_TEMPLATE_ROLE_ARN }}
         role-duration-seconds: 900 # 15 min; minimal duration possible

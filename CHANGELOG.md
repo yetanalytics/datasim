@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.1.13] - 2022-11-03
+- Update CI and CD pipelines to remove GitHub Action deprecation warnings.
+
+## [0.1.12] - 2022-10-24
+- Updated Jackson dependencies to address CVE-2022-42004 and CVE-2022-42003.
+
 ## [0.1.9] - 2022-07-06
 - Removed Import by URL functionality (GET /api/v1/download-url) from API (see [here](https://github.com/yetanalytics/datasim/pull/80))
 
