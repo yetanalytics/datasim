@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.1.13] - 2022-11-03
+- Update CI and CD pipelines to remove GitHub Action deprecation warnings.
+
 ## [0.1.12] - 2022-10-24
 - Updated Jackson dependencies to address CVE-2022-42004 and CVE-2022-42003.
 
