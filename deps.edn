@@ -51,6 +51,8 @@
   {:extra-paths ["src/server"]
    :extra-deps
    {io.pedestal/pedestal.service             {:mvn/version "0.5.10"
+                                              ;; exclude msgpack (via tools.analyzer)
+                                              ;; clears CVE-2022-41719
                                               :exclusions [org.msgpack/msgpack]}
     io.pedestal/pedestal.jetty
     {:mvn/version "0.5.10"
