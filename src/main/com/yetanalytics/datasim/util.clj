@@ -3,15 +3,14 @@
   (:require [clojure.spec.alpha :as s]))
 
 (s/fdef remove-nil-vals
-  :args (s/cat :associative
-               map?)
-  :ret map?
-  :fn (fn [{map-out :ret}]
-        (every? some? (vals map-out))))
+  :args (s/cat :m map?)
+  :ret  (s/and map?
+               #(every? some? (vals %))))
 
 (defn remove-nil-vals
-  "Remove nil values from an associative structure. Does not recurse.
-  Suitable for coercing a record with nil vals to a map."
+  "Remove `nil` values from the associative structure `m`, e.g. a map or
+   a record. Does not recurse. Suitable for coercing a record with `nil` vals
+   to a map."
   [m]
   (reduce-kv
    (fn [m' k v]
