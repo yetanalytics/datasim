@@ -2,7 +2,7 @@
   "Common math utilities")
 
 (defn min-max
-  "given a minimum, maximum and a number, bound it."
+  "Given a minimum `min-n`, maximum `max-n` and a number `n`, bound it."
   [min-n n max-n]
   (-> n
       (max min-n)

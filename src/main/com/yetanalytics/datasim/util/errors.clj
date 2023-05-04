@@ -25,16 +25,17 @@
    no errors."
   [profile-id type-path-string-map]
   (->> type-path-string-map
-       (reduce-kv (fn [acc etype epath-estr-m]
-                    (reduce-kv (fn [acc* epath estr]
-                                 (conj acc* {:path (into [profile-id etype]
-                                                         epath)
-                                             :text estr}))
-                               acc
-                               epath-estr-m))
-                  [])
-       (map-indexed (fn [idx emap]
-                      (assoc emap :id (str "profile-" idx))))
+       (reduce-kv
+        (fn [acc etype epath-estr-m]
+          (reduce-kv
+           (fn [acc* epath estr]
+             (conj acc* {:path (into [profile-id etype] epath)
+                         :text estr}))
+           acc
+           epath-estr-m))
+        [])
+       (map-indexed
+        (fn [idx emap] (assoc emap :id (str "profile-" idx))))
        vec
        not-empty))
 
@@ -44,28 +45,29 @@
    not errors."
   [profile-ids type-path-string-maps]
   (->> type-path-string-maps
-       (map (fn [profile-id etype-epath-estr-m]
-              [profile-id etype-epath-estr-m])
-            profile-ids)
-       (reduce (fn [acc [prof-id etype-epath-estr-m]]
-                 (reduce-kv (fn [acc* etype epath-estr-m]
-                              (reduce-kv (fn [acc** epath estr]
-                                           (let [epath* (into [prof-id etype]
-                                                              epath)]
-                                             (conj acc**
-                                                   {:path epath*
-                                                    :text estr})))
-                                         acc*
-                                         epath-estr-m))
-                            acc
-                            etype-epath-estr-m))
-               [])
-       (map-indexed (fn [idx emap]
-                      (assoc emap :id (str "profiles-" idx))))
+       (map
+        (fn [profile-id etype-epath-estr-m] [profile-id etype-epath-estr-m])
+        profile-ids)
+       (reduce
+        (fn [acc [prof-id etype-epath-estr-m]]
+          (reduce-kv
+           (fn [acc* etype epath-estr-m]
+             (reduce-kv (fn [acc** epath estr]
+                          (let [epath* (into [prof-id etype] epath)]
+                            (conj acc** {:path epath*
+                                         :text estr})))
+                        acc*
+                        epath-estr-m))
+           acc
+           etype-epath-estr-m))
+        [])
+       (map-indexed
+        (fn [idx emap] (assoc emap :id (str "profiles-" idx))))
        vec
        not-empty))
 
 (def bar
+  "Return a bar of 80 `=` characters."
   (apply str (repeat 80 \=)))
 
 (defn map-coll->strs

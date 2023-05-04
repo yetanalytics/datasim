@@ -6,20 +6,12 @@
   If incoming seqs are monotonic, the output is as well."
   [key-fn seqs]
   (lazy-seq
-   (when-let [seqs' (not-empty
-                     (into []
-                           (keep not-empty
-                                 seqs)))]
+   (when-let [seqs' (->> seqs (keep not-empty) (into []) not-empty)]
      (let [[idx [head & rest-seq]]
-           (apply min-key (comp key-fn
-                                first
-                                second)
-                  (map-indexed vector
-                               seqs'))]
-       (cons head
-             (seq-sort
-              key-fn
-              (assoc seqs' idx rest-seq)))))))
+           (apply min-key
+                  (comp key-fn first second)
+                  (map-indexed vector seqs'))]
+       (->> rest-seq (assoc seqs' idx) (seq-sort key-fn) (cons head))))))
 
 ;; https://clojuredocs.org/clojure.core/chunk#example-5c9cebc3e4b0ca44402ef6ec
 (defn re-chunk
