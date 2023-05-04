@@ -159,13 +159,17 @@
                              e))))
       :else #{})))
 
+(defn- follows-any?
+  [any-set values]
+  (->> values set (cset/intersection any-set) not-empty boolean))
+
 ;; -> everything within `all-set` within `values-set`?
 ;;    -> no = failure = (not (not false)) = false
 ;;    -> yes = continue
 ;;       -> anything within `target-set` that's not in `all-set`?
 ;;          -> yes = failure = (not (not false)) = false
 ;;          -> no = success = (not (not true)) = true 
-(defn- follows-all-values?
+(defn- follows-all?*
   "Checks `values-set` set against top and bottom bounds of `all-set`"
   [all-set values-set]
   ;; everything within `all-set` within `target-set`?
@@ -174,30 +178,35 @@
     (cset/superset? all-set values-set)
     false))
 
+(defn- follows-all?
+  [all-set values]
+  (let [values-set (values->set values)]
+    (not (or (contains? values ::unmatchable)
+             (empty? values)
+             ;; see `match-all-logic-test` below for logic proof
+             (not (follows-all?* all-set values-set))))))
+
+(defn- follows-none?
+  [none-set values]
+  (not (some (partial contains? none-set) values)))
+
 (defn- follows-any-all-none?
   "Do the rule `values` follow `any`, `all`, and `none`? Note that if
    `presence` is `recommended` then these will not be strictly followed."
   [presence any all none values]
   (let [ignore? (-> presence (= "excluded"))
-        strict? (-> presence (= "recommended") not)]
+        strict? (-> presence (= "recommended") not)
+        follow? (or strict? (not-empty values))]
     (or ignore?
-        (and
-         (if (and any
-                  (or strict? (not-empty values)))
-           (boolean (not-empty (cset/intersection (set values) any)))
-           true)
-         (if (and all
-                  (or strict? (not-empty values)))
-           (let [values-set (values->set values)]
-             (not (or (contains? values ::unmatchable)
-                      (empty? values)
-                      ;; see `match-all-logic-test` below for logic proof
-                      (not (follows-all-values? all values-set)))))
-           true)
-         (if (and none
-                  (or strict? (not-empty values)))
-           (not (some (partial contains? none) values))
-           true)))))
+        (and (if (and any follow?)
+               (follows-any? any values)
+               true)
+             (if (and all follow?)
+               (follows-all? all values)
+               true)
+             (if (and none follow?)
+               (follows-none? none values)
+               true)))))
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
@@ -233,7 +242,7 @@
   (defn replicate-conditional
     "assuming non-empty matchables which doesn't contain `::unmatchable`"
     [target-set]
-    (not (or false false (not (follows-all-values? all-set-fixture target-set)))))
+    (not (or false false (not (follows-all?* all-set-fixture target-set)))))
 
   (def test-set        #{:c :b :a :A})
   ;; ^ 1 more than `all-set-fixture`
