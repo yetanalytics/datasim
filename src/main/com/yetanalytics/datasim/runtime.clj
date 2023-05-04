@@ -2,8 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim.input :as input]
-            [cheshire.core :as json])
-  (:import [java.time Instant]))
+            [cheshire.core :as json]))
 
 ;; Simple, single-thread impl for now
 ;; Gets the statement seqs and combines them, writes to out
