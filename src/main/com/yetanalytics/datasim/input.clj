@@ -18,6 +18,10 @@
 ;;   personae: a Group that contains one or more Agent, i.e. persona
 ;;   personae-array: an array of one or more Groups
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn- distinct-member-ids?
   [personaes]
   (let [member-ids (->> personaes
@@ -26,6 +30,10 @@
                         (map xapiu/agent-id))]
     (= (-> member-ids count)
        (-> member-ids distinct count))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::personae-array
   (s/and
@@ -37,6 +45,10 @@
 
 (s/def ::parameters
   ::params/parameters)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validate Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn validate-profiles
   [profile-coll]
@@ -75,8 +87,7 @@
                             (map :id profiles))
         pattern-idset (into #{}
                             (keep (fn [{:keys [id primary]}]
-                                    (when (and primary)
-                                      id))
+                                    (when primary id))
                                   (mapcat :patterns profiles)))]
     (concat
      (for [[idx profile-id] (map-indexed vector gen-profiles)
@@ -104,12 +115,12 @@
                    ::parameters]))
 
 (def subobject-constructors
-  {:profile profile/map->Profile
-   :personae personae/map->Personae
-   :alignments alignments/map->Alignments
-   :parameters params/map->Parameters
+  {:profile        profile/map->Profile
+   :personae       personae/map->Personae
+   :alignments     alignments/map->Alignments
+   :parameters     params/map->Parameters
    ;; Hack for array-valued inputs
-   :profiles profile/map->Profile
+   :profiles       profile/map->Profile
    :personae-array personae/map->Personae})
 
 (defn realize-subobjects
@@ -118,30 +129,20 @@
   (reduce-kv
    (fn [m k v]
      (if-let [constructor (get subobject-constructors k)]
-       (let [rec (constructor {})
-             key-fn
-             (partial
-              p/read-key-fn
-              rec)
-             body-fn
-             (cond->> (partial
-                       p/read-body-fn
-                       rec)
-               ;; for profiles and personae-array, it's a vector
-               (#{:profiles :personae-array} k)
-               (partial mapv))]
-         (assoc m
-                k
-                (body-fn
-                 (w/postwalk
-                  (fn [node]
-                    ;; here we can be sure every prop is a key
-                    ;; since we force it with read-key-fn on input
-                    (if (keyword? node)
-                      (let [nn (name node)]
-                        (key-fn node))
-                      node))
-                  v))))
+       (let [rec     (constructor {})
+             key-fn  (partial p/read-key-fn rec)
+             body-fn (cond->> (partial p/read-body-fn rec)
+                       (#{:profiles :personae-array} k) ; these values are vecs
+                       (partial mapv))
+             body    (body-fn
+                      (w/postwalk
+                       (fn [node]
+                         ;; Here we can be sure every prop is a key
+                         ;; since we force it with read-key-fn on input
+                         (cond-> node
+                           (keyword? node) key-fn))
+                       v))]
+         (assoc m k body))
        (throw (ex-info (format "Unknown key %s" k)
                        {:type ::unknown-key
                         :key k
@@ -155,35 +156,32 @@
   (reduce-kv
    (fn [m k v]
      (if-let [constructor (get subobject-constructors k)]
-       (let [rec (constructor {})
-             key-fn
-             (partial
-              p/write-key-fn
-              rec)
-             body-fn
-             (cond->> p/write-body-fn
-               ;; for profiles and persoane-array, it's a vector
-               (#{:profiles :personae-array} k)
-               (partial mapv))]
-         (assoc m
-                k
-                (w/postwalk
-                 (fn [node]
-                   ;; Here we can't know it's a key unless we find it in a map
-                   (if (map? node)
-                     (reduce-kv
-                      (fn [m' k' v']
-                        (assoc m' (key-fn k') v'))
-                      {}
-                      node)
-                     node))
-                 (body-fn v))))
+       (let [rec     (constructor {})
+             key-fn  (partial p/write-key-fn rec)
+             body-fn (cond->> p/write-body-fn
+                       (#{:profiles :personae-array} k) ; these values are vecs
+                       (partial mapv))
+             body    (w/postwalk
+                      (fn [node]
+                        ;; Here we can't know it's a key unless we find
+                        ;; it in a map
+                        (cond->> node
+                          (map? node)
+                          (reduce-kv
+                           (fn [m' k' v'] (assoc m' (key-fn k') v'))
+                           {})))
+                      (body-fn v))]
+         (assoc m k body))
        (throw (ex-info (format "Unknown key %s" k)
                        {:type ::unknown-key
                         :key k
                         :input input}))))
    {}
    input))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Input [profiles
                   personae-array
@@ -200,12 +198,12 @@
         not-empty))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_this k]
     (keyword nil k))
-  (read-body-fn [this json-result]
+  (read-body-fn [_this json-result]
     (map->Input
      (realize-subobjects json-result)))
-  (write-key-fn [this k]
+  (write-key-fn [_this k]
     (name k))
   (write-body-fn [this]
     (unrealize-subobjects this)))
@@ -224,6 +222,10 @@
                     {:type ::unknown-key
                      :key type-k}))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Write Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn to-file
   [record fmt-k location]
   (case fmt-k
@@ -241,6 +243,10 @@
   (case fmt-k
     ;; currently only JSON
     :json (dio/write-loc-json record *err*)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Putting it all together
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result.
