@@ -5,10 +5,7 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.xapi :as xapi]
             [com.yetanalytics.datasim.util :as u]
-            [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.io Reader Writer]))
-
-
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; We model the input personae as an xAPI group.
 ;; It can be anonymous, but the name may be used in some way.
@@ -16,6 +13,9 @@
 ;; If functionality is added to express further groupings we'll have to revise
 ;; this strategy.
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Personae Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; FIXME: This spec is unused
 (s/def ::ifi-map
@@ -58,6 +58,9 @@
          (s/conformer w/keywordize-keys w/stringify-keys)
          ::group))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Personae Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Personae [member
                      objectType
@@ -71,12 +74,12 @@
       (errs/explain-to-map-coll ::personae ed)))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_this k]
     (keyword nil (name k)))
-  (read-body-fn [this json-result]
+  (read-body-fn [_this json-result]
     (map->Personae
      json-result))
-  (write-key-fn [this k]
+  (write-key-fn [_this k]
     (name k))
   (write-body-fn [this]
     (u/remove-nil-vals this)))

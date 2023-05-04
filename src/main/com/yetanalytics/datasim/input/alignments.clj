@@ -2,12 +2,15 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.xapi :as xapi]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; Alignment: Map of Component, Weight, and Object Override properties
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Alignment Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Due to limitations of keywords, we cannot have IRI keys, limiting extensions
 (defn- no-iri-keys?
@@ -23,6 +26,10 @@
     (every? no-iri-keys? obj)
     :else
     true))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Alignment Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::objectOverride
   (s/and (s/conformer w/stringify-keys w/keywordize-keys)
@@ -68,8 +75,13 @@
   (s/every ::actor-alignment))
 
 ;; Alignment input
+
 (s/def ::alignments-input
   (s/keys :req-un [::alignment-vector]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Alignment Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Alignments [alignment-vector]
   p/FromInput
@@ -78,11 +90,11 @@
       (errs/explain-to-map-coll ::alignments-input ed)))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_this k]
     (keyword nil (name k)))
-  (read-body-fn [this json-result]
+  (read-body-fn [_this json-result]
     (map->Alignments {:alignment-vector (into [] json-result)}))
-  (write-key-fn [this k]
+  (write-key-fn [_this k]
     (name k))
-  (write-body-fn [this]
+  (write-body-fn [_this]
     alignment-vector))

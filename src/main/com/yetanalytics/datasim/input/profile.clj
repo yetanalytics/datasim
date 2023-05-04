@@ -1,13 +1,7 @@
 (ns com.yetanalytics.datasim.input.profile
-  (:require [clojure.spec.alpha :as s]
+  (:require [com.yetanalytics.pan :as pan]
             [com.yetanalytics.datasim.protocols :as p]
-            [clojure.string :as cs]
-            [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.util :as u]
-            [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.io Reader Writer]))
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; NOTE: Do not include optional args seeAlso, concepts, templates, and patterns
 ;; The record constructor will populate these properties with nils if they're
@@ -16,6 +10,10 @@
 
 ;; NOTE: Do not include the type property, as it would conflict and be annoying.
 ;; It is static anyhow.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profile Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Profile [id
                     _context

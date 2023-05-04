@@ -1,17 +1,21 @@
 (ns com.yetanalytics.datasim.input.parameters
   "Simulation global parameters"
   (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.protocols :as p]
             [xapi-schema.spec :as xs]
+            [java-time :as t]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [java-time :as t]
+            [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.time.zone ZoneRulesException]
            [java.time Instant]
            [java.util Random]))
 
-;; all options are optional, but everything except `end` will get defaults
+;; All options are optional, but everything except `end` will get defaults
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Parameter Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (optional) start of the simulation (inclusive), 8601 stamp
 (s/def ::start
@@ -27,16 +31,16 @@
   (s/nilable ::xs/timestamp))
 
 ;; (optional) timezone, defaults to UTC
+(defn- timezone? [s]
+  (try (t/zone-id s)
+       (catch clojure.lang.ExceptionInfo exi
+         (if (= (type (ex-cause exi))
+                ZoneRulesException)
+           false
+           (throw exi)))))
+
 (s/def ::timezone
-  (s/and string?
-         not-empty
-         (fn [s]
-           (try (t/zone-id s)
-                (catch clojure.lang.ExceptionInfo exi
-                  (if (= (type (ex-cause exi))
-                         ZoneRulesException)
-                    false
-                    (throw exi)))))))
+  (s/and string? not-empty timezone?))
 
 ;; Seed is required, but will be generated if not present
 (s/def ::seed
@@ -54,6 +58,24 @@
 (s/def ::gen-patterns
   (s/every ::pat/id))
 
+;; Parameter map spec
+(defn- time-boundaries?
+  [{:keys [start from end]}]
+  (when end
+    (assert (t/before? (t/instant start)
+                       (t/instant end))
+            "Sim must start before it ends.")
+    (when from
+      (assert (t/before? (t/instant from)
+                         (t/instant end))
+              "From must be before end.")))
+  (when from
+    (assert (or (= from start)
+                (t/before? (t/instant start)
+                           (t/instant from)))
+            "Sim start must be before or equal to from."))
+  true)
+
 (s/def ::parameters
   (s/and
    (s/keys :req-un [::start
@@ -64,21 +86,11 @@
                     ::max
                     ::gen-profiles
                     ::gen-patterns])
-   (fn [{:keys [start from end]}]
-     (when end
-       (assert (t/before? (t/instant start)
-                          (t/instant end))
-               "Sim must start before it ends.")
-       (when from
-         (assert (t/before? (t/instant from)
-                            (t/instant end))
-                 "From must be before end.")))
-     (when from
-       (assert (or (= from start)
-                   (t/before? (t/instant start)
-                              (t/instant from)))
-               "Sim start must be before or equal to from."))
-     true)))
+   time-boundaries?))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Parameter Records
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-defaults
   "Generate defualts"
@@ -86,10 +98,10 @@
   (merge
    params
    (let [s (or start (.toString (Instant/now)))]
-     {:start s
-      :from (or from s)
+     {:start    s
+      :from     (or from s)
       :timezone (or timezone "UTC")
-      :seed (or seed (.nextLong (Random.)))})))
+      :seed     (or seed (.nextLong (Random.)))})))
 
 (defrecord Parameters [start
                        end
@@ -101,12 +113,12 @@
       (errs/explain-to-map-coll ::parameters ed)))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_this k]
     (keyword nil (name k)))
-  (read-body-fn [this json-result]
+  (read-body-fn [_this json-result]
     (map->Parameters
      (add-defaults json-result)))
-  (write-key-fn [this k]
+  (write-key-fn [_this k]
     (name k))
   (write-body-fn [this]
     (into {} this)))
