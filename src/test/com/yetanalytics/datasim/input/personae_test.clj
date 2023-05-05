@@ -4,11 +4,19 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.personae :refer [map->Personae]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fixtures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def simple-personae
   (dio/read-loc-json (map->Personae {}) "dev-resources/personae/simple.json"))
 
 (def tc3-personae
   (dio/read-loc-json (map->Personae {}) "dev-resources/personae/tccc_dev.json"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftest personae-test
   (testing "personae without roles"
