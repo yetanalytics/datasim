@@ -1,25 +1,20 @@
 (ns com.yetanalytics.datasim.random-test
-  (:require [clojure.test :refer :all]
-            [com.yetanalytics.datasim.random :refer :all]
-            [clojure.test.check :as tc]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.test :refer [deftest is]]
             [clojure.spec.test.alpha :as stest]
-            [clojure.test.check.properties :as prop]
-            [clojure.test.check.clojure-test :refer :all]))
+            [com.yetanalytics.datasim.random :as r]))
 
 (deftest random-functions-test
   (let [results (stest/check
-                 `#{seed-rng
-                    rand*
-                    rand-int*
-                    rand-nth*
-                    shuffle*
-                    random-sample*
-                    rand-gauss
-                    rand-long
-                    rand-uuid
-                    choose
-                    })
+                 `#{r/seed-rng
+                    r/rand*
+                    r/rand-int*
+                    r/rand-nth*
+                    r/shuffle*
+                    r/random-sample*
+                    r/rand-gauss
+                    r/rand-long
+                    r/rand-uuid
+                    r/choose})
         {:keys [total
                 check-passed]} (stest/summarize-results results)]
     (is (= total check-passed))))

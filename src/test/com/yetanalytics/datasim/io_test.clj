@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.io-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest testing is]]
             [com.yetanalytics.datasim.io :as io]
             [com.yetanalytics.datasim.input.profile :as profile]))
 
