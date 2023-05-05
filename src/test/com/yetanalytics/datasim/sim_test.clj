@@ -5,18 +5,30 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]))
 
-(def valid-input
+(def simple-input
   (input/from-location :input :json "dev-resources/input/simple.json"))
+
+(def override-alignments
+  (input/from-location :alignments :json "dev-resources/alignments/simple_with_overrides.json"))
+
+(def mom-profile
+  (input/from-location :profile :json "dev-resources/profiles/tla/mom.jsonld"))
+
+(def ref-profile
+  (input/from-location :profile :json "dev-resources/profiles/referential.jsonld"))
+
+(def tc3-profile
+  (input/from-location :personae :json "dev-resources/personae/tccc_dev.json"))
 
 (deftest build-skeleton-test
   (testing "given valid input, returns a valid skeleton"
     (is (s/valid?
          :com.yetanalytics.datasim.sim/skeleton
-         (build-skeleton valid-input)))))
+         (build-skeleton simple-input)))))
 
 (deftest disjoint-rng-test
   (testing "Make sure RNGs aren't shared across threads."
-    (let [skeleton (build-skeleton (assoc-in valid-input
+    (let [skeleton (build-skeleton (assoc-in simple-input
                                              [:parameters :end]
                                              nil))]
       (are [actor-id] (let [statement-seq (get skeleton
@@ -30,7 +42,7 @@
 
 (deftest xapi-test
   (testing "sim returns valid xapi statements"
-    (let [skeleton (build-skeleton (assoc-in valid-input
+    (let [skeleton (build-skeleton (assoc-in simple-input
                                              [:parameters :end]
                                              nil))]
       (are [actor-id] (s/valid? (s/every ::xs/statement)
@@ -42,7 +54,7 @@
 (deftest stack-test
   (testing "that we can iterate for a long time w/o a stack overflow"
     (is (s/valid? ::xs/statement
-                  (-> valid-input
+                  (-> simple-input
                       (assoc-in [:parameters :end] nil)
                       build-skeleton
                       (get "mbox::mailto:bobfake@example.org")
@@ -50,26 +62,20 @@
 
 (deftest sim-seq-test
   (testing "returns statements"
-    (is (s/valid? (s/every ::xs/statement) (sim-seq valid-input))))
+    (is (s/valid? (s/every ::xs/statement) (sim-seq simple-input))))
   (testing "respects max param"
-    (let [ret (sim-seq (assoc-in valid-input [:parameters :max] 3))]
+    (let [ret (sim-seq (assoc-in simple-input [:parameters :max] 3))]
       (is (s/valid? (s/every ::xs/statement) ret))
       (is (= 3 (count ret)))))
   (testing "respects from param"
-    (let [[s0 s1 & _] (sim-seq valid-input)
-          [s1' & _]   (sim-seq (assoc-in valid-input
+    (let [[s0 s1 & _] (sim-seq simple-input)
+          [s1' & _]   (sim-seq (assoc-in simple-input
                                          [:parameters :from]
                                          (get s0 "timestamp")))]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
   (testing "multiple profiles"
-    (let [double-input (update valid-input
-                               :profiles
-                               conj
-                               (input/from-location
-                                :profile
-                                :json
-                                "dev-resources/profiles/tla/mom.jsonld"))]
+    (let [double-input (update simple-input :profiles conj mom-profile)]
       (testing "respects gen-profiles param"
         (is (= [[{"id" "https://w3id.org/xapi/cmi5/v1.0"}]
                 [{"id" "https://w3id.org/xapi/cmi5/context/categories/moveon"}]]
@@ -94,12 +100,7 @@
       (testing "allows referential use of non-gen profiles"
         (is (= [nil [{"id" "https://w3id.org/xapi/tla/v0.13"}]]
                (-> double-input
-                   (update :profiles
-                           conj
-                           (input/from-location
-                            :profile
-                            :json
-                            "dev-resources/profiles/referential.jsonld"))
+                   (update :profiles conj ref-profile)
                    (update :parameters
                            assoc
                            :gen-patterns
@@ -108,7 +109,7 @@
                    (->> (map #(get-in % ["context" "contextActivities" "category"])))
                    distinct))))))
   (testing "respects agent selection"
-    (let [ret (sim-seq (assoc-in valid-input [:parameters :max] 3)
+    (let [ret (sim-seq (assoc-in simple-input [:parameters :max] 3)
                        ;; specify we only want the given agent(s)
                        :select-agents ["mbox::mailto:bobfake@example.org"])]
       (is (every?
@@ -119,11 +120,10 @@
     (is (= #{"mailto:alicefaux@example.org"
              "mailto:bobfake@example.org"
              "mailto:frederstaz@example.org"}
-           (->> valid-input sim-seq (map #(get-in % ["actor" "mbox"])) set))))
+           (->> simple-input sim-seq (map #(get-in % ["actor" "mbox"])) set))))
   (testing "can apply object override"
-    (let [align (input/from-location :alignments :json "dev-resources/alignments/simple_with_overrides.json")
-          ret   (sim-seq (assoc valid-input :alignments align)
-                         :select-agents ["mbox::mailto:bobfake@example.org"])]
+    (let [ret (sim-seq (assoc simple-input :alignments override-alignments)
+                       :select-agents ["mbox::mailto:bobfake@example.org"])]
       (is (every?
            #(or (= % {"objectType" "Activity"
                       "id"         "https://www.whatever.com/activities#course2"
@@ -136,8 +136,7 @@
                       "mbox"       "mailto:owoverrider@example.com"}))
            (map #(get % "object") ret)))))
   (testing "can apply multiple personae"
-    (let [per (input/from-location :personae :json "dev-resources/personae/tccc_dev.json")
-          ret (sim-seq (update valid-input :personae-array conj per))
+    (let [ret (sim-seq (update simple-input :personae-array conj tc3-profile))
           ids (map #(get-in % ["actor" "mbox"]) ret)]
       (is (= #{;; simple personae
                "mailto:alicefaux@example.org"
