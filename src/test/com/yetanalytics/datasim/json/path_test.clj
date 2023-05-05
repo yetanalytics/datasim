@@ -1,12 +1,8 @@
 (ns com.yetanalytics.datasim.json.path-test
-  (:require [clojure.test :refer :all]
-            [com.yetanalytics.datasim.json.path :refer :all]
-            [blancas.kern.core :as k]
+  (:require [clojure.test :refer [deftest are]]
+            [com.yetanalytics.datasim.json.path :as p]
             [clojure.java.io :as io]
-            [cheshire.core :as json]
-            [clojure.test.check :as tc]
-            [clojure.spec.alpha :as s]
-            [clojure.spec.test.alpha :as stest]))
+            [cheshire.core :as json]))
 
 (def long-statement
   (with-open
@@ -14,16 +10,17 @@
     (json/parse-stream r)))
 
 (deftest parse-test
-  (are [path v] (= v
-                   (parse path))
+  (are [path parsed-path]
+       (= parsed-path
+          (p/parse path))
     "$.store.book[*].author" [#{"store"} #{"book"} '* #{"author"}]
     "$..author"              ['* #{"author"}]
     "$.store.*"              [#{"store"} '*]
     "$.store..price"         [#{"store"} '* #{"price"}]
     "$..book[2]"             ['* #{"book"} #{2}]
-    "$..book[-1:]"           ['* #{"book"} (->RangeSpec -1 Long/MAX_VALUE 1 false)]
+    "$..book[-1:]"           ['* #{"book"} (p/->RangeSpec -1 Long/MAX_VALUE 1 false)]
     "$..book[0,1]"           ['* #{"book"} #{0 1}]
-    "$..book[:2]"            ['* #{"book"} (->RangeSpec 0 2 1 true)]
+    "$..book[:2]"            ['* #{"book"} (p/->RangeSpec 0 2 1 true)]
     "$..*"                   '[* *]
     ;; selections from cmi5
     "$.context.contextActivities.grouping[*]"
@@ -41,8 +38,8 @@
 
 (deftest select-test
   (are [path selection]
-      (= (select long-statement (parse path))
-         selection)
+       (= (p/select long-statement (p/parse path))
+          selection)
     "$.id"        ["6690e6c9-3ef0-4ed3-8b37-7f3964730bee"]
     "$.timestamp" ["2013-05-18T05:32:34.804Z"]
 
@@ -66,15 +63,12 @@
     ["X:\\meetings\\minutes\\examplemeeting.one"]
 
     "$.object.definition.type"
-    ["http://adlnet.gov/expapi/activities/meeting"]
-
-    ))
+    ["http://adlnet.gov/expapi/activities/meeting"]))
 
 (deftest excise-test
-  (are [path s-after]
-      (= s-after
-         (excise long-statement (parse path)
-                 :prune-empty? true))
+  (are [path new-statement]
+       (= new-statement
+          (p/excise long-statement (p/parse path) :prune-empty? true))
     "$.id"        (dissoc long-statement "id")
     "$.timestamp" (dissoc long-statement "timestamp")
 
@@ -97,8 +91,7 @@
                (partial mapv #(dissoc % "id")))
     "$.context.contextActivities.other[*]"
     (update-in long-statement ["context"
-                               "contextActivities"
-                               ]
+                               "contextActivities"]
                dissoc "other")
 
     "$.result.duration"
@@ -112,27 +105,24 @@
 
 (deftest enumerate-test
   (are [path result-count]
-      (= result-count
-         (count (enumerate path :limit 10)))
-    [#{"store"} #{"book"} '* #{"author"}]                       10
-    ['* #{"author"}]                                            10
-    [#{"store"} '*]                                             10
-    [#{"store"} '* #{"price"}]                                  10
-    ['* #{"book"} #{2}]                                         10
-    ['* #{"book"} (->RangeSpec -1 9223372036854775807 1 false)] 100
-    ['* #{"book"} #{0 1}]                                       20
-    ['* #{"book"} (->RangeSpec 0 2 1 true)]                     20
-    '[* *]                                                      100
+       (= result-count
+          (count (p/enumerate path :limit 10)))
+    [#{"store"} #{"book"} '* #{"author"}]                         10
+    ['* #{"author"}]                                              10
+    [#{"store"} '*]                                               10
+    [#{"store"} '* #{"price"}]                                    10
+    ['* #{"book"} #{2}]                                           10
+    ['* #{"book"} (p/->RangeSpec -1 9223372036854775807 1 false)] 100
+    ['* #{"book"} #{0 1}]                                         20
+    ['* #{"book"} (p/->RangeSpec 0 2 1 true)]                     20
+    '[* *]                                                        100
     ;; selections from cmi5
-    [#{"context"} #{"contextActivities"} #{"grouping"} '*]      10
-
-    [#{"context"} #{"extensions"} #{"https://w3id.org/xapi/cmi5/context/extensions/sessionid"}] 1
-    ))
+    [#{"context"} #{"contextActivities"} #{"grouping"} '*] 10
+    [#{"context"} #{"extensions"} #{"https://w3id.org/xapi/cmi5/context/extensions/sessionid"}] 1))
 
 (deftest apply-values-test
   (are [json parsed-path values expected]
-      (= expected
-         (apply-values json parsed-path values))
-
+       (= expected
+          (p/apply-values json parsed-path values))
     long-statement [#{"result"} #{"success"}] [false]
     (assoc-in long-statement ["result" "success"] false)))
