@@ -3,8 +3,8 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
             [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.random :as random]))
+            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ID Fixtures
@@ -18,25 +18,22 @@
 ;; Basic Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def test-input (input/from-location
-                 :input :json "dev-resources/input/simple.json"))
-
 (deftest profiles->map-test
   (testing "profiles->map function"
     (is (s/valid? ::profile/iri-map
-                  (profile/profiles->map (:profiles test-input))))))
+                  (profile/profiles->map (:profiles fix/simple-input))))))
 
 (deftest pattern-zip-test
   (testing "pattern-zip function"
     (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)
-           (-> test-input
+           (-> fix/simple-input
                :profiles
                profile/profiles->map
                profile/pattern-zip
                meta
                keys)))
     (is (s/valid? ::profile/iri-map
-                  (-> test-input
+                  (-> fix/simple-input
                       :profiles
                       profile/profiles->map
                       profile/pattern-zip
@@ -45,7 +42,7 @@
     (is (= {:id         ::profile/root
             :type       "Pattern"
             :alternates [cmi5-pattern-id]}
-           (-> test-input
+           (-> fix/simple-input
                :profiles
                profile/profiles->map
                profile/pattern-zip
@@ -174,7 +171,7 @@
   :ret cmi5-general-pattern?)
 
 (defn gen-single-walk [seed]
-  (let [{:keys [profiles alignments]} test-input
+  (let [{:keys [profiles alignments]} fix/simple-input
         profile-map (profile/profiles->map profiles)
         seeded-rng  (random/seed-rng seed)]
     (->> (profile/rand-pattern-zip profile-map
@@ -196,11 +193,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def combined-iri-map
-  (profile/profiles->map
-   [(input/from-location :profile :json
-                         "dev-resources/profiles/cmi5/fixed.json")
-    (input/from-location :profile :json
-                         "dev-resources/profiles/tla/mom.jsonld")]))
+  (profile/profiles->map [fix/cmi5-profile fix/mom-profile]))
 
 (defn- primary-pattern-ids
   [patterns]

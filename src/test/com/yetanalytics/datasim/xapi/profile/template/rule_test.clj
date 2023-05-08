@@ -5,7 +5,7 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
-            [com.yetanalytics.datasim.input :as input]))
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fixtures
@@ -25,12 +25,9 @@
    "timestamp" "2021-03-18T17:36:22.131Z"})
 
 ;; we can pull some actual rules from cmi5
-(def cmi5-templates
-  (:templates
-   (input/from-location :profile :json "dev-resources/profiles/cmi5/fixed.json")))
+(def cmi5-templates (:templates fix/cmi5-profile))
 
-(def all-rules
-  (mapcat :rules cmi5-templates))
+(def all-rules (mapcat :rules cmi5-templates))
 
 ;; A simple statement to augment
 (def simple-statement

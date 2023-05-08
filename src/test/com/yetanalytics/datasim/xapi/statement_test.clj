@@ -1,14 +1,13 @@
 (ns com.yetanalytics.datasim.xapi.statement-test
-  (:require
-   [clojure.test :refer [deftest testing is are]]
-   [clojure.spec.alpha :as s]
-   [clojure.walk :as w]
-   [xapi-schema.spec :as xs]
-   [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
-   [com.yetanalytics.datasim.input :as input]
-   [com.yetanalytics.datasim.random :as random]
-   [com.yetanalytics.datasim.xapi.profile :as profile]
-   [com.yetanalytics.datasim.xapi.activity :as activity]))
+  (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.spec.alpha :as s]
+            [clojure.walk :as w]
+            [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
+            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.xapi.profile :as profile]
+            [com.yetanalytics.datasim.xapi.activity :as activity]
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 ;; FIXME: generate-statement will still generate statements with blatantly contradictory rules,
 ;; e.g.
@@ -32,9 +31,7 @@
   (testing "given valid args,"
     (let [top-seed    42
           top-rng     (random/seed-rng top-seed)
-          input       (input/from-location :input
-                                           :json
-                                           "dev-resources/input/simple.json")
+          input       fix/simple-input
           iri-map     (profile/profiles->map (:profiles input))
           activities  (activity/derive-cosmos input (random/rand-long top-rng))
           template    (get iri-map "https://w3id.org/xapi/cmi5#satisfied")
