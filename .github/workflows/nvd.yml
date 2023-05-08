@@ -8,7 +8,7 @@ jobs:
   nvd-scan:
     uses: yetanalytics/workflow-nvd/.github/workflows/nvd-scan.yml@v1
     with:
-      nvd-clojure-version: '2.9.0'
+      nvd-clojure-version: '3.2.0'
       classpath-command: 'clojure -Spath -A:cli:server'
       nvd-config-filename: '.nvd/config.json'
       notify-slack: true
