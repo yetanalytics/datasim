@@ -1,12 +1,13 @@
 (ns com.yetanalytics.datasim.json.path-test
   (:require [clojure.test :refer [deftest are]]
-            [com.yetanalytics.datasim.json.path :as p]
             [clojure.java.io :as io]
-            [cheshire.core :as json]))
+            [cheshire.core :as json]
+            [com.yetanalytics.datasim.json.path :as p]
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 (def long-statement
   (with-open
-    [r (io/reader (io/resource "xapi/statements/long.json"))]
+    [r (io/reader fix/long-statement-filepath)]
     (json/parse-stream r)))
 
 (deftest parse-test

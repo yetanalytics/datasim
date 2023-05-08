@@ -1,12 +1,13 @@
 (ns com.yetanalytics.datasim.io-test
   (:require [clojure.test :refer [deftest testing is]]
             [com.yetanalytics.datasim.io :as io]
-            [com.yetanalytics.datasim.input.profile :as profile]))
+            [com.yetanalytics.datasim.input.profile :as profile]
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 (deftest read-loc-json-test
   (let [p (profile/map->Profile {})]
     (testing "Reads files as json"
-      (is (map? (io/read-loc-json p "dev-resources/profiles/cmi5/fixed.json"))))
+      (is (map? (io/read-loc-json p fix/cmi5-profile-filepath))))
     (testing "Throws wrapped I/O errors when it can't read something"
       (is (= ::io/io-error
              (try (io/read-loc-json p "notthere.json")

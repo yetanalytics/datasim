@@ -2,10 +2,11 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
-            [xapi-schema.spec :as xs]
             [cheshire.core :as json]
+            [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.json.zip :as pzip]
-            [com.yetanalytics.datasim.xapi.path :as path]))
+            [com.yetanalytics.datasim.xapi.path :as path]
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fixtures
@@ -13,7 +14,7 @@
 
 (def long-statement
   (with-open
-   [r (io/reader (io/resource "xapi/statements/long.json"))]
+   [r (io/reader fix/long-statement-filepath)]
     (json/parse-stream r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

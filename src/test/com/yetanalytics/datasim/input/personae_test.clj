@@ -2,17 +2,18 @@
   (:require [clojure.test :refer [deftest testing is]]
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input.personae :refer [map->Personae]]))
+            [com.yetanalytics.datasim.input.personae :refer [map->Personae]]
+            [com.yetanalytics.datasim.test-fixtures :as fix]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fixtures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def simple-personae
-  (dio/read-loc-json (map->Personae {}) "dev-resources/personae/simple.json"))
+  (dio/read-loc-json (map->Personae {}) fix/simple-personae-filepath))
 
 (def tc3-personae
-  (dio/read-loc-json (map->Personae {}) "dev-resources/personae/tccc_dev.json"))
+  (dio/read-loc-json (map->Personae {}) fix/tc3-personae-filepath))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests

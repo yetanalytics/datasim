@@ -31,7 +31,7 @@
 
 ;; A simple statement to augment
 (def simple-statement
-  (with-open [r (io/reader "dev-resources/xapi/statements/simple.json")]
+  (with-open [r (io/reader fix/simple-statement-filepath)]
     (json/parse-stream r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

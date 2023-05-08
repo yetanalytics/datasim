@@ -58,6 +58,13 @@
 (def overrides-input-filepath
   "dev-resources/alignments/simple_with_overrides.json")
 
+;; Miscellaneous
+
+(def simple-statement-filepath
+  "dev-resources/xapi/statements/simple.json")
+(def long-statement-filepath
+  "dev-resources/xapi/statements/long.json")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JSON Fixtures
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
