@@ -6,23 +6,11 @@ on:
 
 jobs:
   nvd-scan:
-    uses: yetanalytics/actions/.github/workflows/nvd-scan.yml@v0.0.4
+    uses: yetanalytics/workflow-nvd/.github/workflows/nvd-scan.yml@v1
     with:
-      nvd-clojure-version: '2.9.0'
+      nvd-clojure-version: '3.2.0'
       classpath-command: 'clojure -Spath -A:cli:server'
       nvd-config-filename: '.nvd/config.json'
-
-  notify-slack:
-    runs-on: ubuntu-latest
-    needs: [nvd-scan]
-    if: ${{ always() && (needs.nvd-scan.result == 'failure') }}
-    steps:
-    - name: Notify Slack DATASIM NVD Scan Reporter 
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        payload: |
-          {
-            "run_link": "https://github.com/yetanalytics/datasim/actions/runs/${{ github.run_id }}"
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      notify-slack: true
+    secrets:
+      SLACK_WORKFLOW_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
