@@ -5,10 +5,10 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Fixtures
+;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def gen-seed 42)
@@ -41,13 +41,13 @@
                 "objectType" "Agent"}]}])
 
 ;; we can pull some actual rules from cmi5
-(def cmi5-templates (:templates fix/cmi5-profile))
+(def cmi5-templates (:templates const/cmi5-profile))
 
 (def all-rules (mapcat :rules cmi5-templates))
 
 ;; A simple statement to augment
 (def simple-statement
-  (with-open [r (io/reader fix/simple-statement-filepath)]
+  (with-open [r (io/reader const/simple-statement-filepath)]
     (json/parse-stream r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

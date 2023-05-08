@@ -3,10 +3,10 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.sim :refer [build-skeleton sim-seq]]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Fixtures
+;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- get-timestamp [sim-statement]
@@ -72,11 +72,11 @@
   (testing "given valid input, returns a valid skeleton"
     (is (s/valid?
          :com.yetanalytics.datasim.sim/skeleton
-         (build-skeleton fix/simple-input)))))
+         (build-skeleton const/simple-input)))))
 
 (deftest disjoint-rng-test
   (testing "Make sure RNGs aren't shared across threads."
-    (let [skeleton (build-skeleton (assoc-in fix/simple-input
+    (let [skeleton (build-skeleton (assoc-in const/simple-input
                                              [:parameters :end]
                                              nil))]
       (are [actor-id] (let [statement-seq (get skeleton
@@ -90,7 +90,7 @@
 
 (deftest xapi-test
   (testing "sim returns valid xapi statements"
-    (let [skeleton (build-skeleton (assoc-in fix/simple-input
+    (let [skeleton (build-skeleton (assoc-in const/simple-input
                                              [:parameters :end]
                                              nil))]
       (are [actor-id] (s/valid? (s/every ::xs/statement)
@@ -102,7 +102,7 @@
 (deftest stack-test
   (testing "that we can iterate for a long time w/o a stack overflow"
     (is (s/valid? ::xs/statement
-                  (-> fix/simple-input
+                  (-> const/simple-input
                       (assoc-in [:parameters :end] nil)
                       build-skeleton
                       (get bob-mbox)
@@ -110,20 +110,20 @@
 
 (deftest sim-seq-test
   (testing "returns statements"
-    (is (s/valid? (s/every ::xs/statement) (sim-seq fix/simple-input))))
+    (is (s/valid? (s/every ::xs/statement) (sim-seq const/simple-input))))
   (testing "respects max param"
-    (let [ret (sim-seq (assoc-in fix/simple-input [:parameters :max] 3))]
+    (let [ret (sim-seq (assoc-in const/simple-input [:parameters :max] 3))]
       (is (s/valid? (s/every ::xs/statement) ret))
       (is (= 3 (count ret)))))
   (testing "respects from param"
-    (let [[s0 s1 & _] (sim-seq fix/simple-input)
-          [s1' & _]   (sim-seq (assoc-in fix/simple-input
+    (let [[s0 s1 & _] (sim-seq const/simple-input)
+          [s1' & _]   (sim-seq (assoc-in const/simple-input
                                          [:parameters :from]
                                          (get-timestamp s0)))]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
   (testing "multiple profiles"
-    (let [double-input (update fix/simple-input :profiles conj fix/mom-profile)]
+    (let [double-input (update const/simple-input :profiles conj const/mom-profile)]
       (testing "respects gen-profiles param"
         (is (= [[{"id" cmi5-version-id}]
                 [{"id" cmi5-moveon-id}]]
@@ -146,7 +146,7 @@
       (testing "allows referential use of non-gen profiles"
         (is (= [nil [{"id" tla-version-id}]]
                (-> double-input
-                   (update :profiles conj fix/referential-profile)
+                   (update :profiles conj const/referential-profile)
                    (update :parameters
                            assoc
                            :gen-patterns [referential-completed-session-id])
@@ -154,7 +154,7 @@
                    (->> (map get-context-category-activities))
                    distinct))))))
   (testing "respects agent selection"
-    (let [ret (sim-seq (assoc-in fix/simple-input [:parameters :max] 3)
+    (let [ret (sim-seq (assoc-in const/simple-input [:parameters :max] 3)
                        ;; specify we only want the given agent(s)
                        :select-agents [bob-mbox])]
       (is (every?
@@ -162,17 +162,17 @@
            ret))))
   (testing "only actors in personae are generated"
     (is (= #{alice-mailto bob-mailto fred-mailto}
-           (->> fix/simple-input sim-seq (map get-actor-mbox) set))))
+           (->> const/simple-input sim-seq (map get-actor-mbox) set))))
   (testing "can apply object override"
-    (let [ret (sim-seq (assoc fix/simple-input
-                              :alignments fix/override-alignments)
+    (let [ret (sim-seq (assoc const/simple-input
+                              :alignments const/override-alignments)
                        :select-agents [bob-mbox])]
       (is (every? #(or (= override-activity-1 %)
                        (= override-activity-2 %))
                   (map get-object ret)))))
   (testing "can apply multiple personae"
-    (let [ret (sim-seq (update fix/simple-input
-                               :personae-array conj fix/tc3-personae))
+    (let [ret (sim-seq (update const/simple-input
+                               :personae-array conj const/tc3-personae))
           ids (map get-actor-mbox ret)]
       (is (= #{;; simple personae
                alice-mailto

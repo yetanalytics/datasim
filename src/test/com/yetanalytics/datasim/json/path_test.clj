@@ -3,11 +3,11 @@
             [clojure.java.io :as io]
             [cheshire.core :as json]
             [com.yetanalytics.datasim.json.path :as p]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 (def long-statement
   (with-open
-    [r (io/reader fix/long-statement-filepath)]
+    [r (io/reader const/long-statement-filepath)]
     (json/parse-stream r)))
 
 (deftest parse-test

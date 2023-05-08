@@ -4,10 +4,10 @@
             [clojure.spec.test.alpha :as stest]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.random :as random]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; ID Fixtures
+;; ID Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def cmi5-id "https://w3id.org/xapi/cmi5")
@@ -21,19 +21,19 @@
 (deftest profiles->map-test
   (testing "profiles->map function"
     (is (s/valid? ::profile/iri-map
-                  (profile/profiles->map (:profiles fix/simple-input))))))
+                  (profile/profiles->map (:profiles const/simple-input))))))
 
 (deftest pattern-zip-test
   (testing "pattern-zip function"
     (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)
-           (-> fix/simple-input
+           (-> const/simple-input
                :profiles
                profile/profiles->map
                profile/pattern-zip
                meta
                keys)))
     (is (s/valid? ::profile/iri-map
-                  (-> fix/simple-input
+                  (-> const/simple-input
                       :profiles
                       profile/profiles->map
                       profile/pattern-zip
@@ -42,7 +42,7 @@
     (is (= {:id         ::profile/root
             :type       "Pattern"
             :alternates [cmi5-pattern-id]}
-           (-> fix/simple-input
+           (-> const/simple-input
                :profiles
                profile/profiles->map
                profile/pattern-zip
@@ -171,7 +171,7 @@
   :ret cmi5-general-pattern?)
 
 (defn gen-single-walk [seed]
-  (let [{:keys [profiles alignments]} fix/simple-input
+  (let [{:keys [profiles alignments]} const/simple-input
         profile-map (profile/profiles->map profiles)
         seeded-rng  (random/seed-rng seed)]
     (->> (profile/rand-pattern-zip profile-map
@@ -193,7 +193,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def combined-iri-map
-  (profile/profiles->map [fix/cmi5-profile fix/mom-profile]))
+  (profile/profiles->map [const/cmi5-profile const/mom-profile]))
 
 (defn- primary-pattern-ids
   [patterns]

@@ -6,15 +6,15 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.json.zip :as pzip]
             [com.yetanalytics.datasim.xapi.path :as path]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Fixtures
+;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def long-statement
   (with-open
-   [r (io/reader fix/long-statement-filepath)]
+   [r (io/reader const/long-statement-filepath)]
     (json/parse-stream r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

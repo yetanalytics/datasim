@@ -5,15 +5,15 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.profile :refer [map->Profile]]
             [com.yetanalytics.datasim.io :as dio]
-            [com.yetanalytics.datasim.test-fixtures :as fix])
+            [com.yetanalytics.datasim.test-constants :as const])
   (:import [java.io File]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Fixtures
+;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def minimal-profile
-  (dio/read-loc-json (map->Profile {}) fix/minimal-profile-filepath))
+  (dio/read-loc-json (map->Profile {}) const/minimal-profile-filepath))
 
 (def minimal-profile-map
   {:id         "https://xapinet.org/xapi/yet/minimal"

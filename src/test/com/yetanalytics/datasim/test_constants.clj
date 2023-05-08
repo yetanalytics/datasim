@@ -1,10 +1,10 @@
-(ns com.yetanalytics.datasim.test-fixtures
-  "Fixtures for input items, i.e. profiles, personae, alignments, and
+(ns com.yetanalytics.datasim.test-constants
+  "Constants for input items, i.e. profiles, personae, alignments, and
    parameters."
   (:require [com.yetanalytics.datasim.input :as input]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Filepath Fixtures
+;; Filepath Names
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Profiles
@@ -68,7 +68,7 @@
   "dev-resources/xapi/statements/long.json")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; JSON Fixtures
+;; JSON Datas
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Profiles

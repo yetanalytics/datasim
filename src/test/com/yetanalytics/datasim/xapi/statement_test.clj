@@ -7,7 +7,7 @@
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 ;; FIXME: generate-statement will still generate statements with blatantly contradictory rules,
 ;; e.g.
@@ -20,22 +20,26 @@
 
 ;; TODO: a lot more variation in this test, preferably generative
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def top-seed 42)
 
 (def top-rng
   (random/seed-rng top-seed))
 
 (def profile-iri-map
-  (-> fix/simple-input :profiles profile/profiles->map))
+  (-> const/simple-input :profiles profile/profiles->map))
 
 (def activities
-  (-> fix/simple-input (activity/derive-cosmos (random/rand-long top-rng))))
+  (-> const/simple-input (activity/derive-cosmos (random/rand-long top-rng))))
 
 (def actor
-  (-> fix/simple-input :personae-array first :member first (dissoc :role)))
+  (-> const/simple-input :personae-array first :member first (dissoc :role)))
 
 (def alignments*
-  (-> fix/simple-input (get-in [:alignments :alignment-vector 0 :alignments])))
+  (-> const/simple-input (get-in [:alignments :alignment-vector 0 :alignments])))
 
 (def object-override
   {:objectType "Activity"
@@ -62,7 +66,7 @@
     :primary false}])
 
 (def valid-args
-  {:input             fix/simple-input
+  {:input             const/simple-input
    :iri-map           profile-iri-map
    :activities        activities
    :actor             actor
@@ -72,6 +76,10 @@
    :template          template
    :pattern-ancestors pattern-ancestors
    :registration      (random/rand-uuid top-rng)})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftest generate-statement-test
   (testing "given valid args,"

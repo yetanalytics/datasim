@@ -3,17 +3,17 @@
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.personae :refer [map->Personae]]
-            [com.yetanalytics.datasim.test-fixtures :as fix]))
+            [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Fixtures
+;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def simple-personae
-  (dio/read-loc-json (map->Personae {}) fix/simple-personae-filepath))
+  (dio/read-loc-json (map->Personae {}) const/simple-personae-filepath))
 
 (def tc3-personae
-  (dio/read-loc-json (map->Personae {}) fix/tc3-personae-filepath))
+  (dio/read-loc-json (map->Personae {}) const/tc3-personae-filepath))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
