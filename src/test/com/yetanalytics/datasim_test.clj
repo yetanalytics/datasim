@@ -3,5 +3,5 @@
             [com.yetanalytics.datasim :refer :all]))
 
 (deftest a-test
-  (testing "FIXME, I fail."
+  (testing "FIXME, I fail!"
     (is true #_(= 0 1))))
