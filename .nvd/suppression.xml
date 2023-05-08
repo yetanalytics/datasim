@@ -37,12 +37,4 @@
         <packageUrl regex="true">^(?!pkg:maven/commons-net/commons-net).*$</packageUrl>
         <cpe>cpe:/a:apache:commons_net</cpe>
     </suppress>
-    <!-- The following are FPs since the CVE affects java-json which is not a dep -->
-    <suppress>
-        <notes><![CDATA[
-        file name: jackson-core-2.14.0-rc1.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-core@.*$</packageUrl>
-        <cve>CVE-2022-45688</cve>
-    </suppress>
 </suppressions>
