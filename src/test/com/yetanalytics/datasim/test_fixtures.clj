@@ -57,6 +57,8 @@
   "dev-resources/input/simple.json")
 (def overrides-input-filepath
   "dev-resources/alignments/simple_with_overrides.json")
+(def mom-input-filepath
+  "dev-resources/input/mom64.json")
 
 ;; Miscellaneous
 
