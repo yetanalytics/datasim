@@ -63,6 +63,13 @@
 ;; Input Validation Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def cmi5-satisfied-bad-1 "https://w3id.org/xapi/cmi5#satisfiedbad1")
+(def cmi5-satisfied-bad-2 "https://w3id.org/xapi/cmi5#satisfiedbad2")
+(def cmi5-satisfied-bad-3 "https://w3id.org/xapi/cmi5#satisfiedbad3")
+(def cmi5-initialized "https://w3id.org/xapi/cmi5#initialized")
+(def cmi5-terminated "https://w3id.org/xapi/cmi5#terminated")
+(def cmi5-completed "https://w3id.org/xapi/cmi5#completed")
+
 (deftest profile-cosmos-validation-test
   (testing "input is valid if all template refs are valid"
     (is (nil? (input/validate-profiles [fix/cmi5-profile]))))
@@ -74,15 +81,13 @@
                   count)))
     ;; XXX: If we replaced satisfiedbad3 with satisfiedbad2, we only get a count
     ;; of 2 errors, not 3.
-    (is (= 3 (->> [(-> fix/cmi5-profile
-                       (assoc-in [:patterns 0 :zeroOrMore]
-                                 "https://w3id.org/xapi/cmi5#satisfiedbad1")
-                       (assoc-in [:patterns 1 :sequence 0]
-                                 "https://w3id.org/xapi/cmi5#satisfiedbad2")
-                       (assoc-in [:patterns 1 :sequence 2]
-                                 "https://w3id.org/xapi/cmi5#satisfiedbad3"))]
-                  input/validate-profiles
-                  count))))
+    (is (= 3
+           (->> [(-> fix/cmi5-profile
+                     (assoc-in [:patterns 0 :zeroOrMore] cmi5-satisfied-bad-1)
+                     (assoc-in [:patterns 1 :sequence 0] cmi5-satisfied-bad-2)
+                     (assoc-in [:patterns 1 :sequence 2] cmi5-satisfied-bad-3))]
+                input/validate-profiles
+                count))))
   (testing "validation works for multi-profile cosmos"
     (is (nil? (input/validate-profiles
                [fix/cmi5-profile fix/video-profile])))
@@ -90,12 +95,9 @@
     (is (nil? (input/validate-profiles
                [fix/cmi5-profile
                 (-> fix/video-profile
-                    (assoc-in [:patterns 0 :sequence 0]
-                              "https://w3id.org/xapi/cmi5#initialized")
-                    (assoc-in [:patterns 0 :sequence 2]
-                              "https://w3id.org/xapi/cmi5#terminated")
-                    (assoc-in [:patterns 1 :alternates 6]
-                              "https://w3id.org/xapi/cmi5#completed"))])))
+                    (assoc-in [:patterns 0 :sequence 0] cmi5-initialized)
+                    (assoc-in [:patterns 0 :sequence 2] cmi5-terminated)
+                    (assoc-in [:patterns 1 :alternates 6] cmi5-completed))])))
     (is (= 1 (->> [(-> fix/cmi5-profile
                        (assoc-in [:patterns 0 :zeroOrMore]
                                  "https://w3id.org/xapi/cmi5#bad-template"))

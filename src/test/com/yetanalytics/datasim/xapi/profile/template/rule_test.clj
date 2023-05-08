@@ -24,6 +24,22 @@
    "context"   {"registration" "d7acfddb-f4c2-49f4-a081-ad1fb8490448"},
    "timestamp" "2021-03-18T17:36:22.131Z"})
 
+(def example-rule
+  {:presence "excluded",
+   :location [#{"context"} #{"contextActivities"}]})
+
+(def group-as-actor-rules
+  [;; TODO: Right now this will only apply the second rule if the first is present
+   ;; the path->spec function can't resolve ["actor" "member"]
+   {:location "$.actor.objectType"
+    :presence "included"
+    :all      ["Group"]}
+   {:location "$.actor.member[0]"
+    :presence "included"
+    :all      [{"mbox"       "mailto:milt@yetanalytics.com"
+                "name"       "milt"
+                "objectType" "Agent"}]}])
+
 ;; we can pull some actual rules from cmi5
 (def cmi5-templates (:templates fix/cmi5-profile))
 
@@ -46,18 +62,14 @@
 
 (deftest follows-rule?-test
   (testing "given a statement that follows the rule, it returns true"
-    (is (r/follows-rule?
-         example-statement
-         {:presence "excluded",
-          :location [#{"context"} #{"contextActivities"}]})))
+    (is (r/follows-rule? example-statement example-rule)))
   (testing "given a statement that doesn't follow the rule, it returns false"
     (is (not
          (r/follows-rule?
           (assoc-in example-statement
                     ["context" "contextActivities" "category"]
                     [{"id" "https://w3id.org/xapi/tla/v0.13"}])
-          {:presence "excluded",
-           :location [#{"context"} #{"contextActivities"}]})))))
+          example-rule)))))
 
 (deftest apply-rules-gen-test
   ;; Individual Rule Application
@@ -76,17 +88,9 @@
         (is (nil? (s/explain-data ::xs/statement processed))))))
   ;; Various Cases
   (testing "Case: Group as Actor"
-    (let [rules [;; TODO: Right now this will only apply the second rule if the first is present
-                 ;; the path->spec function can't resolve ["actor" "member"]
-                 {:location "$.actor.objectType"
-                  :presence "included"
-                  :all      ["Group"]}
-                 {:location "$.actor.member[0]"
-                  :presence "included"
-                  :all      [{"mbox"       "mailto:milt@yetanalytics.com"
-                              "name"       "milt"
-                              "objectType" "Agent"}]}]
-          processed (r/apply-rules-gen simple-statement rules :seed gen-seed)]
+    (let [processed (r/apply-rules-gen simple-statement
+                                       group-as-actor-rules
+                                       :seed gen-seed)]
       (is (every? (partial r/follows-rule? processed)
-                  (map r/parse-rule rules)))
+                  (map r/parse-rule group-as-actor-rules)))
       (is (nil? (s/explain-data ::xs/statement processed))))))

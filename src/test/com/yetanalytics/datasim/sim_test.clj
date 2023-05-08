@@ -5,6 +5,69 @@
             [com.yetanalytics.datasim.sim :refer [build-skeleton sim-seq]]
             [com.yetanalytics.datasim.test-fixtures :as fix]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fixtures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-timestamp [sim-statement]
+  (get sim-statement "timestamp"))
+
+(defn- get-object [sim-statement]
+  (get sim-statement "object"))
+
+(defn- get-actor-mbox [sim-statement]
+  (get-in sim-statement ["actor" "mbox"]))
+
+(defn- get-context-category-activities [sim-statement]
+  (get-in sim-statement ["context" "contextActivities" "category"]))
+
+(def alice-mailto
+  "mailto:alicefaux@example.org")
+(def bob-mailto
+  "mailto:bobfake@example.org")
+(def fred-mailto
+  "mailto:frederstaz@example.org")
+
+(def alice-mbox
+  "mbox::mailto:alicefaux@example.org")
+(def bob-mbox
+  "mbox::mailto:bobfake@example.org")
+(def fred-mbox
+  "mbox::mailto:frederstaz@example.org")
+
+(def cmi5-id
+  "https://w3id.org/xapi/cmi5")
+(def cmi5-version-id
+  "https://w3id.org/xapi/cmi5/v1.0")
+(def cmi5-moveon-id
+  "https://w3id.org/xapi/cmi5/context/categories/moveon")
+
+(def tla-version-id
+  "https://w3id.org/xapi/tla/v0.13")
+(def tla-completed-session-id
+  "https://w3id.org/xapi/tla#completed_session")
+
+(def referential-completed-session-id
+  "https://xapinet.org/xapi/yet/referential#completed_session")
+
+(def override-activity-1
+  {"objectType" "Activity"
+   "id"         "https://www.whatever.com/activities#course2"
+   "definition"
+   {"name"        {"en-US" "Course 2"}
+    "description" {"en-US" "Course Description 2"}
+    "type"        "http://adlnet.gov/expapi/activities/course"}})
+
+(def override-activity-2
+  {"objectType" "Agent"
+   "name"       "Owen Overrider"
+   "mbox"       "mailto:owoverrider@example.com"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 (deftest build-skeleton-test
   (testing "given valid input, returns a valid skeleton"
     (is (s/valid?
@@ -21,9 +84,9 @@
                             f1 (future (nth statement-seq 1000))
                             f2 (future (nth statement-seq 1000))]
                         (= @f1 @f2))
-        "mbox::mailto:alicefaux@example.org"
-        "mbox::mailto:bobfake@example.org"
-        "mbox::mailto:frederstaz@example.org"))))
+        alice-mbox
+        bob-mbox
+        fred-mbox))))
 
 (deftest xapi-test
   (testing "sim returns valid xapi statements"
@@ -32,9 +95,9 @@
                                              nil))]
       (are [actor-id] (s/valid? (s/every ::xs/statement)
                                 (get skeleton actor-id))
-        "mbox::mailto:alicefaux@example.org"
-        "mbox::mailto:bobfake@example.org"
-        "mbox::mailto:frederstaz@example.org"))))
+        alice-mbox
+        bob-mbox
+        fred-mbox))))
 
 (deftest stack-test
   (testing "that we can iterate for a long time w/o a stack overflow"
@@ -42,7 +105,7 @@
                   (-> fix/simple-input
                       (assoc-in [:parameters :end] nil)
                       build-skeleton
-                      (get "mbox::mailto:bobfake@example.org")
+                      (get bob-mbox)
                       (nth 10000))))))
 
 (deftest sim-seq-test
@@ -56,77 +119,65 @@
     (let [[s0 s1 & _] (sim-seq fix/simple-input)
           [s1' & _]   (sim-seq (assoc-in fix/simple-input
                                          [:parameters :from]
-                                         (get s0 "timestamp")))]
+                                         (get-timestamp s0)))]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
   (testing "multiple profiles"
     (let [double-input (update fix/simple-input :profiles conj fix/mom-profile)]
       (testing "respects gen-profiles param"
-        (is (= [[{"id" "https://w3id.org/xapi/cmi5/v1.0"}]
-                [{"id" "https://w3id.org/xapi/cmi5/context/categories/moveon"}]]
+        (is (= [[{"id" cmi5-version-id}]
+                [{"id" cmi5-moveon-id}]]
                (-> double-input
                    (update :parameters
                            assoc
-                           :gen-profiles
-                           ["https://w3id.org/xapi/cmi5"])
+                           :gen-profiles [cmi5-id])
                    sim-seq
-                   (->> (map #(get-in % ["context" "contextActivities" "category"])))
+                   (->> (map get-context-category-activities))
                    distinct))))
       (testing "respects gen-patterns param"
-        (is (= [nil [{"id" "https://w3id.org/xapi/tla/v0.13"}]]
+        (is (= [nil [{"id" tla-version-id}]]
                (-> double-input
                    (update :parameters
                            assoc
-                           :gen-patterns
-                           ["https://w3id.org/xapi/tla#completed_session"])
+                           :gen-patterns [tla-completed-session-id])
                    sim-seq
-                   (->> (map #(get-in % ["context" "contextActivities" "category"])))
+                   (->> (map get-context-category-activities))
                    distinct))))
       (testing "allows referential use of non-gen profiles"
-        (is (= [nil [{"id" "https://w3id.org/xapi/tla/v0.13"}]]
+        (is (= [nil [{"id" tla-version-id}]]
                (-> double-input
                    (update :profiles conj fix/referential-profile)
                    (update :parameters
                            assoc
-                           :gen-patterns
-                           ["https://xapinet.org/xapi/yet/referential#completed_session"])
+                           :gen-patterns [referential-completed-session-id])
                    sim-seq
-                   (->> (map #(get-in % ["context" "contextActivities" "category"])))
+                   (->> (map get-context-category-activities))
                    distinct))))))
   (testing "respects agent selection"
     (let [ret (sim-seq (assoc-in fix/simple-input [:parameters :max] 3)
                        ;; specify we only want the given agent(s)
-                       :select-agents ["mbox::mailto:bobfake@example.org"])]
+                       :select-agents [bob-mbox])]
       (is (every?
-           #(= "mailto:bobfake@example.org"
-               (get-in % ["actor" "mbox"]))
+           #(= bob-mailto (get-actor-mbox %))
            ret))))
   (testing "only actors in personae are generated"
-    (is (= #{"mailto:alicefaux@example.org"
-             "mailto:bobfake@example.org"
-             "mailto:frederstaz@example.org"}
-           (->> fix/simple-input sim-seq (map #(get-in % ["actor" "mbox"])) set))))
+    (is (= #{alice-mailto bob-mailto fred-mailto}
+           (->> fix/simple-input sim-seq (map get-actor-mbox) set))))
   (testing "can apply object override"
-    (let [ret (sim-seq (assoc fix/simple-input :alignments fix/override-alignments)
-                       :select-agents ["mbox::mailto:bobfake@example.org"])]
-      (is (every?
-           #(or (= % {"objectType" "Activity"
-                      "id"         "https://www.whatever.com/activities#course2"
-                      "definition"
-                      {"name"        {"en-US" "Course 2"}
-                       "description" {"en-US" "Course Description 2"}
-                       "type"        "http://adlnet.gov/expapi/activities/course"}})
-                (= % {"objectType" "Agent"
-                      "name"       "Owen Overrider"
-                      "mbox"       "mailto:owoverrider@example.com"}))
-           (map #(get % "object") ret)))))
+    (let [ret (sim-seq (assoc fix/simple-input
+                              :alignments fix/override-alignments)
+                       :select-agents [bob-mbox])]
+      (is (every? #(or (= override-activity-1 %)
+                       (= override-activity-2 %))
+                  (map get-object ret)))))
   (testing "can apply multiple personae"
-    (let [ret (sim-seq (update fix/simple-input :personae-array conj fix/tc3-personae))
-          ids (map #(get-in % ["actor" "mbox"]) ret)]
+    (let [ret (sim-seq (update fix/simple-input
+                               :personae-array conj fix/tc3-personae))
+          ids (map get-actor-mbox ret)]
       (is (= #{;; simple personae
-               "mailto:alicefaux@example.org"
-               "mailto:bobfake@example.org"
-               "mailto:frederstaz@example.org"
+               alice-mailto
+               bob-mailto
+               fred-mailto
                ;; tc3 personae
                "mailto:alice@example.org"
                "mailto:bob@example.org"
