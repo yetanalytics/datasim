@@ -6,7 +6,7 @@ jobs:
   nvd-scan:
     uses: yetanalytics/workflow-nvd/.github/workflows/nvd-scan.yml@v1
     with:
-      nvd-clojure-version: '3.2.0'
+      nvd-clojure-version: '2.9.0'
       # onyx dep is outdated and abandoned so don't bother scanning
       classpath-command: 'clojure -Spath -A:cli:server'
       nvd-config-filename: '.nvd/config.json'
