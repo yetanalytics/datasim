@@ -124,10 +124,10 @@
                 "http://www.example.com/meetings/series/267"
                 "http://www.example.com/meetings/series/268"]
     :scopeNote {:en "selector path, any values"}}
-   #_{:location  "$.context.contextActivities.category.*"
-      :selector  "$.id"
-      :all       ["http://www.example.com/meetings/categories/teammeeting"]
-      :scopeNote {:en "selector path, all values"}}
+   {:location  "$.context.contextActivities.category.*"
+    :selector  "$.id"
+    :all       ["http://www.example.com/meetings/categories/teammeeting"]
+    :scopeNote {:en "selector path, all values"}}
    {:location  "$.context.contextActivities.other.*"
     :selector  "$.id"
     :none      ["http://www.example.com/meetings/occurances/0"
@@ -322,6 +322,13 @@
                  "objectType" "Activity"}]
       {:location "$.context.contextActivities.parent[*].id"
        :all      ["http://www.example.com/meetings/series/268"]}
+      ;; Increment one single ID using "selector"
+      ;; FIXME: Bugged out
+      ;; "parent" [{"id" "http://www.example.com/meetings/series/268"
+      ;;            "objectType" "Activity"}]
+      ;; {:location "$.context.contextActivities.parent[*]"
+      ;;  :selector "$.id"
+      ;;  :all      ["http://www.example.com/meetings/series/268"]}
       ;; Replace ID
       "category" [{"id" "scfzd://tqe.pcufavagy.bch/armkz" ; randomly generated
                    "objectType" "Activity"

@@ -88,18 +88,14 @@
 (defn match-rule
   "The matching logic from https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
   returns a tuple, a list of matched values from location, selector, containing the key ::unmatchable if a selector cannot be matched."
-  [statement
-   {:keys [location selector] :as rule}]
-  (let [loc-values (json-path/select statement location)]
-    (into loc-values
-          (when selector
-            (mapcat
-             (fn [lv]
-               (let [selection (json-path/select lv selector)]
-                 (if (empty? selection)
-                   [::unmatchable]
-                   selection)))
-             loc-values)))))
+  [statement {:keys [location selector] :as rule}]
+  (vec (cond->> (json-path/select statement location)
+         selector
+         (mapcat (fn [lv]
+                   (let [selection (json-path/select lv selector)]
+                     (if (empty? selection)
+                       [::unmatchable]
+                       selection)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Follow
