@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.1.14] - 2023-05-08
+- Update dependencies to address CVEs:
+  - Update Jetty dependencies to `9.4.51.v20230217`
+  - Update Cheshire to `5.11.0`
+  - Update Apache Commons Fileupload to `1.5`
+  - Update Apache Jena to `4.8.0`
+- Update NVD scanning to use the stand-alone [workflow-nvd](https://github.com/yetanalytics/workflow-nvd)
+
 ## [0.1.13] - 2022-11-03
 - Update CI and CD pipelines to remove GitHub Action deprecation warnings.
 
