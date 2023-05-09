@@ -1,15 +1,19 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule
   "Apply statement template rules for generation"
-  (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.pan.objects.templates.rule :as rules]
+  (:require [clojure.core.memoize :as memo]
+            [clojure.set :as cset]
+            [clojure.spec.alpha :as s]
+            [clojure.test.check.generators :as gen]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.pan.objects.templates.rule :as pan-rules]
             [com.yetanalytics.datasim.json :as j]
             [com.yetanalytics.datasim.json.path :as json-path]
             [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.random :as random]
-            [clojure.set :as cset]
-            [clojure.test.check.generators :as gen]
-            [clojure.core.memoize :as memo]))
+            [com.yetanalytics.datasim.random :as random]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::location
   ::json-path/json-path)
@@ -33,16 +37,19 @@
            :into #{}))
 
 (s/def ::parsed-rule
-  (s/keys :req-un [::location
-                   ]
-          :opt-un [::any
+  (s/keys :req-un [::location]
+          :opt-un [::selector
+                   ::any
                    ::all
                    ::none
-                   ::selector
-                   ::rules/presence]))
+                   ::pan-rules/presence]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Parse
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef parse-rule
-  :args (s/cat :rule ::rules/rule)
+  :args (s/cat :rule ::pan-rules/rule)
   :ret ::parsed-rule)
 
 (defn parse-rule*
@@ -68,6 +75,10 @@
 (def parse-rule
   (memo/lru parse-rule* {} :lru/threshold 4096))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Match
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
                :rule ::parsed-rule)
@@ -89,6 +100,10 @@
                    [::unmatchable]
                    selection)))
              loc-values)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Follow
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
@@ -211,9 +226,13 @@
    (false? (replicate-conditional test-set-2))
    (true? (replicate-conditional test-set-3))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Apply
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
-               :raw-rules (s/every ::rules/rule)
+               :raw-rules (s/every ::pan-rules/rule)
                :options (s/keys* :req-un [::random/seed]))
   :ret ::xs/statement)
 
