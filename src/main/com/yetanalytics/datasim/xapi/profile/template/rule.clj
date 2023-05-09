@@ -53,23 +53,23 @@
   :ret ::parsed-rule)
 
 (defn parse-rule*
-  "Parse paths in a rule"
+  "Parse the `location` and `selector` paths in `rule` and set-ify `any`,
+   `all`, and `none` values, so that the rule can be used by other functions
+   in this namespace."
   [{:keys [location selector] :as rule}]
-  (cond-> (assoc
-           (reduce-kv
-            (fn [m k v]
-              (if (or (= :presence k)
-                      ;; custom key added for extension generation hint
-                      ;; -> addition to rule is strictly controlled, see `com.yetanalytics.datasim.xapi.extensions`
-                      (= :spec k))
-                (assoc m k v)
-                (assoc m k (set v))))
-            {}
-            (select-keys rule [:any :all :none :presence :spec]))
-           :location (into []
-                           (json-path/parse location)))
-    selector (assoc :selector
-                    (into [] (json-path/parse selector)))))
+  (cond-> (reduce-kv
+           (fn [m k v]
+             ;; Custom `:spec` key added for extension generation hint.
+             ;; Addition to rule is strictly controlled,
+             ;; see `com.yetanalytics.datasim.xapi.extensions`.
+             (if (#{:presence :spec} k)
+               (assoc m k v)
+               (assoc m k (set v))))
+           {}
+           (select-keys rule [:any :all :none :presence :spec]))
+    ;; location is always present so it's always re-assoc'd
+    location (assoc :location (into [] (json-path/parse location)))
+    selector (assoc :selector (into [] (json-path/parse selector)))))
 
 ;; TODO: Memoize in scope
 (def parse-rule
