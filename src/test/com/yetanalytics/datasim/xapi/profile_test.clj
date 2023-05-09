@@ -1,31 +1,39 @@
 (ns com.yetanalytics.datasim.xapi.profile-test
-  (:require
-   [clojure.test :refer [deftest testing is]]
-   [clojure.spec.alpha :as s]
-   [clojure.spec.test.alpha :as stest]
-   [com.yetanalytics.datasim.xapi.profile :as profile]
-   [com.yetanalytics.datasim.input :as input]
-   [com.yetanalytics.datasim.random :as random]))
+  (:require [clojure.test :refer [deftest testing is]]
+            [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as stest]
+            [com.yetanalytics.datasim.xapi.profile :as profile]
+            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.test-constants :as const]))
 
-(def test-input (input/from-location
-                 :input :json "dev-resources/input/simple.json"))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ID Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def cmi5-id "https://w3id.org/xapi/cmi5")
+(def cmi5-pattern-id "https://w3id.org/xapi/cmi5#toplevel")
+(def tla-id "https://w3id.org/xapi/tla")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Basic Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftest profiles->map-test
   (testing "profiles->map function"
     (is (s/valid? ::profile/iri-map
-                  (profile/profiles->map (:profiles test-input))))))
+                  (profile/profiles->map (:profiles const/simple-input))))))
 
 (deftest pattern-zip-test
   (testing "pattern-zip function"
     (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)
-           (-> test-input
+           (-> const/simple-input
                :profiles
                profile/profiles->map
                profile/pattern-zip
                meta
                keys)))
     (is (s/valid? ::profile/iri-map
-                  (-> test-input
+                  (-> const/simple-input
                       :profiles
                       profile/profiles->map
                       profile/pattern-zip
@@ -33,8 +41,8 @@
                       (dissoc ::profile/root))))
     (is (= {:id         ::profile/root
             :type       "Pattern"
-            :alternates ["https://w3id.org/xapi/cmi5#toplevel"]}
-           (-> test-input
+            :alternates [cmi5-pattern-id]}
+           (-> const/simple-input
                :profiles
                profile/profiles->map
                profile/pattern-zip
@@ -158,20 +166,21 @@
   (s/cat :satisfieds cmi5-satisfieds?
          :typical-sessions cmi5-typical-sessions?))
 
-(defn gen-single-walk [seed]
-  (->>
-   (profile/rand-pattern-zip
-    (profile/profiles->map (:profiles test-input))
-    (:alignments test-input)
-    (random/seed-rng seed))
-   profile/walk-once
-   (keep (fn [loc]
-           (let [loc-obj (profile/loc-object loc)]
-             (if (= "StatementTemplate" (:type loc-obj)) loc-obj nil))))))
-
 (s/fdef gen-single-walk
-        :args (s/cat :seed int?)
-        :ret cmi5-general-pattern?)
+  :args (s/cat :seed int?)
+  :ret cmi5-general-pattern?)
+
+(defn gen-single-walk [seed]
+  (let [{:keys [profiles alignments]} const/simple-input
+        profile-map (profile/profiles->map profiles)
+        seeded-rng  (random/seed-rng seed)]
+    (->> (profile/rand-pattern-zip profile-map
+                                   alignments
+                                   seeded-rng)
+         profile/walk-once
+         (keep (fn [loc]
+                 (let [{obj-type :type :as loc-obj} (profile/loc-object loc)]
+                   (when (= "StatementTemplate" obj-type) loc-obj)))))))
 
 (deftest zip-walk-test
   (testing "rand-pattern-zip followed by walk-once"
@@ -179,46 +188,45 @@
           (stest/summarize-results (stest/check `gen-single-walk))]
       (is (= total check-passed)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; cmi5 + tla profiles tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def combined-iri-map
+  (profile/profiles->map [const/cmi5-profile const/mom-profile]))
+
+(defn- primary-pattern-ids
+  [patterns]
+  (keep (fn [{:keys [id primary]}] (when primary id)) patterns))
+
 (deftest select-primary-patterns-test
-  (let [iri-map (profile/profiles->map
-                 [(input/from-location :profile :json
-                                       "dev-resources/profiles/cmi5/fixed.json")
-                  (input/from-location :profile :json
-                                       "dev-resources/profiles/tla/mom.jsonld")])]
-    (testing "with no params, returns iri map"
-      (is (= iri-map
-             (profile/select-primary-patterns
-              iri-map {}))))
-    (testing "profile selection implies patterns"
-      (is (= iri-map
-             (profile/select-primary-patterns
-              iri-map
-              {:gen-profiles ["https://w3id.org/xapi/cmi5"
-                              "https://w3id.org/xapi/tla"]})))
-      (testing "unless also specified"
-        (is (not= iri-map
-                  (profile/select-primary-patterns
-                   iri-map
-                   {:gen-profiles ["https://w3id.org/xapi/cmi5"
-                                   "https://w3id.org/xapi/tla"]
-                    :gen-patterns ["https://w3id.org/xapi/cmi5#toplevel"]})))))
-    (testing "filters by profile"
-      (is (= ["https://w3id.org/xapi/cmi5#toplevel"]
-             (-> (profile/select-primary-patterns
-                  iri-map
-                  {:gen-profiles ["https://w3id.org/xapi/cmi5"]})
-                 vals
-                 (->>
-                  (keep (fn [{:keys [id primary]}]
-                          (when primary
-                            id))))))))
-    (testing "filters by pattern"
-      (is (= ["https://w3id.org/xapi/cmi5#toplevel"]
-             (-> (profile/select-primary-patterns
-                  iri-map
-                  {:gen-patterns ["https://w3id.org/xapi/cmi5#toplevel"]})
-                 vals
-                 (->>
-                  (keep (fn [{:keys [id primary]}]
-                          (when primary
-                            id))))))))))
+  (testing "with no params, returns iri map"
+    (is (= combined-iri-map
+           (profile/select-primary-patterns
+            combined-iri-map
+            {}))))
+  (testing "profile selection implies patterns"
+    (is (= combined-iri-map
+           (profile/select-primary-patterns
+            combined-iri-map
+            {:gen-profiles [cmi5-id tla-id]})))
+    (testing "unless also specified"
+      (is (not= combined-iri-map
+                (profile/select-primary-patterns
+                 combined-iri-map
+                 {:gen-profiles [cmi5-id tla-id]
+                  :gen-patterns [cmi5-pattern-id]})))))
+  (testing "filters by profile"
+    (is (= [cmi5-pattern-id]
+           (-> (profile/select-primary-patterns
+                combined-iri-map
+                {:gen-profiles [cmi5-id]})
+               vals
+               primary-pattern-ids))))
+  (testing "filters by pattern"
+    (is (= [cmi5-pattern-id]
+           (-> (profile/select-primary-patterns
+                combined-iri-map
+                {:gen-patterns [cmi5-pattern-id]})
+               vals
+               primary-pattern-ids)))))
