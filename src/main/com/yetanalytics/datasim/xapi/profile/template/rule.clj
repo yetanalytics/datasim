@@ -85,10 +85,12 @@
   :ret (s/every (s/or :json ::j/any
                       :unmatchable #{::unmatchable})))
 
+;; matching logic from:
+;; https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
 (defn match-rule
-  "The matching logic from https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
-  returns a tuple, a list of matched values from location, selector, containing the key ::unmatchable if a selector cannot be matched."
-  [statement {:keys [location selector] :as rule}]
+  "Return a vector of matchable values. If a selector cannot match any values
+   it returns the `::unmatchable` keyword in its place."
+  [statement {:keys [location selector]}]
   (vec (cond->> (json-path/select statement location)
          selector
          (mapcat (fn [lv]
@@ -108,80 +110,81 @@
                                             :unmatchable #{::unmatchable}))))
   :ret boolean?)
 
-(defn follows-rule?
-  "simple predicate check for a rule being satisfied by a statement
-  a la https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation.
-  You can pass in matches for efficiency's sake."
-  [statement
-   {:keys                                                 [location selector
-                                                           any all none presence] :as rule}
-   & [matches]]
-  (let [strict (if (= presence "recommended")
-                 false
-                 true)
-        values (or matches (match-rule statement rule))]
-    (and (if presence
-           (case presence
-             "included"
-             (if (or (empty? values)
-                     (contains? values ::unmatchable))
-               false
-               true)
-             "excluded"
-             (if (and (not-empty values)
-                      (not-empty (remove #{::unmatchable} values)))
-               false
-               true)
-             "recommended" true)
+(defn- follows-rule-presence?
+  [presence values]
+  (case presence
+    "included" ; no unmatchable values
+    (and (boolean (not-empty values))
+         (every? (comp not #{::unmatchable}) values))
+    "excluded" ; only unmatchable values
+    (or (empty? values)
+        (boolean (some #{::unmatchable} values)))
+    ;; recommended or no presence
+    true))
+
+(comment
+  [[1]])
+
+(defn- follows-rule-values?
+  [presence any all none values]
+  (let [strict? (-> presence (= "recommended") not)
+        ignore? (-> presence (= "excluded"))]
+    (or ignore?
+        (and
+         (if (and any
+                  (or strict? (not-empty values)))
+           (boolean (not-empty (cset/intersection (set values) any)))
            true)
-         (if (= presence "excluded")
-           true ;; ignore
-           (and
-            (if (and any
-                     (or strict (not-empty values)))
-              (not (empty? (cset/intersection (set values) any)))
-              true)
-            (if (and all
-                     (or strict (not-empty values)))
-              (let [values-set* (if (and (coll? values)
-                                         (coll? (first values))
-                                         (= 1 (count values)))
-                                  ;; first and only coll in a coll of colls
-                                  (first values)
-                                  values)
-                    values-set (cond
-                                 ;; most cases, gaurd for map to prevent conversion to keypairs
-                                 (and (coll? values-set*) (not (map? values-set*)))
-                                 (into #{} values-set*)
-                                 ;; if `all` specified an object for the location, prevent conversion to keypairs
-                                 (map? values-set*)
-                                 #{values-set*}
-                                 ;; attempt conversion to set, throw on error
-                                 (some? values-set*)
-                                 (try (set values-set*)
-                                      (catch Exception e
-                                        (throw (ex-info "Unexpected State!"
-                                                        {:type            ::rule-check-error
-                                                         :rule            rule
-                                                         :statement       statement
-                                                         :matched         matches
-                                                         :values          values
-                                                         :values-set*     values-set*}
-                                                        e))))
-                                 :else #{})]
-                (not (or (contains? values ::unmatchable)
-                         (empty? values)
-                         (not
-                          ;; see `match-all-logic-test` bellow for logic proof
-                          (if (empty? (cset/difference all values-set))
-                            (cset/superset? all values-set)
-                            false)))))
-              true)
-            (if (and none
-                     (or strict (not-empty values)))
-              (not (some (partial contains? none)
-                         values))
-              true))))))
+         (if (and all
+                  (or strict? (not-empty values)))
+           (let [values-set* (if (and (coll? values)
+                                      (coll? (first values))
+                                      (= 1 (count values)))
+                           ;; first and only coll in a coll of colls
+                               (first values)
+                               values)
+                 values-set
+                 (cond
+                   ;; most cases, guard for map to prevent conversion to keypairs
+                   (and (coll? values-set*) (not (map? values-set*)))
+                   (into #{} values-set*)
+                   ;; if `all` specified an object for the location, prevent conversion to keypairs
+                   (map? values-set*)
+                   #{values-set*}
+                   ;; attempt conversion to set, throw on error
+                   (some? values-set*)
+                   (try (set values-set*)
+                        (catch Exception e
+                          (throw (ex-info "Unexpected State!"
+                                          {:type        ::rule-check-error
+                                           :values      values
+                                           :values-set* values-set*}
+                                          e))))
+                   :else #{})
+                 ;; FIXME: THis is the correct way to do such things
+                 #_values-set #_(set values)]
+             (not (or
+               ;; Unmatchable values?
+                   (some #{::unmatchable} values)
+                   (empty? values)
+               ;; see `match-all-logic-test` bellow for logic proof
+                   (not (if (empty? (cset/difference all values-set))
+                          (cset/superset? all values-set)
+                          false)))))
+           true)
+         (if (and none
+                  (or strict? (not-empty values)))
+           (not (some (partial contains? none)
+                      values))
+           true)))))
+
+(defn follows-rule?
+  "Does `statement `follow `rule`? `matches` can be provided to avoid
+   re-finding the matched values."
+  [statement {:keys [any all none presence] :as rule} & [matches]]
+  (let [values (or matches (match-rule statement rule))]
+    (and (follows-rule-presence? presence values)
+         (follows-rule-values? presence any all none values))))
 
 (comment
   ;; -> everything within `all-set` within `target-set`?
