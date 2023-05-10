@@ -236,7 +236,7 @@
   :ret ::xs/statement)
 
 (defn- valid-value?
-  [{:keys [all any none] :as rule} v]
+  [{:keys [all none]} v]
   (and (if all
          (contains? all v)
          true)
@@ -250,39 +250,46 @@
     selector
     (json-path/excise (into location selector) :prune-empty? true)))
 
+(defn- xapi-generator
+  [statement {:keys [none spec] :as rule} location-enum]
+  (cond->> (s/gen
+            (or spec ;; known to be `s/gen` safe
+                (try (xp/path->spec
+                      ::xs/statement
+                      (first location-enum)
+                      statement)
+                     (catch java.lang.AssertionError ae
+                       (throw (ex-info "Couldn't figure out xapi path"
+                                       {:type      ::undefined-path
+                                        :key-path  (first location-enum)
+                                        :rule      rule
+                                        :statement statement}
+                                       ae))))))
+    (not-empty none)
+    (gen/such-that (partial (complement contains?)
+                            none))))
+
+(defn- generate-xapi
+  [statement rule location-enum rng]
+  (try (gen/generate (xapi-generator statement rule location-enum)
+                     30
+                     (random/rand-long rng))
+       (catch clojure.lang.ExceptionInfo exi
+         (throw (ex-info "Generation error!"
+                         {:type      ::gen-error
+                          :rule      rule
+                          :statement statement}
+                         exi)))))
+
 ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
 (defn- apply-rule
-  [statement {:keys [location any all none spec] :as rule} rng matches]
+  [statement {:keys [location any all] :as rule} rng matches]
   (let [discrete? (json-path/discrete? location)
         location-enum (if discrete?
                         (json-path/enumerate location)
                         (json-path/enumerate location :limit 3))
         ;; spec generation is expensive, let's wrap it up for control
-        gen-xapi! (fn []
-                    (try (gen/generate
-                          (cond->> (s/gen
-                                    (or spec ;; known to be `s/gen` safe
-                                        (try (xp/path->spec
-                                              ::xs/statement
-                                              (first location-enum)
-                                              statement)
-                                             (catch java.lang.AssertionError ae
-                                               (throw (ex-info "Couldn't figure out xapi path"
-                                                               {:type      ::undefined-path
-                                                                :key-path  (first location-enum)
-                                                                :rule      rule
-                                                                :statement statement}
-                                                               ae))))))
-                            (not-empty none) (gen/such-that (partial (complement contains?)
-                                                                     none)))
-                          30 (random/rand-long rng))
-                         (catch clojure.lang.ExceptionInfo exi
-                           (throw (ex-info "Generation error!"
-                                           {:type            ::gen-error
-                                            :rule            rule
-                                            :statement       statement
-                                            :matched         matches}
-                                           exi)))))
+        gen-xapi! (fn [] (generate-xapi statement rule location-enum rng))
         any-all (not-empty (concat any all))
         ;; In certain situations, we should attempt to make the
         ;; values distinct. This is pretty open ended, but generally
