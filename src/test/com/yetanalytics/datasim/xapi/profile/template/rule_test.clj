@@ -5,7 +5,8 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
-            [com.yetanalytics.datasim.test-constants :as const]))
+            [com.yetanalytics.datasim.test-constants :as const])
+  (:import [clojure.lang ExceptionInfo]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -14,14 +15,14 @@
 (def gen-seed 100)
 
 (def short-statement
-  {"id"        "59de1b06-bb6c-4708-a51a-b3d403c491db",
+  {"id"        "59de1b06-bb6c-4708-a51a-b3d403c491db"
    "actor"     {"name" "Alice Faux"
-                "mbox" "mailto:alice@example.org"},
-   "verb"      {"id" "https://adlnet.gov/expapi/verbs/launched"},
-   "object"    {"id"         "https://example.org/career/1054719918",
-                "definition" {"type" "https://w3id.org/xapi/tla/activity-types/career"},
-                "objectType" "Activity"},
-   "context"   {"registration" "d7acfddb-f4c2-49f4-a081-ad1fb8490448"},
+                "mbox" "mailto:alice@example.org"}
+   "verb"      {"id" "https://adlnet.gov/expapi/verbs/launched"}
+   "object"    {"id"         "https://example.org/career/1054719918"
+                "definition" {"type" "https://w3id.org/xapi/tla/activity-types/career"}
+                "objectType" "Activity"}
+   "context"   {"registration" "d7acfddb-f4c2-49f4-a081-ad1fb8490448"}
    "timestamp" "2021-03-18T17:36:22.131Z"})
 
 (def long-statement
@@ -490,6 +491,41 @@
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "other"]))))))
 
+(deftest apply-rules-gen-exception-test
+  (testing "apply-rules-gen throws exceptions if rules are invalid"
+    ;; Flat-out invalid Statement property
+    (is (= ::r/gen-error
+           (try (r/apply-rules-gen
+                 short-statement
+                 [{:location "$.object.zooWeeMama"
+                   :presence "included"}]
+                 :seed gen-seed)
+                nil
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    ;; Actor name in an Activity object
+    (is (= ::r/gen-error
+           (try (r/apply-rules-gen
+                 short-statement
+                 [{:location "$.object.name"
+                   :presence "included"}]
+                 :seed gen-seed)
+                nil
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    ;; Activity definition in an Actor object
+    (is (= ::r/gen-error
+           (try (r/apply-rules-gen
+                 short-statement
+                 [;; First replace the Activity object with an Actor object
+                  {:location "$.object"
+                   :all      [{"objectType" "Agent"
+                               "name"       "Owen Overrider"
+                               "mbox"       "mailto:owoverrider@example.com"}]}
+                  {:location "$.object.definition.type"
+                   :presence "included"}]
+                 :seed gen-seed)
+                nil
+                (catch ExceptionInfo e (-> e ex-data :type)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CMI5 Rule Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -528,3 +564,68 @@
           (is (every? (partial r/follows-rule? processed)
                       (map r/parse-rule rules)))
           (is (nil? (s/explain-data ::xs/statement processed))))))))
+
+(comment
+  (r/apply-rules-gen
+   {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
+    "timestamp" "2015-11-18T12:17:00+00:00",
+    "actor"
+    {"objectType" "Agent",
+     "name" "Project Tin Can API",
+     "mbox" "mailto:user@example.com"},
+    "verb"
+    {"id" "http://example.com/xapi/verbs#sent-a-statement",
+     "display" {"en-US" "sent"}},
+    "object"
+    {"id" "http://example.com/xapi/activity/simplestatement",
+     "definition"
+     {"name" {"en-US" "simple statement"},
+      "description"
+      {"en-US"
+       "A simple Experience API statement. Note that the LRS \n\t\t\t\tdoes not need to have any prior information about the Actor (learner), the \n\t\t\t\tverb, or the Activity/object."}}}}
+   [{:location "$.object.definition.type"}]
+   #_[{:location "$.verb.display.en-US", :all ["Launched"]}
+    {:location "$.verb.display.zh-CN", :all ["展开"]}
+    {:location "$.verb.display.zh-CN", :none ["展开"]}]
+   #_[{:location "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/launchmode']"
+       :presence "included"
+       :all      ["Review" "Normal" "Browse"]}]
+   :seed gen-seed) 
+
+   (r/follows-rule?
+    {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
+     "timestamp" "2015-11-18T12:17:00+00:00",
+     "actor"
+     {"objectType" "Agent",
+      "name" "Project Tin Can API",
+      "mbox" "mailto:user@example.com"},
+     "verb"
+     {"id" "http://example.com/xapi/verbs#sent-a-statement",
+      "display" {"en-US" "sent"}},
+     "object"
+     {"objectType" "Agent"
+      "name"       "Owen Overrider"
+      "mbox"       "mailto:owoverrider@example.com"}}
+    (r/parse-rule {:location "$.object.definition.type"
+                   :presence "included"}))
+
+   (r/apply-rules-gen
+    {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
+     "timestamp" "2015-11-18T12:17:00+00:00",
+     "actor"
+     {"objectType" "Agent",
+      "name" "Project Tin Can API",
+      "mbox" "mailto:user@example.com"},
+     "verb"
+     {"id" "http://example.com/xapi/verbs#sent-a-statement",
+      "display" {"en-US" "sent"}},
+     "object"
+     {"objectType" "Agent"
+      "name"       "Owen Overrider"
+      "mbox"       "mailto:owoverrider@example.com"}}
+    [{:location "$.object.definition.type"
+      :presence "included"}]
+    #_[{:location "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/launchmode']"
+        :presence "included"
+        :all      ["Review" "Normal" "Browse"]}]
+    :seed gen-seed))
