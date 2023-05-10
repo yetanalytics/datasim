@@ -50,7 +50,7 @@
 (def referential-completed-session-id
   "https://xapinet.org/xapi/yet/referential#completed_session")
 
-(def override-activity-1
+(def override-object-1
   {"objectType" "Activity"
    "id"         "https://www.whatever.com/activities#course2"
    "definition"
@@ -58,7 +58,7 @@
     "description" {"en-US" "Course Description 2"}
     "type"        "http://adlnet.gov/expapi/activities/course"}})
 
-(def override-activity-2
+(def override-object-2
   {"objectType" "Agent"
    "name"       "Owen Overrider"
    "mbox"       "mailto:owoverrider@example.com"})
@@ -164,11 +164,16 @@
     (is (= #{alice-mailto bob-mailto fred-mailto}
            (->> const/simple-input sim-seq (map get-actor-mbox) set))))
   (testing "can apply object override"
+    ;; FIXME: This input is very fragile: it can potentially cause an exception
+    ;; since one of the StatementTemplate rules in the Profile specifies an
+    ;; $.object.definition.type location, which clashes with override-object-2.
+    ;; Such a situation should ideally raise a validation error so simulation
+    ;; cannot occur in the first place.
     (let [ret (sim-seq (assoc const/simple-input
                               :alignments const/override-alignments)
                        :select-agents [bob-mbox])]
-      (is (every? #(or (= override-activity-1 %)
-                       (= override-activity-2 %))
+      (is (every? #(or (= override-object-1 %)
+                       (= override-object-2 %))
                   (map get-object ret)))))
   (testing "can apply multiple personae"
     (let [ret (sim-seq (update const/simple-input
