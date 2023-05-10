@@ -284,64 +284,61 @@
 ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
 (defn- apply-rule
   [statement {:keys [location any all] :as rule} rng matches]
-  (let [discrete? (json-path/discrete? location)
-        location-enum (if discrete?
-                        (json-path/enumerate location)
-                        (json-path/enumerate location :limit 3))
-        ;; spec generation is expensive, let's wrap it up for control
-        gen-xapi! (fn [] (generate-xapi statement rule location-enum rng))
-        any-all (not-empty (concat any all))
-        ;; In certain situations, we should attempt to make the
+  (let [;; In certain situations, we should attempt to make the
         ;; values distinct. This is pretty open ended, but generally
         ;; if the path points at an ID this is sane to do...
-        distinct? (= #{"id"} (last location))
+        distinct-vals? (= #{"id"} (last location))
+        discrete-locs? (json-path/discrete? location)
+        ?any-all-coll  (not-empty (concat any all))
+        loc-enum-limit (max
+                        ;; gotta be at least 1
+                        1
+                        ;; gotta be at least as many matched values, if we
+                        ;; need to override them
+                        (count (remove (partial = ::unmatchable) matches))
+                        ;; or as many as all provided any or all values
+                        (count ?any-all-coll)
+                        ;; or maybe up to N
+                        #_(if distinct-vals? ;; for distinct, use what we have
+                            1
+                            (random/rand-int* rng 10)))
+        location-enum (json-path/enumerate location :limit loc-enum-limit)
+        ;; spec generation is expensive, let's wrap it up for control
+        generate-xapi (partial generate-xapi statement rule location-enum rng)
         values
-        (if (and discrete?
+        (if (and discrete-locs?
                  (= 1 (count location-enum))) ;; a single loc that must conform
           (if (not-empty all)
             (into [] all)
             [(if (not-empty any)
                (random/choose rng {} any)
-               (gen-xapi!))])
+               (generate-xapi))])
           #_[(cond (not-empty any)
                    (random/choose rng {} any)
                    (not-empty all)
                    (random/choose rng {} all)
                    :else (gen-xapi!))]
           ;; multiple discrete locs or infinite locs
-          (loop [loc-enum (cond->> location-enum
-                            ;; only needs limiting if not discrete
-                            (not discrete?) (take (max
-                                                   ;; gotta be at least 1
-                                                   1
-                                                   ;; gotta be at least as many as matched
-                                                   (count (remove (partial = ::unmatchable)
-                                                                  matches))
-                                                   ;; or as many as all provided vals
-                                                   (count (concat any all))
-                                                   ;; or maybe up to N
-                                                   (if distinct? ;; for distinct, use what we have
-                                                     1
-                                                     (random/rand-int* rng 10)))))
-                 vs []
+          (loop [loc-enum location-enum
+                 vs       []
                  any-sat? false]
             (if-let [path (first loc-enum)]
               (let [?match (get-in statement path)
                     v (cond (and (some? ?match) (valid-value? rule ?match))
                             ?match
-                            any-all
+                            ?any-all-coll
                             ;; try to use each provided val once
                             (if-let [any-all-remaining (not-empty (remove
                                                                    (partial contains? vs)
-                                                                   any-all))]
+                                                                   ?any-all-coll))]
                               (random/choose rng {} any-all-remaining)
                               ;; but it is better to repeat then gen
                               ;; unless this should be distinct...
-                              (if distinct?
-                                (gen-xapi!)
-                                (random/choose rng {} any-all)))
+                              (if distinct-vals?
+                                (generate-xapi)
+                                (random/choose rng {} ?any-all-coll)))
                             :else
-                            (gen-xapi!))]
+                            (generate-xapi))]
                 (recur (rest loc-enum)
                        (conj vs v)
                        (or any-sat?

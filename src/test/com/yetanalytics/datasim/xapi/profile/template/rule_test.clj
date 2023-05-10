@@ -354,7 +354,8 @@
                 "objectType" "Activity"}
                {"id" ["http://www.example.com/meetings/occurances/foo"
                       "http://www.example.com/meetings/occurances/bar"
-                      "http://www.example.com/meetings/occurances/qux"]}]
+                      "http://www.example.com/meetings/occurances/qux"
+                      "http://www.example.com/meetings/occurances/foo"]}]
       {:location "$.context.contextActivities.other[*].id"
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"
