@@ -386,7 +386,21 @@
                                  "type"        "http://example.com/expapi/activities/meetingcategory"}}
                   {"definition" {"description" [{"en" "A category of meeting used for regular team meetings."} {"en" "foo"}]}}]
       {:location "$.context.contextActivities.category[0,1].definition.description"
-       :any      [{"en" "foo"}]})))
+       :any      [{"en" "foo"}]}
+      ;; Try creating multiple distinct IDs, but only one ID is available
+      ;; FIXME: Obviously bugged out
+      "grouping" [{"id" "http://www.example.com/only-id"}
+                  {"id" "http://www.example.com/only-id"}
+                  {"id" '("http://www.example.com/only-id")}]
+      {:location "$.context.contextActivities.grouping[0,1,2].id"
+       :presence "included"
+       :all      ["http://www.example.com/only-id"]}
+      ;; Same thing as above but with array splicing
+      ;; FIXME: Array splice does not work
+      "grouping" [{"id" "http://www.example.com/only-id"}]
+      {:location "$.context.contextActivities.grouping[0:2].id"
+       :presence "included"
+       :all      ["http://www.example.com/only-id"]})))
 
 ;; Apply a collection of rules
 (deftest apply-rule-coll-gen-test
@@ -524,7 +538,22 @@
                    :presence "included"}]
                  :seed gen-seed)
                 nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))))
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    ;; Try to generate with gaps in the array
+    ;; TODO: Add another test case where this rule also has a grouping[0]
+    ;; counterpart
+    ;; FIXME: Should either do one of the following:
+    ;; a) create dummy values to fill in the gaps
+    ;; b) throw/return a validation error for invalid rule/template
+    ;; c) throw/return an error that's more descriptive than IndexOutOfBounds
+    (is (try (r/apply-rules-gen
+              long-statement
+              [{:location "$.context.contextActivities.grouping[1].definition.type"
+                :presence "included"
+                :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}]
+              :seed gen-seed)
+             false
+             (catch IndexOutOfBoundsException _ true)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CMI5 Rule Tests
