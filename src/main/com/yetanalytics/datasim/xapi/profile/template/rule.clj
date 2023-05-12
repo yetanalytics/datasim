@@ -281,6 +281,235 @@
                           :statement statement}
                          exi)))))
 
+;; START EXPERIMENTS
+(comment
+  {:any [1 2 3]
+   :all [1 2]}
+  ;; => 1 2
+  {:any [1 2]
+   :all [1 2 3]}
+  ;; => 1 2 OR 1 3 OR 2 3
+  {:any [1 2]
+   :all [3 4]}
+  ;; => No choices
+  
+  (def any #{1 2 3 4 5})
+  (def all #{1 2 3 4 6})
+  (def none #{4})
+
+  (->> any
+       (filter all)
+       (filter (comp not none))))
+
+(defn- combo-with-replacement
+  "Select a vector of `n` items from `value-set` with replacement. Each
+   particular combination has a `1 / (count value-set)^n` probability of being
+   returned."
+  [rng value-set n]
+  (vec (repeatedly n #(random/choose rng {} value-set))))
+
+(defn- combo-without-replacement
+  "Select `n` items from `value-set` without replacement. Each particular
+   combination has a `1 / (choose (count value-set) n)` probability of
+   being returned."
+  [rng value-set n]
+  (loop [vset  value-set
+         combo (transient [])
+         idx   0]
+    (if (and (< idx n)
+             (not-empty vset))
+      (let [x (random/choose rng {} vset)]
+        (recur (disj vset x) (conj! combo x) (inc idx)))
+      (persistent! combo))))
+
+;; See `clojure.math.combinatorics/index-combinations`
+(defn- combinations
+  "Return an infinite lazy seq of combinations of `n` values from `value-set`,
+   whose entries are randomly selected. `replace?` determines whether the
+   values are selected with or without replacement; by default they are
+   selected with replacement."
+  ([rng value-set n]
+   (combinations rng value-set n true))
+  ([rng value-set n replace?]
+   (let [combo-fn      (if replace?
+                         #(combo-with-replacement rng value-set n)
+                         #(combo-without-replacement rng value-set n))
+         combinations* (fn combinations* [combo-fn]
+                         (lazy-seq
+                          (cons (combo-fn)
+                                (combinations* combo-fn))))]
+     (lazy-seq
+      (combinations* combo-fn)))))
+
+(defn- rule-values
+  "Return a coll of `n` values specified by `any`, `all`, and `none`."
+  [{:keys [any all none]} n rng gen-xapi replace?]
+  (cond
+    ;; Guards
+    (and all any (empty? (cset/intersection any all)))
+    (throw (ex-info "No `all` values exist in `any` - generation impossible."
+                    {:type ::gen-error
+                     :any  any
+                     :all  all}))
+    (and all none (= all none))
+    (throw (ex-info "Every `all` value exists in `none` - generation impossible."
+                    {:type ::gen-error
+                     :all  all
+                     :none none}))
+    (and any none (= any none))
+    (throw (ex-info "Every `any` value exists in `none` - generation impossible"
+                    {:type ::gen-error
+                     :any  any
+                     :none none}))
+    ;; Generation
+    all
+    (first (cond->> (combinations rng all n replace?)
+             true (map set)
+             any  (filter (fn [aset] (not-empty (cset/intersection any aset))))
+             none (filter (fn [aset] (empty? (cset/intersection none aset))))))
+    any   ; treat `any` like `all`
+    (first (cond->> (combinations rng any n replace?)
+             true (map set)
+             none (filter (fn [aset] (empty? (cset/intersection none aset))))))
+    :else ; `gen-xapi` already incorporates `none` filter
+    (set (repeatedly n gen-xapi))))
+
+(comment
+  (def the-rng (random/seed-rng 100)) 
+   
+  (take 10 (combinations the-rng
+                         (set (range 1000))
+                         3
+                         false))
+
+  (rule-values {:any  #{} ; #_{1 2 3 4 5}
+                :all  (set (range 100))
+                :none #{4}}
+               3
+               the-rng
+               (fn [] (random/rand-int* the-rng 10))
+               true)
+
+  (rule-values {:none #{11 12}}
+               3
+               the-rng
+               (fn [] (random/rand-int* the-rng 10))
+               false)
+  )
+
+(defn- rule-values-2
+  [{:keys [any all none]} extant n rng gen-fn]
+  (let [choose   (partial random/choose rng {})
+        ext-set  (cond-> (set extant)
+                   all  (cset/intersection all)
+                   none (cset/difference none))
+        ?all     (some-> all (cset/difference ext-set))
+        ?any     (some-> any (cset/difference ext-set))
+        ?any-all (and any all (cset/intersection ?any ?all))]
+    (loop [extant   extant
+           new      []
+           any-sat? (nil? ?any) ; ignore if `any` is not present
+           idx      0]
+      (cond
+        (>= idx n)
+        new
+        (contains? ext-set (first extant)) ; skip if value already follows rule
+        (recur (rest extant)
+               (conj new (first extant))
+               any-sat?
+               (inc idx))
+        (not any-sat?) ; add at least one value from `any`
+        (recur (rest extant)
+               (conj new (choose (or ?any-all ?any)))
+               (boolean true) ; avoid weird "recur arg for primitive local" err
+               (inc idx))
+        ?all
+        (recur (rest extant)
+               (conj new (choose ?all))
+               any-sat?
+               (inc idx))
+        :else
+        (recur (rest extant)
+               (conj new (gen-fn))
+               any-sat?
+               (inc idx))))))
+
+(defn- rule-values-3
+  [{:keys [any all none]} extant n rng gen-fn replace?]
+  (let [n         (max n (count extant))
+        select-fn (if replace?
+                    random/select-replace
+                    random/select-no-replace)
+        ext-set*  (cond-> (set extant)
+                    all  (cset/intersection all)
+                    none (cset/difference none)
+                    true (disj nil))
+        extant*   (->> extant (filter ext-set*))
+        ext-set   (cond-> ext-set*
+                    ;; If none of the pre-existing values are found in `any`,
+                    ;; remove a random one so we can insert an `any` value.
+                    (and (= n (count extant*))
+                         (empty? (cset/intersection ext-set* any)))
+                    (disj (random/choose rng {} ext-set*)))
+        ?all      (and all (cset/difference all ext-set))
+        ?any      (and any (cset/difference any ext-set))
+        ?any-all  (and any all (cset/intersection ?any ?all))
+        ext-count (count extant*)
+        any-count (if (or ?any-all ?any)
+                    (->> (- n ext-count) dec (random/rand-int* rng) inc)
+                    0)
+        any-pool  (when-some [coll (or ?any-all ?any)]
+                    (select-fn rng coll any-count))
+        all-pool  (when-some [coll (or ?all (set (repeatedly n gen-fn)))]
+                    (select-fn rng coll (- n ext-count any-count)))
+        val-pool  (random/shuffle* rng (concat any-pool all-pool))]
+    (loop [extant extant
+           pool   val-pool
+           new    []]
+      (cond
+        ;; skip if value already follows rule
+        (and (not-empty extant)
+             (contains? ext-set (first extant)))
+        (recur (rest extant)
+               pool
+               (conj new (first extant)))
+        ;; otherwise select from the pool of values
+        (not-empty pool)
+        (recur (rest extant)
+               (rest pool)
+               (conj new (first pool)))
+        :else
+        new))))
+
+(comment
+  (def the-rng (random/seed-rng 100))
+
+  (random/rand-int* the-rng -1)
+
+  {:any #{:extant-value-a :value-1}
+   :all #{:extant-value-a :value-2}
+   :none #{:extant-value-b}}
+
+  [:extant-value-a :extant-value-b] ; start
+  [:extant-value-a] ; intersect w/ all + difference w/ none
+  [:extant-value-a :value-1] ; add items chosen from (any + all - none) - extant
+  [:extant-value-a :value-1 :value-2] ; add items chosen from (all - none) - extant
+
+  (rule-values-3 {:any #{:value-1 :value-3}
+                  :all #{:extant-value-a :value-1 :value-2 :value-3}
+                  :none #{:extant-value-b}}
+                 [#_:extant-value-b :extant-value-a]
+                 1
+                 the-rng
+                 (fn [] "foobar")
+                 true)
+  
+  ;; n = 2
+  {:any #{:value-1 :value-2}}
+  [:extant-value-a :extant-value-b]
+  )
+;; END EXPERIMENTS
+
 ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
 (defn- apply-rule
   [statement {:keys [location any all] :as rule} rng matches]
@@ -320,38 +549,36 @@
                    :else (gen-xapi!))]
           ;; multiple discrete locs or infinite locs
           (loop [loc-enum location-enum
-                 vs       []
-                 any-sat? false]
+                 values   []
+                 any-sat? (empty? any)]
             (if-let [path (first loc-enum)]
               (let [?match (get-in statement path)
-                    v (cond (and (some? ?match) (valid-value? rule ?match))
-                            ?match
-                            ?any-all-coll
-                            ;; try to use each provided val once
-                            (if-let [any-all-remaining (not-empty (remove
-                                                                   (partial contains? vs)
-                                                                   ?any-all-coll))]
-                              (random/choose rng {} any-all-remaining)
-                              ;; but it is better to repeat then gen
-                              ;; unless this should be distinct...
-                              (if distinct-vals?
-                                (generate-xapi)
-                                (random/choose rng {} ?any-all-coll)))
-                            :else
-                            (generate-xapi))]
+                    value  (cond
+                             (and (some? ?match)
+                                  (valid-value? rule ?match))
+                             ?match
+                             ?any-all-coll
+                             ;; try to use each provided val once
+                             (if-let [any-all-remaining (not-empty (remove
+                                                                    (partial contains? values)
+                                                                    ?any-all-coll))]
+                               (random/choose rng {} any-all-remaining)
+                               ;; but it is better to repeat then gen
+                               ;; unless this should be distinct...
+                               (if distinct-vals?
+                                 (generate-xapi)
+                                 (random/choose rng {} ?any-all-coll)))
+                             :else
+                             (generate-xapi))]
                 (recur (rest loc-enum)
-                       (conj vs v)
-                       (or any-sat?
-                           (empty? any)
-                           (and (not-empty any)
-                                (contains? any v))
-                           false)))
+                       (conj values value)
+                       (or any-sat? (contains? any value))))
               ;; handle possible lack of any...
               (if any-sat?
-                vs
+                values
                 ;; if there's no any, just swap one
-                (let [swap-idx (random/rand-int* rng (count vs))]
-                  (assoc vs swap-idx (random/choose rng {} any)))))))]
+                (let [swap-idx (random/rand-int* rng (count values))]
+                  (assoc values swap-idx (random/choose rng {} any)))))))]
         ;; TODO: remove unmatchable paths
         (json-path/apply-values statement
                                 location
