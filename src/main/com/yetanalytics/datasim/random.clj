@@ -166,6 +166,70 @@
                   sd))))
            coll)))
 
+(s/fdef select-replace
+  :args (s/cat :rng ::rng
+               :coll (s/every any? :min-count 1 :gen-max 2)
+               ;; avoid generating 1 million+ elements
+               :n (s/with-gen pos-int? #(s/gen (s/int-in 0 1000))))
+  :ret (s/every any? :kind vector?))
+
+(defn select-replace
+  "Select a vector of `n` items from `coll` with replacement. Each
+   particular combination has a `1 / (count coll)^n` probability of being
+   returned."
+  [rng coll n]
+  (vec (repeatedly n #(choose rng {} coll))))
+
+(s/fdef select-no-replace
+  :args (s/cat :rng ::rng
+               :coll (s/every any? :min-count 1)
+               :n pos-int?)
+  :ret (s/every any? :kind (every-pred vector? distinct?)))
+
+(defn select-no-replace
+  "Select `n` items from `coll` without replacement. Each particular
+   combination has a `1 / (choose (count coll) n)` probability of
+   being returned."
+  [rng coll n]
+  (loop [vset  (set coll)
+         combo (transient [])
+         idx   0]
+    (if (and (< idx n)
+             (not-empty vset))
+      (let [x (choose rng {} vset)]
+        (recur (disj vset x) (conj! combo x) (inc idx)))
+      (persistent! combo))))
+
+(s/fdef combinations
+  :args (s/cat :rng ::rng
+               :coll (s/every any? :min-count 1)
+               :n (s/with-gen pos-int? #(s/gen (s/int-in 0 1000)))
+               :replace? (s/? boolean?))
+  :ret (s/every vector? :kind #(instance? clojure.lang.LazySeq %))
+  :fn (fn [{:keys [args ret]}]
+        (or (:replace? args)
+            (every? distinct? ret))))
+
+;; See `clojure.math.combinatorics/combinations` and its helper fn
+;; `clojure.math.combinatorics/index-combinations`
+(defn combinations
+  "Return an infinite lazy seq of combinations of `n` values from `value-set`,
+   whose entries are randomly selected. `replace?` determines whether the
+   values are selected with or without replacement; by default they are
+   selected with replacement."
+  ([rng coll n]
+   (combinations rng coll n true))
+  ([rng coll n replace?]
+   (let [combo-select  (if replace?
+                         #(select-replace rng coll n)
+                         #(select-no-replace rng coll n))
+         combinations* (fn combinations* [combo-fn]
+                         (lazy-seq
+                          (cons (combo-fn)
+                                (combinations* combo-fn))))]
+     (lazy-seq
+      (combinations* combo-select)))))
+
 (comment
 
   #_(use '(incanter core stats charts io))
