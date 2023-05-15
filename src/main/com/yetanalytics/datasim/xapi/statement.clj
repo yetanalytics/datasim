@@ -14,7 +14,8 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
             [com.yetanalytics.datasim.json.schema :as j-schema]
-            [com.yetanalytics.datasim.xapi.extensions :as ext])
+            [com.yetanalytics.datasim.xapi.extensions :as ext]
+            [com.yetanalytics.datasim.json.path :as path])
   (:import [java.time Instant]))
 
 ;; The duration, in milliseconds, of the returned statement
@@ -229,3 +230,261 @@
        :timestamp-ms sim-t
        ;; Return the template, useful for a bunch of things
        :template template})))
+
+;; NEW ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def verb-id-path
+  (path/parse "$.verb.id"))
+(def object-definition-type-path
+  (path/parse "$.object.definition.type"))
+(def object-type-path
+  (path/parse "$.object.type"))
+(def context-activity-category-path
+  (path/parse "$.context.contextActivities.category"))
+(def context-activity-grouping-path
+  (path/parse "$.context.contextActivities.grouping"))
+(def context-activity-parent-path
+  (path/parse "$.context.contextActivities.parent"))
+(def context-activity-other-path
+  (path/parse "$.context.contextActivities.other"))
+(def attachment-path
+  (path/parse "$.attachments"))
+
+;; TODO: objectStatementRefTemplate and contextStatementRefTemplate
+(defn parse-template
+  [{?verb-id                     :verb
+    ?object-activity-type        :objectActivityType
+    ?ctx-category-activity-types :contextCategoryActivityType
+    ?ctx-grouping-activity-types :contextGroupingActivityType
+    ?ctx-parent-activity-types   :contextParentActivityType
+    ?ctx-other-activity-types    :contextOtherActivityType
+    ?attachment-usage-types      :attachmentUsageType
+    ?rules                       :rules}]
+  (cond-> []
+    ?verb-id
+    (into [{:location verb-id-path
+            :presence "determining"
+            :all      [?verb-id]}])
+    ?object-activity-type
+    (into [{:location object-type-path
+            :all      ["Activity"]}
+           {:location object-definition-type-path
+            :all      [?object-activity-type]}])
+    ?ctx-category-activity-types
+    (into (map-indexed
+           (fn [idx activity-type]
+             {:location (conj context-activity-category-path #{idx} #{"id"})
+              :all      [activity-type]})
+           ?ctx-category-activity-types))
+    ?ctx-grouping-activity-types
+    (into (map-indexed
+           (fn [idx activity-type]
+             {:location (conj context-activity-grouping-path #{idx} #{"id"})
+              :all      [activity-type]})
+           ?ctx-grouping-activity-types))
+    ?ctx-parent-activity-types
+    (into (map-indexed
+           (fn [idx activity-type]
+             {:location (conj context-activity-parent-path #{idx} #{"id"})
+              :all      [activity-type]})
+           ?ctx-parent-activity-types))
+    ?ctx-other-activity-types
+    (into (map-indexed
+           (fn [idx activity-type]
+             {:location (conj context-activity-other-path #{idx} #{"id"})
+              :all      [activity-type]})
+           ?ctx-other-activity-types))
+    ?attachment-usage-types
+    (into (map-indexed
+           (fn [idx usage-type]
+             {:location (conj attachment-path #{idx} #{"usageType"})
+              :all      [usage-type]})
+           ?attachment-usage-types))
+    ?rules
+    (into (map rule/parse-rule ?rules))))
+
+(defn valid-object-override?
+  "Is the `object-override` Object valid against the `template`?"
+  [{?activity-type          :objectActivityType
+    ?statement-ref-template :objectStatementRefTemplate
+    ?rules                  :rules
+    :as                     _template}
+   {override-type "objectType"
+    :as object-override}]
+  (let [object-rules  (->> ?rules
+                           (map rule/parse-rule)
+                           (filterv #(-> % :location first (= #{"object"}))))
+        override-stmt {"object" object-override}]
+    (and (or (= "Activity" override-type)
+             (nil? ?activity-type))
+         (or (= "StatementRef" override-type)
+             (nil? ?statement-ref-template))
+         (every? (partial rule/follows-rule? override-stmt)
+                 object-rules))))
+
+(comment
+  (def object-rule
+    {:location "$.object.definition.type"
+     :presence "included"
+     :any ["https://w3id.org/xapi/cmi5/activitytype/block"
+           "https://w3id.org/xapi/cmi5/activitytype/course"]})
+
+  (valid-object-override?
+   {:rules [object-rule]}
+   {"objectType" "Activity"
+    "id"         "https://www.whatever.com/activities#course2"
+    "definition"
+    {"name"        {"en-US" "Course 2"}
+     "description" {"en-US" "Course Description 2"}
+     "type"        "https://w3id.org/xapi/cmi5/activitytype/course"}})
+  ;; => true
+
+  (valid-object-override?
+   {:rules [object-rule]}
+   {"objectType" "Agent"
+    "name"       "Owen Overrider"
+    "mbox"       "mailto:owoverrider@example.com"})
+  ;; => false
+  )
+
+(defn- group-by-prefix
+  "Given `rules-coll`, return a map grouped by the `:location` prefix.
+   Concatenates `:selector` onto `:location`. `skip-n` is provided to
+   skip `n` entries for the purposes of grouping, e.g. `0` to group by
+   the full prefix, or `1` to ignore the very first element in `:location`."
+  [skip-n rules-coll]
+  (->> rules-coll
+       (map
+        (fn [{:keys [location selector] :as rule}]
+          (-> rule
+              (assoc :location (vec (concat location selector)))
+              (dissoc :selector))))
+       (group-by
+        (fn [{:keys [location]}]
+          (reduce (fn [prefix k]
+                    (if (string? k)
+                      (conj prefix k)
+                      (reduced prefix)))
+                  (subvec location 0 skip-n)
+                  (subvec location skip-n))))
+       (reduce-kv
+        (fn [m prefix rules]
+          (->> rules
+               (mapv #(update % :location subvec (count prefix)))
+               (assoc m prefix)))
+        {})))
+
+(defn- get-first-loc [rule]
+  (-> rule :location first))
+
+(defn- fill-rule-gaps**
+  "Fill in the missing indexes (the first element of `:location`) with
+   ```
+   {:location [index]
+    :presence \"included\"}
+   ```
+   rules."
+  [rules]
+  (loop [rules (sort-by get-first-loc rules)
+         prev  {:location [-1]}
+         new   []]
+    (if-let [rule (first rules)]
+      (let [fillers (->> (range (-> prev get-first-loc inc)
+                                (-> rule get-first-loc))
+                         (mapv (fn [idx] {:location [idx] :presence "included"})))]
+        
+        (recur (rest rules)
+               rule
+               (into new (conj fillers rule))))
+      (vec new))))
+
+(defn- fill-rule-gaps*
+  "Group `rules-coll` by `:location` prefixes and return a map from prefixes
+   to rules. Recursive; some map values may themselves be prefix-rule maps,
+   if the prefix ends with an int (indicating an array). Each missing array
+   index is filled in by `fill-rule-gaps**`."
+  [skip-n rules-coll]
+  (reduce-kv
+   (fn [m prefix rules]
+     (let [rule-indexes (map get-first-loc rules)]
+       (condp #(every? %1 %2) rule-indexes
+         (comp not int?)
+         (assoc m prefix rules)
+         (some-fn nil? int?)
+         (assoc m
+                prefix
+                (merge (->> rules ; in case some rules terminate early
+                            (filter (comp nil? get-first-loc))
+                            (fill-rule-gaps* 0))
+                       (->> rules
+                            (filter (comp int? get-first-loc))
+                            fill-rule-gaps**
+                            (fill-rule-gaps* 1))))
+         ;; else
+         (throw (ex-info "Cannot mix array indexes with properties"
+                         {:type  ::invalid-rules
+                          :rules rules-coll})))))
+   {}
+   (group-by-prefix skip-n rules-coll)))
+
+(defn- restore-locs
+  "Given the return value of `fill-rule-gaps*`, returns a vector of rules
+   sorted by `:location` and with mising array indexes filled in."
+  [prefix-rule-m]
+  (reduce-kv (fn [acc prefix rules]
+               (let [rules* (cond-> rules (map? rules) restore-locs)]
+                 (->> rules*
+                      (map #(update % :location (partial into prefix)))
+                      (into acc))))
+             []
+             prefix-rule-m))
+
+(defn- fill-rule-gaps
+  "Given `rules-coll`, sort them by `:location` (with `:selector folded into
+   that vector) and fill in any missing array indexes (to avoid
+   IndexOutOfBoundsException errors when assoc'ing arrays)."
+  [rules-coll]
+  (->> rules-coll (fill-rule-gaps* 0) restore-locs))
+
+(comment 
+  (group-by-prefix
+   0
+   [{:location ["context" "contextActivity" "grouping" 1 "id"]
+     :any ["http://example.com/1"]}
+    {:location ["context" "contextActivity" "grouping" 3 "id" 0]
+     :any ["http://example.com/3-a"]}
+    {:location ["context" "contextActivity" "grouping" 3 "id" 2]
+     :any ["http://example.com/3-b"]}])
+  
+  (group-by-prefix
+   1
+   [{:location [0], :presence "included"}
+    {:location [1 "id"], :any ["http://example.com/1"]}
+    {:location [2], :presence "included"}
+    {:location [3 "id" 0], :any ["http://example.com/3-a"]}
+    {:location [3 "id" 2], :any ["http://example.com/3-b"]}]) 
+  
+  (fill-rule-gaps
+   [{:location ["id"]
+     :any ["http://example.com/the-id"]}
+    {:location ["context" "contextActivity" "grouping" 1 "id"]
+     :any ["http://example.com/1"]}
+    {:location ["context" "contextActivity" "grouping" 3 "id" 0]
+     :any ["http://example.com/3-a"]}
+    {:location ["context" "contextActivity" "grouping" 3 "id" 2]
+     :any ["http://example.com/3-b"]}])
+  
+  (fill-rule-gaps
+   [{:location ["id"]
+     :any ["http://example.com/1"]}
+    {:location ["id"]
+     :any ["http://example.com/2"]}])
+  
+  (fill-rule-gaps
+   [{:location ["context" "contextActivity" "grouping"]
+     :presence "included"}
+    {:location ["context" "contextActivity" "grouping" 0 "id"]
+     :any ["http://example.com/2"]}
+    {:location ["context" "contextActivity" "grouping" 2 "id"]
+     :any ["http://example.com/2"]}])
+  )
