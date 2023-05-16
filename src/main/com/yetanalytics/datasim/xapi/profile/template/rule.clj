@@ -1,8 +1,9 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule
   "Apply statement template rules for generation"
   (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.pan.objects.templates.rule :as rules]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.pathetic :as path]
+            [com.yetanalytics.pan.objects.templates.rule :as rules]
             [com.yetanalytics.datasim.json :as j]
             [com.yetanalytics.datasim.json.path :as json-path]
             [com.yetanalytics.datasim.xapi.path :as xp]
