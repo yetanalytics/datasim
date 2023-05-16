@@ -397,7 +397,8 @@
        :all      ["http://www.example.com/only-id"]}
       ;; Same thing as above but with array splicing
       ;; FIXME: Array splice does not work
-      "grouping" [{"id" "http://www.example.com/only-id"}]
+      "grouping" [{"id" "http://www.example.com/only-id"}
+                  {"id" '("http://www.example.com/only-id")}]
       {:location "$.context.contextActivities.grouping[0:2].id"
        :presence "included"
        :all      ["http://www.example.com/only-id"]})))
