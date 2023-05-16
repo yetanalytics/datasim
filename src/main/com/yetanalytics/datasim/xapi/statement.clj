@@ -4,6 +4,7 @@
             [clojure.set :as cset]
             [clojure.string :as string]
             [clojure.walk :as w]
+            [com.yetanalytics.pathetic :as pathetic]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.input :as input]
@@ -233,26 +234,29 @@
 
 ;; NEW ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def verb-id-path
-  (path/parse "$.verb.id"))
+(def verb-path
+  (pathetic/parse-paths "$.verb" {:strict? true}))
+(def object-path
+  (pathetic/parse-paths "$.object" {:strict? true}))
 (def object-definition-type-path
-  (path/parse "$.object.definition.type"))
+  (pathetic/parse-paths "$.object.definition.type" {:strict? true}))
 (def object-type-path
-  (path/parse "$.object.type"))
+  (pathetic/parse-paths "$.object.type" {:strict? true}))
 (def context-activity-category-path
-  (path/parse "$.context.contextActivities.category"))
+  (pathetic/parse-paths "$.context.contextActivities.category" {:strict? true}))
 (def context-activity-grouping-path
-  (path/parse "$.context.contextActivities.grouping"))
+  (pathetic/parse-paths "$.context.contextActivities.grouping" {:strict? true}))
 (def context-activity-parent-path
-  (path/parse "$.context.contextActivities.parent"))
+  (pathetic/parse-paths "$.context.contextActivities.parent" {:strict? true}))
 (def context-activity-other-path
-  (path/parse "$.context.contextActivities.other"))
+  (pathetic/parse-paths "$.context.contextActivities.other" {:strict? true}))
 (def attachment-path
-  (path/parse "$.attachments"))
+  (pathetic/parse-paths "$.attachments" {:strict? true}))
 
 ;; TODO: objectStatementRefTemplate and contextStatementRefTemplate
 (defn parse-template
-  [{?verb-id                     :verb
+  [profile-iri-map
+   {?verb-id                     :verb
     ?object-activity-type        :objectActivityType
     ?ctx-category-activity-types :contextCategoryActivityType
     ?ctx-grouping-activity-types :contextGroupingActivityType
@@ -262,14 +266,16 @@
     ?rules                       :rules}]
   (cond-> []
     ?verb-id
-    (into [{:location verb-id-path
-            :presence "determining"
-            :all      [?verb-id]}])
+    (into [{:location verb-path
+            :all      #{(get profile-iri-map ?verb-id)}}])
     ?object-activity-type
-    (into [{:location object-type-path
-            :all      ["Activity"]}
+    (into [{:location object-path
+            :all      #{(-> (get profile-iri-map ?object-activity-type)
+                            (assoc "objectType" "Activity"))}}])
+    #_(into [{:location object-type-path
+            :all      #{"Activity"}}
            {:location object-definition-type-path
-            :all      [?object-activity-type]}])
+            :all      #{?object-activity-type}}])
     ?ctx-category-activity-types
     (into (map-indexed
            (fn [idx activity-type]
@@ -301,7 +307,7 @@
               :all      [usage-type]})
            ?attachment-usage-types))
     ?rules
-    (into (map rule/parse-rule ?rules))))
+    (into (map rule/parse-rule-2 ?rules))))
 
 (defn valid-object-override?
   "Is the `object-override` Object valid against the `template`?"
@@ -488,3 +494,64 @@
     {:location ["context" "contextActivity" "grouping" 2 "id"]
      :any ["http://example.com/2"]}])
   )
+
+(def default-verb
+  {:id        "http://adlnet.gov/expapi/verbs/experienced" 
+   :type      "Verb"
+   :prefLabel {:en "experienced"}})
+
+(defn- profile-verb
+  [iri-map rng alignment]
+  (let [verbs*    (reduce-kv (fn [m k v]
+                               (cond-> m (#{"Verb"} (:type v)) (assoc k v)))
+                             {}
+                             iri-map)
+        verbs     (or (not-empty verbs*)
+                      {(:id default-verb) default-verb})
+        verb-id   (random/choose rng alignment (keys verbs*))
+        verb      (get verbs verb-id)
+        ?lang-map (get verb :prefLabel)]
+    (cond-> {"id" verb-id}
+      ?lang-map
+      (assoc "display" (w/stringify-keys ?lang-map)))))
+
+(defn- profile-activity
+  [activities rng alignment]
+  (let [activities* (reduce merge (vals activities))
+        activity-id (random/choose rng alignment (keys activities*))
+        activity    (get activities* activity-id)]
+    activity))
+
+(defn- registration-rules
+  ([registration]
+   (registration-rules registration nil nil))
+  ([registration sub-registration profile-id]
+   (cond-> [{:location ["context" "registration"]
+             :presence "included"
+             :all      [registration]}]
+     (and (some? sub-registration)
+          (some? profile-id))
+     (conj {:location ["context" "extensions" "https://w3id.org/xapi/profiles/extensions/subregistration"]
+            :presence "included"
+            :all      [{"profile"         profile-id
+                        "subregistration" sub-registration}]}))))
+
+(defn- profile-context-rule
+  [profile-version-id]
+  {:location "$.context.contextActivities.category[*].id"
+   :any      [profile-version-id]})
+
+(defn- object-override-rule
+  [{:keys [rng alignment template]}]
+  (let [valid-override? (partial valid-object-override? template)
+        object-override (some->> alignment
+                                 (filter valid-override?)
+                                 not-empty
+                                 keys
+                                 (random/choose rng alignment)
+                                 (get alignment)
+                                 :object-override
+                                 w/stringify-keys)]
+    (when object-override
+      {:location "$.object"
+       :all      [object-override]})))

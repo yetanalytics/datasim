@@ -5,6 +5,7 @@
             [clojure.spec.alpha :as s]
             [clojure.test.check.generators :as gen]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.pathetic :as pathetic]
             [com.yetanalytics.pan.objects.templates.rule :as pan-rules]
             [com.yetanalytics.datasim.json :as j]
             [com.yetanalytics.datasim.json.path :as json-path]
@@ -74,6 +75,17 @@
 ;; TODO: Memoize in scope
 (def parse-rule
   (memo/lru parse-rule* {} :lru/threshold 4096))
+
+(defn parse-rule-2
+  [{:keys [location selector] :as rule}]
+  (cond-> (reduce-kv
+           (fn [m k v]
+             (if (#{:presence} k) (assoc m k v) (assoc m k (set v))))
+           {}
+           (select-keys rule [:any :all :none :presence]))
+    ;; location is always present so it's always re-assoc'd
+    location (assoc :location (into [] (pathetic/parse-paths location {:strict? true})))
+    selector (assoc :selector (into [] (pathetic/parse-paths selector {:strict true})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Match

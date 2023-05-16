@@ -16,7 +16,11 @@
         org.clojure/test.check {:mvn/version "1.0.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
         http-kit/http-kit {:mvn/version "2.5.0"}
-        cheshire/cheshire {:mvn/version "5.11.0"}}
+        cheshire/cheshire {:mvn/version "5.11.0"}
+        com.yetanalytics/pathetic
+        {:mvn/version "0.4.1"
+         :exclusions [org.clojure/clojure
+                      org.clojure/clojurescript]}}
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:git/url "https://github.com/clojure/tools.cli"

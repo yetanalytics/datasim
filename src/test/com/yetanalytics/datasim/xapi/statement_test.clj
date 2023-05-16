@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
+            [com.yetanalytics.datasim.xapi.statement :as stmt :refer [generate-statement]]
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.activity :as activity]
@@ -107,3 +107,66 @@
                (-> (generate-statement valid-args')
                    (get "object")
                    w/keywordize-keys)))))))
+
+(defn- heal-statement
+  [statement]
+  (cond-> statement
+    (nil? (get-in statement ["id"]))
+    (assoc "id" "00000000-4000-8000-0000-000000000000")
+    (nil? (get-in statement ["actor"]))
+    (assoc "actor" {})
+    (nil? (get-in statement ["verb"]))
+    (assoc "verb" {})
+    (nil? (get-in statement ["object"]))
+    (assoc "object" {})
+    (nil? (get-in statement ["timestamp"]))
+    (assoc "timestamp" "2023-03-03T10:10:10.000Z")
+    ))
+
+(comment
+  (require '[com.yetanalytics.pathetic :as pathetic])
+
+  (reduce (fn [stmt {:keys [location presence any all none]}]
+            (cond
+             (= "excluded" presence)
+             (pathetic/excise* stmt location)
+             :else
+             (pathetic/apply-value* stmt location (or (first all)
+                                                      (first any)))))
+          {}
+          (stmt/parse-template profile-iri-map template))
+  
+  (s/explain-data ::xs/statement
+                  {"verb" {"id" "http://adlnet.gov/expapi/verbs/satisfied"},
+                   "context" {"contextActivities" {"category" [{"id" nil}]}},
+                   "object" {"definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}})
+
+  )
+
+(comment
+  (require '[com.yetanalytics.datasim.xapi.spec :as datasim-spec])
+  
+  (datasim-spec/fill-object
+   (assoc valid-args :rng (random/seed-rng 100))
+   :statement
+   {"verb" {"id" "https://w3id.org/xapi/adl/verbs/satisfied"},
+    "context" {"contextActivities" {"category" [{"id" nil}]}},
+    "object" {"definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}})
+  
+  (merge {"name" "Bob Fakename", "mbox" "mailto:bobfake@example.org"}
+         {"name" "Bob Fakename"})
+  
+  (datasim-spec/fill-object
+   (-> valid-args
+       (assoc :rng (random/seed-rng 100))
+       (update :iri-map assoc "http://attachment-usage-type.com" {:id "http://attachment-usage-type.com"
+                                                                  :type "AttachmentUsageType"
+                                                                  :prefLabel {"en-us" "foo"}
+                                                                  :definition {"en-us" "bar"}})
+       (update :alignments assoc "http://attachment-usage-type.com" {:weight 0.0}))
+   :statement
+   {"actor" {"name" "Bob Fakename"}
+    "verb" {"id" "https://w3id.org/xapi/adl/verbs/satisfied"},
+    "context" {"contextActivities" {"category" [{"id" nil}]}},
+    "object" {"definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+    "attachments" {}}))
