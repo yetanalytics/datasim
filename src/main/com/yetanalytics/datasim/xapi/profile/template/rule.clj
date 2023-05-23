@@ -1,23 +1,24 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule
   "Apply statement template rules for generation"
-  (:require [clojure.spec.alpha :as s]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.pathetic :as path]
-            [com.yetanalytics.pan.objects.templates.rule :as rules]
-            [com.yetanalytics.datasim.json :as j]
-            [com.yetanalytics.datasim.json.path :as json-path]
-            [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.random :as random]
-            [clojure.set :as cset]
+  (:require [clojure.core.memoize          :as memo]
+            [clojure.set                   :as cset]
+            [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as gen]
-            [clojure.core.memoize :as memo]
-            [clojure.math.combinatorics :as combo]))
+            [xapi-schema.spec                    :as xs]
+            [com.yetanalytics.pathetic           :as path]
+            [com.yetanalytics.pathetic.json-path :as jpath]
+            [com.yetanalytics.pan.objects.templates.rule :as rules]
+            [com.yetanalytics.datasim.json      :as j]
+            [com.yetanalytics.datasim.xapi.path :as xp]
+            [com.yetanalytics.datasim.random    :as random]))
 
-(s/def ::location
-  :com.yetanalytics.pathetic.json-path/paths)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::selector
-  :com.yetanalytics.pathetic.json-path/paths)
+(s/def ::location ::jpath/paths)
+
+(s/def ::selector ::jpath/paths)
 
 (s/def ::any
   (s/every ::j/any
@@ -35,13 +36,16 @@
            :into #{}))
 
 (s/def ::parsed-rule
-  (s/keys :req-un [::location
-                   ]
+  (s/keys :req-un [::location]
           :opt-un [::any
                    ::all
                    ::none
                    ::selector
                    ::rules/presence]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Parse
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef parse-rule
   :args (s/cat :rule ::rules/rule)
@@ -66,9 +70,12 @@
     selector (assoc :selector
                     (into [] (path/parse-paths selector)))))
 
-;; TODO: Memoize in scope
 (def parse-rule
   (memo/lru parse-rule* {} :lru/threshold 4096))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Follow
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- not-empty?
   "Like `not-empty` but returns a boolean."
@@ -111,15 +118,25 @@
                       (not (or strict? ?values))
                       (empty? (cset/intersection (set ?values) none))))))))
 
-(s/fdef apply-rules-gen
-  :args (s/cat :partial-statement ::xs/statement
-               :raw-rules (s/every ::rules/rule)
-               :options (s/keys* :req-un [::random/seed]))
-  :ret ::xs/statement)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Rule Application
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Basic Properties
 
 (def max-enumerated-paths 10)
 
 (def distinct-value-properties #{"id"})
+
+;; Parsed Path Join
+
+(defn- join-location-and-selector
+  [location selector]
+  (vec (for [loc location
+             sel selector]
+         (vec (concat loc sel)))))
+
+;; Generators
 
 (defn- xapi-generator
   [spec parsed-locations statement]
@@ -153,11 +170,15 @@
                             :rule rule}
                            exi))))))
 
-(defn- join-location-and-selector
-  [location selector]
-  (vec (for [loc location
-             sel selector]
-         (vec (concat loc sel)))))
+;; Rule Excision
+
+(defn- excise-rule
+  [statement {:keys [location selector]}]
+  (let [paths (cond-> location
+                selector (join-location-and-selector selector))]
+    (path/excise* statement paths {:prune-empty? true})))
+
+;; Rule Application
 
 (defn- distinct-values? [parsed-paths]
   (->> parsed-paths
@@ -165,12 +186,6 @@
        (filter coll?)
        (map set)
        (some #(not-empty (cset/intersection % distinct-value-properties)))))
-
-(defn- excise-rule
-  [statement {:keys [location selector]}]
-  (let [paths (cond-> location
-                selector (join-location-and-selector selector))]
-    (path/excise* statement paths {:prune-empty? true})))
 
 (defn- rule-value-set
   [{:keys [any all none] :as rule}]
@@ -251,14 +266,22 @@
     ;; twice, but profiling shows that this doesn't actually matter.
     (path/apply-value* statement paths* val-coll opt-map)))
 
+;; Putting it all together
+
+(s/fdef apply-rules-gen
+  :args (s/cat :partial-statement ::xs/statement
+               :raw-rules (s/every ::rules/rule)
+               :options (s/keys* :req-un [::random/seed]))
+  :ret ::xs/statement)
+
 ;; TODO: We ensure that the rules pass, but we do not ensure that intermediate
 ;; parts of the statement are valid!
 (defn apply-rules-gen
   "Given a partial statement and rules, attempt to make the statement satisfy
   the rules. Additional options like :seed help do this deterministically."
-  [partial-statement raw-rules & {:keys [seed]}]
+  [partial-statement rules & {:keys [seed]}]
   (let [rng   (random/seed-rng seed)
-        rules (map parse-rule raw-rules)]
+        rules (map parse-rule rules)]
     (reduce
      (fn [statement {:keys [presence] :as rule}]
        (cond
@@ -268,7 +291,7 @@
          ;; The simplest case is an exclusion rule...
          (= "excluded" presence)
          (excise-rule statement rule)
-         ;; Otherwise, we need to apply rule values
+         ;; Otherwise, we need to apply rule values.
          :else
          (apply-rule statement rule rng)))
      partial-statement
