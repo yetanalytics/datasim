@@ -159,6 +159,11 @@
     :none      [{"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.two"}]
     :scopeNote {:en "none value that is a JSON object"}}])
 
+(comment
+  (r/match-rule long-statement
+                (r/parse-rule {:location "$.id"
+                               :presence "included"})))
+
 (deftest example-rules-test
   (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]
                            [scopeNote (r/parse-rule rule)])
@@ -242,13 +247,14 @@
        "mbox" "mailto:alice@example.org"}
       {:location "$.actor.name"
        :any      ["Alice Faux" "Bob Fakename"]}
-      ;; FIXME: ::out-of-paths error due to using "all" on a scalar
-      #_{"name" "Alice Faux"
-         "mbox" "mailto:alice@example.org"}
-      #_{:location "$.actor.name"
-         :all      ["Alice Faux" "Bob Fakename"]}
+      ;; Replace actor name - applied...
+      ;; FIXME???
+      {"name" "Bob Fakename"
+       "mbox" "mailto:alice@example.org"}
+      {:location "$.actor.name"
+       :all      ["Alice Faux" "Bob Fakename"]}
       ;; Remove actor name via "none"
-      {"name" ""
+      {"name" "ux8B8sU7otk14" ; randomly generated
        "mbox" "mailto:alice@example.org"}
       {:location "$.actor.name"
        :none     ["Alice Faux" "Bob Fakename"]}
@@ -272,9 +278,7 @@
       {:location "$.actor"
        :presence "excluded"}
       ;; Remove actor properties
-      ;; FIXME: Currently bugged out
-      {"name" "Alice Faux"
-       "mbox" "mailto:alice@example.org"}
+      nil
       {:location "$.actor.*"
        :presence "excluded"}))
   ;; Verbs
@@ -294,7 +298,7 @@
        :presence "included"
        :all      ["https://adlnet.gov/expapi/verbs/launched"]}
       ;; Remove verb ID using "none"
-      {"id" "scfzd://tqe.pcufavagy.bch/armkz"} ; ID result from fixed seed
+      {"id" "rdc://vpugpmcqun.ikxdfny.bkq/qljkldinf"} ; ID result from fixed seed
       {:location "$.verb.id"
        :presence "included"
        :none     ["https://adlnet.gov/expapi/verbs/launched"]}
@@ -321,33 +325,45 @@
       ;; Increment one single ID
       "parent" [{"id" "http://www.example.com/meetings/series/268"
                  "objectType" "Activity"}]
+      {:location "$.context.contextActivities.parent[0].id"
+       :all      ["http://www.example.com/meetings/series/268"]}
+      ;; Increment potentially multiple IDs using wildcard
+      "parent" [{"id" "http://www.example.com/meetings/series/268"
+                 "objectType" "Activity"}
+                {"id" "http://www.example.com/meetings/series/268"}
+                {"id" "http://www.example.com/meetings/series/268"}
+                {"id" "http://www.example.com/meetings/series/268"}
+                {"id" "http://www.example.com/meetings/series/268"}
+                {"id" "http://www.example.com/meetings/series/268"}
+                {"id" "http://www.example.com/meetings/series/268"}]
       {:location "$.context.contextActivities.parent[*].id"
        :all      ["http://www.example.com/meetings/series/268"]}
       ;; Replace ID
-      "category" [{"id" "scfzd://tqe.pcufavagy.bch/armkz" ; randomly generated
+      "category" [{"id" "rdc://vpugpmcqun.ikxdfny.bkq/qljkldinf" ; randomly gen
                    "objectType" "Activity"
                    "definition" {"name" {"en" "team meeting"}
                                  "description" {"en" "A category of meeting used for regular team meetings."}
                                  "type" "http://example.com/expapi/activities/meetingcategory"}}]
-      {:location "$.context.contextActivities.category[*].id"
+      {:location "$.context.contextActivities.category[0].id"
        :none     ["http://www.example.com/meetings/categories/teammeeting"]}
       ;; Replace two different IDs
       "other" [{"id" "http://www.example.com/meetings/occurances/bar"
                 "objectType" "Activity"}
                {"id" "http://www.example.com/meetings/occurances/foo"
                 "objectType" "Activity"}]
-      {:location "$.context.contextActivities.other[*].id"
+      {:location "$.context.contextActivities.other[0,1].id"
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"]}
-      ;; Replace and insert IDs
-      ;; FIXME: This is obviously bugged out
-      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
+      ;; Replace and insert IDs using wildcard
+      "other" [{"id" "http://www.example.com/meetings/occurances/baz"
                 "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/3425567"
+               {"id" "http://www.example.com/meetings/occurances/bar"
                 "objectType" "Activity"}
-               {"id" ["http://www.example.com/meetings/occurances/foo"
-                      "http://www.example.com/meetings/occurances/bar"
-                      "http://www.example.com/meetings/occurances/qux"]}]
+               {"id" "http://www.example.com/meetings/occurances/bar"}
+               {"id" "http://www.example.com/meetings/occurances/qux"}
+               {"id" "http://www.example.com/meetings/occurances/bar"}
+               {"id" "http://www.example.com/meetings/occurances/foo"}
+               {"id" "http://www.example.com/meetings/occurances/bar"}]
       {:location "$.context.contextActivities.other[*].id"
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"
@@ -357,49 +373,33 @@
       "other" [{"id" "http://www.example.com/meetings/occurances/34257"
                 "objectType" "Activity"}
                ;; selected via deteministed seeded rng
-               {"id" "http://www.example.com/meetings/occurances/foo"
+               {"id" "http://www.example.com/meetings/occurances/bar"
                 "objectType" "Activity"}]
-      {:location "$.context.contextActivities.other[*].id"
+      {:location "$.context.contextActivities.other[1].id"
        :any      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"]}
-      ;; No "all" - rely on gen
-      "parent" [{"id" "dhuyef://scfzai.tqe.pcuu/tkworfljnfvtkvcs"
-                 "objectType" "Activity"}]
-      {:location "$.context.contextActivities.parent[*].id"
-       :all      []}
-      ;; No "any" - rely on gen
-      ;; FIXME: If we replace the [0] with [*] we end up with a
-      ;; ::path/out-of-paths exception
-      "category" [{"id" "http://www.example.com/meetings/categories/teammeeting"
-                   "objectType" "Activity"
-                   "definition" {"type" "http://example.com/expapi/activities/meetingcategory"
-                                 "name" {"en" "team meeting"}
-                                 ;; deterministic rng
-                                 "description" {"en-GB" "m6GCj33tgO22", "en" "E"}}}]
-      {:location "$.context.contextActivities.category[0].definition.description"
-       :any      []}
-      ;; FIXME: This is obviously bugged out
+      ;; Replace Activity definitions
       "category" [{"id"         "http://www.example.com/meetings/categories/teammeeting"
                    "objectType" "Activity"
                    "definition" {"name"        {"en" "team meeting"}
-                                 "description" {"en" "A category of meeting used for regular team meetings."}
+                                 "description" {"en" "foo"}
                                  "type"        "http://example.com/expapi/activities/meetingcategory"}}
-                  {"definition" {"description" [{"en" "A category of meeting used for regular team meetings."} {"en" "foo"}]}}]
+                  {"definition" {"description" {"en" "foo"}}}]
       {:location "$.context.contextActivities.category[0,1].definition.description"
        :any      [{"en" "foo"}]}
-      ;; Try creating multiple distinct IDs, but only one ID is available
-      ;; FIXME: Obviously bugged out
+      ;; Try creating multiple IDs, but only one ID is available
+      ;; IDs should be distinct...
       "grouping" [{"id" "http://www.example.com/only-id"}
                   {"id" "http://www.example.com/only-id"}
-                  {"id" '("http://www.example.com/only-id")}]
+                  {"id" "http://www.example.com/only-id"}]
       {:location "$.context.contextActivities.grouping[0,1,2].id"
        :presence "included"
        :all      ["http://www.example.com/only-id"]}
-      ;; Same thing as above but with array splicing
-      ;; FIXME: Array splice does not work
+      ;; Same thing as above but skipping an entry
       "grouping" [{"id" "http://www.example.com/only-id"}
-                  {"id" '("http://www.example.com/only-id")}]
-      {:location "$.context.contextActivities.grouping[0:2].id"
+                  nil
+                  {"id" "http://www.example.com/only-id"}]
+      {:location "$.context.contextActivities.grouping[0,2].id"
        :presence "included"
        :all      ["http://www.example.com/only-id"]})))
 
@@ -441,7 +441,7 @@
     ;; Add, then try to remove, lang map entries
     (is (= {"id" "https://adlnet.gov/expapi/verbs/launched"
             "display" {"en-US" "Launched"
-                       "zh-CN" "7f"}} ; replaced with generated
+                       "zh-CN" "7gp0jt8lp77HHQ1mSe72yOdCrN"}} ; randomly gen
            (-> short-statement
                (r/apply-rules-gen
                 [{:location "$.verb.display.en-US"
@@ -453,11 +453,16 @@
                 :seed gen-seed)
                (get "verb")))))
   (testing "apply-rules-gen with multiple rules for Context Activities"
-    ;; two "any" rules
+    ;; two "any" rules - second "any" overwrites first
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/foo"
-             "objectType" "Activity"}]
+            {"id" "http://www.example.com/meetings/occurances/bar"
+             "objectType" "Activity"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -466,11 +471,16 @@
                   :any ["http://www.example.com/meetings/occurances/bar"]}]
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "other"]))))
-    ;; "all" followed by "any"
-    (is (= [{"id" "http://www.example.com/meetings/occurances/foo"
+    ;; "all" followed by "any" - "any" overwrites "all"
+    (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
             {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}]
+             "objectType" "Activity"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -479,11 +489,16 @@
                   :any ["http://www.example.com/meetings/occurances/bar"]}]
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "other"]))))
-    ;; "any" followed by "all"
+    ;; "any" followed by "all" - "all" overwrites "any"
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
             {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}]
+             "objectType" "Activity"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -492,11 +507,16 @@
                   :all ["http://www.example.com/meetings/occurances/bar"]}]
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "other"]))))
-    ;; two "all" rules
+    ;; two "all" rules - second "all" overwrites first
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
             {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}]
+             "objectType" "Activity"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}
+            {"id" "http://www.example.com/meetings/occurances/bar"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
