@@ -243,7 +243,7 @@
       {:location "$.actor.name"
        :all      ["Alice Faux" "Bob Fakename"]}
       ;; Remove actor name via "none"
-      {"name" "ux8B8sU7otk14" ; randomly generated
+      {"name" "g0940tWy7k3GA49j871LLl4W0" ; randomly generated
        "mbox" "mailto:alice@example.org"}
       {:location "$.actor.name"
        :none     ["Alice Faux" "Bob Fakename"]}
@@ -287,7 +287,7 @@
        :presence "included"
        :all      ["https://adlnet.gov/expapi/verbs/launched"]}
       ;; Remove verb ID using "none"
-      {"id" "rdc://vpugpmcqun.ikxdfny.bkq/qljkldinf"} ; ID result from fixed seed
+      {"id" "tnwjfgj://dtiwcirffy.mkkt.efbk/xeozmjldyx"} ; randomly generated
       {:location "$.verb.id"
        :presence "included"
        :none     ["https://adlnet.gov/expapi/verbs/launched"]}
@@ -317,19 +317,13 @@
       {:location "$.context.contextActivities.parent[0].id"
        :all      ["http://www.example.com/meetings/series/268"]}
       ;; Increment potentially multiple IDs using wildcard
+      ;; Values are randomly chosen
       "parent" [{"id" "http://www.example.com/meetings/series/268"
-                 "objectType" "Activity"}
-                {"id" "http://www.example.com/meetings/series/268"}
-                {"id" "http://www.example.com/meetings/series/268"}
-                {"id" "http://www.example.com/meetings/series/268"}
-                {"id" "http://www.example.com/meetings/series/268"}
-                {"id" "http://www.example.com/meetings/series/268"}
-                {"id" "http://www.example.com/meetings/series/268"}
-                {"id" "http://www.example.com/meetings/series/268"}]
+                 "objectType" "Activity"}]
       {:location "$.context.contextActivities.parent[*].id"
        :all      ["http://www.example.com/meetings/series/268"]}
       ;; Replace ID
-      "category" [{"id" "rdc://vpugpmcqun.ikxdfny.bkq/qljkldinf" ; randomly gen
+      "category" [{"id" "tnwjfgj://dtiwcirffy.mkkt.efbk/xeozmjldyx" ; randomly generated
                    "objectType" "Activity"
                    "definition" {"name" {"en" "team meeting"}
                                  "description" {"en" "A category of meeting used for regular team meetings."}
@@ -345,16 +339,12 @@
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"]}
       ;; Replace and insert IDs using wildcard
-      "other" [{"id" "http://www.example.com/meetings/occurances/bar"
+      ;; Values are randomly chosen
+      "other" [{"id" "http://www.example.com/meetings/occurances/qux"
                 "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/baz"
+               {"id" "http://www.example.com/meetings/occurances/foo"
                 "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/bar"}
-               {"id" "http://www.example.com/meetings/occurances/bar"}
-               {"id" "http://www.example.com/meetings/occurances/baz"}
-               {"id" "http://www.example.com/meetings/occurances/bar"}
-               {"id" "http://www.example.com/meetings/occurances/qux"}
-               {"id" "http://www.example.com/meetings/occurances/foo"}]
+               {"id" "http://www.example.com/meetings/occurances/baz"}]
       {:location "$.context.contextActivities.other[*].id"
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"
@@ -378,8 +368,18 @@
                   {"definition" {"description" {"en" "foo"}}}]
       {:location "$.context.contextActivities.category[0,1].definition.description"
        :any      [{"en" "foo"}]}
+      ;; Try creating multiple IDs
+      ;; Collection is randomly shuffled
+      "grouping" [{"id" "http://www.example.com/id-3"}
+                  {"id" "http://www.example.com/id-1"}
+                  {"id" "http://www.example.com/id-2"}]
+      {:location "$.context.contextActivities.grouping[0,1,2].id"
+       :presence "included"
+       :all      ["http://www.example.com/id-1"
+                  "http://www.example.com/id-2"
+                  "http://www.example.com/id-3"]}
       ;; Try creating multiple IDs, but only one ID is available
-      ;; IDs should be distinct...
+      ;; IDs should be distinct, but since the profile says otherwise
       "grouping" [{"id" "http://www.example.com/only-id"}
                   {"id" "http://www.example.com/only-id"}
                   {"id" "http://www.example.com/only-id"}]
@@ -438,7 +438,7 @@
     ;; Add, then try to remove, lang map entries
     (is (= {"id" "https://adlnet.gov/expapi/verbs/launched"
             "display" {"en-US" "Launched"
-                       "zh-CN" "7gp0jt8lp77HHQ1mSe72yOdCrN"}} ; randomly gen
+                       "zh-CN" "3csI6sZq6uxukVZ964BE5GDrqBoLJ7"}} ; randomly gen
            (-> short-statement
                (r/apply-rules-gen
                 [{:location "$.verb.display.en-US"
@@ -449,18 +449,16 @@
                   :none     ["展开"]}]
                 :seed gen-seed)
                (get "verb")))))
+  ;; TODO: Right now only one value can be replaced in the following
+  ;; test cases since we are dealing with an `id` property and there is
+  ;; only one value in the `any` and `all` colls. We need to discuss if
+  ;; this behavior should be changed in Pathetic.
   (testing "apply-rules-gen with multiple rules for Context Activities"
-    ;; two "any" rules - second "any" partially overwrites first
+    ;; two "any" rules
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}]
+            {"id" "http://www.example.com/meetings/occurances/3425567"
+             "objectType" "Activity"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -469,17 +467,11 @@
                   :any ["http://www.example.com/meetings/occurances/bar"]}]
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "other"]))))
-    ;; "all" followed by "any" - "any" partially overwrites "all"
+    ;; "all" followed by "any" - "any" overwrites "all"
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}]
+            {"id" "http://www.example.com/meetings/occurances/3425567"
+             "objectType" "Activity"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -491,14 +483,8 @@
     ;; "any" followed by "all" - "all" overwrites "any"
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}]
+            {"id" "http://www.example.com/meetings/occurances/3425567"
+             "objectType" "Activity"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -510,14 +496,8 @@
     ;; two "all" rules - second "all" overwrites first
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}
-            {"id" "http://www.example.com/meetings/occurances/foo"}]
+            {"id" "http://www.example.com/meetings/occurances/3425567"
+             "objectType" "Activity"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -539,6 +519,43 @@
                   :all      ["https://xapinet.com/xapi/blooms/activities/objectives/procedural"]}]
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "grouping"]))))))
+
+(deftest apply-rule-gen-distinct-test
+  (testing "apply-rules-gen uses all 3 distinct `all` values for 3 locations"
+   (let [rule     {:location "$.context.contextActivities.grouping[0,1,2].id"
+                   :presence "included"
+                   :all      ["http://www.example.com/id-1"
+                              "http://www.example.com/id-2"
+                              "http://www.example.com/id-3"]}
+         expected #{{"id" "http://www.example.com/id-1"}
+                    {"id" "http://www.example.com/id-2"}
+                    {"id" "http://www.example.com/id-3"}}
+         actuals  (repeatedly
+                   30
+                   #(-> long-statement
+                        (r/apply-rules-gen [rule] :seed gen-seed)
+                        (get-in ["context" "contextActivities" "grouping"])
+                        set))]
+     (is (every? #(= expected %) actuals))))
+  (testing "apply-rules-gen uses 2 of 3 distinct `all` values for 2 locations"
+    (let [rule     {:location "$.context.contextActivities.grouping[0,1].id"
+                    :presence "included"
+                    :all      ["http://www.example.com/id-1"
+                               "http://www.example.com/id-2"
+                               "http://www.example.com/id-3"]}
+          expect-1 #{{"id" "http://www.example.com/id-1"}
+                     {"id" "http://www.example.com/id-2"}}
+          expect-2 #{{"id" "http://www.example.com/id-1"}
+                     {"id" "http://www.example.com/id-3"}}
+          expect-3 #{{"id" "http://www.example.com/id-2"}
+                     {"id" "http://www.example.com/id-3"}}
+          actuals  (repeatedly
+                    30
+                    #(-> long-statement
+                         (r/apply-rules-gen [rule] :seed gen-seed)
+                         (get-in ["context" "contextActivities" "grouping"])
+                         set))]
+      (is (every? #(#{expect-1 expect-2 expect-3} %) actuals)))))
 
 (deftest apply-rules-gen-exception-test
   (testing "apply-rules-gen throws exceptions if rules are invalid"

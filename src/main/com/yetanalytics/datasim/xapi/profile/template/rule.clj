@@ -119,6 +119,8 @@
 
 (def max-enumerated-paths 10)
 
+(def distinct-value-properties #{"id"})
+
 (defn- xapi-generator
   [spec parsed-locations statement]
   (let [ex-info-msg "Couldn't figure out xapi path"
@@ -135,19 +137,15 @@
               (catch clojure.lang.ExceptionInfo exi
                 (throw (ex-info ex-info-msg ex-info-map exi))))))))
 
-(defn- join-location-and-selector
-  [location selector]
-  (vec (for [loc location
-             sel selector]
-         (vec (concat loc sel)))))
-
 (defn- generate-xapi
-  [rng generator {:keys [none] :as rule}]
+  [spec rng enumerated-paths statement {:keys [none] :as rule}]
   (let [?none-filter (when (not-empty none)
                        (partial (complement contains?) none))
-        generator*   (cond->> generator
-                       ?none-filter (gen/such-that ?none-filter))]
-    (try (gen/generate generator* 30 (random/rand-long rng))
+        generator    (cond->> (xapi-generator spec enumerated-paths statement)
+                       ?none-filter (gen/such-that ?none-filter))
+        generate-fn  #(gen/generate generator 30 (random/rand-long rng))
+        gen-size     (count enumerated-paths)]
+    (try (vec (repeatedly gen-size generate-fn))
          (catch clojure.lang.ExceptionInfo exi
            (throw (ex-info "Generation error!"
                            {:type ::gen-error
@@ -155,90 +153,103 @@
                             :rule rule}
                            exi))))))
 
+(defn- join-location-and-selector
+  [location selector]
+  (vec (for [loc location
+             sel selector]
+         (vec (concat loc sel)))))
+
+(defn- distinct-values? [parsed-paths]
+  (->> parsed-paths
+       (map last)
+       (filter coll?)
+       (map set)
+       (some #(not-empty (cset/intersection % distinct-value-properties)))))
+
 (defn- excise-rule
   [statement {:keys [location selector]}]
   (let [paths (cond-> location
                 selector (join-location-and-selector selector))]
     (path/excise* statement paths {:prune-empty? true})))
 
-(defn- validate-rule-values
-  [rule rule-value-set]
-  (if (not-empty rule-value-set)
-    rule-value-set
-    (throw (ex-info "Cannot generate non-empty rule value set from rule!"
-                    {:kind ::invalid-rule-values
-                     :rule rule}))))
+(defn- rule-value-set
+  [{:keys [any all none] :as rule}]
+  (let [?value-set
+        (cond
+          (and any all none)
+          (cset/difference (cset/intersection any all) none)
+          (and any none)
+          (cset/difference any none)
+          (and all none)
+          (cset/difference all none)
+          (and any all)
+          (cset/intersection any all)
+          all   all
+          any   any
+          :else nil)] ; No any, all, or none - must resort to generation
+    (if (or (nil? ?value-set)
+            (not-empty ?value-set))
+      ?value-set
+      (throw (ex-info "Cannot generate non-empty rule value set from rule!"
+                      {:kind ::invalid-rule-values
+                       :rule rule})))))
 
-(defn- apply-rule-values*
-  "Return a set of values to apply to the Statement from the rule's `any`,
-   `all`, and `none` values. Returned values must be part of `all` and not
-   include `none`; if `any` is present, then the value space will be
-   further restricted to values in `any` (which is stricter than required
-   by the xAPI spec). Otherwise use `rng` and `generator` to generate a
-   bunch of values."
-  [rng generator {:keys [any all none] :as rule}]
-  (validate-rule-values
-   rule
-   (cond
-     (and any all none)
-     (cset/difference (cset/intersection any all) none)
-     (and any none)
-     (cset/difference any none)
-     (and all none)
-     (cset/difference all none)
-     (and any all)
-     (cset/intersection any all)
-     all   all
-     any   any
-     :else (->> #(generate-xapi rng generator rule)
-                (repeatedly max-enumerated-paths)
-                set))))
-
-(defn- apply-rule-values
-  "Return the collection of values to apply at a rule location, in order."
-  [rng generator rule num-values]
-  (loop [n-values num-values
-         val-set  (apply-rule-values* rng generator rule)
-         val-coll []]
-    (cond
-      (or (empty? val-set)
-          (zero? n-values))
-      (vec (random/shuffle* rng val-coll))
-      ;; n-values is nearly exhausted
-      (<= n-values (count val-set))
-      (let [x (first val-set)]
-        (recur (dec n-values)
-               (disj val-set x)
-               (conj val-coll x)))
-      ;; val-set is nearly exhausted
-      (= 1 (count val-set))
-      (let [x (first val-set)]
-        (recur 0
-               (disj val-set x)
-               (into val-coll (repeat n-values x))))
-      :else
-      (let [x (first val-set)
-            n (random/rand-int* rng n-values)]
-        (recur (- n-values n)
-               (disj val-set x)
-               (into val-coll (repeat n x)))))))
+(defn- rule-value-coll
+  [value-set rng num-locations distinct-vals?]
+  (if (and distinct-vals?
+           (>= (count value-set) num-locations))
+    ;; Distinct values (e.g. IDs)
+    (vec (take num-locations (random/shuffle* rng value-set)))
+    ;; Either values are not distinct or there are not enough distinct
+    ;; values for every location (violating the Pigenhole Principle)
+    (loop [n-values num-locations
+           val-set  value-set
+           val-coll []]
+      (cond
+        (or (empty? val-set)
+            (zero? n-values))
+        (vec (random/shuffle* rng val-coll))
+          ;; n-values is nearly exhausted
+        (<= n-values (count val-set))
+        (let [x (first val-set)]
+          (recur (dec n-values)
+                 (disj val-set x)
+                 (conj val-coll x)))
+          ;; val-set is nearly exhausted
+        (= 1 (count val-set))
+        (let [x (first val-set)]
+          (recur 0
+                 (disj val-set x)
+                 (into val-coll (repeat n-values x))))
+        :else
+        (let [x (first val-set)
+              n (random/rand-int* rng n-values)]
+          (recur (- n-values n)
+                 (disj val-set x)
+                 (into val-coll (repeat n x))))))))
 
 ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
 (defn- apply-rule
   [statement {:keys [location selector spec] :as rule} rng]
-  (let [enum-limit (inc (random/rand-int* rng max-enumerated-paths)) ; [1, 10]
+  (let [?val-set   (rule-value-set rule)
+        paths*     (cond-> location
+                     selector (join-location-and-selector selector))
+        distincts? (distinct-values? paths*)
+        enum-max   (if (and distincts? ?val-set)
+                     (count ?val-set)
+                     max-enumerated-paths)
+        enum-limit (inc (random/rand-int* rng enum-max))
         opt-map    {:multi-value?     true
                     :wildcard-append? false
                     :wildcard-limit   enum-limit}
-        paths*     (cond-> location
-                     selector (join-location-and-selector selector))
         paths      (path/speculate-paths* statement paths* opt-map)
-        generator  (xapi-generator spec paths statement)
-        max-paths  (count paths)
-        values     (apply-rule-values rng generator rule max-paths)]
+        num-paths  (count paths)
+        val-coll   (if ?val-set
+                     (rule-value-coll ?val-set rng num-paths distincts?)
+                     (generate-xapi spec rng paths statement rule))]
     ;; It's rather unoptimized to call pathetic.json-path/speculative-path-seqs
     ;; twice, but profiling shows that this doesn't actually matter.
-    (path/apply-value* statement paths* values opt-map)))
+    (path/apply-value* statement paths* val-coll opt-map)))
 
 ;; TODO: We ensure that the rules pass, but we do not ensure that intermediate
 ;; parts of the statement are valid!
