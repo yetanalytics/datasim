@@ -125,10 +125,10 @@
                 "http://www.example.com/meetings/series/267"
                 "http://www.example.com/meetings/series/268"]
     :scopeNote {:en "selector path, any values"}}
-   #_{:location  "$.context.contextActivities.category.*"
-      :selector  "$.id"
-      :all       ["http://www.example.com/meetings/categories/teammeeting"]
-      :scopeNote {:en "selector path, all values"}}
+   {:location  "$.context.contextActivities.category.*"
+    :selector  "$.id"
+    :all       ["http://www.example.com/meetings/categories/teammeeting"]
+    :scopeNote {:en "selector path, all values"}}
    {:location  "$.context.contextActivities.other.*"
     :selector  "$.id"
     :none      ["http://www.example.com/meetings/occurances/0"
@@ -160,9 +160,11 @@
     :scopeNote {:en "none value that is a JSON object"}}])
 
 (comment
-  (r/match-rule long-statement
-                (r/parse-rule {:location "$.id"
-                               :presence "included"})))
+  (r/match-rule short-statement
+                (r/parse-rule {:location  "$.actor"
+                               :selector  "$.member"
+                               :all       ["http://www.example.com/meetings/categories/teammeeting"]
+                               :scopeNote {:en "selector path, all values"}})))
 
 (deftest example-rules-test
   (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]

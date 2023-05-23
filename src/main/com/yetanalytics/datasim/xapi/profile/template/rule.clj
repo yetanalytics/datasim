@@ -82,15 +82,14 @@
   [statement
    {:keys [location selector] :as _rule}]
   (let [loc-values (path/get-values* statement location)]
-    (into loc-values
-          (when selector
-            (mapcat
-             (fn [lv]
-               (let [selection (path/get-values* lv selector)]
-                 (if (empty? selection)
-                   [::unmatchable]
-                   selection)))
-             loc-values)))))
+    (if selector
+      (mapcat (fn [lv]
+                (let [sel-values (path/get-values* lv selector)]
+                  (if (empty? sel-values)
+                    [::unmatchable]
+                    sel-values)))
+              loc-values)
+      loc-values)))
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
