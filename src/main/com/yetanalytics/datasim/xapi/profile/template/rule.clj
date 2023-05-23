@@ -75,12 +75,7 @@
   [coll]
   (boolean (not-empty coll)))
 
-(s/fdef match-rule
-  :args (s/cat :statement ::xs/statement
-               :rule ::parsed-rule)
-  :ret (s/every ::j/any))
-
-(defn match-rule
+(defn- match-rule
   "The matching logic from https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
   returns a tuple, a list of matched values from location, selector, returning an empty vector if a selector cannot be matched."
   [statement

@@ -159,13 +159,6 @@
     :none      [{"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.two"}]
     :scopeNote {:en "none value that is a JSON object"}}])
 
-(comment
-  (r/match-rule short-statement
-                (r/parse-rule {:location  "$.actor"
-                               :selector  "$.member"
-                               :all       ["http://www.example.com/meetings/categories/teammeeting"]
-                               :scopeNote {:en "selector path, all values"}})))
-
 (deftest example-rules-test
   (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]
                            [scopeNote (r/parse-rule rule)])
@@ -174,10 +167,6 @@
       (doseq [[rule-name parsed-rule] rule-tuples]
         (testing rule-name
           (is (nil? (s/explain-data ::r/parsed-rule parsed-rule))))))
-    (testing "Matches rule test:"
-      (doseq [[rule-name parsed-rule] rule-tuples]
-        (testing rule-name
-          (is (some? (r/match-rule long-statement parsed-rule))))))
     (testing "Follows rule test:"
       (doseq [[rule-name parsed-rule] rule-tuples]
         (testing rule-name
