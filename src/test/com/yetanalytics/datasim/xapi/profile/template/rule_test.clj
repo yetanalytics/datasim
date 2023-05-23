@@ -247,9 +247,8 @@
        "mbox" "mailto:alice@example.org"}
       {:location "$.actor.name"
        :any      ["Alice Faux" "Bob Fakename"]}
-      ;; Replace actor name - applied...
-      ;; FIXME???
-      {"name" "Bob Fakename"
+      ;; Replace actor name - not applied due to already matching
+      {"name" "Alice Faux"
        "mbox" "mailto:alice@example.org"}
       {:location "$.actor.name"
        :all      ["Alice Faux" "Bob Fakename"]}
@@ -335,6 +334,7 @@
                 {"id" "http://www.example.com/meetings/series/268"}
                 {"id" "http://www.example.com/meetings/series/268"}
                 {"id" "http://www.example.com/meetings/series/268"}
+                {"id" "http://www.example.com/meetings/series/268"}
                 {"id" "http://www.example.com/meetings/series/268"}]
       {:location "$.context.contextActivities.parent[*].id"
        :all      ["http://www.example.com/meetings/series/268"]}
@@ -355,15 +355,16 @@
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"]}
       ;; Replace and insert IDs using wildcard
-      "other" [{"id" "http://www.example.com/meetings/occurances/baz"
+      "other" [{"id" "http://www.example.com/meetings/occurances/bar"
                 "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/bar"
+               {"id" "http://www.example.com/meetings/occurances/baz"
                 "objectType" "Activity"}
+               {"id" "http://www.example.com/meetings/occurances/bar"}
+               {"id" "http://www.example.com/meetings/occurances/bar"}
+               {"id" "http://www.example.com/meetings/occurances/baz"}
                {"id" "http://www.example.com/meetings/occurances/bar"}
                {"id" "http://www.example.com/meetings/occurances/qux"}
-               {"id" "http://www.example.com/meetings/occurances/bar"}
-               {"id" "http://www.example.com/meetings/occurances/foo"}
-               {"id" "http://www.example.com/meetings/occurances/bar"}]
+               {"id" "http://www.example.com/meetings/occurances/foo"}]
       {:location "$.context.contextActivities.other[*].id"
        :all      ["http://www.example.com/meetings/occurances/foo"
                   "http://www.example.com/meetings/occurances/bar"
@@ -453,7 +454,7 @@
                 :seed gen-seed)
                (get "verb")))))
   (testing "apply-rules-gen with multiple rules for Context Activities"
-    ;; two "any" rules - second "any" overwrites first
+    ;; two "any" rules - second "any" partially overwrites first
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
             {"id" "http://www.example.com/meetings/occurances/bar"
@@ -462,7 +463,8 @@
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}]
+            {"id" "http://www.example.com/meetings/occurances/foo"}
+            {"id" "http://www.example.com/meetings/occurances/foo"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -471,7 +473,7 @@
                   :any ["http://www.example.com/meetings/occurances/bar"]}]
                 :seed gen-seed)
                (get-in ["context" "contextActivities" "other"]))))
-    ;; "all" followed by "any" - "any" overwrites "all"
+    ;; "all" followed by "any" - "any" partially overwrites "all"
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
             {"id" "http://www.example.com/meetings/occurances/bar"
@@ -480,7 +482,8 @@
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}]
+            {"id" "http://www.example.com/meetings/occurances/foo"}
+            {"id" "http://www.example.com/meetings/occurances/foo"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -498,7 +501,8 @@
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}]
+            {"id" "http://www.example.com/meetings/occurances/foo"}
+            {"id" "http://www.example.com/meetings/occurances/foo"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"
@@ -516,7 +520,8 @@
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
             {"id" "http://www.example.com/meetings/occurances/bar"}
-            {"id" "http://www.example.com/meetings/occurances/bar"}]
+            {"id" "http://www.example.com/meetings/occurances/foo"}
+            {"id" "http://www.example.com/meetings/occurances/foo"}]
            (-> long-statement
                (r/apply-rules-gen
                 [{:location "$.context.contextActivities.other[*].id"

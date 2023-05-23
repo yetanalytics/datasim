@@ -80,7 +80,7 @@
   "The matching logic from https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
   returns a tuple, a list of matched values from location, selector, containing the key ::unmatchable if a selector cannot be matched."
   [statement
-   {:keys [location selector] :as rule}]
+   {:keys [location selector] :as _rule}]
   (let [loc-values (path/get-values* statement location)]
     (into loc-values
           (when selector
@@ -104,114 +104,35 @@
   a la https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation.
   You can pass in matches for efficiency's sake."
   [statement
-   {:keys                                                 [location selector
-                                                           any all none presence] :as rule}
+   {:keys [any all none presence] :as rule}
    & [matches]]
-  (let [strict (if (= presence "recommended")
-                 false
-                 true)
+  (let [strict (not= presence "recommended")
         values (or matches (match-rule statement rule))]
     (and (if presence
            (case presence
-             "included"
-             (if (or (empty? values)
-                     (contains? values ::unmatchable))
-               false
-               true)
-             "excluded"
-             (if (and (not-empty values)
-                      (not-empty (remove #{::unmatchable} values)))
-               false
-               true)
+             "included" (not (or (empty? values)
+                                 (contains? values ::unmatchable)))
+             "excluded" (not (and (not-empty values)
+                                  (not-empty (remove #{::unmatchable} values))))
              "recommended" true)
            true)
          (if (= presence "excluded")
-           true ;; ignore
+           true ; ignore
            (and
             (if (and any
                      (or strict (not-empty values)))
-              (not-empty (cset/intersection (set values) any))
+              (boolean (not-empty (cset/intersection (set values) any)))
               true)
             (if (and all
                      (or strict (not-empty values)))
-              (let [values-set* (if (and (coll? values)
-                                         (coll? (first values))
-                                         (= 1 (count values)))
-                                  ;; first and only coll in a coll of colls
-                                  (first values)
-                                  values)
-                    values-set (cond
-                                 ;; most cases, gaurd for map to prevent conversion to keypairs
-                                 (and (coll? values-set*) (not (map? values-set*)))
-                                 (into #{} values-set*)
-                                 ;; if `all` specified an object for the location, prevent conversion to keypairs
-                                 (map? values-set*)
-                                 #{values-set*}
-                                 ;; attempt conversion to set, throw on error
-                                 (some? values-set*)
-                                 (try (set values-set*)
-                                      (catch Exception e
-                                        (throw (ex-info "Unexpected State!"
-                                                        {:type            ::rule-check-error
-                                                         :rule            rule
-                                                         :statement       statement
-                                                         :matched         matches
-                                                         :values          values
-                                                         :values-set*     values-set*}
-                                                        e))))
-                                 :else #{})]
-                (not (or (contains? values ::unmatchable)
-                         (empty? values)
-                         (not
-                          ;; see `match-all-logic-test` bellow for logic proof
-                          (if (empty? (cset/difference all values-set))
-                            (cset/superset? all values-set)
-                            false)))))
+              (and (not (contains? values ::unmatchable))
+                   (boolean (not-empty values))
+                   (cset/superset? all (set values)))
               true)
             (if (and none
                      (or strict (not-empty values)))
-              (not (some (partial contains? none)
-                         values))
+              (not (some (partial contains? none) values))
               true))))))
-
-(comment
-  ;; -> everything within `all-set` within `target-set`?
-  ;;    -> no = failure = (not (not false)) = false
-  ;;    -> yes = continue
-  ;;       -> anything within `target-set` that's not in `all-set`?
-  ;;          -> yes = failure = (not (not false)) = false
-  ;;          -> no = success = (not (not true)) = true
-
-  (defn match-all-logic-test
-    "Checks `target` set against top and bottom bounds of `all-set`"
-    [all-set target-set]
-    ;; everything within `all-set` within `target-set`?
-    (if (empty? (cset/difference all-set target-set))
-      ;; anything within `target-set` that's not in `all-set`?
-      (cset/superset? all-set target-set)
-      false))
-
-  (def all-set-fixture #{:a :b :c})
-
-  (defn replicate-conditional
-    "assuming non-empty matchables which doesn't contain `::unmatchable`"
-    [target-set]
-    (not (or false false (not (match-all-logic-test all-set-fixture target-set)))))
-
-  (def test-set        #{:c :b :a :A})
-  ;; ^ 1 more than `all-set-fixture`
-  (def test-set-1      #{:a :b})
-  ;; ^ 1 less than `all-set-fixture`
-  (def test-set-2      #{:d :e :f})
-  ;; ^ same number as `all-set-fixture` but different members
-  (def test-set-3      #{:b :c :a})
-  ;; ^ matches `all-set-fixture`
-
-  (and
-   (false? (replicate-conditional test-set))
-   (false? (replicate-conditional test-set-1))
-   (false? (replicate-conditional test-set-2))
-   (true? (replicate-conditional test-set-3))))
 
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
