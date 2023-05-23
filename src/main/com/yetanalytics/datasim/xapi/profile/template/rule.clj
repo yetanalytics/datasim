@@ -255,29 +255,20 @@
   "Given a partial statement and rules, attempt to make the statement satisfy
   the rules. Additional options like :seed help do this deterministically."
   [partial-statement raw-rules & {:keys [seed]}]
-  (let [rng (random/seed-rng seed)]
-    (loop [statement partial-statement
-           rules     (map parse-rule raw-rules)
-           paths     {:applied #{}
-                      :excised #{}}]
-      (if-let [{:keys [presence] :as rule} (first rules)]
-        (let [matches (match-rule statement rule)]
-          (if (follows-rule? statement rule matches)
-            ;; If the statement follows the rule, continue processing!
-            (recur statement (rest rules) paths)
-            ;; If not, we've got work to do...
-            ;; The simplest case is an exclusion rule, which we can safely
-            ;; apply without additional recursion.
-            (if (= presence "excluded")
-              (let [statement-excised (excise-rule statement rule)
-                    statement-paths   (some-> statement-excised meta :paths)]
-                (recur statement-excised
-                       (rest rules)
-                       (update paths :excised into statement-paths)))
-              (let [statement-applied (apply-rule statement rule rng)
-                    statement-paths   (some-> statement-applied meta :paths)]
-                (recur statement-applied
-                       (rest rules)
-                       (update paths :applied into statement-paths))))))
-        ;; Rules have been exhausted
-        statement))))
+  (let [rng   (random/seed-rng seed)
+        rules (map parse-rule raw-rules)]
+    (reduce
+     (fn [statement {:keys [presence] :as rule}]
+       (let [matches (match-rule statement rule)]
+         (cond
+           ;; If the statement follows the rule, continue processing!
+           (follows-rule? statement rule matches)
+           statement
+           ;; The simplest case is an exclusion rule...
+           (= "excluded" presence)
+           (excise-rule statement rule)
+           ;; Otherwise, we need to apply rule values
+           :else
+           (apply-rule statement rule rng))))
+     partial-statement
+     rules)))
