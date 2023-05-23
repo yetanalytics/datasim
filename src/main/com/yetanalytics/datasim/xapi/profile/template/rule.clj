@@ -10,13 +10,14 @@
             [com.yetanalytics.datasim.random :as random]
             [clojure.set :as cset]
             [clojure.test.check.generators :as gen]
-            [clojure.core.memoize :as memo]))
+            [clojure.core.memoize :as memo]
+            [clojure.math.combinatorics :as combo]))
 
 (s/def ::location
-  ::json-path/json-path)
+  :com.yetanalytics.pathetic.json-path/paths)
 
 (s/def ::selector
-  ::json-path/json-path)
+  :com.yetanalytics.pathetic.json-path/paths)
 
 (s/def ::any
   (s/every ::j/any
@@ -61,9 +62,9 @@
             {}
             (select-keys rule [:any :all :none :presence :spec]))
            :location (into []
-                           (json-path/parse location)))
+                           (path/parse-paths location)))
     selector (assoc :selector
-                    (into [] (json-path/parse selector)))))
+                    (into [] (path/parse-paths selector)))))
 
 ;; TODO: Memoize in scope
 (def parse-rule
@@ -80,12 +81,12 @@
   returns a tuple, a list of matched values from location, selector, containing the key ::unmatchable if a selector cannot be matched."
   [statement
    {:keys [location selector] :as rule}]
-  (let [loc-values (json-path/select statement location)]
+  (let [loc-values (path/get-values* statement location)]
     (into loc-values
           (when selector
             (mapcat
              (fn [lv]
-               (let [selection (json-path/select lv selector)]
+               (let [selection (path/get-values* lv selector)]
                  (if (empty? selection)
                    [::unmatchable]
                    selection)))
@@ -129,7 +130,7 @@
            (and
             (if (and any
                      (or strict (not-empty values)))
-              (not (empty? (cset/intersection (set values) any)))
+              (not-empty (cset/intersection (set values) any))
               true)
             (if (and all
                      (or strict (not-empty values)))
@@ -218,166 +219,156 @@
                :options (s/keys* :req-un [::random/seed]))
   :ret ::xs/statement)
 
-(defn- valid-value?
-  [{:keys [all any none] :as rule} v]
-  (and (if all
-         (contains? all v)
-         true)
-       (if none
-         (not (contains? none v))
-         true)))
+(def max-enumerated-paths 10)
+
+(defn- xapi-generator
+  [spec parsed-locations statement]
+  (s/gen
+   (or spec ;; known to be `s/gen` safe
+       (try (xp/path->spec
+             ::xs/statement
+             (first parsed-locations)
+             statement)
+            (catch java.lang.AssertionError ae
+              (throw (ex-info "Couldn't figure out xapi path"
+                              {:type     ::undefined-path
+                               :key-path (first parsed-locations)}
+                              ae)))))))
+
+(defn- join-location-and-selector
+  [location selector]
+  (vec (for [loc location
+             sel selector]
+         (vec (concat loc sel)))))
+
+(defn- generate-xapi
+  [rng generator {:keys [none] :as rule}]
+  (let [?none-filter (when (not-empty none)
+                       (partial (complement contains?) none))
+        generator*   (cond->> generator
+                       ?none-filter (gen/such-that ?none-filter))]
+    (try (gen/generate generator* 30 (random/rand-long rng))
+         (catch clojure.lang.ExceptionInfo exi
+           (throw (ex-info "Generation error!"
+                           {:type ::gen-error
+                            :gen  generator
+                            :rule rule}
+                           exi))))))
+
+(defn- excise-rule
+  [statement {:keys [location selector]}]
+  (let [paths (cond-> location
+                selector (join-location-and-selector selector))]
+    (path/excise* statement paths {:prune-empty? true})))
+
+(defn- validate-rule-values
+  [rule rule-value-set]
+  (if (not-empty rule-value-set)
+    rule-value-set
+    (throw (ex-info "Cannot generate non-empty rule value set from rule!"
+                    {:kind ::invalid-rule-values
+                     :rule rule}))))
+
+(defn- apply-rule-values*
+  "Return a set of values to apply to the Statement from the rule's `any`,
+   `all`, and `none` values. Returned values must be part of `all` and not
+   include `none`; if `any` is present, then the value space will be
+   further restricted to values in `any` (which is stricter than required
+   by the xAPI spec). Otherwise use `rng` and `generator` to generate a
+   bunch of values."
+  [rng generator {:keys [any all none] :as rule}]
+  (validate-rule-values
+   rule
+   (cond
+     (and any all none)
+     (cset/difference (cset/intersection any all) none)
+     (and any none)
+     (cset/difference any none)
+     (and all none)
+     (cset/difference all none)
+     (and any all)
+     (cset/intersection any all)
+     all   all
+     any   any
+     :else (->> #(generate-xapi rng generator rule)
+                (repeatedly max-enumerated-paths)
+                set))))
+
+(defn- apply-rule-values
+  "Return the collection of values to apply at a rule location, in order."
+  [rng generator rule num-values]
+  (loop [n-values num-values
+         val-set  (apply-rule-values* rng generator rule)
+         val-coll []]
+    (cond
+      (or (empty? val-set)
+          (zero? n-values))
+      (vec (random/shuffle* rng val-coll))
+      ;; n-values is nearly exhausted
+      (<= n-values (count val-set))
+      (let [x (first val-set)]
+        (recur (dec n-values)
+               (disj val-set x)
+               (conj val-coll x)))
+      ;; val-set is nearly exhausted
+      (= 1 (count val-set))
+      (let [x (first val-set)]
+        (recur 0
+               (disj val-set x)
+               (into val-coll (repeat n-values x))))
+      :else
+      (let [x (first val-set)
+            n (random/rand-int* rng n-values)]
+        (recur (- n-values n)
+               (disj val-set x)
+               (into val-coll (repeat n x)))))))
+
+;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
+(defn- apply-rule
+  [statement {:keys [location selector spec] :as rule} rng]
+  (let [enum-limit (inc (random/rand-int* rng max-enumerated-paths)) ; [1, 10]
+        opt-map    {:multi-value?     true
+                    :wildcard-append? false
+                    :wildcard-limit   enum-limit}
+        paths*     (cond-> location
+                     selector (join-location-and-selector selector))
+        paths      (path/speculate-paths* statement paths* opt-map)
+        generator  (xapi-generator spec paths statement)
+        max-paths  (count paths)
+        values     (apply-rule-values rng generator rule max-paths)]
+    ;; It's rather unoptimized to call pathetic.json-path/speculative-path-seqs
+    ;; twice, but profiling shows that this doesn't actually matter.
+    (path/apply-value* statement paths* values opt-map)))
 
 ;; TODO: We ensure that the rules pass, but we do not ensure that intermediate
 ;; parts of the statement are valid!
 (defn apply-rules-gen
   "Given a partial statement and rules, attempt to make the statement satisfy
-  the rules. Additional options like :seed help do this deterministically.
-  "
-  [partial-statement
-   raw-rules
-   & {:keys [seed]}]
+  the rules. Additional options like :seed help do this deterministically."
+  [partial-statement raw-rules & {:keys [seed]}]
   (let [rng (random/seed-rng seed)]
     (loop [statement partial-statement
-           rules     (map parse-rule
-                          raw-rules)
+           rules     (map parse-rule raw-rules)
            paths     {:applied #{}
                       :excised #{}}]
-      (if-let [{:keys [location selector
-                       presence
-                       any all none
-                       ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
-                       spec]
-                :as   rule} (first rules)]
+      (if-let [{:keys [presence] :as rule} (first rules)]
         (let [matches (match-rule statement rule)]
           (if (follows-rule? statement rule matches)
-            ;; if the statement follows the rule, continue processing!
+            ;; If the statement follows the rule, continue processing!
             (recur statement (rest rules) paths)
-            ;; if not, we've got work to do..
-            (if ;; the simplest case is an exclusion rule, which we can safely
-                ;; apply without additional recursion
-                (= presence "excluded")
-              (let [statement-excised (cond-> (json-path/excise statement location :prune-empty? true)
-                                        selector
-                                        (json-path/excise (into location selector) :prune-empty? true))]
-                (recur
-                 statement-excised
-                 (rest rules)
-                 (update paths :excised into (some-> statement-excised
-                                                     meta
-                                                     :paths))))
-              (let [discrete? (json-path/discrete? location)
-                    location-enum (if discrete?
-                                    (json-path/enumerate location)
-                                    (json-path/enumerate location :limit 3))
-                    ;; spec generation is expensive, let's wrap it up for control
-                    gen-xapi! (fn []
-                                (try (gen/generate
-                                      (cond->> (s/gen
-                                                (or spec ;; known to be `s/gen` safe
-                                                    (try (xp/path->spec
-                                                          ::xs/statement
-                                                          (first location-enum)
-                                                          statement)
-                                                         (catch java.lang.AssertionError ae
-                                                           (throw (ex-info "Couldn't figure out xapi path"
-                                                                           {:type      ::undefined-path
-                                                                            :key-path  (first location-enum)
-                                                                            :rule      rule
-                                                                            :statement statement}
-                                                                           ae))))))
-                                        (not-empty none) (gen/such-that (partial (complement contains?)
-                                                                                 none)))
-                                                   30 (random/rand-long rng))
-                                     (catch clojure.lang.ExceptionInfo exi
-                                       (throw (ex-info "Generation error!"
-                                                       {:type            ::gen-error
-                                                        :rule            rule
-                                                        :statement       statement
-                                                        :matched         matches}
-                                                       exi)))))
-                    any-all (not-empty (concat any all))
-
-                    ;; In certain situations, we should attempt to make the
-                    ;; values distinct. This is pretty open ended, but generally
-                    ;; if the path points at an ID this is sane to do...
-                    distinct? (= #{"id"} (last location))
-                    values
-                    (if (and discrete?
-                             (= 1 (count location-enum))) ;; a single loc that must conform
-                      (if (not-empty all)
-                        (into [] all)
-                        [(if (not-empty any)
-                           (random/choose rng {} any)
-                           (gen-xapi!))])
-                      #_[(cond (not-empty any)
-                             (random/choose rng {} any)
-                             (not-empty all)
-                             (random/choose rng {} all)
-                             :else (gen-xapi!))]
-                      ;; multiple discrete locs or infinite locs
-                      (loop [loc-enum (cond->> location-enum
-                                        ;; only needs limiting if not discrete
-                                        (not discrete?) (take (max
-                                                               ;; gotta be at least 1
-                                                               1
-                                                               ;; gotta be at least as many as matched
-                                                               (count (remove (partial = ::unmatchable)
-                                                                              matches))
-                                                               ;; or as many as all provided vals
-                                                               (count (concat any all))
-                                                               ;; or maybe up to N
-                                                               (if distinct? ;; for distinct, use what we have
-                                                                 1
-                                                                 (random/rand-int* rng 10)))))
-                             vs []
-                             any-sat? false]
-                        (if-let [path (first loc-enum)]
-                          (let [?match (get-in statement path)
-                                v (cond (and (some? ?match) (valid-value? rule ?match))
-                                        ?match
-                                        any-all
-                                        ;; try to use each provided val once
-                                        (if-let [any-all-remaining (not-empty (remove
-                                                                               (partial contains? vs)
-                                                                               any-all))]
-                                          (random/choose rng {} any-all-remaining)
-                                          ;; but it is better to repeat then gen
-                                          ;; unless this should be distinct...
-                                          (if distinct?
-                                            (gen-xapi!)
-                                            (random/choose rng {} any-all)))
-                                        :else
-                                        (gen-xapi!))]
-                            (recur (rest loc-enum)
-                                   (conj vs v)
-                                   (or any-sat?
-                                       (empty? any)
-                                       (and (not-empty any)
-                                            (contains? any v))
-                                       false)))
-                          ;; handle possible lack of any...
-                          (if any-sat?
-                            vs
-                            ;; if there's no any, just swap one
-                            (let [swap-idx (random/rand-int* rng (count vs))]
-                              (assoc vs swap-idx (random/choose rng {} any)))))))
-                    ;; ;; TODO: remove unmatchable paths
-                    statement-applied (json-path/apply-values
-                                       statement location
-                                       values
-                                       :enum-limit 3)]
-                (recur
-                 statement-applied
-                 (rest rules)
-                 (update paths :applied into (some-> statement-applied
-                                                     meta
-                                                     :paths)))))))
-        ;; all rules pass and we're done!
-        statement
-        ;; check the specs (dev/debug)
-
-        #_(if (s/valid? ::xs/statement statement)
-          statement
-          (throw (ex-info "Healing not yet implemented"
-                          {:type ::not-yet-implemented
-                           :statement-error (s/explain-data ::xs/statement statement)})))))))
+            ;; If not, we've got work to do...
+            ;; The simplest case is an exclusion rule, which we can safely
+            ;; apply without additional recursion.
+            (if (= presence "excluded")
+              (let [statement-excised (excise-rule statement rule)
+                    statement-paths   (some-> statement-excised meta :paths)]
+                (recur statement-excised
+                       (rest rules)
+                       (update paths :excised into statement-paths)))
+              (let [statement-applied (apply-rule statement rule rng)
+                    statement-paths   (some-> statement-applied meta :paths)]
+                (recur statement-applied
+                       (rest rules)
+                       (update paths :applied into statement-paths))))))
+        ;; Rules have been exhausted
+        statement))))
