@@ -177,8 +177,7 @@
     (testing "Matches rule test:"
       (doseq [[rule-name parsed-rule] rule-tuples]
         (testing rule-name
-          (is (not= ::r/unmatchable
-                    (r/match-rule long-statement parsed-rule))))))
+          (is (some? (r/match-rule long-statement parsed-rule))))))
     (testing "Follows rule test:"
       (doseq [[rule-name parsed-rule] rule-tuples]
         (testing rule-name

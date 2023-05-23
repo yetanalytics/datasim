@@ -70,32 +70,30 @@
 (def parse-rule
   (memo/lru parse-rule* {} :lru/threshold 4096))
 
+(defn- not-empty?
+  "Like `not-empty` but returns a boolean."
+  [coll]
+  (boolean (not-empty coll)))
+
 (s/fdef match-rule
   :args (s/cat :statement ::xs/statement
                :rule ::parsed-rule)
-  :ret (s/every (s/or :json ::j/any
-                      :unmatchable #{::unmatchable})))
+  :ret (s/every ::j/any))
 
 (defn match-rule
   "The matching logic from https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
-  returns a tuple, a list of matched values from location, selector, containing the key ::unmatchable if a selector cannot be matched."
+  returns a tuple, a list of matched values from location, selector, returning an empty vector if a selector cannot be matched."
   [statement
    {:keys [location selector] :as _rule}]
   (let [loc-values (path/get-values* statement location)]
     (if selector
-      (mapcat (fn [lv]
-                (let [sel-values (path/get-values* lv selector)]
-                  (if (empty? sel-values)
-                    [::unmatchable]
-                    sel-values)))
-              loc-values)
+      (mapcat (fn [lv] (path/get-values* lv selector)) loc-values)
       loc-values)))
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
                :rule ::parsed-rule
-               :matches (s/? (s/every (s/or :json ::j/any
-                                            :unmatchable #{::unmatchable}))))
+               :matches (s/? (s/every ::j/any)))
   :ret boolean?)
 
 (defn follows-rule?
@@ -109,10 +107,8 @@
         values (or matches (match-rule statement rule))]
     (and (if presence
            (case presence
-             "included" (not (or (empty? values)
-                                 (contains? values ::unmatchable)))
-             "excluded" (not (and (not-empty values)
-                                  (not-empty (remove #{::unmatchable} values))))
+             "included" (not-empty? values)
+             "excluded" (not (not-empty values))
              "recommended" true)
            true)
          (if (= presence "excluded")
@@ -124,8 +120,7 @@
               true)
             (if (and all
                      (or strict (not-empty values)))
-              (and (not (contains? values ::unmatchable))
-                   (boolean (not-empty values))
+              (and (boolean (not-empty values))
                    (cset/superset? all (set values)))
               true)
             (if (and none
