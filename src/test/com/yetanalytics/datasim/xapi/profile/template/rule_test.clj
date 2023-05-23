@@ -117,8 +117,6 @@
     :none      ["1.0.1" "1.0.2" "1.0.3"]
     :scopeNote {:en "no presence, none values"}}
    ;; selector JSONPath
-   ;; FIXME: selector is currently bugged due to being appended, not
-   ;; replacing, the location values
    {:location  "$.context.contextActivities.parent.*"
     :selector  "$.id"
     :any       ["http://www.example.com/meetings/series/266"
@@ -193,7 +191,25 @@
       (assoc-in short-statement
                 ["context" "contextActivities" "grouping"]
                 [{"id" "https://w3id.org/xapi/tla/v0.13"}])
-      (get example-rules 8))))
+      (get example-rules 8)))
+  (testing "Not following rules w/ recommended presence"
+    (are [statement rule]
+         (->> rule r/parse-rule (r/follows-rule? statement) not)
+      ;; Bad Verb ID - recommended presence
+      (assoc-in short-statement
+                ["verb" "id"]
+                "http://foo.org")
+      (get example-rules 14)
+      ;; Bad Actor Name - recommended presence
+      (assoc-in short-statement
+                ["actor" "member"]
+                [{"name" "Foo Bar" "mbox" "mailto:foo@example.com"}])
+      (get example-rules 15)
+      ;; Version Present - recommended presence
+      (assoc-in short-statement
+                ["version"]
+                "1.0.2")
+      (get example-rules 16))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Application Tests
@@ -201,6 +217,15 @@
 
 (defn- apply-rule-gen [statement rule]
   (r/apply-rules-gen statement [rule] :seed gen-seed))
+
+(comment
+  (apply-rule-gen
+   long-statement
+   {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
+    :selector "$.definition.type"
+    :all      ["http://www.example.com/activity-type-1"
+               "http://www.example.com/activity-type-2"
+               "http://www.example.com/activity-type-3"]}))
 
 ;; Apply one rule at a time
 (deftest apply-rule-gen-test
@@ -262,6 +287,11 @@
       {:location "$.actor.name"
        :presence "excluded"
        :none     ["Alice Faux" "Bob Fakename"]}
+      ;; Remove actor name using both location and selector
+      {"mbox" "mailto:alice@example.org"}
+      {:location "$.actor"
+       :selector "$.name"
+       :presence "excluded"}
       ;; Remove actor via "excluded"
       nil
       {:location "$.actor"
@@ -269,7 +299,38 @@
       ;; Remove actor properties
       nil
       {:location "$.actor.*"
-       :presence "excluded"}))
+       :presence "excluded"}
+      ;; Both `any` and `all` - former is superset of latter
+      {"name" "Bob Fakename"
+       "mbox" "mailto:alice@example.org"}
+      {:location "$.actor.name"
+       :any      ["Alice Faux" "Bob Fakename"]
+       :all      ["Bob Fakename"]}
+      ;; Both `any` and `all` - former is subset of latter
+      {"name" "Bob Fakename"
+       "mbox" "mailto:alice@example.org"}
+      {:location "$.actor.name"
+       :any      ["Bob Fakename"]
+       :all      ["Alice Faux" "Bob Fakename"]}
+      ;; Both `any` and `none`
+      {"name" "Bob Fakename"
+       "mbox" "mailto:alice@example.org"}
+      {:location "$.actor.name"
+       :any      ["Bob Fakename"]
+       :none     ["Alice Faux"]}
+      ;; Both `all` and `none`
+      {"name" "Bob Fakename"
+       "mbox" "mailto:alice@example.org"}
+      {:location "$.actor.name"
+       :all      ["Bob Fakename"]
+       :none     ["Alice Faux"]}
+      ;; Everything: `any`, `all`, and `none`
+      {"name" "Bob Fakename"
+       "mbox" "mailto:alice@example.org"}
+      {:location "$.actor.name"
+       :all      ["Alice Faux" "Bob Fakename" "Fred Ersatz"]
+       :any      ["Alice Faux" "Bob Fakename"]
+       :none     ["Alice Faux"]}))
   ;; Verbs
   (testing "apply-rules-gen for Verbs in short statement"
     (are [new-verb rule]
@@ -350,6 +411,21 @@
                   "http://www.example.com/meetings/occurances/bar"
                   "http://www.example.com/meetings/occurances/baz"
                   "http://www.example.com/meetings/occurances/qux"]}
+      ;; Replace and insert multiple activity types
+      ;; Activity types are selected randomly
+      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-3"}}
+               {"id" "http://www.example.com/meetings/occurances/3425567"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-2"}}
+               {"definition" {"type" "http://www.example.com/activity-type-2"}}
+               {"definition" {"type" "http://www.example.com/activity-type-2"}}
+               {"definition" {"type" "http://www.example.com/activity-type-3"}}]
+      {:location "$.context.contextActivities.other[0,1,2,3,4].definition.type"
+       :all      ["http://www.example.com/activity-type-1"
+                  "http://www.example.com/activity-type-2"
+                  "http://www.example.com/activity-type-3"]}
       ;; Replace one ID with "any"
       "other" [{"id" "http://www.example.com/meetings/occurances/34257"
                 "objectType" "Activity"}
@@ -398,7 +474,49 @@
       "grouping" [nil {"definition" {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
       {:location "$.context.contextActivities.grouping[1].definition.type"
        :presence "included"
-       :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]})))
+       :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}
+      ;; Use both location and selector
+      ;; Activity types are chosen randomly
+      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-3"}}
+               {"id" "http://www.example.com/meetings/occurances/3425567"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-2"}}
+               {"definition" {"type" "http://www.example.com/activity-type-2"}}
+               {"definition" {"type" "http://www.example.com/activity-type-2"}}
+               {"definition" {"type" "http://www.example.com/activity-type-3"}}]
+      {:location "$.context.contextActivities.other[0,1,2,3,4]"
+       :selector "$.definition.type"
+       :all      ["http://www.example.com/activity-type-1"
+                  "http://www.example.com/activity-type-2"
+                  "http://www.example.com/activity-type-3"]}
+      ;; Use the pipe operator on location
+      ;; Activity types are chosen randomly
+      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-1"}}
+               {"id" "http://www.example.com/meetings/occurances/3425567"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-2"}}]
+      {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
+       :selector "$.definition.type"
+       :all      ["http://www.example.com/activity-type-1"
+                  "http://www.example.com/activity-type-2"
+                  "http://www.example.com/activity-type-3"]}
+      ;; Use the pipe operator on selector
+      ;; Activity types are chosen randomly
+      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-1"}}
+               {"id" "http://www.example.com/meetings/occurances/3425567"
+                "objectType" "Activity"
+                "definition" {"type" "http://www.example.com/activity-type-2"}}]
+      {:location "$.context.contextActivities"
+       :selector "$.other[0].definition.type | $.other[1].definition.type"
+       :all      ["http://www.example.com/activity-type-1"
+                  "http://www.example.com/activity-type-2"
+                  "http://www.example.com/activity-type-3"]})))
 
 ;; Apply a collection of rules
 (deftest apply-rule-coll-gen-test
@@ -588,6 +706,34 @@
                                "mbox"       "mailto:owoverrider@example.com"}]}
                   {:location "$.object.definition.type"
                    :presence "included"}]
+                 :seed gen-seed)
+                nil
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    ;; Rule value pool is empty
+    (is (= ::r/invalid-rule-values
+           (try (r/apply-rules-gen
+                 short-statement
+                 [{:location "$.actor.name"
+                   :any      ["Alice Faux"]
+                   :all      ["Bob Fakename"]}]
+                 :seed gen-seed)
+                nil
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::r/invalid-rule-values
+           (try (r/apply-rules-gen
+                 short-statement
+                 [{:location "$.actor.name"
+                   :any      ["Alice Faux"]
+                   :none     ["Alice Faux"]}]
+                 :seed gen-seed)
+                nil
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::r/invalid-rule-values
+           (try (r/apply-rules-gen
+                 short-statement
+                 [{:location "$.actor.name"
+                   :all      ["Bob Fakename"]
+                   :none     ["Bob Fakename"]}]
                  :seed gen-seed)
                 nil
                 (catch ExceptionInfo e (-> e ex-data :type)))))))
