@@ -103,7 +103,12 @@
   :ret boolean?)
 
 (defn follows-rule?
-  "Simple predicate check to see if `parsed-rule` satisfies `statement`."
+  "Simple predicate check to see if `parsed-rule` satisfies `statement`.
+   
+   Note: normally if `presence` is `recommended`, then validation
+   auto-passes, but otherwise we won't be able to apply rules in those
+   cases, so we validate anyways (though we pass if no values are
+   matchable)."
   [statement {:keys [any all none presence] :as parsed-rule}]
   (let [strict? (not= :recommended presence)
         ?values (not-empty (match-rule statement parsed-rule))]
@@ -221,7 +226,7 @@
             (not-empty ?value-set))
       ?value-set
       (throw (ex-info "Cannot generate non-empty rule value set from rule!"
-                      {:kind ::invalid-rule-values
+                      {:type ::invalid-rule-values
                        :rule rule})))))
 
 (defn- rule-value-coll
@@ -240,21 +245,21 @@
            val-set  value-set
            val-coll []]
       (cond
-        (or (empty? val-set)
-            (zero? n-values))
+        (zero? n-values)
         (vec (random/shuffle* rng val-coll))
-          ;; n-values is nearly exhausted
+        ;; n-values is nearly exhausted - choose one of each remaining value
         (<= n-values (count val-set))
         (let [x (first val-set)]
           (recur (dec n-values)
                  (disj val-set x)
                  (conj val-coll x)))
-          ;; val-set is nearly exhausted
+        ;; val-set is nearly exhausted - repeat last value to fill locations
         (= 1 (count val-set))
         (let [x (first val-set)]
           (recur 0
                  (disj val-set x)
                  (into val-coll (repeat n-values x))))
+        ;; choose a value and repeat it between 0 (inclusive) and n-values (exclusive) times
         :else
         (let [x (first val-set)
               n (random/rand-int* rng n-values)]
