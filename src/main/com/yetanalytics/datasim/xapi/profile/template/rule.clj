@@ -103,30 +103,23 @@
   [statement
    {:keys [any all none presence] :as rule}
    & [matches]]
-  (let [strict (not= presence "recommended")
-        values (or matches (match-rule statement rule))]
-    (and (if presence
-           (case presence
-             "included" (not-empty? values)
-             "excluded" (not (not-empty values))
-             "recommended" true)
+  (let [strict? (not= presence "recommended")
+        ?values (not-empty (or matches (match-rule statement rule)))]
+    (and (case presence
+           "included" (some? ?values)
+           "excluded" (nil? ?values)
            true)
-         (if (= presence "excluded")
-           true ; ignore
-           (and
-            (if (and any
-                     (or strict (not-empty values)))
-              (boolean (not-empty (cset/intersection (set values) any)))
-              true)
-            (if (and all
-                     (or strict (not-empty values)))
-              (and (boolean (not-empty values))
-                   (cset/superset? all (set values)))
-              true)
-            (if (and none
-                     (or strict (not-empty values)))
-              (not (some (partial contains? none) values))
-              true))))))
+         (or (= presence "excluded")
+             (and (or (not all)
+                      (not (or strict? ?values))
+                      (and ?values
+                           (cset/superset? all (set ?values))))
+                  (or (not any)
+                      (not (or strict? ?values))
+                      (not-empty? (cset/intersection (set ?values) any)))
+                  (or (not none)
+                      (not (or strict? ?values))
+                      (empty? (cset/intersection (set ?values) none))))))))
 
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
