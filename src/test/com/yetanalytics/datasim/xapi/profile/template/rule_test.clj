@@ -403,7 +403,13 @@
                   {"id" "http://www.example.com/only-id"}]
       {:location "$.context.contextActivities.grouping[0,2].id"
        :presence "included"
-       :all      ["http://www.example.com/only-id"]})))
+       :all      ["http://www.example.com/only-id"]}
+      ;; Assoc an entry out of bounds
+      ;; (this was the error Cliff encountered when trying to craft a Profile)
+      "grouping" [nil {"definition" {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
+      {:location "$.context.contextActivities.grouping[1].definition.type"
+       :presence "included"
+       :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]})))
 
 ;; Apply a collection of rules
 (deftest apply-rule-coll-gen-test
@@ -530,12 +536,25 @@
                  {:location "$.context.contextActivities.other[*].id"
                   :all ["http://www.example.com/meetings/occurances/bar"]}]
                 :seed gen-seed)
-               (get-in ["context" "contextActivities" "other"]))))))
+               (get-in ["context" "contextActivities" "other"]))))
+    ;; assoc the 1st entry in an array before the 0th entry
+    (is (= [{"definition" {"type" "https://xapinet.com/xapi/blooms/activities/objectives/procedural"}}
+            {"definition" {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
+           (-> long-statement
+               (r/apply-rules-gen
+                [{:location "$.context.contextActivities.grouping[1].definition.type"
+                  :presence "included"
+                  :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}
+                 {:location "$.context.contextActivities.grouping[0].definition.type"
+                  :presence "included"
+                  :all      ["https://xapinet.com/xapi/blooms/activities/objectives/procedural"]}]
+                :seed gen-seed)
+               (get-in ["context" "contextActivities" "grouping"]))))))
 
 (deftest apply-rules-gen-exception-test
   (testing "apply-rules-gen throws exceptions if rules are invalid"
     ;; Flat-out invalid Statement property
-    (is (= ::r/gen-error
+    (is (= ::r/undefined-path
            (try (r/apply-rules-gen
                  short-statement
                  [{:location "$.object.zooWeeMama"
@@ -544,7 +563,7 @@
                 nil
                 (catch ExceptionInfo e (-> e ex-data :type)))))
     ;; Actor name in an Activity object
-    (is (= ::r/gen-error
+    (is (= ::r/undefined-path
            (try (r/apply-rules-gen
                  short-statement
                  [{:location "$.object.name"
@@ -553,7 +572,7 @@
                 nil
                 (catch ExceptionInfo e (-> e ex-data :type)))))
     ;; Activity definition in an Actor object
-    (is (= ::r/gen-error
+    (is (= ::r/undefined-path
            (try (r/apply-rules-gen
                  short-statement
                  [;; First replace the Activity object with an Actor object
@@ -565,22 +584,7 @@
                    :presence "included"}]
                  :seed gen-seed)
                 nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))
-    ;; Try to generate with gaps in the array
-    ;; TODO: Add another test case where this rule also has a grouping[0]
-    ;; counterpart
-    ;; FIXME: Should either do one of the following:
-    ;; a) create dummy values to fill in the gaps
-    ;; b) throw/return a validation error for invalid rule/template
-    ;; c) throw/return an error that's more descriptive than IndexOutOfBounds
-    (is (try (r/apply-rules-gen
-              long-statement
-              [{:location "$.context.contextActivities.grouping[1].definition.type"
-                :presence "included"
-                :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}]
-              :seed gen-seed)
-             false
-             (catch IndexOutOfBoundsException _ true)))))
+                (catch ExceptionInfo e (-> e ex-data :type)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CMI5 Rule Tests

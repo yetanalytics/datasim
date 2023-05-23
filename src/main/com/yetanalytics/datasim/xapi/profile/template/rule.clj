@@ -85,10 +85,9 @@
   returns a tuple, a list of matched values from location, selector, returning an empty vector if a selector cannot be matched."
   [statement
    {:keys [location selector] :as _rule}]
-  (let [loc-values (path/get-values* statement location)]
-    (if selector
-      (mapcat (fn [lv] (path/get-values* lv selector)) loc-values)
-      loc-values)))
+  (cond-> (path/get-values* statement location)
+    selector
+    (->> (mapcat #(path/get-values* % selector)) vec)))
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
@@ -131,17 +130,19 @@
 
 (defn- xapi-generator
   [spec parsed-locations statement]
-  (s/gen
-   (or spec ;; known to be `s/gen` safe
-       (try (xp/path->spec
-             ::xs/statement
-             (first parsed-locations)
-             statement)
-            (catch java.lang.AssertionError ae
-              (throw (ex-info "Couldn't figure out xapi path"
-                              {:type     ::undefined-path
-                               :key-path (first parsed-locations)}
-                              ae)))))))
+  (let [ex-info-msg "Couldn't figure out xapi path"
+        ex-info-map {:type     ::undefined-path
+                     :key-path (first parsed-locations)}]
+    (s/gen
+     (or spec ;; known to be `s/gen` safe
+         (try (xp/path->spec
+               ::xs/statement
+               (first parsed-locations)
+               statement)
+              (catch java.lang.AssertionError ae
+                (throw (ex-info ex-info-msg ex-info-map ae)))
+              (catch clojure.lang.ExceptionInfo exi
+                (throw (ex-info ex-info-msg ex-info-map exi))))))))
 
 (defn- join-location-and-selector
   [location selector]
