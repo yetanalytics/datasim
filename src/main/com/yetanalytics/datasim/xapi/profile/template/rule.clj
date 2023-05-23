@@ -86,19 +86,15 @@
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
-               :rule ::parsed-rule
-               :matches (s/? (s/every ::j/any)))
+               :rule ::parsed-rule)
   :ret boolean?)
 
 (defn follows-rule?
   "simple predicate check for a rule being satisfied by a statement
-  a la https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation.
-  You can pass in matches for efficiency's sake."
-  [statement
-   {:keys [any all none presence] :as rule}
-   & [matches]]
+  a la https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation."
+  [statement {:keys [any all none presence] :as rule}]
   (let [strict? (not= presence "recommended")
-        ?values (not-empty (or matches (match-rule statement rule)))]
+        ?values (not-empty (match-rule statement rule))]
     (and (case presence
            "included" (some? ?values)
            "excluded" (nil? ?values)
@@ -254,16 +250,15 @@
         rules (map parse-rule raw-rules)]
     (reduce
      (fn [statement {:keys [presence] :as rule}]
-       (let [matches (match-rule statement rule)]
-         (cond
-           ;; If the statement follows the rule, continue processing!
-           (follows-rule? statement rule matches)
-           statement
-           ;; The simplest case is an exclusion rule...
-           (= "excluded" presence)
-           (excise-rule statement rule)
-           ;; Otherwise, we need to apply rule values
-           :else
-           (apply-rule statement rule rng))))
+       (cond
+         ;; If the statement follows the rule, continue processing!
+         (follows-rule? statement rule)
+         statement
+         ;; The simplest case is an exclusion rule...
+         (= "excluded" presence)
+         (excise-rule statement rule)
+         ;; Otherwise, we need to apply rule values
+         :else
+         (apply-rule statement rule rng)))
      partial-statement
      rules)))
