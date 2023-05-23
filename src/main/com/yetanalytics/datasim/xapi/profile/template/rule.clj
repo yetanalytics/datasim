@@ -47,10 +47,6 @@
 ;; Rule Parse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/fdef parse-rule
-  :args (s/cat :rule ::rules/rule)
-  :ret ::parsed-rule)
-
 (defn parse-rule*
   "Parse paths in a rule"
   [{:keys [location selector] :as rule}]
@@ -70,12 +66,20 @@
     selector (assoc :selector
                     (into [] (path/parse-paths selector)))))
 
+(s/fdef parse-rule
+  :args (s/cat :rule ::rules/rule)
+  :ret ::parsed-rule)
+
 (def parse-rule
+  "Memoized version of `parse-rule*`."
   (memo/lru parse-rule* {} :lru/threshold 4096))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Follow
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Statement Template validation logic:
+;; https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
 
 (defn- not-empty?
   "Like `not-empty` but returns a boolean."
@@ -83,10 +87,9 @@
   (boolean (not-empty coll)))
 
 (defn- match-rule
-  "The matching logic from https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation
-  returns a tuple, a list of matched values from location, selector, returning an empty vector if a selector cannot be matched."
-  [statement
-   {:keys [location selector] :as _rule}]
+  "Return the matched values given by `location` and `selector`, or an empty
+   coll if no values can be matched."
+  [statement {:keys [location selector] :as _parsed-rule}]
   (cond-> (path/get-values* statement location)
     selector
     (->> (mapcat #(path/get-values* % selector)) vec)))
@@ -97,11 +100,10 @@
   :ret boolean?)
 
 (defn follows-rule?
-  "simple predicate check for a rule being satisfied by a statement
-  a la https://github.com/adlnet/xapi-profiles/blob/master/xapi-profiles-communication.md#21-statement-template-validation."
-  [statement {:keys [any all none presence] :as rule}]
+  "Simple predicate check to see if `parsed-rule` satisfies `statement`."
+  [statement {:keys [any all none presence] :as parsed-rule}]
   (let [strict? (not= presence "recommended")
-        ?values (not-empty (match-rule statement rule))]
+        ?values (not-empty (match-rule statement parsed-rule))]
     (and (case presence
            "included" (some? ?values)
            "excluded" (nil? ?values)
@@ -173,14 +175,17 @@
 ;; Rule Excision
 
 (defn- excise-rule
-  [statement {:keys [location selector]}]
+  "Remove all values given by the rule `location` and `selector`."
+  [statement {:keys [location selector] :as _parsed-rule}]
   (let [paths (cond-> location
                 selector (join-location-and-selector selector))]
     (path/excise* statement paths {:prune-empty? true})))
 
 ;; Rule Application
 
-(defn- distinct-values? [parsed-paths]
+(defn- distinct-values?
+  "Do some `parsed-paths` end at a distinct value property (e.g. `id`)?"
+  [parsed-paths]
   (->> parsed-paths
        (map last)
        (filter coll?)
@@ -188,6 +193,13 @@
        (some #(not-empty (cset/intersection % distinct-value-properties)))))
 
 (defn- rule-value-set
+  "Return the set of values to choose from when applying the rule. The
+   returned set must be a subset of `all` and exclude `none`; if `any` is
+   present it will also be a subset of that (which is more restrictive
+   than the spec but simplifies things).
+   
+   If no `any`, `all`, or `none` are provided, then return `nil`. If the
+   ensuing set is empty, throw an exception."
   [{:keys [any all none] :as rule}]
   (let [?value-set
         (cond
@@ -201,7 +213,7 @@
           (cset/intersection any all)
           all   all
           any   any
-          :else nil)] ; No any, all, or none - must resort to generation
+          :else nil)]
     (if (or (nil? ?value-set)
             (not-empty ?value-set))
       ?value-set
@@ -210,6 +222,10 @@
                        :rule rule})))))
 
 (defn- rule-value-coll
+  "Turn `value-set` into the ordered collection of values to apply at the
+   locations. If `distinct-vals?` is true (and there are enough locations
+   to put them) than any values are present exactly once; otherwise repeat
+   some values until there are enough for `num-locations`."
   [value-set rng num-locations distinct-vals?]
   (if (and distinct-vals?
            (>= (count value-set) num-locations))
@@ -245,6 +261,7 @@
 
 ;; `spec` only in `rule` if previously shown to be `s/gen` safe and more accurate than `::j/any`
 (defn- apply-rule
+  "Put the values given by `rule` at the specified `location` and `selector`."
   [statement {:keys [location selector spec] :as rule} rng]
   (let [?val-set   (rule-value-set rule)
         paths*     (cond-> location
@@ -278,7 +295,7 @@
 ;; parts of the statement are valid!
 (defn apply-rules-gen
   "Given a partial statement and rules, attempt to make the statement satisfy
-  the rules. Additional options like :seed help do this deterministically."
+   the rules. Additional options like `:seed` help do this deterministically."
   [partial-statement rules & {:keys [seed]}]
   (let [rng   (random/seed-rng seed)
         rules (map parse-rule rules)]
