@@ -35,36 +35,38 @@
            :kind set?
            :into #{}))
 
+(s/def ::presence
+  #{:included :excluded :recommended})
+
 (s/def ::parsed-rule
   (s/keys :req-un [::location]
           :opt-un [::any
                    ::all
                    ::none
                    ::selector
-                   ::rules/presence]))
+                   ::presence]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Parse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn parse-rule*
-  "Parse paths in a rule"
+  "Parse `location` and `selector` in `rule`, keywordize `presence`, and
+   turn `any`, `all`, and `none` into a set."
   [{:keys [location selector] :as rule}]
-  (cond-> (assoc
-           (reduce-kv
-            (fn [m k v]
-              (if (or (= :presence k)
-                      ;; custom key added for extension generation hint
-                      ;; -> addition to rule is strictly controlled, see `com.yetanalytics.datasim.xapi.extensions`
-                      (= :spec k))
-                (assoc m k v)
-                (assoc m k (set v))))
-            {}
-            (select-keys rule [:any :all :none :presence :spec]))
-           :location (into []
-                           (path/parse-paths location)))
-    selector (assoc :selector
-                    (into [] (path/parse-paths selector)))))
+
+  (cond-> (reduce-kv
+           (fn [m k v]
+             (case k
+               ;; custom key added for extension generation hint
+               ;; -> addition to rule is strictly controlled, see `com.yetanalytics.datasim.xapi.extensions`
+               :spec     (assoc m k v)
+               :presence (assoc m k (keyword v))
+               (assoc m k (set v)))) ; any, all, and none
+           {}
+           (select-keys rule [:any :all :none :presence :spec]))
+    location (assoc :location (into [] (path/parse-paths location)))
+    selector (assoc :selector (into [] (path/parse-paths selector)))))
 
 (s/fdef parse-rule
   :args (s/cat :rule ::rules/rule)
@@ -96,19 +98,19 @@
 
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
-               :rule ::parsed-rule)
+               :parsed-rule ::parsed-rule)
   :ret boolean?)
 
 (defn follows-rule?
   "Simple predicate check to see if `parsed-rule` satisfies `statement`."
   [statement {:keys [any all none presence] :as parsed-rule}]
-  (let [strict? (not= presence "recommended")
+  (let [strict? (not= :recommended presence)
         ?values (not-empty (match-rule statement parsed-rule))]
     (and (case presence
-           "included" (some? ?values)
-           "excluded" (nil? ?values)
+           :included (some? ?values)
+           :excluded (nil? ?values)
            true)
-         (or (= presence "excluded")
+         (or (= :excluded presence)
              (and (or (not all)
                       (not (or strict? ?values))
                       (and ?values
@@ -287,7 +289,7 @@
 
 (s/fdef apply-rules-gen
   :args (s/cat :partial-statement ::xs/statement
-               :raw-rules (s/every ::rules/rule)
+               :rules (s/every ::rules/rule)
                :options (s/keys* :req-un [::random/seed]))
   :ret ::xs/statement)
 
@@ -306,7 +308,7 @@
          (follows-rule? statement rule)
          statement
          ;; The simplest case is an exclusion rule...
-         (= "excluded" presence)
+         (= :excluded presence)
          (excise-rule statement rule)
          ;; Otherwise, we need to apply rule values.
          :else
