@@ -51,22 +51,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn parse-rule*
-  "Parse `location` and `selector` in `rule`, keywordize `presence`, and
-   turn `any`, `all`, and `none` into a set."
-  [{:keys [location selector] :as rule}]
-
-  (cond-> (reduce-kv
-           (fn [m k v]
-             (case k
-               ;; custom key added for extension generation hint
-               ;; -> addition to rule is strictly controlled, see `com.yetanalytics.datasim.xapi.extensions`
-               :spec     (assoc m k v)
-               :presence (assoc m k (keyword v))
-               (assoc m k (set v)))) ; any, all, and none
-           {}
-           (select-keys rule [:any :all :none :presence :spec]))
-    location (assoc :location (into [] (path/parse-paths location)))
-    selector (assoc :selector (into [] (path/parse-paths selector)))))
+  "Parse `:location` and `:selector` in `rule`, keywordize `:presence`, and
+   turn `:any`, `:all`, and `:none` into sets."
+  [rule]
+  (reduce-kv
+   (fn [m k v]
+     (let [v* (condp #(contains? %1 %2) k
+                #{:location :selector} (path/parse-paths v)
+                #{:presence}           (keyword v)
+                #{:any :all :none}     (set v)
+                ;; custom key added for extension generation hint
+                ;; -> addition to rule is strictly controlled,
+                ;;    see `com.yetanalytics.datasim.xapi.extensions`
+                #{:spec} v
+                v)] ; ignore all other keys
+       (assoc m k v*)))
+   {}
+   rule))
 
 (s/fdef parse-rule
   :args (s/cat :rule ::rules/rule)
