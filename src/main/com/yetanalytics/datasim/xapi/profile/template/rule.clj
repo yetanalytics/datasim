@@ -198,7 +198,8 @@
        (map last)
        (filter coll?)
        (map set)
-       (some #(not-empty (cset/intersection % distinct-value-properties)))))
+       (some #(not-empty (cset/intersection % distinct-value-properties)))
+       boolean))
 
 (defn- rule-value-set
   "Return the set of values to choose from when applying the rule. The
