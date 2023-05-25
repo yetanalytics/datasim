@@ -573,6 +573,9 @@
   ;; this behavior should be changed in Pathetic.
   (testing "apply-rules-gen with multiple rules for Context Activities"
     ;; two "any" rules
+    ;; FIXME: This is technically wrong, as two `any` rules at the same
+    ;; location would be valid (and in fact this result is wrong, since
+    ;; the intersection w/ the "foo" coll is empty).
     (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
              "objectType" "Activity"}
             {"id" "http://www.example.com/meetings/occurances/3425567"

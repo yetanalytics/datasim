@@ -201,6 +201,12 @@
        (some #(not-empty (cset/intersection % distinct-value-properties)))
        boolean))
 
+;; TODO: There are still some significant limits to this approach:
+;; - There would be no way to add rules outside of the `any` coll, even if
+;;   they are allowed by the spec.
+;; - If there are multiple `any` rules at the same location, their values
+;;   will overwrite each other instead of being appended to each other.
+;; - Multiple `all` rules at the same location will contradict each other.
 (defn- rule-value-set
   "Return the set of values to choose from when applying the rule. The
    returned set must be a subset of `all` and exclude `none`; if `any` is
