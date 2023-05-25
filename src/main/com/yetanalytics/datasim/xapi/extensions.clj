@@ -14,25 +14,30 @@
 
 ;; FIXME: support activity extensions + substatement extensions
 
+;; FIXME: Make it work with the JSONPath pipe ("|") operator
+;; Right now it only works for the first entry
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; step 1, find all rules about extensions whose gen defaults to `:com.yetanalytics.datasim.json/any`
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn filter-for-extension-rule-fn
   "parsed `:location` needs to indicate the rule is about an extension"
-  [a-rule]
-  (let [{t-loc :location} (rule/parse-rule a-rule)]
-    (containsv? t-loc #{"extensions"})))
+  [rule]
+  (let [{t-loc :location} (rule/parse-rule rule)]
+    (->> t-loc
+         first ; FIXME: Make it work with JSONPath pipe operator
+         (filter (fn [t-entry] (containsv? t-entry "extensions")))
+         not-empty)))
 
 (defn filter-for-rel-ext-rules-fn
   "only care about rules which provide no additional info to go off of in majority of cases"
   [ext-rule]
-  (let [{ext-loc  :location
-         ext-pres :presence
+  (let [{ext-pres :presence
          ext-any  :any
          ext-all  :all
          ext-none :none} (rule/parse-rule ext-rule)]
-    (if (not= ext-pres "included")
+    (if (not= :included ext-pres)
       false
       (if (some? (or (not-empty ext-any) (not-empty ext-all) (not-empty ext-none)))
         ;; rule gives us something to go off of
@@ -84,7 +89,7 @@
   The `s/spec` is only added to `raw-rule` at `:spec` if a generator can be created from it via `s/gen`,
   otherwise return `raw-rule` unaltered and rely on default of `com.yetanalytics.datasim.json/any`"
   [profiles rng raw-rule parsed-loc]
-  (let [[_ _ ext-id-set] parsed-loc
+  (let [[_ _ ext-id-set] (first parsed-loc) ; FIXME: Make it work with JSONPath pipe operator
         {json-schema-str :inlineSchema
          :as from-ps} (extension-concept-from-profiles profiles (first ext-id-set))]
     (if (and (string? json-schema-str) (not-empty json-schema-str))
@@ -107,8 +112,9 @@
   "When `extension-rule` is describing a context or result extension, continue on to `in-line-schema->spec`,
    otherwise return `extension-rule` unaltered"
   [profiles rng extension-rule]
-  (let [{[ext-kind-set :as ext-loc] :location} (rule/parse-rule extension-rule)]
-    (if (or (= ext-kind-set #{"context"}) (= ext-kind-set #{"result"}))
+  (let [{ext-loc :location} (rule/parse-rule extension-rule)
+        ext-kind-coll       (ffirst ext-loc)] ; FIXME: Make it work with JSONPath pipe operator
+    (if (or (= ext-kind-coll ["context"]) (= ext-kind-coll ["result"]))
       (in-line-schema->spec profiles rng extension-rule ext-loc)
       ;; not supporting any other types of extensions at this time, may be revisited and expanded at future date
       extension-rule)))
@@ -126,8 +132,7 @@
     (if (empty? tmpl-ext-rules-coll)
       ;; no relevant rules within current template, return `template-rules` unaltered
       template-rules
-      (let [ext-rule-locs     (mapv :location
-                                    tmpl-ext-rules-coll)
+      (let [ext-rule-locs     (mapv :location tmpl-ext-rules-coll)
             without-ext-rules (filterv (fn [tmpl-rule] (not (containsv? ext-rule-locs (:location tmpl-rule))))
                                        template-rules)
             updated-rules     (mapv (partial add-spec-to-ext-rule-fn profiles rng)
@@ -149,6 +154,7 @@
 
   (def rng 123)
 
+  ;; TODO: Turn into tests
   (and (some? (:spec (first (derive-generation-hint profiles rng template-rules))))
        (s/valid? (:spec (first (derive-generation-hint profiles rng template-rules))) 1)
        (s/valid? (:spec (first (derive-generation-hint profiles rng template-rules))) 1.0)
