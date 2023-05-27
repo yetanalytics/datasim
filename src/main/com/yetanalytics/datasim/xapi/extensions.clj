@@ -27,7 +27,9 @@
   (let [{t-loc :location} (rule/parse-rule rule)]
     (->> t-loc
          first ; FIXME: Make it work with JSONPath pipe operator
-         (filter (fn [t-entry] (containsv? t-entry "extensions")))
+         (filter (fn [t-entry]
+                   (and (coll? t-entry) ; not a wildcard
+                        (containsv? t-entry "extensions"))))
          not-empty)))
 
 (defn filter-for-rel-ext-rules-fn
