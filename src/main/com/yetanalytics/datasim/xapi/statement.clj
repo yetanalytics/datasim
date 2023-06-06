@@ -105,6 +105,35 @@
               (mapv usage-type->attachment-base attachment-usage-types))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Rule Application
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn template-rules
+  [{:keys [iri-map activities]} {rules :rules}]
+  (let [;; TODO: More efficient data structures
+        verb-set          (->> iri-map (filter #(= "Verb" (:type %))) set)
+        verb-id-set       (->> verb-set (map :id) set)
+        activity-set      (->> activities vals (mapcat vals) set)
+        activity-id-set   (->> activities vals (mapcat keys) set)
+        activity-type-set (->> activities keys set)
+        add-rule-valuegen (partial rule/add-rule-valuegen
+                                   {:verbs          verb-set
+                                    :verb-ids       verb-id-set
+                                    :activities     activity-set
+                                    :activity-ids   activity-id-set
+                                    :activity-types activity-type-set})
+        parsed-rules      (->> rules
+                               (map rule/parse-rule-2)
+                               (mapcat rule/separate-rule)
+                               (map rule/add-rule-specpath))
+        add-rule-specname (partial rule/add-rule-specname
+                                   (rule/->path-rule-map parsed-rules))]
+    (->> rules
+         (map add-rule-specname)
+         (map add-rule-valuegen)
+         vec)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

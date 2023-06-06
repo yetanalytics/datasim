@@ -2,6 +2,7 @@
   "Given a path into an xAPI structure, return a spec from xapi-schema"
   (:require [com.yetanalytics.datasim.json :as json]
             [clojure.spec.alpha :as s]
+            [clojure.set :as cset]
             [xapi-schema.spec :as xs]))
 
 (s/def :spec-map.map-spec/keys
@@ -159,7 +160,8 @@
      (do
        (assert (or (s/get-spec spec)
                    (fn? spec)
-                   (s/spec? spec)) "Must return a valid, registered spec or a function or a spec literal")
+                   (s/spec? spec))
+               "Must return a valid, registered spec or a function or a spec literal")
        spec)
      (if-let [spec-entry (get spec-map spec)]
        (let [p-key (first path)]
@@ -218,3 +220,136 @@
        (throw (ex-info "No spec in map"
                        {:type ::no-spec-in-map
                         :spec spec}))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def xs-ns "xapi-schema.spec")
+
+(defn- array-element-spec-name
+  [array-prop]
+  (condp contains? array-prop
+    #{"category" "grouping" "parent" "other"}
+    "activity"
+    #{"choices" "scale" "source" "target" "steps"}
+    "interaction-component"
+    #{"correctResponsesPattern"}
+    "string-not-empty"
+    #{"member"}
+    "agent"
+    #{"attachments"}
+    "attachment"
+    ;; else
+    (throw (ex-info "Unknown array property"
+                    {:type     ::invalid-array-property
+                     :property array-prop}))))
+
+(defn- follows-prefix?
+  [prefix coll]
+  (->> (map = prefix coll)
+       (every? true?)))
+
+(defn- rule-object-type [path-prefix rules]
+  (let [path->rule-m
+        (reduce (fn [m {:keys [specpath] :as rule}]
+                  (cond-> m
+                    (follows-prefix? path-prefix specpath)
+                    (assoc specpath rule)))
+                {}
+                rules)
+        object-type-vals
+        (:valueset (get path->rule-m (conj path-prefix "objectType")))
+        property-set
+        (->> path->rule-m keys (drop (count path-prefix)) set)]
+    {:object-type-vals object-type-vals
+     :property-set     property-set}))
+
+(defn- object-type [path-prefix rules]
+  (let [{:keys [object-type-vals property-set]}
+        (rule-object-type path-prefix rules)]
+    (cond
+      ;; Decide based on `objectType`
+      ;; TODO: Take care of contradictions between objectType and
+      ;; other properties
+      (< 1 (count object-type-vals))
+      (throw (ex-info "Multiple possible objectTypes not supported"
+                      {:type ::multiple-object-types
+                       :path (conj path-prefix "objectType")}))
+      (= #{"Activity"} object-type-vals)     "activity"
+      (= #{"Agent"} object-type-vals)        "agent"
+      (= #{"Group"} object-type-vals)        "group"
+      (= #{"StatementRef"} object-type-vals) "statement-ref"
+      (= #{"SubStatement"} object-type-vals) "sub-statement"
+      ;; Decide based on other properties
+      (-> #{"member"}
+          (cset/intersection property-set)
+          not-empty)
+      "group"
+      (-> #{"name" "mbox" "mbox_sha1sum" "openid" "acount"}
+          (cset/intersection property-set)
+          not-empty)
+      "agent" ; default to agent
+      (-> #{"timestamp" "actor" "verb" "object" "context" "result" "attachments"}
+          (cset/intersection property-set)
+          not-empty)
+      "sub-statement"
+      ;; Default to activity
+      :else
+      "activity")))
+
+(defn- actor-type [path-prefix rules]
+  (let [{:keys [object-type-vals property-set]}
+        (rule-object-type path-prefix rules)]
+    (cond
+      ;; Decide based on `objectType`
+      (= #{"Agent"} object-type-vals) "agent"
+      (= #{"Group"} object-type-vals) "group"
+      ;; Decide based on other properties
+      (-> #{"member"}
+          (cset/intersection property-set)
+          not-empty)
+      "group"
+      ;; Default to agent
+      :else
+      "agent")))
+
+(defn rule-spec-keyword
+  [parsed-rules path]
+  (let [[x0 x1 x2] (take-last 3 path)]
+    (cond
+      ;; $.object => ::xs/activity
+      (= "object" x2)
+      (keyword xs-ns
+               (object-type (->> [x1 x2] (filterv nil?)) parsed-rules))
+      ;; $.actor => ::xs/agent
+      (= "actor" x2)
+      (keyword xs-ns
+               (actor-type (->> [x1 x2] (filterv nil?)) parsed-rules))
+      ;; $.object.id => :activity/id
+      (= "object" x1)
+      (keyword (object-type (->> [x0 x1] (filterv nil?)) parsed-rules)
+               x2)
+      ;; $.actor.name => :agent/name
+      (= "actor" x1)
+      (keyword (actor-type (->> [x0 x1] (filterv nil?)) parsed-rules)
+               x2)
+      ;; $.verb => ::xs/verb
+      (and (nil? x1)
+           (string? x2))
+      (keyword xs-ns x2)
+      ;; $.verb.id => :verb/id
+      (and (string? x1)
+           (string? x2))
+      (keyword x1 x2)
+      ;; $.attachments.* => ::xs/attachment
+      (and (string? x1)
+           (= '* x2))
+      (keyword xs-ns (array-element-spec-name x1))
+      ;; $.attachments.*.id => :attachment/id
+      (and (string? x0)
+           (= '* x1)
+           (string? x2))
+      (keyword (array-element-spec-name x0) (first x2))
+      :else
+      (throw (ex-info "Unsupported key-index combination"
+                      {:type ::invalid-path
+                       :path path})))))

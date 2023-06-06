@@ -10,7 +10,8 @@
             [com.yetanalytics.pan.objects.templates.rule :as rules]
             [com.yetanalytics.datasim.json      :as j]
             [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.random    :as random]))
+            [com.yetanalytics.datasim.random    :as random]
+            [com.yetanalytics.datasim.json.schema :as jschema]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -328,3 +329,264 @@
          (apply-rule statement rule rng)))
      partial-statement
      rules)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; NEW RULE FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- rule-value-set-2
+  ([?all ?none]
+   (rule-value-set-2 nil ?all ?none))
+  ([?any ?all ?none]
+   (cond
+     (and ?any ?all ?none)
+     (cset/difference (cset/intersection ?any ?all) ?none)
+     (and ?any ?none)
+     (cset/difference ?any ?none)
+     (and ?all ?none)
+     (cset/difference ?all ?none)
+     (and ?any ?all)
+     (cset/intersection ?any ?all)
+     ?all   ?all
+     ?any   ?any
+     :else nil)))
+
+(defn parse-rule-2
+  [{:keys [location selector presence any all none]}]
+  (let [paths (cond-> (path/parse-paths location)
+                selector
+                (join-location-and-selector (path/parse-paths selector)))
+        ?any  (not-empty (set any))
+        ?all  (not-empty (set all))
+        ?none (not-empty (set none))]
+    (cond-> {:location paths}
+      presence       (assoc :presence (keyword presence))
+      (or ?any ?all) (assoc :valueset (rule-value-set-2 ?any ?all ?none))
+      ?any           (assoc :any ?any)
+      ?all           (assoc :all ?all)
+      ?none          (assoc :none ?none))))
+
+(defn separate-rule
+  [{:keys [location] :as parsed-rule}]
+  (let [rules (map (fn [loc] (assoc parsed-rule :location [loc]))
+                   location)]
+    (loop [idx   0
+           loc   (first location)
+           rules rules]
+      (if-some [loc-element (first loc)]
+        (let [loc-rest (rest loc)]
+          (cond
+            (or (= '* loc-element)
+                (= 1 (count loc-element))
+                (every? int? loc-element))
+            (recur (inc idx)
+                   loc-rest
+                   rules)
+            (every? string? loc-element)
+            (recur (inc idx)
+                   loc-rest
+                   (for [rule  rules
+                         loc-k loc-rest]
+                     (assoc-in rule [:location 0 idx] loc-k)))
+            :else
+            (throw (ex-info "Rule location cannot mix integer and string keys."
+                            {:type ::invalid-rule
+                             :rule parsed-rule}))))
+        (vec rules)))))
+
+(def xs-ns "xapi-schema.spec")
+
+(defn- array-element-spec-name
+  [element]
+  (condp contains? element
+    #{"category" "grouping" "parent" "other"}
+    "activity"
+    #{"choices" "scale" "source" "target" "steps"}
+    "interaction-component"
+    #{"correctResponsesPattern"}
+    "string"
+    #{"member"}
+    "agent"
+    #{"attachments"}
+    "attachment"
+    ;; else
+    (throw (ex-info "Unknown path elements"
+                    {:type ::invalid-path-element
+                     :element element}))))
+
+(defn add-rule-specpath
+  [{:keys [location] :as parsed-rule}]
+  (->> location
+       first
+       (mapv (fn [loc-elements]
+               (cond
+                 (or (-> loc-elements #{'*})
+                     (-> loc-elements first int?))
+                 '*
+                 :else
+                 (first loc-elements))))
+       (assoc parsed-rule :specpath)))
+
+(defn ->path-rule-map
+  [parsed-rules]
+  (reduce (fn [m {:keys [specpath] :as parsed-rule}]
+            (assoc m specpath parsed-rule))
+          {}
+          parsed-rules))
+
+(defn- follows-prefix?
+  [prefix coll]
+  (and (<= (count prefix) (count coll))
+       (= prefix (subvec coll 0 (count prefix)))))
+
+(defn- object-type [path-rule-map path-prefix]
+  (let [object-types (->> (conj path-prefix "objectType")
+                          (get path-rule-map)
+                          :valueset)
+        property-set (->> path-rule-map
+                          keys
+                          (filter #(follows-prefix? path-prefix %))
+                          (map #(get % (count path-prefix)))
+                          set)]
+    (cond
+      (< 1 (count object-types))
+      (throw (ex-info "Multiple possible objectTypes not supported"
+                      {:type ::multiple-object-types
+                       :path (conj path-prefix "objectType")}))
+      (= 1 (count object-types))
+      (condp = object-types
+        #{"Activity"} "activity"
+        #{"Agent"}    "agent"
+        #{"Group"}    "group"
+        #{"StatementRef"} "statement-ref"
+        #{"SubStatement"} "sub-statement"
+        ;; else - default to activity
+        "activity")
+      :else
+      (condp #(contains? %2 %1) property-set
+        "member"       "group"
+        "name"         "agent"
+        "mbox"         "agent"
+        "mbox_sha1sum" "agent"
+        "openid"       "agent"
+        "account"      "agent"
+        "timestamp"    "sub-statement"
+        "actor"        "sub-statement"
+        "verb"         "sub-statement"
+        "object"       "sub-statement"
+        "context"      "sub-statement"
+        "result"       "sub-statement"
+        "attachments"  "sub-statement"
+        ;; else - default to activity
+        "activity"))))
+
+(defn- actor-type [path-rule-map path-prefix]
+  (let [object-types (->> (conj path-prefix "objectType")
+                          (get path-rule-map)
+                          :valueset)
+        property-set (->> path-rule-map
+                          keys
+                          (filter #(follows-prefix? path-prefix %))
+                          (map #(get % (count path-prefix)))
+                          set)]
+    (cond
+      (< 1 (count object-types))
+      (throw (ex-info "Multiple possible objectTypes not supported"
+                      {:type ::multiple-object-types
+                       :path (conj path-prefix "objectType")}))
+      (= 1 (count object-types))
+      (condp = object-types
+        #{"Agent"} "agent"
+        #{"Group"} "group"
+        ;; else - default to agent
+        "agent")
+      :else
+      (condp #(contains? %2 %1) property-set
+        "member"       "group"
+        "name"         "agent"
+        "mbox"         "agent"
+        "mbox_sha1sum" "agent"
+        "openid"       "agent"
+        "account"      "agent"
+        ;; else - default to agent
+        "agent"))))
+
+(defn- rule-spec-name
+  [path-rule-map path]
+  (let [[x0 x1 x2] (take-last 3 path)]
+    (cond
+      ;; $.object.object => :sub-statement/activity
+      (and (= "object" x1)
+           (= "object" x2))
+      (keyword "sub-statement"
+               (object-type path-rule-map ["object" "object"]))
+      ;; $.object => :statement/activity
+      (and (nil? x1)
+           (= "object" x2))
+      (keyword "statement"
+               (object-type path-rule-map ["object"]))
+      ;; $.actor => ::xs/agent
+      (or (= "actor" x2)
+          (= "authority" x2))
+      (keyword xs-ns (actor-type path-rule-map path))
+      ;; $.object.id => :activity/id
+      (= "object" x1)
+      (keyword (object-type path-rule-map path) x2)
+      ;; $.actor.name => :agent/name
+      (= "actor" x1)
+      (keyword (actor-type path-rule-map path) x2)
+      ;; $.verb => ::xs/verb
+      (and (nil? x1)
+           (string? x2))
+      (keyword xs-ns x2)
+      ;; $.verb.id => :verb/id
+      (and (string? x1)
+           (string? x2))
+      (keyword x1 x2)
+      ;; $.attachments.* => ::xs/attachment
+      (and (string? x1)
+           (= '* x2))
+      (keyword xs-ns (array-element-spec-name x1))
+      ;; $.attachments.*.id => :attachment/id
+      (and (string? x0)
+           (= '* x1)
+           (string? x2))
+      (keyword (array-element-spec-name x0) (first x2))
+      :else
+      (throw (ex-info "Unsupported key-index combination"
+                      {:type ::invalid-path
+                       :path path})))))
+
+(defn add-rule-specname
+  [path-rule-map parsed-rule]
+  (->> (rule-spec-name path-rule-map parsed-rule)
+       (assoc parsed-rule :specname)))
+
+(defn- specname->generator
+  [specname]
+  ;; TODO: Extensions
+  (try (s/gen specname)
+       (catch Exception e
+         (ex-info (format "Unable to create generator for: %s" specname)
+                  {:type ::generator-failure
+                   :spec specname}
+                  e))))
+
+(defn add-rule-valuegen
+  [{:keys [verbs verb-ids activities activity-ids activity-types]}
+   {:keys [specname valueset none] :as parsed-rule}]
+  (let [?all-set (case specname
+                   :statement/verb verbs
+                   :sub-statement/verb verbs
+                   :verb/id verb-ids
+                   :statement-object/activity activities
+                   :sub-statement-object/activity activities
+                   :activity/id activity-ids
+                   :definition/type activity-types
+                   nil)]
+    (cond-> parsed-rule
+      (and (not valueset) ?all-set)
+      (assoc :all      ?all-set
+             :valueset (rule-value-set-2 ?all-set none))
+      (and (not valueset) (not ?all-set))
+      (assoc :generator (specname->generator specname)))))
