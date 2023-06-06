@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.statement
   "Generate Statements"
   (:require [clojure.spec.alpha :as s]
+            [clojure.spec.gen.alpha :as sgen]
             [clojure.set :as cset]
             [clojure.string :as string]
             [clojure.walk :as w]
@@ -111,7 +112,7 @@
 (defn template-rules
   [{:keys [iri-map activities]} {rules :rules}]
   (let [;; TODO: More efficient data structures
-        verb-set          (->> iri-map (filter #(= "Verb" (:type %))) set)
+        verb-set          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
         verb-id-set       (->> verb-set (map :id) set)
         activity-set      (->> activities vals (mapcat vals) set)
         activity-id-set   (->> activities vals (mapcat keys) set)
@@ -132,6 +133,345 @@
          (map add-rule-specname)
          (map add-rule-valuegen)
          vec)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Completion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- merge-nested
+  "Perform a nested merge of `m2` onto `m1`. Recurses on maps and replaces
+   all other values."
+  [m1 m2]
+  (merge-with
+   (fn [v1 v2] (if (and (map? v1) (map? v2)) (merge-nested v1 v2) v2))
+   m1
+   m2))
+
+(defn- super-nested?
+  "Is `m1` a \"supermap\" of `m2`? Checks recursively on map values."
+  [m1 m2]
+  (let [keys-1 (keys m1)
+        keys-2 (keys m2)]
+    (if (cset/superset? (set keys-1) (set keys-2))
+      (->> m2
+           (merge-with
+            (fn [v1 v2]
+              (if (and (map? v1) (map? v2))
+                (super-nested? v1 v2)
+                (= v1 v2)))
+            (select-keys m1 keys-2))
+           vals
+           (reduce (fn [acc res] (and acc res)) true))
+      false)))
+
+;; Verbs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def verb-id-gen (s/gen :verb/id))
+
+(defn- generate-verb [_]
+  {"id" (sgen/generate verb-id-gen)})
+
+(defn profile->statement-verb
+  [{:keys [id prefLabel]}]
+  {"id"      id
+   "display" (w/stringify-keys prefLabel)})
+
+(s/fdef complete-verb
+  :args (s/cat :inputs (s/keys :req-un [::profile/iri-map ::alignment])
+               :rng    ::random/rng
+               :verb   (s/nilable map?))
+  :ret ::xs/verb)
+
+(defn complete-verb
+  [{:keys [iri-map alignment]} rng {:strs [id] :as verb}]
+  (-> (or (some->> id
+                   (get iri-map)
+                   profile->statement-verb)
+          (some->> verb
+                   generate-verb)
+          (some->> iri-map
+                   vals
+                   (filter #(= "Verb" (:type %)))
+                   (map :id)
+                   (random/choose rng alignment)
+                   (get iri-map)))
+      (merge-nested verb)))
+
+;; Activities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def activity-id-gen (s/gen :activity/id))
+
+(defn- generate-activity [_]
+  {"id" (sgen/generate activity-id-gen)
+   "objectType" "Activity"})
+
+(s/fdef complete-activity
+  :args (s/cat :inputs   (s/keys :req-un [::profile/iri-map
+                                          ::activities
+                                          ::alignment])
+               :rng      ::random/rng
+               :activity (s/nilable map?))
+  :ret ::xs/activity)
+
+(defn complete-activity
+  [{:keys [activities alignment]}
+   rng
+   {:strs [id] {:strs [type]} "definition" :as activity}]
+  (-> (or (some->> id
+                   (get (reduce merge {} (vals activities))))
+          (some->> type
+                   (get activities)
+                   keys
+                   (random/choose rng alignment)
+                   (apply get-in activities type))
+          (some->> activity
+                   generate-activity)
+          (some->> activities
+                   keys
+                   (random/choose rng alignment)
+                   (get activities)
+                   keys
+                   (random/choose rng alignment)
+                   (get (reduce merge {} (vals activities)))))
+      (merge-nested activity)))
+
+;; Agents ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-ifi
+  [{:strs [mbox mbox_sha1sum openid account]}]
+  (or mbox mbox_sha1sum openid account))
+
+(def agent-gen (s/gen ::xs/agent))
+
+(def agent-account-gen (s/gen :agent/account))
+
+(s/fdef complete-agent
+  :args (s/cat :agent map?)
+  :ret ::xs/agent)
+
+(defn complete-agent [agent]
+  (let [ifi     (get-ifi agent)
+        account (get agent "account")
+        agent*  (assoc agent "objectType" "Agent")]
+    (cond
+      (nil? ifi)
+      (merge (sgen/generate agent-gen) agent*)
+      (and account
+           (or (not (contains? account "homePage"))
+               (not (contains? account "name"))))
+      (update agent*
+              "account"
+              (partial merge (sgen/generate agent-account-gen)))
+      :else
+      agent*)))
+
+;; Groups ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def group-gen (s/gen ::xs/group))
+
+(def group-account-gen (s/gen :group/account))
+
+(s/fdef complete-group
+  :args (s/cat :group map?)
+  :ret ::xs/group)
+
+(defn complete-group
+  [group]
+  (let [ifi     (get-ifi group)
+        account (get group "account")
+        members (not-empty (get group "member"))
+        group*  (cond-> group
+                  true    (assoc "objectType" "Group")
+                  members (update "member" (partial mapv complete-agent)))]
+    (cond
+      (and (nil? ifi) (nil? members))
+      (merge (sgen/generate group-gen) group*)
+      (and account
+           (or (not (contains? account "homePage"))
+               (not (contains? account "name"))))
+      (update group*
+              "account"
+              (partial merge (sgen/generate group-account-gen)))
+      :else
+      group*)))
+
+;; Context ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef complete-context
+  :args (s/cat :inputs  (s/keys :req-un [::profile/iri-map
+                                         ::activities
+                                         ::alignment])
+               :rng     ::random/rng
+               :context (s/nilable map?))
+  :ret ::xs/context)
+
+(defn complete-context
+  [inputs
+   rng
+   {:strs [instructor team]
+    {:strs [category grouping parent other]} "contextActivities"
+    :as context}]
+  (let [complete-activities (partial mapv (partial complete-activity inputs rng))]
+    (cond-> context
+      instructor (update-in ["instructor"] complete-agent)
+      team       (update-in ["team"] complete-group)
+      category   (update-in ["contextActivities" "category"] complete-activities)
+      grouping   (update-in ["contextActivities" "grouping"] complete-activities)
+      parent     (update-in ["contextActivities" "parent"] complete-activities)
+      other      (update-in ["contextActivities" "other"] complete-activities))))
+
+;; Attachments ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def attachment-gen (s/gen ::xs/attachment))
+
+(defn- complete-attachment
+  [attachment]
+  (merge (sgen/generate attachment-gen) attachment))
+
+(s/fdef complete-attachments
+  :args (s/cat :attachments (s/coll-of map?))
+  :ret ::xs/attachments)
+
+(defn complete-attachments
+  [attachments]
+  (mapv complete-attachment attachments))
+
+;; Authority ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- replace-ifi-with-account
+  [{:strs [mbox mbox_sha1sum openid account] :as agent}]
+  (cond-> agent
+    (or mbox mbox_sha1sum openid)
+    (dissoc "mbox" "mbox_sha1sum" "openid")
+    (not account)
+    (assoc "account" {})))
+
+(s/fdef complete-authority
+  :args (s/cat :authority map?)
+  :ret (s/or :agent ::xs/agent
+             :oauth-consumer ::xs/oauth-consumer
+             :three-legged-oauth-group ::xs/tlo-group))
+
+(defn complete-authority
+  [{:strs [objectType member] :as authority}]
+  (if (= "Group" objectType)
+    ;; Three-legged OAuth Group
+    (complete-group
+     (condp #(= %1 (count %2)) member
+       0 (assoc authority
+                "member"
+                [(complete-agent {"account" {}})
+                 (complete-agent {})])
+       1 (assoc authority
+                "member"
+                [(complete-agent (-> member first replace-ifi-with-account))
+                 (complete-agent {})])
+       2 (assoc authority
+                "member"
+                [(complete-agent (-> member first replace-ifi-with-account))
+                 (complete-agent (-> member second))])
+       (throw (ex-info "Cannot have authority with more than 2 group members"
+                       {:type     ::invalid-3-legged-oauth-authority
+                        :authority authority}))))
+    ;; Regular Authority Agent
+    (complete-agent authority)))
+
+;; StatementRef ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def statement-ref-id-gen (s/gen :statement-ref/id))
+
+(s/fdef complete-statement-ref
+  :args (s/cat :statement-ref map?)
+  :ret ::xs/statement-ref)
+
+(defn complete-statement-ref
+  [{:strs [id] :as statement-ref}]
+  (cond-> (assoc statement-ref "objectType" "StatementRef")
+    (nil? id) (assoc "id" (sgen/generate statement-ref-id-gen))))
+
+;; SubStatement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn complete-sub-object
+  [inputs rng object]
+  (case (get object "objectType")
+    "Activity"     (complete-activity inputs rng object)
+    "Agent"        (complete-agent object)
+    "Group"        (complete-group object)
+    "StatementRef" (complete-statement-ref object)
+    "SubStatement" (throw (ex-info "Cannot have nested SubStatements!"
+                                   {:type  ::nested-substatement
+                                    :object object}))
+    (complete-activity inputs rng object)))
+
+(s/fdef complete-sub-statement
+  :args (s/cat :inputs (s/keys :req-un [::profile/iri-map
+                                        ::activities
+                                        ::alignment])
+               :rng ::random/rng
+               :sub-statement map?)
+  :ret ::xs/sub-statement)
+
+;; Unlike top-level statements, sub-statements cannot have IDs or authorities
+(defn complete-sub-statement
+  [inputs rng sub-statement]
+  (let [{:strs [context attachments]} sub-statement
+        actor (-> inputs :actor w/stringify-keys)
+        ;; Functions
+        complete-verb    (partial complete-verb inputs rng)
+        complete-object  (partial complete-sub-object inputs rng)
+        complete-context (partial complete-context inputs rng)]
+    (cond-> (-> sub-statement
+                (update "actor" merge actor) ; TODO: Check that actor conforms to template
+                (update "verb" complete-verb)
+                (update "object" complete-object))
+      ;; Optional statement properties
+      context     (update "context" complete-context)
+      attachments (update "attachments" complete-attachments))))
+
+;; Statement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def id-gen (s/gen :statement/id))
+
+(defn- complete-id [id]
+  (if id id (sgen/generate id-gen)))
+
+(defn complete-object
+  [inputs rng object]
+  (case (get object "objectType")
+    "Activity"     (complete-activity inputs rng object)
+    "Agent"        (complete-agent object)
+    "Group"        (complete-group object)
+    "StatementRef" (complete-statement-ref object)
+    "SubStatement" (complete-sub-statement inputs rng object)
+    (complete-activity inputs rng object)))
+
+(s/fdef complete-statement
+  :args (s/cat :inputs (s/keys :req-un [::profile/iri-map
+                                        ::activities
+                                        ::alignment])
+               :rng ::random/rng
+               :statement map?)
+  :ret ::xs/statement)
+
+(defn complete-statement
+  [inputs rng statement]
+  (let [{:strs [context attachments authority]} statement
+        actor (-> inputs :actor w/stringify-keys)
+        ;; Functions
+        complete-verb    (partial complete-verb inputs rng)
+        complete-object  (partial complete-object inputs rng)
+        complete-context (partial complete-context inputs rng)]
+    (cond-> (-> statement
+                (update "id" complete-id)
+                (update "actor" merge actor) ; TODO: Check that actor conforms to template
+                (update "verb" complete-verb)
+                (update "object" complete-object))
+      ;; Optional statement properties
+      context     (update "context" complete-context)
+      attachments (update "attachments" complete-attachments)
+      authority   (update "authority" complete-authority))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Generation
