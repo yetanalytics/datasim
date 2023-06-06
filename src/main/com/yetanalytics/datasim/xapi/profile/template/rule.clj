@@ -590,3 +590,66 @@
              :valueset (rule-value-set-2 ?all-set none))
       (and (not valueset) (not ?all-set))
       (assoc :generator (specname->generator specname)))))
+
+(defn- generate-xapi-2
+  [generator none rng gen-size]
+  (let [?none-filter (when (not-empty none)
+                       (partial (complement contains?) none))
+        generator    (cond->> generator
+                       ?none-filter (gen/such-that ?none-filter))
+        generate-fn  #(gen/generate generator 30 (random/rand-long rng))]
+    (try (vec (repeatedly gen-size generate-fn))
+         (catch clojure.lang.ExceptionInfo exi
+           (throw (ex-info "Generation error!"
+                           {:type ::gen-error
+                            :gen  generator}
+                           exi))))))
+
+(defn- apply-inclusion-rule
+  [statement {:keys [location valueset generator none]} rng]
+  (let [distincts? (distinct-values? location)
+        enum-max   (if (and distincts? valueset)
+                     (count valueset)
+                     max-enumerated-paths)
+        enum-limit (inc (random/rand-int* rng enum-max))
+        opt-map    {:multi-value?     true
+                    :wildcard-append? false
+                    :wildcard-limit   enum-limit}
+        paths      (path/speculate-paths* statement location opt-map)
+        num-paths  (count paths)
+        val-coll   (if valueset
+                     (rule-value-coll valueset rng num-paths distincts?)
+                     (generate-xapi-2 generator none rng num-paths))]
+    ;; It's rather unoptimized to call pathetic.json-path/speculative-path-seqs
+    ;; twice, but profiling shows that this doesn't actually matter.
+    (path/apply-value* statement location val-coll opt-map)))
+
+(defn apply-inclusion-rules
+  [statement parsed-rules rng]
+  (->> parsed-rules
+       (filter
+        (fn [{:keys [presence]}]
+          (not= :excluded presence)))
+       (reduce 
+        (fn [statement rule]
+          (if-not (follows-rule? statement rule)
+            (apply-inclusion-rule statement rule rng)
+            statement))
+        statement)))
+
+(defn- apply-exclusion-rule
+  [statement {:keys [location]}]
+  (path/excise* statement location {:prune-empty? true}))
+
+(defn apply-exclusion-rules
+  [statement parsed-rules]
+  (->> parsed-rules
+       (filter
+        (fn [{:keys [presence]}]
+          (= :excluded presence)))
+       (reduce
+        (fn [statement rule]
+          (if-not (follows-rule? statement rule)
+            (apply-exclusion-rule statement rule)
+            statement))
+        statement)))
