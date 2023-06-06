@@ -73,7 +73,8 @@
   "Form the base of a statement from the Determining Properties of
    the Template. Elements of array-valued properties (the context
    activity types and the attachment usage types) are added in order."
-  [{verb-id                 :verb
+  [{profile-version-id      :inScheme
+    verb-id                 :verb
     object-activity-type    :objectActivityType
     category-activity-types :contextCategoryActivityType
     grouping-activity-types :contextGroupingActivityType
@@ -103,7 +104,21 @@
               (mapv activity-type->activity-base other-activity-types))
     attachment-usage-types
     (assoc-in ["attachments"]
-              (mapv usage-type->attachment-base attachment-usage-types))))
+              (mapv usage-type->attachment-base attachment-usage-types))
+    profile-version-id ; always true
+    (update-in ["context" "contextActivities" "category"]
+               conj
+               {"id" profile-version-id})))
+
+(defn base-statement
+  [{:keys [template sim-t registration]} rng]
+  (-> (template->base-statement template)
+      (assoc-in ["id"]
+                (random/rand-uuid rng))
+      (assoc-in ["timestamp"]
+                (.toString (Instant/ofEpochMilli sim-t)))
+      (assoc-in ["context" "registration"]
+                registration)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Rule Application
