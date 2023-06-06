@@ -17,6 +17,10 @@
             [com.yetanalytics.datasim.xapi.extensions :as ext])
   (:import [java.time Instant]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; The duration, in milliseconds, of the returned statement
 ;; This is so we can resume processing AFTER the statement timestamp + duration
 (s/def ::end-ms
@@ -51,6 +55,58 @@
   (s/map-of ::xs/iri ;; activity type
             (s/map-of ::xs/iri
                       ::xs/activity)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Base
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- activity-type->activity-base
+  [activity-type]
+  {"definition" {"type" activity-type}})
+
+(defn- usage-type->attachment-base
+  [attachment-usage-type]
+  {"usageType" attachment-usage-type})
+
+(defn template->base-statement
+  "Form the base of a statement from the Determining Properties of
+   the Template. Elements of array-valued properties (the context
+   activity types and the attachment usage types) are added in order."
+  [{verb-id                 :verb
+    object-activity-type    :objectActivityType
+    category-activity-types :contextCategoryActivityType
+    grouping-activity-types :contextGroupingActivityType
+    parent-activity-types   :contextParentActivityType
+    other-activity-types    :contextOtherActivityType
+    attachment-usage-types  :attachemntUsageType
+    ;; TODO: StatementRef properties
+    ;; object-statement-ref  :objectStatementRefTemplate
+    ;; context-statement-ref :contextStatementRefTemplate
+    }]
+  (cond-> {}
+    verb-id
+    (assoc-in ["verb" "id"] verb-id)
+    object-activity-type
+    (assoc-in ["object" "definition" "type"] object-activity-type)
+    category-activity-types
+    (assoc-in ["context" "contextActivities" "category"]
+              (mapv activity-type->activity-base category-activity-types))
+    grouping-activity-types
+    (assoc-in ["context" "contextActivities" "grouping"]
+              (mapv activity-type->activity-base grouping-activity-types))
+    parent-activity-types
+    (assoc-in ["context" "contextActivities" "parent"]
+              (mapv activity-type->activity-base parent-activity-types))
+    other-activity-types
+    (assoc-in ["context" "contextActivities" "other"]
+              (mapv activity-type->activity-base other-activity-types))
+    attachment-usage-types
+    (assoc-in ["attachments"]
+              (mapv usage-type->attachment-base attachment-usage-types))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef generate-statement
   :args
