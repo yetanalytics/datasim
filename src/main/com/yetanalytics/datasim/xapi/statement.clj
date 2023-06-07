@@ -201,13 +201,13 @@
    "display" (w/stringify-keys prefLabel)})
 
 (s/fdef complete-verb
-  :args (s/cat :inputs (s/keys :req-un [::profile/iri-map ::alignment])
-               :rng    ::random/rng
-               :verb   (s/nilable map?))
+  :args (s/cat :verb   (s/nilable map?)
+               :inputs (s/keys :req-un [::profile/iri-map ::alignment])
+               :rng    ::random/rng)
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{:keys [iri-map alignment]} rng {:strs [id] :as verb}]
+  [{:strs [id] :as verb} {:keys [iri-map alignment]} rng]
   (-> (or (some->> id
                    (get iri-map)
                    profile->statement-verb)
@@ -230,24 +230,22 @@
    "objectType" "Activity"})
 
 (s/fdef complete-activity
-  :args (s/cat :inputs   (s/keys :req-un [::profile/iri-map
-                                          ::activities
-                                          ::alignment])
-               :rng      ::random/rng
-               :activity (s/nilable map?))
+  :args (s/cat :activity (s/nilable map?)
+               :inputs   (s/keys :req-un [::activities ::alignment])
+               :rng      ::random/rng)
   :ret ::xs/activity)
 
 (defn complete-activity
-  [{:keys [activities alignment]}
-   rng
-   {:strs [id] {:strs [type]} "definition" :as activity}]
+  [{:strs [id] {:strs [type]} "definition" :as activity}
+   {:keys [activities alignment]}
+   rng]
   (-> (or (some->> id
                    (get (reduce merge {} (vals activities))))
-          (some->> type
-                   (get activities)
-                   keys
-                   (random/choose rng alignment)
-                   (apply get-in activities type))
+          (let [activity-id (some->> type
+                                     (get activities)
+                                     keys
+                                     (random/choose rng alignment))]
+            (get-in activities [type activity-id]))
           (some->> activity
                    generate-activity)
           (some->> activities
@@ -322,20 +320,18 @@
 ;; Context ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef complete-context
-  :args (s/cat :inputs  (s/keys :req-un [::profile/iri-map
-                                         ::activities
-                                         ::alignment])
-               :rng     ::random/rng
-               :context (s/nilable map?))
+  :args (s/cat :context (s/nilable map?)
+               :inputs  (s/keys :req-un [::activities ::alignment])
+               :rng     ::random/rng)
   :ret ::xs/context)
 
 (defn complete-context
-  [inputs
-   rng
-   {:strs [instructor team]
+  [{:strs [instructor team]
     {:strs [category grouping parent other]} "contextActivities"
-    :as context}]
-  (let [complete-activities (partial mapv (partial complete-activity inputs rng))]
+    :as context}
+   inputs
+   rng]
+  (let [complete-activities (partial mapv #(complete-activity % inputs rng))]
     (cond-> context
       instructor (update-in ["instructor"] complete-agent)
       team       (update-in ["team"] complete-group)
@@ -416,40 +412,36 @@
 ;; SubStatement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn complete-sub-object
-  [inputs rng object]
+  [object inputs rng]
   (case (get object "objectType")
-    "Activity"     (complete-activity inputs rng object)
+    "Activity"     (complete-activity object inputs rng)
     "Agent"        (complete-agent object)
     "Group"        (complete-group object)
     "StatementRef" (complete-statement-ref object)
     "SubStatement" (throw (ex-info "Cannot have nested SubStatements!"
                                    {:type  ::nested-substatement
                                     :object object}))
-    (complete-activity inputs rng object)))
+    (complete-activity object inputs rng)))
 
 (s/fdef complete-sub-statement
-  :args (s/cat :inputs (s/keys :req-un [::profile/iri-map
+  :args (s/cat :sub-statement map?
+               :inputs (s/keys :req-un [::profile/iri-map
                                         ::activities
                                         ::alignment])
-               :rng ::random/rng
-               :sub-statement map?)
+               :rng ::random/rng)
   :ret ::xs/sub-statement)
 
 ;; Unlike top-level statements, sub-statements cannot have IDs or authorities
 (defn complete-sub-statement
-  [inputs rng sub-statement]
+  [sub-statement inputs rng]
   (let [{:strs [context attachments]} sub-statement
-        actor (-> inputs :actor w/stringify-keys)
-        ;; Functions
-        complete-verb    (partial complete-verb inputs rng)
-        complete-object  (partial complete-sub-object inputs rng)
-        complete-context (partial complete-context inputs rng)]
+        actor (-> inputs :actor w/stringify-keys)]
     (cond-> (-> sub-statement
                 (update "actor" merge actor) ; TODO: Check that actor conforms to template
-                (update "verb" complete-verb)
-                (update "object" complete-object))
+                (update "verb" complete-verb inputs rng)
+                (update "object" complete-sub-object inputs rng))
       ;; Optional statement properties
-      context     (update "context" complete-context)
+      context     (update "context" complete-context inputs rng)
       attachments (update "attachments" complete-attachments))))
 
 ;; Statement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -460,38 +452,36 @@
   (if id id (sgen/generate id-gen)))
 
 (defn complete-object
-  [inputs rng object]
+  [object inputs rng]
   (case (get object "objectType")
-    "Activity"     (complete-activity inputs rng object)
+    "Activity"     (complete-activity object inputs rng)
     "Agent"        (complete-agent object)
     "Group"        (complete-group object)
     "StatementRef" (complete-statement-ref object)
     "SubStatement" (complete-sub-statement inputs rng object)
-    (complete-activity inputs rng object)))
+    (complete-activity object inputs rng)))
 
 (s/fdef complete-statement
-  :args (s/cat :inputs (s/keys :req-un [::profile/iri-map
+  :args (s/cat :statement map?
+               :inputs (s/keys :req-un [::profile/iri-map
                                         ::activities
                                         ::alignment])
-               :rng ::random/rng
-               :statement map?)
+               :rng ::random/rng)
   :ret ::xs/statement)
 
 (defn complete-statement
-  [inputs rng statement]
+  [statement inputs rng]
   (let [{:strs [context attachments authority]} statement
-        actor (-> inputs :actor w/stringify-keys)
-        ;; Functions
-        complete-verb    (partial complete-verb inputs rng)
-        complete-object  (partial complete-object inputs rng)
-        complete-context (partial complete-context inputs rng)]
+        ;; TODO: Check that actor conforms to template
+        actor (-> inputs :actor w/stringify-keys)]
     (cond-> (-> statement
                 (update "id" complete-id)
-                (update "actor" merge actor) ; TODO: Check that actor conforms to template
-                (update "verb" complete-verb)
-                (update "object" complete-object))
+                (update "actor" merge actor)
+                (update "verb" complete-verb inputs rng)
+                (update "object" complete-object inputs rng))
       ;; Optional statement properties
-      context     (update "context" complete-context)
+      ;; Result is not updated since it has no required properties
+      context     (update "context" complete-context inputs rng)
       attachments (update "attachments" complete-attachments)
       authority   (update "authority" complete-authority))))
 
