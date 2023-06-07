@@ -513,7 +513,10 @@
 
 (defn- rule-spec-name
   [path-rule-map path]
-  (let [[x0 x1 x2] (take-last 3 path)]
+  (let [len (count path)
+        x2  (when (< 0 len) (get path (- len 1)))
+        x1  (when (< 1 len) (get path (- len 2)))
+        x0  (when (< 2 len) (get path (- len 3)))]
     (cond
       ;; $.object.object => :sub-statement/activity
       (and (= "object" x1)
@@ -551,15 +554,18 @@
       (and (string? x0)
            (= '* x1)
            (string? x2))
-      (keyword (array-element-spec-name x0) (first x2))
+      (keyword (array-element-spec-name x0) x2)
       :else
-      (throw (ex-info "Unsupported key-index combination"
+      (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
                       {:type ::invalid-path
                        :path path})))))
 
+(comment
+  (rule-spec-name {} ["result" "score"]))
+
 (defn add-rule-specname
-  [path-rule-map parsed-rule]
-  (->> (rule-spec-name path-rule-map parsed-rule)
+  [path-rule-map {:keys [specpath] :as parsed-rule}]
+  (->> (rule-spec-name path-rule-map specpath)
        (assoc parsed-rule :specname)))
 
 (defn- rule-generator
@@ -605,7 +611,7 @@
 
 (defn property-rule?
   [property {:keys [location]}]
-  (not= [[property]] (first location)))
+  (not= [property] (ffirst location)))
 
 (defn- generate-xapi-2
   [generator none rng gen-size]

@@ -107,12 +107,12 @@
               (mapv usage-type->attachment-base attachment-usage-types))
     profile-version-id ; always true
     (update-in ["context" "contextActivities" "category"]
-               conj
+               (fnil conj [])
                {"id" profile-version-id})))
 
 (defn base-statement
-  [{:keys [template sim-t registration object-override]} rng]
-  (cond-> (-> (template->base-statement template)
+  [template-base {:keys [sim-t registration object-override]} rng]
+  (cond-> (-> template-base
               (assoc-in ["id"]
                         (random/rand-uuid rng))
               (assoc-in ["timestamp"]
@@ -127,12 +127,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn template-rules
-  [{:keys [iri-map activities object-override]} rng {rules :rules}]
+  [iri-map activities {rules :rules profile-id :inScheme :as _template}]
   (let [;; TODO: More efficient data structures
         verb-set          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
         verb-id-set       (->> verb-set (map :id) set)
-        activity-set      (->> activities vals (mapcat vals) set)
-        activity-id-set   (->> activities vals (mapcat keys) set)
+        activity-set      (->> activities vals (mapcat vals) (into #{{"id" profile-id}}))
+        activity-id-set   (->> activities vals (mapcat keys) (into #{profile-id}))
         activity-type-set (->> activities keys set)
         add-rule-valuegen (partial rule/add-rule-valuegen
                                    iri-map
@@ -146,14 +146,10 @@
                                (mapcat rule/separate-rule)
                                (map rule/add-rule-specpath))
         add-rule-specname (partial rule/add-rule-specname
-                                   (rule/->path-rule-map parsed-rules))
-        not-object-rule?  (if object-override
-                            (partial rule/property-rule? "object")
-                            (constantly true))]
-    (->> rules
+                                   (rule/->path-rule-map parsed-rules))]
+    (->> parsed-rules
          (map add-rule-specname)
          (map add-rule-valuegen)
-         (filter not-object-rule?)
          vec)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -208,18 +204,27 @@
 
 (defn complete-verb
   [{:strs [id] :as verb} {:keys [iri-map alignment]} rng]
-  (-> (or (some->> id
-                   (get iri-map)
-                   profile->statement-verb)
-          (some->> verb
-                   generate-verb)
-          (some->> iri-map
-                   vals
-                   (filter #(= "Verb" (:type %)))
-                   (map :id)
-                   (random/choose rng alignment)
-                   (get iri-map)))
-      (merge-nested verb)))
+  (let [return-verb (fn [_] verb)
+        merge-verb  (fn [v] (merge-nested v verb))]
+    (or
+     ;; Verb found by ID
+     (some->> id
+              (get iri-map)
+              profile->statement-verb
+              merge-verb)
+     ;; Verb w/ ID not found, return as-is
+     (some->> id
+              return-verb)
+     ;; Verb w/o ID not found, generate ID
+     (some->> verb
+              generate-verb)
+     ;; Choose random verb
+     (some->> iri-map
+              vals
+              (filter #(= "Verb" (:type %)))
+              (map :id)
+              (random/choose rng alignment)
+              (get iri-map)))))
 
 ;; Activities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -239,23 +244,35 @@
   [{:strs [id] {:strs [type]} "definition" :as activity}
    {:keys [activities alignment]}
    rng]
-  (-> (or (some->> id
-                   (get (reduce merge {} (vals activities))))
-          (let [activity-id (some->> type
-                                     (get activities)
-                                     keys
-                                     (random/choose rng alignment))]
-            (get-in activities [type activity-id]))
-          (some->> activity
-                   generate-activity)
-          (some->> activities
-                   keys
-                   (random/choose rng alignment)
-                   (get activities)
-                   keys
-                   (random/choose rng alignment)
-                   (get (reduce merge {} (vals activities)))))
-      (merge-nested activity)))
+  (let [return-activity (fn [_] activity)
+        merge-activity  (fn [a] (merge-nested a activity))]
+    (or
+     ;; Get activity by ID
+     (some->> id
+              (get (reduce merge {} (vals activities)))
+              merge-activity)
+     ;; Get activity by type
+     (some->> type
+              (get activities)
+              keys
+              (random/choose rng alignment)
+              (conj [type])
+              (get-in activities)
+              merge-activity)
+     ;; Activity w/ ID not found, return as-is
+     (some->> id
+              return-activity)
+     ;; Activity w/o ID not found, assoc generated
+     (some->> activity
+              generate-activity)
+     ;; Choose random activity
+     (some->> activities
+              keys
+              (random/choose rng alignment)
+              (get activities)
+              keys
+              (random/choose rng alignment)
+              (get (reduce merge {} (vals activities)))))))
 
 ;; Agents ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -499,6 +516,18 @@
            :object-override
            w/stringify-keys))
 
+(defn- remove-object-rules
+  [rules ?object-override]
+  (cond->> rules
+    ?object-override
+    (filterv (partial rule/property-rule? "object"))))
+
+(defn- apply-object-override
+  [statement ?object-override]
+  (cond-> statement
+    ?object-override
+    (assoc "object" ?object-override)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -569,6 +598,38 @@
 ;;    -> only necessary when a primary pattern contains another primary pattern
 
 (defn generate-statement
+  [{{:keys [profiles]} :input
+    iri-map            :iri-map
+    activities         :activities
+    actor              :actor
+    alignment          :alignment
+    sim-t              :sim-t
+    seed               :seed
+    template           :template
+    pattern-ancestors  :pattern-ancestors
+    registration       :registration
+    ?sub-registration  :sub-registration
+    :as inputs}]
+  (let [;; Prep
+        ;; TODO: Precompile these two so that they don't happen on
+        ;; every statement gen
+        template-base  (template->base-statement template)
+        template-rules (template-rules iri-map activities template)
+        ;; Basics
+        rng             (random/seed-rng seed)
+        object-override (select-object-override rng alignment)
+        template-rules* (remove-object-rules template-rules object-override)]
+    (-> template-base
+        (base-statement inputs rng)
+        (apply-object-override object-override)
+        (rule/apply-inclusion-rules template-rules* rng)
+        (complete-statement inputs rng)
+        (rule/apply-exclusion-rules template-rules*)
+        (with-meta {:end-ms       (+ sim-t (long (random/rand-gauss rng 600000.0 0.5)))
+                    :timestamp-ms sim-t
+                    :template     template}))))
+
+#_(defn generate-statement
   [{{:keys [profiles]} :input
     iri-map :iri-map
     activities :activities
