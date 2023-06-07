@@ -591,6 +591,10 @@
       (and (not valueset) (not ?all-set))
       (assoc :generator (specname->generator specname)))))
 
+(defn property-rule?
+  [property {:keys [location]}]
+  (not= [[property]] (first location)))
+
 (defn- generate-xapi-2
   [generator none rng gen-size]
   (let [?none-filter (when (not-empty none)

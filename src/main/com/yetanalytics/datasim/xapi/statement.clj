@@ -111,21 +111,23 @@
                {"id" profile-version-id})))
 
 (defn base-statement
-  [{:keys [template sim-t registration]} rng]
-  (-> (template->base-statement template)
-      (assoc-in ["id"]
-                (random/rand-uuid rng))
-      (assoc-in ["timestamp"]
-                (.toString (Instant/ofEpochMilli sim-t)))
-      (assoc-in ["context" "registration"]
-                registration)))
+  [{:keys [template sim-t registration object-override]} rng]
+  (cond-> (-> (template->base-statement template)
+              (assoc-in ["id"]
+                        (random/rand-uuid rng))
+              (assoc-in ["timestamp"]
+                        (.toString (Instant/ofEpochMilli sim-t)))
+              (assoc-in ["context" "registration"]
+                        registration))
+    object-override
+    (assoc "object" object-override)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Rule Application
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn template-rules
-  [{:keys [iri-map activities]} {rules :rules}]
+  [{:keys [iri-map activities object-override]} rng {rules :rules}]
   (let [;; TODO: More efficient data structures
         verb-set          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
         verb-id-set       (->> verb-set (map :id) set)
@@ -143,10 +145,14 @@
                                (mapcat rule/separate-rule)
                                (map rule/add-rule-specpath))
         add-rule-specname (partial rule/add-rule-specname
-                                   (rule/->path-rule-map parsed-rules))]
+                                   (rule/->path-rule-map parsed-rules))
+        not-object-rule?  (if object-override
+                            (partial rule/property-rule? "object")
+                            (constantly true))]
     (->> rules
          (map add-rule-specname)
          (map add-rule-valuegen)
+         (filter not-object-rule?)
          vec)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -487,6 +493,20 @@
       context     (update "context" complete-context)
       attachments (update "attachments" complete-attachments)
       authority   (update "authority" complete-authority))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Object Override
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- select-object-override
+  [rng alignment]
+  (some->> alignment
+           not-empty
+           keys
+           (random/choose rng alignment)
+           (get alignment)
+           :object-override
+           w/stringify-keys))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Generation
