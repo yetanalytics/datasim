@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.json.schema
   (:require [clojure.spec.alpha :as s]
+            [clojure.walk :as w]
             [cheshire.core :as json]
-            [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.json :as j]))
 (set! *warn-on-reflection* true)
 ;; FIXME: what does this look like using the new default as-code/as-data protocols?
@@ -836,12 +836,40 @@
 ;; JSON Schema -> spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; FIXME: `rng` is now unused
+
+(defn- dynamic-or
+  "Similar to `s/or`, but accepts a coll of `[:key pred]` pairs. Unlike
+   `s/or`, this accepts a dynamic number of such pairs (hence why it
+   is a function instead of a macro)."
+  [key-pred-pairs]
+  (let [keys  (mapv first key-pred-pairs)
+        preds (mapv second key-pred-pairs)]
+    ;; Yes, spec says not to use `or-spec-impl`, but we need to create
+    ;; `s/or` specs at runtime and it is much easier to bypass the macro
+    ;; instead of mixing compile-time and run-time code.
+    (s/or-spec-impl keys preds preds nil)))
+
+(defn- coll-schema-spec
+  [type->spec schema-types]
+  (let [pairs (map (fn [schema-type]
+                     (case schema-type
+                       "null"    [:null ::null]
+                       "boolean" [:boolean ::boolean]
+                       "integer" [:integer ::integer]
+                       "number"  [:number (type->spec "number")]
+                       "string"  [:string (type->spec "string")]
+                       "array"   [:array (type->spec "array")]
+                       "object"  [:object (type->spec "object")]))
+                   schema-types)]
+    (dynamic-or pairs)))
+
 (defn schema->spec
   ([rng schema]
    (let [parsed-schema (cond (string? schema)
                              (json/parse-string schema)
                              (map? schema)
-                             (clojure.walk/stringify-keys schema))
+                             (w/stringify-keys schema))
          {ext-val-type "type"} parsed-schema]
      (letfn [(schema-dispatch [ext-val-t]
                (case ext-val-t
@@ -853,7 +881,8 @@
                  "array"   (schema->spec rng ext-val-type parsed-schema)
                  "object"  (schema->spec rng ext-val-type parsed-schema)))]
        (cond (coll? ext-val-type)
-             (schema-dispatch (random/choose rng {} ext-val-type))
+             (coll-schema-spec #(schema->spec rng % (assoc parsed-schema "type" %))
+                               ext-val-type)
              (string? ext-val-type)
              (schema-dispatch ext-val-type)
              :else ::j/any))))
@@ -864,3 +893,15 @@
      "number" (number-schema->spec rng complex-schema)
      "string" (string-schema->spec rng complex-schema))))
 
+(comment
+  (require '[clojure.spec.gen.alpha :as sgen])
+  
+  (let [ext-val-type ["number" "string"]]
+    (coll-schema-spec #(schema->spec nil % {"type" %}) ext-val-type))
+
+  (sgen/generate (s/gen (schema->spec nil "{\"type\": [\"number\", \"string\"]}")))
+  
+  (sgen/generate (s/gen (schema->spec nil "{\"type\": \"number\"}")))
+  
+  (sgen/generate (s/gen (s/or :foo (fn [_] false))))
+  )

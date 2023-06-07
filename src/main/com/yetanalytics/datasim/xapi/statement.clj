@@ -135,6 +135,7 @@
         activity-id-set   (->> activities vals (mapcat keys) set)
         activity-type-set (->> activities keys set)
         add-rule-valuegen (partial rule/add-rule-valuegen
+                                   iri-map
                                    {:verbs          verb-set
                                     :verb-ids       verb-id-set
                                     :activities     activity-set

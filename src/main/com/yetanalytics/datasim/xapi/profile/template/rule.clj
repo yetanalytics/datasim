@@ -562,18 +562,30 @@
   (->> (rule-spec-name path-rule-map parsed-rule)
        (assoc parsed-rule :specname)))
 
-(defn- specname->generator
-  [specname]
-  ;; TODO: Extensions
-  (try (s/gen specname)
-       (catch Exception e
-         (ex-info (format "Unable to create generator for: %s" specname)
-                  {:type ::generator-failure
-                   :spec specname}
-                  e))))
+(defn- rule-generator
+  [iri-map specname]
+  (try
+    (cond
+      (= "extensions" (namespace specname))
+      (or (some->> (name specname)
+                   (get iri-map)
+                   :inlineSchema
+                   (jschema/schema->spec nil)
+                   s/gen)
+          (s/gen any?))
+      (s/get-spec specname)
+      (s/gen specname)
+      :else
+      (s/gen any?))
+    (catch Exception e
+      (ex-info (format "Unable to create generator for: %s" specname)
+               {:type ::generator-failure
+                :spec specname}
+               e))))
 
 (defn add-rule-valuegen
-  [{:keys [verbs verb-ids activities activity-ids activity-types]}
+  [iri-map
+   {:keys [verbs verb-ids activities activity-ids activity-types]}
    {:keys [specname valueset none] :as parsed-rule}]
   (let [?all-set (case specname
                    :statement/verb verbs
@@ -583,13 +595,13 @@
                    :sub-statement-object/activity activities
                    :activity/id activity-ids
                    :definition/type activity-types
-                   nil)]
+                   nil)] 
     (cond-> parsed-rule
       (and (not valueset) ?all-set)
       (assoc :all      ?all-set
              :valueset (rule-value-set-2 ?all-set none))
       (and (not valueset) (not ?all-set))
-      (assoc :generator (specname->generator specname)))))
+      (assoc :generator (rule-generator iri-map specname)))))
 
 (defn property-rule?
   [property {:keys [location]}]
