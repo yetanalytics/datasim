@@ -3,7 +3,8 @@
   (:require [com.yetanalytics.datasim.json :as json]
             [clojure.spec.alpha :as s]
             [clojure.set :as cset]
-            [xapi-schema.spec :as xs]))
+            [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.util :as u]))
 
 (s/def :spec-map.map-spec/keys
   qualified-keyword?)
@@ -225,6 +226,69 @@
 
 (def xs-ns "xapi-schema.spec")
 
+(defn prefix-path?
+  [prefix path]
+  (and (<= (count prefix) (count path))
+       (->> (map = prefix path) (every? true?))))
+
+(defn spec-hinted-path
+  [path]
+  (let [prefix-path* (fn [prefix] (when (prefix-path? prefix path) prefix))]
+    (or
+     ;; SubStatement paths
+     (prefix-path* ["object" "actor"])
+     (prefix-path* ["object" "object"])
+     (prefix-path* ["object" "context" "instructor"])
+     ;; Statement paths
+     (prefix-path* ["actor"])
+     (prefix-path* ["object"])
+     (prefix-path* ["context" "instructor"])
+     (prefix-path* ["authority"]))))
+
+(def default-spec-hints
+  {["object"]                        #{"activity" "agent" "group" "statement-ref" "sub-statement"}
+   ["object" "object"]               #{"activity" "agent" "group" "statement-ref" "sub-statement"}
+   ["actor"]                         #{"agent" "group"}
+   ["object" "actor"]                #{"agent" "group"}
+   ["context" "instructor"]          #{"agent" "group"}
+   ["object" "context" "instructor"] #{"agent" "group"}
+   ["authority"]                     #{"agent" "group"}})
+
+(def object-type-kebab-case
+  {"Activity"     "activity"
+   "Agent"        "agent"
+   "Group"        "group"
+   "StatementRef" "statement-ref"
+   "SubStatement" "sub-statement"})
+
+(def spec-hint-properties
+  {"objectType"   #{"activity" "agent" "group" "statement-ref" "sub-statement"}
+   "id"           #{"activity" "statement-ref" "sub-statement"}
+   "definition"   #{"activity"}
+   "name"         #{"agent" "group"}
+   "mbox"         #{"agent" "group"}
+   "mbox_sha1sum" #{"agent" "group"}
+   "openid"       #{"agent" "group"}
+   "account"      #{"agent" "group"}
+   "member"       #{"group"}
+   "actor"        #{"sub-statement"}
+   "verb"         #{"sub-statement"}
+   "object"       #{"sub-statement"}
+   "context"      #{"sub-statement"}
+   "results"      #{"sub-statement"}
+   "attachments"  #{"sub-statement"}
+   "timestamp"    #{"sub-statement"}})
+
+(defn paths->spec-hints
+  ([paths]
+   (paths->spec-hints #{} paths))
+  ([type-set paths]
+   (reduce (fn [acc path]
+             (let [prop-set (get spec-hint-properties (last path))]
+               (cset/intersection acc prop-set)))
+           type-set
+           paths)))
+
 (defn- array-element-spec-name
   [array-prop]
   (condp contains? array-prop
@@ -243,95 +307,46 @@
                     {:type     ::invalid-array-property
                      :property array-prop}))))
 
-(defn- follows-prefix?
-  [prefix coll]
-  (->> (map = prefix coll)
-       (every? true?)))
+;; (object-or "statement-object" #{"agent" "group"})
+;; => (s/or :agent ::statement-object/agent :group ::statement-object/group)
+(defn object-or
+  [spec-ns object-types]
+  (->> object-types
+       (map (fn [obj-type] [(keyword obj-type) (keyword spec-ns obj-type)]))
+       u/dynamic-or))
 
-(defn- rule-object-type [path-prefix rules]
-  (let [path->rule-m
-        (reduce (fn [m {:keys [specpath] :as rule}]
-                  (cond-> m
-                    (follows-prefix? path-prefix specpath)
-                    (assoc specpath rule)))
-                {}
-                rules)
-        object-type-vals
-        (:valueset (get path->rule-m (conj path-prefix "objectType")))
-        property-set
-        (->> path->rule-m keys (drop (count path-prefix)) set)]
-    {:object-type-vals object-type-vals
-     :property-set     property-set}))
+;; (object-property-or #{"agent" "group"} "name")
+;; => (s/or :agent :agent/name :group :group/name)
+(defn object-property-or
+  [object-types prop-name]
+  (->> object-types
+       (map (fn [obj-type] [(keyword obj-type) (keyword obj-type prop-name)]))
+       u/dynamic-or))
 
-(defn- object-type [path-prefix rules]
-  (let [{:keys [object-type-vals property-set]}
-        (rule-object-type path-prefix rules)]
+(defn path->spec-2
+  [spec-hints path]
+  (let [len (count path)
+        x2  (when (< 0 len) (get path (- len 1)))
+        x1  (when (< 1 len) (get path (- len 2)))
+        x0  (when (< 2 len) (get path (- len 3)))]
     (cond
-      ;; Decide based on `objectType`
-      ;; TODO: Take care of contradictions between objectType and
-      ;; other properties
-      (< 1 (count object-type-vals))
-      (throw (ex-info "Multiple possible objectTypes not supported"
-                      {:type ::multiple-object-types
-                       :path (conj path-prefix "objectType")}))
-      (= #{"Activity"} object-type-vals)     "activity"
-      (= #{"Agent"} object-type-vals)        "agent"
-      (= #{"Group"} object-type-vals)        "group"
-      (= #{"StatementRef"} object-type-vals) "statement-ref"
-      (= #{"SubStatement"} object-type-vals) "sub-statement"
-      ;; Decide based on other properties
-      (-> #{"member"}
-          (cset/intersection property-set)
-          not-empty)
-      "group"
-      (-> #{"name" "mbox" "mbox_sha1sum" "openid" "acount"}
-          (cset/intersection property-set)
-          not-empty)
-      "agent" ; default to agent
-      (-> #{"timestamp" "actor" "verb" "object" "context" "result" "attachments"}
-          (cset/intersection property-set)
-          not-empty)
-      "sub-statement"
-      ;; Default to activity
-      :else
-      "activity")))
-
-(defn- actor-type [path-prefix rules]
-  (let [{:keys [object-type-vals property-set]}
-        (rule-object-type path-prefix rules)]
-    (cond
-      ;; Decide based on `objectType`
-      (= #{"Agent"} object-type-vals) "agent"
-      (= #{"Group"} object-type-vals) "group"
-      ;; Decide based on other properties
-      (-> #{"member"}
-          (cset/intersection property-set)
-          not-empty)
-      "group"
-      ;; Default to agent
-      :else
-      "agent")))
-
-(defn rule-spec-keyword
-  [parsed-rules path]
-  (let [[x0 x1 x2] (take-last 3 path)]
-    (cond
-      ;; $.object => ::xs/activity
-      (= "object" x2)
-      (keyword xs-ns
-               (object-type (->> [x1 x2] (filterv nil?)) parsed-rules))
+      ;; $.object.object => :sub-statement/activity
+      (= ["object" "object"] path)
+      (object-or "sub-statement-object" (get spec-hints path))
+      ;; $.object => :statement/activity
+      (= ["object"] path)
+      (object-or "statement-object" (get spec-hints path))
       ;; $.actor => ::xs/agent
-      (= "actor" x2)
-      (keyword xs-ns
-               (actor-type (->> [x1 x2] (filterv nil?)) parsed-rules))
-      ;; $.object.id => :activity/id
-      (= "object" x1)
-      (keyword (object-type (->> [x0 x1] (filterv nil?)) parsed-rules)
-               x2)
+      (#{["actor"] ["authority"] ["context" "instructor"]
+         ["object" "actor"] ["object" "context" "instructor"]}
+       path)
+      (object-or xs-ns (get spec-hints path))
       ;; $.actor.name => :agent/name
-      (= "actor" x1)
-      (keyword (actor-type (->> [x0 x1] (filterv nil?)) parsed-rules)
-               x2)
+      (and (#{["object"] ["actor"] ["context" "instructor"] ["authority"]
+              ["object" "actor"] ["object" "object"] ["object" "context" "instructor"]}
+            (vec (butlast path)))
+           (string? x2))
+      (object-property-or (get spec-hints path) x2)
       ;; $.verb => ::xs/verb
       (and (nil? x1)
            (string? x2))
@@ -348,8 +363,60 @@
       (and (string? x0)
            (= '* x1)
            (string? x2))
-      (keyword (array-element-spec-name x0) (first x2))
+      (keyword (array-element-spec-name x0) x2)
       :else
-      (throw (ex-info "Unsupported key-index combination"
+      (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
                       {:type ::invalid-path
                        :path path})))))
+
+(defn- path->valueset
+  [spec-hints
+   {:keys [verbs verb-ids activities activity-ids activity-types]}
+   path]
+  (let [path*    (cond-> path
+                   (and (#{"object"} (get path 0))
+                        (#{"verb" "object" "context"} (get path 1)))
+                   (subvec 1))
+        activity? (fn [path] ((get spec-hints path #{}) "activity"))
+        drop-one  (fn [path] (if (< 1 (count path)) (-> path pop) []))
+        drop-two  (fn [path] (if (< 2 (count path)) (-> path pop pop) []))]
+    (case path*
+      ;; Verbs
+      ["verb"]
+      verbs
+      ["verb" "id"]
+      verb-ids
+      ;; Object Activities
+      ["object"]
+      (when (activity? path) activities)
+      ["object" "id"]
+      (when (activity? (drop-one path)) activity-ids)
+      ["object" "definition" "type"]
+      (when (activity? (drop-two path)) activity-types)
+      ;; Context Activities
+      ["context" "contextActivities" "category" '*]
+      activities
+      ["context" "contextActivities" "grouping" '*]
+      activities
+      ["context" "contextActivities" "parent" '*]
+      activities
+      ["context" "contextActivities" "other" '*]
+      activities
+      ["context" "contextActivities" "category" '* "id"]
+      activity-ids
+      ["context" "contextActivities" "grouping" '* "id"]
+      activity-ids
+      ["context" "contextActivities" "parent" '* "id"]
+      activity-ids
+      ["context" "contextActivities" "other" '* "id"]
+      activity-ids
+      ["context" "contextActivities" "category" '* "definition" "type"]
+      activity-types
+      ["context" "contextActivities" "grouping" '* "definition" "type"]
+      activity-types
+      ["context" "contextActivities" "parent" '* "definition" "type"]
+      activity-types
+      ["context" "contextActivities" "other" '* "definition" "type"]
+      activity-types
+      ;; Otherwise none
+      nil)))

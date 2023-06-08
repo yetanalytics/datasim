@@ -2,7 +2,8 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [cheshire.core :as json]
-            [com.yetanalytics.datasim.json :as j]))
+            [com.yetanalytics.datasim.json :as j]
+            [com.yetanalytics.datasim.util :as u]))
 (set! *warn-on-reflection* true)
 ;; FIXME: what does this look like using the new default as-code/as-data protocols?
 ;; FIXME: what does this look like using spec2?
@@ -838,18 +839,6 @@
 
 ;; FIXME: `rng` is now unused
 
-(defn- dynamic-or
-  "Similar to `s/or`, but accepts a coll of `[:key pred]` pairs. Unlike
-   `s/or`, this accepts a dynamic number of such pairs (hence why it
-   is a function instead of a macro)."
-  [key-pred-pairs]
-  (let [keys  (mapv first key-pred-pairs)
-        preds (mapv second key-pred-pairs)]
-    ;; Yes, spec says not to use `or-spec-impl`, but we need to create
-    ;; `s/or` specs at runtime and it is much easier to bypass the macro
-    ;; instead of mixing compile-time and run-time code.
-    (s/or-spec-impl keys preds preds nil)))
-
 (defn- coll-schema-spec
   [type->spec schema-types]
   (let [pairs (map (fn [schema-type]
@@ -862,7 +851,7 @@
                        "array"   [:array (type->spec "array")]
                        "object"  [:object (type->spec "object")]))
                    schema-types)]
-    (dynamic-or pairs)))
+    (u/dynamic-or pairs)))
 
 (defn schema->spec
   ([rng schema]

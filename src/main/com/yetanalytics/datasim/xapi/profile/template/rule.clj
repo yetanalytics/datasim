@@ -434,82 +434,154 @@
           {}
           parsed-rules))
 
-(defn- follows-prefix?
-  [prefix coll]
-  (and (<= (count prefix) (count coll))
-       (= prefix (subvec coll 0 (count prefix)))))
+;; Spec hints
 
-(defn- object-type [path-rule-map path-prefix]
-  (let [object-types (->> (conj path-prefix "objectType")
-                          (get path-rule-map)
-                          :valueset)
-        property-set (->> path-rule-map
-                          keys
-                          (filter #(follows-prefix? path-prefix %))
-                          (map #(get % (count path-prefix)))
-                          set)]
-    (cond
-      (< 1 (count object-types))
-      (throw (ex-info "Multiple possible objectTypes not supported"
-                      {:type ::multiple-object-types
-                       :path (conj path-prefix "objectType")}))
-      (= 1 (count object-types))
-      (condp = object-types
-        #{"Activity"} "activity"
-        #{"Agent"}    "agent"
-        #{"Group"}    "group"
-        #{"StatementRef"} "statement-ref"
-        #{"SubStatement"} "sub-statement"
-        ;; else - default to activity
-        "activity")
-      :else
-      (condp #(contains? %2 %1) property-set
-        "member"       "group"
-        "name"         "agent"
-        "mbox"         "agent"
-        "mbox_sha1sum" "agent"
-        "openid"       "agent"
-        "account"      "agent"
-        "timestamp"    "sub-statement"
-        "actor"        "sub-statement"
-        "verb"         "sub-statement"
-        "object"       "sub-statement"
-        "context"      "sub-statement"
-        "result"       "sub-statement"
-        "attachments"  "sub-statement"
-        ;; else - default to activity
-        "activity"))))
+(defn- get-object-types [parsed-rules path-prefix]
+  (let [obj-type-path (conj path-prefix "objectType")]
+    (->> parsed-rules
+         (some (fn [{:keys [presence specpath valueset]}]
+                 (when (and (= obj-type-path specpath)
+                            (not= :excluded presence))
+                   valueset))))))
 
-(defn- actor-type [path-rule-map path-prefix]
-  (let [object-types (->> (conj path-prefix "objectType")
-                          (get path-rule-map)
-                          :valueset)
-        property-set (->> path-rule-map
-                          keys
-                          (filter #(follows-prefix? path-prefix %))
-                          (map #(get % (count path-prefix)))
-                          set)]
+(defn- get-property-set [parsed-rules path-prefix]
+  (->> parsed-rules
+       (keep (fn [{:keys [presence specpath]}]
+               (when (and (= path-prefix
+                             (subvec specpath 0 (count path-prefix)))
+                          (not= :excluded presence))
+                 (get specpath (count path-prefix)))))
+       set))
+
+(defn- object-type [parsed-rules path-prefix]
+  (let [object-types (get-object-types parsed-rules path-prefix)
+        property-set (get-property-set parsed-rules path-prefix)
+        has-props?   (fn [props] (cset/intersection property-set props))]
+    ;; This logic can allow for profile contradictions, but that should
+    ;; be handled in separate validation
     (cond
-      (< 1 (count object-types))
-      (throw (ex-info "Multiple possible objectTypes not supported"
-                      {:type ::multiple-object-types
-                       :path (conj path-prefix "objectType")}))
-      (= 1 (count object-types))
-      (condp = object-types
-        #{"Agent"} "agent"
-        #{"Group"} "group"
-        ;; else - default to agent
-        "agent")
+      (not-empty object-types)
+      ;; Determine types based off of objectType
+      (set (map {"Activity"     "activity"
+                 "Agent"        "agent"
+                 "Group"        "group"
+                 "StatementRef" "statement-ref"
+                 "SubStatement" "sub-statement"}
+                object-types))
+      ;; No objectType: infer based off of properties
+      (not-empty property-set)
+      (cond-> #{}
+        ;; If ID is present, default to activity (even though both
+        ;; StatementRefs and SubStatements can have them)
+        ;; TODO: Override if ObjectStatementRefTemplate determining
+        ;; property is present
+        (has-props? #{"id" "definition"})
+        (conj "activity")
+        ;; Agent and Groups can both have name and IFI, but only
+        ;; Groups can have members
+        (has-props? #{"name" "mbox" "mbox_sha1sum" "openid" "account"})
+        (into (cond-> ["agent"] (property-set "member") (conj "group")))
+        ;; Statement properties = SubStatement
+        (has-props? #{"actor" "verb" "object" "context" "results"
+                      "attachments" "timestamp"})
+        (conj "sub-statement"))
+      ;; Default to Activity
       :else
-      (condp #(contains? %2 %1) property-set
-        "member"       "group"
-        "name"         "agent"
-        "mbox"         "agent"
-        "mbox_sha1sum" "agent"
-        "openid"       "agent"
-        "account"      "agent"
-        ;; else - default to agent
-        "agent"))))
+      #{"activity"})))
+
+(defn- actor-type [parsed-rules path-prefix]
+  (let [object-types (get-object-types parsed-rules path-prefix)
+        property-set (get-property-set parsed-rules path-prefix)]
+    (if (not-empty object-types)
+      ;; Determine types based off of objectType
+      (set (map {"Agent" "agent"
+                 "Group" "group"}
+                object-types))
+      ;; Default to Agent, but also suggest Group if member is present
+      (cond-> #{"agent"}
+        (property-set "member")
+        (conj "group")))))
+
+(defn rules->spec-hints
+  [parsed-rules]
+  (let [prefix-rule-m
+        (-> (group-by (fn [{:keys [specpath]}]
+                        (xp/spec-hinted-path specpath))
+                      parsed-rules)
+            (dissoc nil))]
+    (reduce-kv
+     (fn [m prefix rules]
+       (let [object-type-path
+             (conj prefix "objectType")
+             ?object-types
+             (some (fn [{:keys [specpath valueset]}]
+                     (when (= object-type-path specpath)
+                       (->> valueset
+                            (map xp/object-type-kebab-case)
+                            set
+                            not-empty)))
+                   rules)
+             paths
+             (map :specpath rules)
+             init-types
+             (or ?object-types
+                 (xp/default-spec-hints prefix))
+             all-types
+             (xp/paths->spec-hints init-types paths)]
+         (if (not-empty all-types)
+           (assoc m prefix all-types)
+           (throw (ex-info (format "Contradiction on path: $.%s"
+                                   (cstr/join "." prefix))
+                           {:type  ::non-constructable-spec-hint
+                            :path  prefix
+                            :rules rules})))))
+     {}
+     prefix-rule-m)))
+
+(defn add-spec-hints
+  [spec-hints parsed-rules]
+  (let [filter-rules (fn [prefix]
+                       (let [len (count prefix)]
+                         (filter (fn [{:keys [presence specpath]}]
+                                   (and (= prefix (subvec specpath 0 len))
+                                        (not= :excluded presence)))
+                                 parsed-rules)))
+        template-obj  (get spec-hints ["object"])
+        object-rules  (filter-rules ["object"])
+        subobj-rules  (filter-rules ["object" "object"])
+        actor-rules   (filter-rules ["actor"])
+        auth-rules    (filter-rules ["authority"])
+        inst-rules    (filter-rules ["context" "instructor"])
+        subact-rules  (filter-rules ["object" "actor"])
+        subinst-rules (filter-rules ["object" "context" "instructor"])]
+    (cond-> spec-hints
+      (and (not-empty object-rules)
+           (not-empty template-obj))
+      (update ["object"]
+              into
+              (object-type object-rules ["object"]))
+      (and (not-empty object-rules)
+           (empty? template-obj))
+      (assoc ["object"]
+             (object-type object-rules ["object"]))
+      (not-empty subobj-rules)
+      (assoc ["object" "object"]
+             (object-type object-rules ["object" "object"]))
+      (not-empty actor-rules)
+      (assoc ["actor"]
+             (actor-type actor-rules ["actor"]))
+      (not-empty auth-rules)
+      (assoc ["authority"]
+             (actor-type auth-rules ["authority"]))
+      (not-empty inst-rules)
+      (assoc ["context" "instructor"]
+             (actor-type inst-rules ["context" "instructor"]))
+      (not-empty subact-rules)
+      (assoc ["object" "actor"]
+             (actor-type inst-rules ["object" "actor"]))
+      (not-empty subinst-rules)
+      (assoc ["object" "context" "instructor"]
+             (actor-type inst-rules ["object" "context" "instructor"])))))
 
 (defn- rule-spec-name
   [path-rule-map path]
@@ -559,9 +631,6 @@
       (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
                       {:type ::invalid-path
                        :path path})))))
-
-(comment
-  (rule-spec-name {} ["result" "score"]))
 
 (defn add-rule-specname
   [path-rule-map {:keys [specpath] :as parsed-rule}]

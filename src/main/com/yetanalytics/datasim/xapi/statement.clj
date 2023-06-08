@@ -127,7 +127,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn template-rules
-  [iri-map activities {rules :rules profile-id :inScheme :as _template}]
+  [iri-map
+   activities
+   {object-activity-type :objectActivityType
+    object-statement-ref :objectStatementRefTemplate
+    profile-id           :inScheme
+    rules                :rules}]
   (let [;; TODO: More efficient data structures
         verb-set          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
         verb-id-set       (->> verb-set (map :id) set)
@@ -146,7 +151,12 @@
                                (mapcat rule/separate-rule)
                                (map rule/add-rule-specpath))
         add-rule-specname (partial rule/add-rule-specname
-                                   (rule/->path-rule-map parsed-rules))]
+                                   (rule/->path-rule-map parsed-rules))
+        spec-hints        (cond-> (rule/rules->spec-hints parsed-rules)
+                            object-activity-type
+                            (update ["object"] cset/intersection #{"activity"})
+                            object-statement-ref
+                            (update ["object"] cset/intersection #{"statement-ref"}))]
     (->> parsed-rules
          (map add-rule-specname)
          (map add-rule-valuegen)
