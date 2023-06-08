@@ -133,34 +133,25 @@
     object-statement-ref :objectStatementRefTemplate
     profile-id           :inScheme
     rules                :rules}]
-  (let [;; TODO: More efficient data structures
-        verb-set          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
-        verb-id-set       (->> verb-set (map :id) set)
-        activity-set      (->> activities vals (mapcat vals) (into #{{"id" profile-id}}))
-        activity-id-set   (->> activities vals (mapcat keys) (into #{profile-id}))
-        activity-type-set (->> activities keys set)
-        add-rule-valuegen (partial rule/add-rule-valuegen
-                                   iri-map
-                                   {:verbs          verb-set
-                                    :verb-ids       verb-id-set
-                                    :activities     activity-set
-                                    :activity-ids   activity-id-set
-                                    :activity-types activity-type-set})
-        parsed-rules      (->> rules
-                               (map rule/parse-rule-2)
-                               (mapcat rule/separate-rule)
-                               (map rule/add-rule-specpath))
-        add-rule-specname (partial rule/add-rule-specname
-                                   (rule/->path-rule-map parsed-rules))
-        spec-hints        (cond-> (rule/rules->spec-hints parsed-rules)
-                            object-activity-type
-                            (update ["object"] cset/intersection #{"activity"})
-                            object-statement-ref
-                            (update ["object"] cset/intersection #{"statement-ref"}))]
-    (->> parsed-rules
-         (map add-rule-specname)
-         (map add-rule-valuegen)
-         vec)))
+  (let [parsed-rules   (rule/parse-rules rules)
+        spec-hints     (cond-> (rule/rules->spec-hints parsed-rules)
+                         object-activity-type
+                         (update ["object"] cset/intersection #{"activity"})
+                         object-statement-ref
+                         (update ["object"] cset/intersection #{"statement-ref"}))
+        ;; TODO: More efficient data structures
+        verbs          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
+        verb-ids       (->> verbs (map :id) set)
+        activityies    (->> activities vals (mapcat vals) (into #{{"id" profile-id}}))
+        activity-ids   (->> activities vals (mapcat keys) (into #{profile-id}))
+        activity-types (->> activities keys set)
+        value-sets     {:verbs          verbs
+                        :verb-ids       verb-ids
+                        :activities     activityies
+                        :activity-ids   activity-ids
+                        :activity-types activity-types}]
+    (mapv (partial rule/add-rule-valuegen iri-map spec-hints value-sets)
+          parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Completion

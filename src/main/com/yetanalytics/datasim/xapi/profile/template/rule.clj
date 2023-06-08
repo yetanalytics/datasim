@@ -2,6 +2,7 @@
   "Apply statement template rules for generation"
   (:require [clojure.core.memoize          :as memo]
             [clojure.set                   :as cset]
+            [clojure.string                :as cstr]
             [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as gen]
             [xapi-schema.spec                    :as xs]
@@ -334,6 +335,8 @@
 ;; NEW RULE FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Basic Rule Parsing
+
 (defn- rule-value-set-2
   ([?all ?none]
    (rule-value-set-2 nil ?all ?none))
@@ -352,6 +355,13 @@
      :else nil)))
 
 (defn parse-rule-2
+  "Parse the rule by doing the following:
+   - Convert `location` and `selector` JSONPath strings into a single
+     Pathetic-compatible `location` vector.
+   - Keywordize `presence`.
+   - Convert `any`, `all`, and `none` into sets.
+   - Add a `valueset` that consists of the intersection of `any` and
+     `all` minus `none`."
   [{:keys [location selector presence any all none]}]
   (let [paths (cond-> (path/parse-paths location)
                 selector
@@ -367,6 +377,9 @@
       ?none          (assoc :none ?none))))
 
 (defn separate-rule
+  "Given a single `parsed-rule`, return a vector of multiple parsed
+   rules such that each resulting `location` does not have multiple
+   `|`-conjoined paths or multiple string keys per element."
   [{:keys [location] :as parsed-rule}]
   (let [rules (map (fn [loc] (assoc parsed-rule :location [loc]))
                    location)]
@@ -394,27 +407,11 @@
                              :rule parsed-rule}))))
         (vec rules)))))
 
-(def xs-ns "xapi-schema.spec")
-
-(defn- array-element-spec-name
-  [element]
-  (condp contains? element
-    #{"category" "grouping" "parent" "other"}
-    "activity"
-    #{"choices" "scale" "source" "target" "steps"}
-    "interaction-component"
-    #{"correctResponsesPattern"}
-    "string"
-    #{"member"}
-    "agent"
-    #{"attachments"}
-    "attachment"
-    ;; else
-    (throw (ex-info "Unknown path elements"
-                    {:type ::invalid-path-element
-                     :element element}))))
-
 (defn add-rule-specpath
+  "Given `parsed-rule`, apply a `path` that is the `location` but
+   flattened into a single vector of string keys and wildcards.
+   Turns any integer elements into wildcards. Assumes that the
+   rules were separated using `separate-rule`."
   [{:keys [location] :as parsed-rule}]
   (->> location
        first
@@ -425,88 +422,27 @@
                  '*
                  :else
                  (first loc-elements))))
-       (assoc parsed-rule :specpath)))
+       (assoc parsed-rule :path)))
 
-(defn ->path-rule-map
-  [parsed-rules]
-  (reduce (fn [m {:keys [specpath] :as parsed-rule}]
-            (assoc m specpath parsed-rule))
-          {}
-          parsed-rules))
+(defn parse-rules
+  "Parse a collection of `rules` and return a coll of parsed and
+   separated rules."
+  [rules]
+  (->> rules
+       (map parse-rule-2)
+       (mapcat separate-rule)
+       (mapv add-rule-specpath)))
 
 ;; Spec hints
 
-(defn- get-object-types [parsed-rules path-prefix]
-  (let [obj-type-path (conj path-prefix "objectType")]
-    (->> parsed-rules
-         (some (fn [{:keys [presence specpath valueset]}]
-                 (when (and (= obj-type-path specpath)
-                            (not= :excluded presence))
-                   valueset))))))
-
-(defn- get-property-set [parsed-rules path-prefix]
-  (->> parsed-rules
-       (keep (fn [{:keys [presence specpath]}]
-               (when (and (= path-prefix
-                             (subvec specpath 0 (count path-prefix)))
-                          (not= :excluded presence))
-                 (get specpath (count path-prefix)))))
-       set))
-
-(defn- object-type [parsed-rules path-prefix]
-  (let [object-types (get-object-types parsed-rules path-prefix)
-        property-set (get-property-set parsed-rules path-prefix)
-        has-props?   (fn [props] (cset/intersection property-set props))]
-    ;; This logic can allow for profile contradictions, but that should
-    ;; be handled in separate validation
-    (cond
-      (not-empty object-types)
-      ;; Determine types based off of objectType
-      (set (map {"Activity"     "activity"
-                 "Agent"        "agent"
-                 "Group"        "group"
-                 "StatementRef" "statement-ref"
-                 "SubStatement" "sub-statement"}
-                object-types))
-      ;; No objectType: infer based off of properties
-      (not-empty property-set)
-      (cond-> #{}
-        ;; If ID is present, default to activity (even though both
-        ;; StatementRefs and SubStatements can have them)
-        ;; TODO: Override if ObjectStatementRefTemplate determining
-        ;; property is present
-        (has-props? #{"id" "definition"})
-        (conj "activity")
-        ;; Agent and Groups can both have name and IFI, but only
-        ;; Groups can have members
-        (has-props? #{"name" "mbox" "mbox_sha1sum" "openid" "account"})
-        (into (cond-> ["agent"] (property-set "member") (conj "group")))
-        ;; Statement properties = SubStatement
-        (has-props? #{"actor" "verb" "object" "context" "results"
-                      "attachments" "timestamp"})
-        (conj "sub-statement"))
-      ;; Default to Activity
-      :else
-      #{"activity"})))
-
-(defn- actor-type [parsed-rules path-prefix]
-  (let [object-types (get-object-types parsed-rules path-prefix)
-        property-set (get-property-set parsed-rules path-prefix)]
-    (if (not-empty object-types)
-      ;; Determine types based off of objectType
-      (set (map {"Agent" "agent"
-                 "Group" "group"}
-                object-types))
-      ;; Default to Agent, but also suggest Group if member is present
-      (cond-> #{"agent"}
-        (property-set "member")
-        (conj "group")))))
-
 (defn rules->spec-hints
+  "Derive spec hints from `parsed-rules`, i.e. a map from paths
+   to a set of types that the value at that path can be (e.g. one
+   possible key-value pair is `[\"actor\"] #{\"agent\" \"group\"}`)."
   [parsed-rules]
   (let [prefix-rule-m
-        (-> (group-by (fn [{:keys [specpath]}]
-                        (xp/spec-hinted-path specpath))
+        (-> (group-by (fn [{:keys [path]}]
+                        (xp/spec-hinted-path path))
                       parsed-rules)
             (dissoc nil))]
     (reduce-kv
@@ -514,15 +450,15 @@
        (let [object-type-path
              (conj prefix "objectType")
              ?object-types
-             (some (fn [{:keys [specpath valueset]}]
-                     (when (= object-type-path specpath)
+             (some (fn [{:keys [path valueset]}]
+                     (when (= object-type-path path)
                        (->> valueset
                             (map xp/object-type-kebab-case)
                             set
                             not-empty)))
                    rules)
              paths
-             (map :specpath rules)
+             (map :path rules)
              init-types
              (or ?object-types
                  (xp/default-spec-hints prefix))
@@ -538,145 +474,35 @@
      {}
      prefix-rule-m)))
 
-(defn add-spec-hints
-  [spec-hints parsed-rules]
-  (let [filter-rules (fn [prefix]
-                       (let [len (count prefix)]
-                         (filter (fn [{:keys [presence specpath]}]
-                                   (and (= prefix (subvec specpath 0 len))
-                                        (not= :excluded presence)))
-                                 parsed-rules)))
-        template-obj  (get spec-hints ["object"])
-        object-rules  (filter-rules ["object"])
-        subobj-rules  (filter-rules ["object" "object"])
-        actor-rules   (filter-rules ["actor"])
-        auth-rules    (filter-rules ["authority"])
-        inst-rules    (filter-rules ["context" "instructor"])
-        subact-rules  (filter-rules ["object" "actor"])
-        subinst-rules (filter-rules ["object" "context" "instructor"])]
-    (cond-> spec-hints
-      (and (not-empty object-rules)
-           (not-empty template-obj))
-      (update ["object"]
-              into
-              (object-type object-rules ["object"]))
-      (and (not-empty object-rules)
-           (empty? template-obj))
-      (assoc ["object"]
-             (object-type object-rules ["object"]))
-      (not-empty subobj-rules)
-      (assoc ["object" "object"]
-             (object-type object-rules ["object" "object"]))
-      (not-empty actor-rules)
-      (assoc ["actor"]
-             (actor-type actor-rules ["actor"]))
-      (not-empty auth-rules)
-      (assoc ["authority"]
-             (actor-type auth-rules ["authority"]))
-      (not-empty inst-rules)
-      (assoc ["context" "instructor"]
-             (actor-type inst-rules ["context" "instructor"]))
-      (not-empty subact-rules)
-      (assoc ["object" "actor"]
-             (actor-type inst-rules ["object" "actor"]))
-      (not-empty subinst-rules)
-      (assoc ["object" "context" "instructor"]
-             (actor-type inst-rules ["object" "context" "instructor"])))))
-
-(defn- rule-spec-name
-  [path-rule-map path]
-  (let [len (count path)
-        x2  (when (< 0 len) (get path (- len 1)))
-        x1  (when (< 1 len) (get path (- len 2)))
-        x0  (when (< 2 len) (get path (- len 3)))]
-    (cond
-      ;; $.object.object => :sub-statement/activity
-      (and (= "object" x1)
-           (= "object" x2))
-      (keyword "sub-statement"
-               (object-type path-rule-map ["object" "object"]))
-      ;; $.object => :statement/activity
-      (and (nil? x1)
-           (= "object" x2))
-      (keyword "statement"
-               (object-type path-rule-map ["object"]))
-      ;; $.actor => ::xs/agent
-      (or (= "actor" x2)
-          (= "authority" x2))
-      (keyword xs-ns (actor-type path-rule-map path))
-      ;; $.object.id => :activity/id
-      (= "object" x1)
-      (keyword (object-type path-rule-map path) x2)
-      ;; $.actor.name => :agent/name
-      (= "actor" x1)
-      (keyword (actor-type path-rule-map path) x2)
-      ;; $.verb => ::xs/verb
-      (and (nil? x1)
-           (string? x2))
-      (keyword xs-ns x2)
-      ;; $.verb.id => :verb/id
-      (and (string? x1)
-           (string? x2))
-      (keyword x1 x2)
-      ;; $.attachments.* => ::xs/attachment
-      (and (string? x1)
-           (= '* x2))
-      (keyword xs-ns (array-element-spec-name x1))
-      ;; $.attachments.*.id => :attachment/id
-      (and (string? x0)
-           (= '* x1)
-           (string? x2))
-      (keyword (array-element-spec-name x0) x2)
-      :else
-      (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
-                      {:type ::invalid-path
-                       :path path})))))
-
-(defn add-rule-specname
-  [path-rule-map {:keys [specpath] :as parsed-rule}]
-  (->> (rule-spec-name path-rule-map specpath)
-       (assoc parsed-rule :specname)))
-
 (defn- rule-generator
-  [iri-map specname]
-  (try
-    (cond
-      (= "extensions" (namespace specname))
-      (or (some->> (name specname)
-                   (get iri-map)
-                   :inlineSchema
-                   (jschema/schema->spec nil)
-                   s/gen)
-          (s/gen any?))
-      (s/get-spec specname)
-      (s/gen specname)
-      :else
-      (s/gen any?))
-    (catch Exception e
-      (ex-info (format "Unable to create generator for: %s" specname)
-               {:type ::generator-failure
-                :spec specname}
-               e))))
+  "Return "
+  [iri-map spec-hints {:keys [path]}]
+  (let [spec (xp/path->spec-2 iri-map spec-hints path)
+        gen  (try (s/gen spec)
+                  (catch Exception e
+                    (ex-info (format "Unable to create generator for: %s" spec)
+                             {:type ::generator-failure
+                              :spec spec}
+                             e)))]
+    {:spec      spec
+     :generator gen}))
 
 (defn add-rule-valuegen
-  [iri-map
-   {:keys [verbs verb-ids activities activity-ids activity-types]}
-   {:keys [specname valueset none] :as parsed-rule}]
-  (let [?all-set (case specname
-                   :statement/verb verbs
-                   :sub-statement/verb verbs
-                   :verb/id verb-ids
-                   :statement-object/activity activities
-                   :sub-statement-object/activity activities
-                   :activity/id activity-ids
-                   :definition/type activity-types
-                   nil)] 
+  "If `parsed-rule` does not already have a `valueset`, then either
+   derive one from the profile cosmos (i.e. the `valuesets` arg), where
+   an `:all` set containing all appropriate values is introduced, or
+   add a `:spec` and `:generator`. This will ensure that during rule
+   application, the rule will always be able to come up with a value."
+  [iri-map spec-hints valuesets {:keys [path valueset none] :as parsed-rule}]
+  (let [?all-set (xp/path->valueset spec-hints valuesets path)] 
     (cond-> parsed-rule
       (and (not valueset) ?all-set)
       (assoc :all      ?all-set
              :valueset (rule-value-set-2 ?all-set none))
       (and (not valueset) (not ?all-set))
-      (assoc :generator (rule-generator iri-map specname)))))
+      (merge (rule-generator iri-map spec-hints parsed-rule)))))
+
+;; Rule Application
 
 (defn property-rule?
   [property {:keys [location]}]

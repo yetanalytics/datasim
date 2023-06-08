@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.path
   "Given a path into an xAPI structure, return a spec from xapi-schema"
   (:require [com.yetanalytics.datasim.json :as json]
+            [com.yetanalytics.datasim.json.schema :as jschema]
             [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]
@@ -289,87 +290,26 @@
            type-set
            paths)))
 
-(defn- array-element-spec-name
-  [array-prop]
-  (condp contains? array-prop
-    #{"category" "grouping" "parent" "other"}
-    "activity"
-    #{"choices" "scale" "source" "target" "steps"}
-    "interaction-component"
-    #{"correctResponsesPattern"}
-    "string-not-empty"
-    #{"member"}
-    "agent"
-    #{"attachments"}
-    "attachment"
-    ;; else
-    (throw (ex-info "Unknown array property"
-                    {:type     ::invalid-array-property
-                     :property array-prop}))))
+;; Need to fill in for otherwise-nonexistent spec
+(s/def :correctResponsesPattern/string string?)
 
-;; (object-or "statement-object" #{"agent" "group"})
-;; => (s/or :agent ::statement-object/agent :group ::statement-object/group)
-(defn object-or
-  [spec-ns object-types]
-  (->> object-types
-       (map (fn [obj-type] [(keyword obj-type) (keyword spec-ns obj-type)]))
-       u/dynamic-or))
+(def array-element-specname
+  {"category"                "activity"
+   "grouping"                "activity"
+   "parent"                  "activity"
+   "other"                   "activity"
+   "choices"                 "interaction-component"
+   "scale"                   "interaction-component"
+   "source"                  "interaction-component"
+   "target"                  "interaction-component"
+   "steps"                   "interaction-component"
+   "correctResponsesPattern" "string"
+   "member"                  "agent"
+   "attachments"             "attachment"})
 
-;; (object-property-or #{"agent" "group"} "name")
-;; => (s/or :agent :agent/name :group :group/name)
-(defn object-property-or
-  [object-types prop-name]
-  (->> object-types
-       (map (fn [obj-type] [(keyword obj-type) (keyword obj-type prop-name)]))
-       u/dynamic-or))
-
-(defn path->spec-2
-  [spec-hints path]
-  (let [len (count path)
-        x2  (when (< 0 len) (get path (- len 1)))
-        x1  (when (< 1 len) (get path (- len 2)))
-        x0  (when (< 2 len) (get path (- len 3)))]
-    (cond
-      ;; $.object.object => :sub-statement/activity
-      (= ["object" "object"] path)
-      (object-or "sub-statement-object" (get spec-hints path))
-      ;; $.object => :statement/activity
-      (= ["object"] path)
-      (object-or "statement-object" (get spec-hints path))
-      ;; $.actor => ::xs/agent
-      (#{["actor"] ["authority"] ["context" "instructor"]
-         ["object" "actor"] ["object" "context" "instructor"]}
-       path)
-      (object-or xs-ns (get spec-hints path))
-      ;; $.actor.name => :agent/name
-      (and (#{["object"] ["actor"] ["context" "instructor"] ["authority"]
-              ["object" "actor"] ["object" "object"] ["object" "context" "instructor"]}
-            (vec (butlast path)))
-           (string? x2))
-      (object-property-or (get spec-hints path) x2)
-      ;; $.verb => ::xs/verb
-      (and (nil? x1)
-           (string? x2))
-      (keyword xs-ns x2)
-      ;; $.verb.id => :verb/id
-      (and (string? x1)
-           (string? x2))
-      (keyword x1 x2)
-      ;; $.attachments.* => ::xs/attachment
-      (and (string? x1)
-           (= '* x2))
-      (keyword xs-ns (array-element-spec-name x1))
-      ;; $.attachments.*.id => :attachment/id
-      (and (string? x0)
-           (= '* x1)
-           (string? x2))
-      (keyword (array-element-spec-name x0) x2)
-      :else
-      (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
-                      {:type ::invalid-path
-                       :path path})))))
-
-(defn- path->valueset
+(defn path->valueset
+  "Derive the appropriate set of values, taken from the profile cosmos, from
+   `path`."
   [spec-hints
    {:keys [verbs verb-ids activities activity-ids activity-types]}
    path]
@@ -420,3 +360,72 @@
       activity-types
       ;; Otherwise none
       nil)))
+
+;; (object-or "statement-object" #{"agent" "group"})
+;; => (s/or :agent ::statement-object/agent :group ::statement-object/group)
+(defn object-or
+  [spec-ns object-types]
+  (->> object-types
+       (map (fn [obj-type] [(keyword obj-type) (keyword spec-ns obj-type)]))
+       u/dynamic-or))
+
+;; (object-property-or #{"agent" "group"} "name")
+;; => (s/or :agent :agent/name :group :group/name)
+(defn object-property-or
+  [object-types prop-name]
+  (->> object-types
+       (map (fn [obj-type] [(keyword obj-type) (keyword obj-type prop-name)]))
+       u/dynamic-or))
+
+(defn path->spec-2
+  "Given `path`, derive the appropriate spec."
+  [iri-map spec-hints path]
+  (let [len (count path)
+        x2  (when (< 0 len) (get path (- len 1)))
+        x1  (when (< 1 len) (get path (- len 2)))
+        x0  (when (< 2 len) (get path (- len 3)))]
+    (cond
+      ;; $.object.object => :sub-statement/activity
+      (= ["object" "object"] path)
+      (object-or "sub-statement-object" (get spec-hints path))
+      ;; $.object => :statement/activity
+      (= ["object"] path)
+      (object-or "statement-object" (get spec-hints path))
+      ;; $.actor => ::xs/agent
+      (#{["actor"] ["authority"] ["context" "instructor"]
+         ["object" "actor"] ["object" "context" "instructor"]}
+       path)
+      (object-or xs-ns (get spec-hints path))
+      ;; $.actor.name => :agent/name
+      (and (#{["object"] ["actor"] ["context" "instructor"] ["authority"]
+              ["object" "actor"] ["object" "object"] ["object" "context" "instructor"]}
+            (vec (butlast path)))
+           (string? x2))
+      (object-property-or (get spec-hints path) x2)
+      ;; $.result.extension['http://foo.org/extension']
+      (and (#{"definition" "context" "result"} x0)
+           (#{"extensions"} x1)
+           (string? x2))
+      (or (some->> x2 (get iri-map) :inlineSchema (jschema/schema->spec nil))
+          any?)
+      ;; $.verb => ::xs/verb
+      (and (nil? x1)
+           (string? x2))
+      (keyword xs-ns x2)
+      ;; $.verb.id => :verb/id
+      (and (string? x1)
+           (string? x2))
+      (keyword x1 x2)
+      ;; $.attachments.* => ::xs/attachment
+      (and (string? x1)
+           (= '* x2))
+      (keyword xs-ns (get array-element-specname x1))
+      ;; $.attachments.*.id => :attachment/id
+      (and (string? x0)
+           (= '* x1)
+           (string? x2))
+      (keyword (get array-element-specname x0) x2)
+      :else
+      (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
+                      {:type ::invalid-path
+                       :path path})))))
