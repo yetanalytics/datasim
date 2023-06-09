@@ -45,8 +45,15 @@
          (pzip/json->path-map long-statement))))
   (testing "works for arbitrary and relative paths"
     (is (= ::xs/language-map-text
-           (path/path->spec ::xs/activity ["definition" "name" "en-US"]))))
-  (testing "can return functions for use as specs"
-    (is (= string?
-           (path/path->spec ::xs/statement
-                            ["object" "definition" "correctResponsesPattern" 0])))))
+           (path/path->spec-3 ::xs/activity
+                              ["definition" "name" "en-US"]
+                              {}))))
+  (testing "can return custom specs"
+    (is (= :actor/objectType
+           (path/path->spec-3 ::xs/statement
+                              ["actor" "objectType"]
+                              {:object-types {["actor"] #{"agent" "group"}}})))
+    (is (= :correctResponsesPattern/string
+           (path/path->spec-3 ::xs/statement
+                              ["object" "definition" "correctResponsesPattern" '*]
+                              {:object-types {["object"] #{"activity"}}})))))

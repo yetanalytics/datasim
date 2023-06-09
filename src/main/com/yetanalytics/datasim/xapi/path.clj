@@ -460,9 +460,13 @@
 (defmethod path-spec :definition/extensions [_ path _ _]
   [path ::xs/extensions])
 
+;; This is just to avoid complications with putting a fn in a place
+;; where keywords normally go
+(s/def :correctResponsesPattern/string string?)
+
 (defmethod path-spec :definition/correctResponsesPattern [_ path p _]
   (validate-wildcard-path-key p)
-  [(conj path p) string?])
+  [(conj path p) :correctResponsesPattern/string])
 
 (defmethod path-spec ::xs/interaction-components [_ path p _]
   (validate-wildcard-path-key p)
@@ -724,56 +728,3 @@
       activity-types
       ;; Otherwise none
       nil)))
-
-(defn path->spec-2
-  "Given `path`, derive the appropriate spec."
-  [iri-map spec-hints path]
-  (let [len (count path)
-        x2  (when (< 0 len) (get path (- len 1)))
-        x1  (when (< 1 len) (get path (- len 2)))
-        x0  (when (< 2 len) (get path (- len 3)))]
-    (cond
-      ;; $.object.object => :sub-statement/activity
-      (= ["object" "object"] path)
-      (object-or "sub-statement-object" (get spec-hints path))
-      ;; $.object => :statement/activity
-      (= ["object"] path)
-      (object-or "statement-object" (get spec-hints path))
-      ;; $.actor => ::xs/agent
-      (#{["actor"] ["authority"] ["context" "instructor"]
-         ["object" "actor"] ["object" "context" "instructor"]}
-       path)
-      (object-or xs-ns (get spec-hints path))
-      ;; $.actor.name => :agent/name
-      (and (#{["object"] ["actor"] ["context" "instructor"] ["authority"]
-              ["object" "actor"] ["object" "object"] ["object" "context" "instructor"]}
-            (vec (butlast path)))
-           (string? x2))
-      (object-property-or (get spec-hints path) x2)
-      ;; $.result.extension['http://foo.org/extension']
-      (and (#{"definition" "context" "result"} x0)
-           (#{"extensions"} x1)
-           (string? x2))
-      (or (some->> x2 (get iri-map) :inlineSchema (jschema/schema->spec nil))
-          any?)
-      ;; $.verb => ::xs/verb
-      (and (nil? x1)
-           (string? x2))
-      (keyword xs-ns x2)
-      ;; $.verb.id => :verb/id
-      (and (string? x1)
-           (string? x2))
-      (keyword x1 x2)
-      ;; $.attachments.* => ::xs/attachment
-      (and (string? x1)
-           (= '* x2))
-      (keyword xs-ns (get array-element-specname x1))
-      ;; $.attachments.*.id => :attachment/id
-      (and (string? x0)
-           (= '* x1)
-           (string? x2))
-      (keyword (get array-element-specname x0) x2)
-      :else
-      (throw (ex-info (format "Unsupported key-index combination in path: %s" path)
-                      {:type ::invalid-path
-                       :path path})))))
