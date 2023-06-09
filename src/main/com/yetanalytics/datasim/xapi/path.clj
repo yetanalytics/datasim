@@ -64,11 +64,13 @@
    "timestamp"    #{"sub-statement"}})
 
 (defn paths->spec-hints
-  ([paths]
-   (paths->spec-hints #{} paths))
-  ([type-set paths]
+  ([prefix paths]
+   (paths->spec-hints #{} prefix paths))
+  ([type-set prefix paths]
    (reduce (fn [acc path]
-             (let [prop-set (get spec-hint-properties (last path))]
+             (let [prop-set (->> (count prefix)
+                                 (get path)
+                                 (get spec-hint-properties))]
                (cset/intersection acc prop-set)))
            type-set
            paths)))
@@ -271,14 +273,13 @@
                    :object-types object-types})))
 
 ;; TODO: Distinguish between activity, context, and result extensions
-(defn- path-spec-extension
+(defn- path-spec-extensions
   [extension-id {:keys [iri-map]}]
-  (-> (or (some->> extension-id
-                   (get iri-map)
-                   :inlineSchema
-                   (jschema/schema->spec nil))
-          any?)
-      (with-meta {:extension? true})))
+  (or (some->> extension-id
+               (get iri-map)
+               :inlineSchema
+               (jschema/schema->spec nil))
+      ::json/any))
 
 (defmulti path-spec
   (fn path-spec-dispatch [spec _path _p _hint-data] spec))
@@ -456,8 +457,8 @@
 (defmethod path-spec :definition/steps [_ path _ _]
   [path ::xs/interaction-components])
 
-(defmethod path-spec :definition/extensions [_ path p hint-data]
-  [path (path-spec-extension p hint-data)])
+(defmethod path-spec :definition/extensions [_ path _ _]
+  [path ::xs/extensions])
 
 (defmethod path-spec :definition/correctResponsesPattern [_ path p _]
   (validate-wildcard-path-key p)
@@ -480,8 +481,8 @@
   (validate-string-path-key p)
   [(conj path p) (keyword "result" p)])
 
-(defmethod path-spec :result/extensions [_ path p hint-data]
-  [path (path-spec-extension p hint-data)])
+(defmethod path-spec :result/extensions [_ path _ _]
+  [path ::xs/extensions])
 
 (defmethod path-spec :result/score [_ path p _]
   (validate-string-path-key p)
@@ -501,8 +502,8 @@
   [path ::xs/context-activities])
 (defmethod path-spec :context/statement [_ path _ _]
   [path ::xs/statement-ref])
-(defmethod path-spec :context/extensions [_ path p hint-data]
-  [path (path-spec-extension p hint-data)])
+(defmethod path-spec :context/extensions [_ path _ _]
+  [path ::xs/extensions])
 
 (defmethod path-spec ::xs/context-activities [_ path p _]
   (validate-string-path-key p)
@@ -542,6 +543,10 @@
   (validate-spec-path-key ::xs/language-tag p)
   [(conj path p) ::xs/language-map-text])
 
+(defmethod path-spec ::xs/extensions [_ path p _]
+  (validate-spec-path-key ::xs/iri p)
+  [(conj path p) ::json/any])
+
 (defn path->spec-3
   [spec path hint-data]
   (loop [spec   spec
@@ -551,21 +556,28 @@
       (let [[prefix* new-spec] (path-spec spec prefix p hint-data)
             suffix* (cond
                       ;; Short-circuit on extension
-                      (:extension? (meta new-spec)) []
+                      (= ::json/any new-spec) []
                       ;; We advanced one spot in the path
                       (= p (peek prefix*)) (rest suffix)
                       ;; Silent traversal along equivalent specs 
                       :else suffix)]
         (recur new-spec prefix* suffix*))
-      (if-not (or (s/get-spec spec)
-                  (fn? spec)
-                  (s/spec? spec))
+      (cond
+        ;; Treat extensions specially
+        (= ::json/any spec)
+        (path-spec-extensions (peek suffix) hint-data)
+        ;; Recognized spec
+        (or (s/get-spec spec)
+            (fn? spec)
+            (s/spec? spec))
+        spec
+        ;; Bad or unrecognized spec
+        :else
         (throw (ex-info "Must return a valid, registered spec or a function or a spec literal"
                         {:type :invalid-spec
                          :spec spec
                          :path prefix
-                         :hint hint-data}))
-        spec))))
+                         :hint hint-data}))))))
 
 (comment
   (path-spec ::xs/statement

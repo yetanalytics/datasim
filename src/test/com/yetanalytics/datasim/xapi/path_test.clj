@@ -24,13 +24,22 @@
 (deftest spec-map-test
   (is (s/valid? ::path/spec-map path/spec-map)))
 
+(def object-types
+  {["object"] #{"activity"}
+   ["context" "instructor"] #{"agent"}
+   ["actor"] #{"group"}
+   ["authority"] #{"agent"}})
+
 (deftest path->spec-test
   (testing "works for lots of paths"
     ;; Explode a statement using a helper from our zipperoo to get a bunch of
     ;; paths and leaf values
     (is (every?
          (fn [[path v]]
-           (let [spec (path/path->spec ::xs/statement path long-statement)]
+           (let [path (mapv #(if (int? %) '* %) path)
+                 spec (path/path->spec-3 ::xs/statement
+                                         path
+                                         {:object-types object-types})]
              (and spec
                   (s/valid? spec v))))
          (pzip/json->path-map long-statement))))

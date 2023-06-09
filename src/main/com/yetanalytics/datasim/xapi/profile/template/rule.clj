@@ -463,7 +463,7 @@
              (or ?object-types
                  (xp/default-spec-hints prefix))
              all-types
-             (xp/paths->spec-hints init-types paths)]
+             (xp/paths->spec-hints init-types prefix paths)]
          (if (not-empty all-types)
            (assoc m prefix all-types)
            (throw (ex-info (format "Contradiction on path: $.%s"
@@ -477,15 +477,15 @@
 (defn- rule-generator
   "Return "
   [spec-hints {:keys [path]}]
-  (let [spec (xp/path->spec-3 ::xs/statement path spec-hints)
-        gen  (try (s/gen spec)
-                  (catch Exception e
-                    (ex-info (format "Unable to create generator for: %s" spec)
-                             {:type ::generator-failure
-                              :spec spec}
-                             e)))]
-    {:spec      spec
-     :generator gen}))
+  (let [spec (xp/path->spec-3 :xapi-schema.spec/statement path spec-hints)]
+    (try {:spec spec
+          :generator (s/gen spec)}
+         (catch Exception e
+           (throw
+            (ex-info "Unable to create generator" #_(format "Unable to create generator for: %s" spec)
+                     {:type ::generator-failure
+                      :spec spec}
+                     e))))))
 
 (defn add-rule-valuegen
   "If `parsed-rule` does not already have a `valueset`, then either

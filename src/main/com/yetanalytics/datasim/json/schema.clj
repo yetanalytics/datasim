@@ -892,5 +892,11 @@
   
   (sgen/generate (s/gen (schema->spec nil "{\"type\": \"number\"}")))
   
+  (sgen/generate (s/gen (schema->spec nil "{ \"type\": \"string\", \"format\": \"uri\" }")))
+  
+  (sgen/generate (s/gen (schema->spec nil "{ \"enum\": [\"Passed\", \"Completed\", \"CompletedAndPassed\", \"CompletedOrPassed\", \"NotApplicable\"] }")))
+
   (sgen/generate (s/gen (s/or :foo (fn [_] false))))
+
+  (sgen/generate (s/gen any?))
   )
