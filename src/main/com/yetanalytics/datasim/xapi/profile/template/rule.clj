@@ -363,9 +363,10 @@
    - Add a `valueset` that consists of the intersection of `any` and
      `all` minus `none`."
   [{:keys [location selector presence any all none]}]
-  (let [paths (cond-> (path/parse-paths location)
+  (let [opts  {:strict? true}
+        paths (cond-> (path/parse-paths location opts)
                 selector
-                (join-location-and-selector (path/parse-paths selector)))
+                (join-location-and-selector (path/parse-paths selector opts)))
         ?any  (not-empty (set any))
         ?all  (not-empty (set all))
         ?none (not-empty (set none))]
@@ -399,8 +400,8 @@
             (recur (inc idx)
                    loc-rest
                    (for [rule  rules
-                         loc-k loc-rest]
-                     (assoc-in rule [:location 0 idx] loc-k)))
+                         loc-e loc-element]
+                     (assoc-in rule [:location 0 idx] [loc-e])))
             :else
             (throw (ex-info "Rule location cannot mix integer and string keys."
                             {:type ::invalid-rule
