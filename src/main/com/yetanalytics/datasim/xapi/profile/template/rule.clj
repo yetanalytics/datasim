@@ -476,8 +476,8 @@
 
 (defn- rule-generator
   "Return "
-  [iri-map spec-hints {:keys [path]}]
-  (let [spec (xp/path->spec-2 iri-map spec-hints path)
+  [spec-hints {:keys [path]}]
+  (let [spec (xp/path->spec-3 ::xs/statement path spec-hints)
         gen  (try (s/gen spec)
                   (catch Exception e
                     (ex-info (format "Unable to create generator for: %s" spec)
@@ -493,14 +493,16 @@
    an `:all` set containing all appropriate values is introduced, or
    add a `:spec` and `:generator`. This will ensure that during rule
    application, the rule will always be able to come up with a value."
-  [iri-map spec-hints valuesets {:keys [path valueset none] :as parsed-rule}]
-  (let [?all-set (xp/path->valueset spec-hints valuesets path)] 
+  [iri-map object-types valuesets {:keys [path valueset none] :as parsed-rule}]
+  (let [?all-set (xp/path->valueset object-types valuesets path)] 
     (cond-> parsed-rule
       (and (not valueset) ?all-set)
       (assoc :all      ?all-set
              :valueset (rule-value-set-2 ?all-set none))
       (and (not valueset) (not ?all-set))
-      (merge (rule-generator iri-map spec-hints parsed-rule)))))
+      (merge (rule-generator {:iri-map      iri-map
+                              :object-types object-types}
+                             parsed-rule)))))
 
 ;; Rule Application
 
