@@ -305,12 +305,11 @@
   (let [types (get object-type-m path)]
     (case types
       #{"activity"}      ::xs/activity
-      #{"actor" "group"} ::xs/actor
+      #{"agent" "group"} ::xs/actor
       #{"agent"}         ::xs/agent
       #{"group"}         ::xs/group
       #{"statement-ref"} ::xs/statement-ref
       #{"sub-statement"} ::xs/sub-statement
-      :else
       (if (contains? types "activity")
         ::xs/activity
         (throw-unsupported-object-types :statement/object path types)))))
@@ -353,9 +352,13 @@
   [path (actor-type-dispatch object-types path)])
 
 (defmethod path-spec ::actor [_ path p _]
-  (if (= "objectType" p)
+  (case p
+    "objectType"
     [(conj path p) :actor/objectType]
-    [(conj path p) (keyword "group" p)]))
+    "member"
+    [(conj path p) :group/member]
+    ;; else
+    [(conj path p) (keyword "agent" p)]))
 
 (defmethod path-spec ::xs/account [_ path p _]
   [(conj path p) (keyword "account" p)])
@@ -407,11 +410,10 @@
   (let [types (get object-type-map path)]
     (case types
       #{"activity"}      ::xs/activity
-      #{"actor" "group"} ::xs/actor
+      #{"agent" "group"} ::xs/actor
       #{"agent"}         ::xs/agent
       #{"group"}         ::xs/group
       #{"statement-ref"} ::xs/statement-ref
-      :else
       (if (contains? types "activity")
         ;; default to activity
         ::xs/activity
@@ -528,9 +530,9 @@
 
 ;; Attachment specs
 
-(defmethod path-spec ::xs/attachments [_ path _ _]
-  (validate-wildcard-path-key path)
-  [path ::xs/attachment])
+(defmethod path-spec ::xs/attachments [_ path p _]
+  (validate-wildcard-path-key p)
+  [(conj path p) ::xs/attachment])
 
 (defmethod path-spec ::xs/attachment [_ path p _]
   (validate-string-path-key p)
@@ -560,16 +562,18 @@
       (let [[prefix* new-spec] (path-spec spec prefix p hint-data)
             suffix* (cond
                       ;; Short-circuit on extension
-                      (= ::json/any new-spec) []
+                      (= ::json/any new-spec)
+                      []
                       ;; We advanced one spot in the path
-                      (= p (peek prefix*)) (rest suffix)
+                      (= (-> prefix count inc) (-> prefix* count))
+                      (rest suffix)
                       ;; Silent traversal along equivalent specs 
                       :else suffix)]
         (recur new-spec prefix* suffix*))
       (cond
         ;; Treat extensions specially
         (= ::json/any spec)
-        (path-spec-extensions (peek suffix) hint-data)
+        (path-spec-extensions (peek prefix) hint-data)
         ;; Recognized spec
         (or (s/get-spec spec)
             (fn? spec)
@@ -578,7 +582,7 @@
         ;; Bad or unrecognized spec
         :else
         (throw (ex-info "Must return a valid, registered spec or a function or a spec literal"
-                        {:type :invalid-spec
+                        {:type ::invalid-spec
                          :spec spec
                          :path prefix
                          :hint hint-data}))))))
