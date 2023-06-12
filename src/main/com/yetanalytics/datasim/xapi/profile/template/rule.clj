@@ -354,7 +354,7 @@
      ?any   ?any
      :else nil)))
 
-(defn parse-rule-2
+(defn- parse-rule-2
   "Parse the rule by doing the following:
    - Convert `location` and `selector` JSONPath strings into a single
      Pathetic-compatible `location` vector.
@@ -377,7 +377,7 @@
       ?all           (assoc :all ?all)
       ?none          (assoc :none ?none))))
 
-(defn separate-rule
+(defn- separate-rule
   "Given a single `parsed-rule`, return a vector of multiple parsed
    rules such that each resulting `location` does not have multiple
    `|`-conjoined paths or multiple string keys per element."
@@ -408,7 +408,7 @@
                              :rule parsed-rule}))))
         (vec rules)))))
 
-(defn add-rule-specpath
+(defn- add-rule-specpath
   "Given `parsed-rule`, apply a `path` that is the `location` but
    flattened into a single vector of string keys and wildcards.
    Turns any integer elements into wildcards. Assumes that the

@@ -157,192 +157,173 @@
     :none      [{"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.two"}]
     :scopeNote {:en "none value that is a JSON object"}}])
 
-(deftest rule-parse-test
-  (testing "parse-rule function"
-    (is (= {:location [[["id"]]]
-            :presence :included}
-           (r/parse-rule-2
-            {:location  "$.id"
-             :presence  "included"
-             :scopeNote {:en "included presence, no value requirement"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :any      #{"http://adlnet.gov/expapi/verbs/launched"
-                        "http://adlnet.gov/expapi/verbs/attended"}
-            :valueset #{"http://adlnet.gov/expapi/verbs/launched"
-                        "http://adlnet.gov/expapi/verbs/attended"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :any       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"]
-             :scopeNote {:en "included presence, any values"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :all      #{"http://adlnet.gov/expapi/verbs/launched"
-                        "http://adlnet.gov/expapi/verbs/attended"}
-            :valueset #{"http://adlnet.gov/expapi/verbs/launched"
-                        "http://adlnet.gov/expapi/verbs/attended"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :all       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"]
-             :scopeNote {:en "included presence, all values"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :none     #{"http://adlnet.gov/expapi/verbs/launched"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :none      ["http://adlnet.gov/expapi/verbs/launched"]
-             :scopeNote {:en "included presence, none values"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
-            :any       #{"http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"}
-            :all       #{"http://adlnet.gov/expapi/verbs/launched"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :any       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"]
-             :all       ["http://adlnet.gov/expapi/verbs/launched"]
-             :scopeNote {:en "included presence, any and all values"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
-            :any       #{"http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"}
-            :none      #{"http://adlnet.gov/expapi/verbs/attended"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :any       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"]
-             :none      ["http://adlnet.gov/expapi/verbs/attended"]
-             :scopeNote {:en "included presence, any and none values"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
-            :all       #{"http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"}
-            :none      #{"http://adlnet.gov/expapi/verbs/attended"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :all       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/attended"]
-             :none      ["http://adlnet.gov/expapi/verbs/attended"]
-             :scopeNote {:en "included presence, all and none values"}})))
-    (is (= {:location [[["verb"] ["id"]]]
-            :presence :included
-            :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
-            :any       #{"http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/initialized"
-                         "http://adlnet.gov/expapi/verbs/passed"}
-            :all       #{"http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/initialized"
-                         "http://adlnet.gov/expapi/verbs/completed"}
-            :none      #{"http://adlnet.gov/expapi/verbs/initialized"}}
-           (r/parse-rule-2
-            {:location  "$.verb.id"
-             :presence  "included"
-             :any       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/initialized"
-                         "http://adlnet.gov/expapi/verbs/passed"]
-             :all       ["http://adlnet.gov/expapi/verbs/launched"
-                         "http://adlnet.gov/expapi/verbs/initialized"
-                         "http://adlnet.gov/expapi/verbs/completed"]
-             :none      ["http://adlnet.gov/expapi/verbs/initialized"]
-             :scopeNote {:en "included presence, both any, all, and none values"}})))
-    (is (= {:location [[["context"] ["contextActivities"] ["grouping"]]]
-            :presence :excluded}
-           (r/parse-rule-2
-            {:location  "$.context.contextActivities.grouping"
-             :presence  "excluded"
-             :scopeNote {:en "excluded presence, no value requirement"}})))
-    (is (= {:location [[["context"] ["contextActivities"] ["parent"]]]
-            :presence :recommended}
-           (r/parse-rule-2
-            {:location  "$.context.contextActivities.parent"
-             :presence  "recommended"
-             :scopeNote {:en "recommended presence, no value req, exists in long statement"}})))
-    (is (= {:location [[["context"] ["contextActivities"] ["other"] [0 1] ["id"]]]
-            :presence :included}
-           (r/parse-rule-2
-            {:location  "$.context.contextActivities.other[0,1]"
-             :selector  "$.id"
-             :presence  :included
-             :scopeNote {:en "selector path with array indices"}})))
-    (is (= {:location [[["actor"] ["member"] '* ["objectType"]]]
-            :presence :included
-            :all      #{"Agent" "Group"}
-            :valueset #{"Agent" "Group"}}
-           (r/parse-rule-2
-            {:location  "$.actor.member[*].objectType"
-             :presence  "included"
-             :all       ["Agent" "Group"]
-             :scopeNote {:en "path with wildcards"}})))))
+(defmacro test-parse [testname parsed-rules rules]
+  `(testing ~testname
+     (is (= ~parsed-rules (r/parse-rules ~rules)))))
 
-(deftest rule-separate-test
-  (testing "separate-rule function"
-    (is (= [{:location  [[["context"] ["contextActivities"] ["category"] [0 1]]]
-             :presence  :included}
-            {:location  [[["context"] ["contextActivities"] ["grouping"] [0 1]]]
-             :presence  :included}]
-           (-> {:location  "$.context.contextActivities['category','grouping']"
+(deftest parse-rules-test
+  (test-parse "included presence, no value requirement"
+              [{:location [[["id"]]]
+                :presence :included
+                :path     ["id"]}]
+              [{:location  "$.id"
+                :presence  "included"}])
+  (test-parse "included presence, no value requirement, with scope note"
+              [{:location [[["timestamp"]]]
+                :presence :included
+                :path     ["timestamp"]}]
+              [{:location  "$.timestamp"
+                :presence  "included"
+                :scopeNote {:en-US "This is a scope note"}}])
+  (test-parse "included presence, any values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :valueset #{"http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"}
+                :any      #{"http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"}
+                :path     ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :any       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"]}])
+  (test-parse "included presence, all values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :valueset #{"http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"}
+                :all      #{"http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"}
+                :path     ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :all       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"]}])
+  (test-parse "included presence, none values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :none     #{"http://adlnet.gov/expapi/verbs/launched"}
+                :path     ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :none      ["http://adlnet.gov/expapi/verbs/launched"]}])
+  (test-parse "included presence, any and all values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
+                :any       #{"http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/attended"}
+                :all       #{"http://adlnet.gov/expapi/verbs/launched"}
+                :path      ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :any       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"]
+                :all       ["http://adlnet.gov/expapi/verbs/launched"]}])
+  (test-parse "included presence, any and none values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
+                :any       #{"http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/attended"}
+                :none      #{"http://adlnet.gov/expapi/verbs/attended"}
+                :path      ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :any       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"]
+                :none      ["http://adlnet.gov/expapi/verbs/attended"]}])
+  (test-parse "included presence, all and none values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
+                :all       #{"http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/attended"}
+                :none      #{"http://adlnet.gov/expapi/verbs/attended"}
+                :path      ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :all       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/attended"]
+                :none      ["http://adlnet.gov/expapi/verbs/attended"]}])
+  (test-parse "included presence, any, all and none values"
+              [{:location [[["verb"] ["id"]]]
+                :presence :included
+                :valueset  #{"http://adlnet.gov/expapi/verbs/launched"}
+                :any       #{"http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/initialized"
+                             "http://adlnet.gov/expapi/verbs/passed"}
+                :all       #{"http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/initialized"
+                             "http://adlnet.gov/expapi/verbs/completed"}
+                :none      #{"http://adlnet.gov/expapi/verbs/initialized"}
+                :path      ["verb" "id"]}]
+              [{:location  "$.verb.id"
+                :presence  "included"
+                :any       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/initialized"
+                            "http://adlnet.gov/expapi/verbs/passed"]
+                :all       ["http://adlnet.gov/expapi/verbs/launched"
+                            "http://adlnet.gov/expapi/verbs/initialized"
+                            "http://adlnet.gov/expapi/verbs/completed"]
+                :none      ["http://adlnet.gov/expapi/verbs/initialized"]}])
+  (test-parse "included presence, path with wildcards"
+              [{:location [[["actor"] ["member"] '* ["objectType"]]]
+                :presence :included
+                :all      #{"Agent" "Group"}
+                :valueset #{"Agent" "Group"}
+                :path     ["actor" "member" '* "objectType"]}]
+              [{:location  "$.actor.member[*].objectType"
+                :presence  "included"
+                :all       ["Agent" "Group"]}])
+  (test-parse "excluded presence, no value requirement"
+              [{:location [[["context"] ["contextActivities"] ["grouping"]]]
+                :presence :excluded
+                :path     ["context" "contextActivities" "grouping"]}]
+              [{:location  "$.context.contextActivities.grouping"
+                :presence  "excluded"}])
+  (test-parse "recommended presence, no value req, exists in long statement"
+              [{:location [[["context"] ["contextActivities"] ["parent"]]]
+                :presence :recommended
+                :path     ["context" "contextActivities" "parent"]}]
+              [{:location  "$.context.contextActivities.parent"
+                :presence  "recommended"}])
+  (test-parse "selector path with array indices"
+              [{:location [[["context"] ["contextActivities"] ["other"] [0 1] ["id"]]]
+                :presence :included
+                :path     ["context" "contextActivities" "other" '* "id"]}]
+              [{:location  "$.context.contextActivities.other[0,1]"
+                :selector  "$.id"
+                :presence  :included}])
+  (test-parse "selector path with multiple string keys"
+              [{:location  [[["context"] ["contextActivities"] ["category"] [0 1]]]
+                :presence  :included
+                :path      ["context" "contextActivities" "category" '*]}
+               {:location  [[["context"] ["contextActivities"] ["grouping"] [0 1]]]
+                :presence  :included
+                :path      ["context" "contextActivities" "grouping" '*]}]
+              [{:location  "$.context.contextActivities['category','grouping']"
                 :selector  "$[0,1]"
+                :presence  :included}])
+  (test-parse "selector path with and multiple keys and wildcard"
+              [{:location  [[["context"] ["contextActivities"] ["parent"] '*]]
                 :presence  :included
-                :scopeNote {:en "path with selector and multiple keys"}}
-               r/parse-rule-2
-               r/separate-rule)))
-    (is (= [{:location  [[["context"] ["contextActivities"] ["parent"] '*]]
-             :presence  :included}
-            {:location  [[["context"] ["contextActivities"] ["other"] '*]]
-             :presence  :included}]
-           (-> {:location  "$.context.contextActivities['parent','other']"
+                :path      ["context" "contextActivities" "parent" '*]}
+               {:location  [[["context"] ["contextActivities"] ["other"] '*]]
+                :presence  :included
+                :path      ["context" "contextActivities" "other" '*]}]
+              [{:location  "$.context.contextActivities['parent','other']"
                 :selector  "$.*"
+                :presence  :included}])
+  (test-parse "path with pipe operator"
+              [{:location  [[["object"] ["id"]]]
                 :presence  :included
-                :scopeNote {:en "path with selector and multiple keys + wildcard"}}
-               r/parse-rule-2
-               r/separate-rule)))
-    (is (= [{:location  [[["object"] ["id"]]]
-             :presence  :included}
-            {:location  [[["object"] ["object"] ["id"]]]
-             :presence  :included}]
-           (-> {:location  "$.object.id | $.object.object.id"
+                :path      ["object" "id"]}
+               {:location  [[["object"] ["object"] ["id"]]]
                 :presence  :included
-                :scopeNote {:en "path with pipe operator"}}
-               r/parse-rule-2
-               r/separate-rule)))
-    (is (= ::r/invalid-rule
-           (try (-> {:location  "$.context['registration',0]"
-                     :presence  :included
-                     :scopeNote {:en "invalid rule path"}}
-                    r/parse-rule-2
-                    r/separate-rule)
-                (catch Exception e (-> e ex-data :type)))))))
-
-(deftest rule-specpath-test
-  (testing "add-rule-specpath function"
-    (is (= [["context" "contextActivities" "category" '* "id"]]
-           (->> {:location  "$.context.contextActivities.category.*.id"
-                 :presence  :included
-                 :scopeNote {:en "path with wildcard"}}
-                r/parse-rule-2
-                r/separate-rule
-                (map r/add-rule-specpath)
-                (map :path))))
-    (is (= [["context" "contextActivities" "grouping" '* "id"]]
-           (->> {:location  "$.context.contextActivities.grouping[0,1,2].id"
-                 :presence  :included
-                 :scopeNote {:en "path with wildcard"}}
-                r/parse-rule-2
-                r/separate-rule
-                (map r/add-rule-specpath)
-                (map :path))))))
+                :path      ["object" "object" "id"]}]
+              [{:location  "$.object.id | $.object.object.id"
+                :presence  :included}]))
 
 (deftest example-rules-test
   (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]
@@ -986,13 +967,13 @@
       {"en-US"
        "A simple Experience API statement. Note that the LRS \n\t\t\t\tdoes not need to have any prior information about the Actor (learner), the \n\t\t\t\tverb, or the Activity/object."}}}}
    [{:location "$.object.definition.type"}]
-   #_[{:location "$.verb.display.en-US", :all ["Launched"]}
+   #_[{:location "$.verb.display.en-US", :all ["Launched"]}]
     {:location "$.verb.display.zh-CN", :all ["展开"]}
-    {:location "$.verb.display.zh-CN", :none ["展开"]}]
+    {:location "$.verb.display.zh-CN", :none ["展开"]}
    #_[{:location "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/launchmode']"
        :presence "included"
        :all      ["Review" "Normal" "Browse"]}]
-   :seed gen-seed) 
+   :seed gen-seed 
 
    (r/follows-rule?
     {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
@@ -1030,4 +1011,4 @@
     #_[{:location "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/launchmode']"
         :presence "included"
         :all      ["Review" "Normal" "Browse"]}]
-    :seed gen-seed))
+    :seed gen-seed)))

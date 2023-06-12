@@ -4,11 +4,7 @@
             [com.yetanalytics.datasim.json.schema :as jschema]
             [clojure.spec.alpha :as s]
             [clojure.set :as cset]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.util :as u]))
-
-
-(def xs-ns "xapi-schema.spec")
+            [xapi-schema.spec :as xs]))
 
 (defn prefix-path?
   [prefix path]
@@ -74,41 +70,6 @@
                (cset/intersection acc prop-set)))
            type-set
            paths)))
-
-;; Need to fill in for otherwise-nonexistent spec
-(s/def :correctResponsesPattern/string string?)
-
-(def array-element-specname
-  {"category"                "activity"
-   "grouping"                "activity"
-   "parent"                  "activity"
-   "other"                   "activity"
-   "choices"                 "interaction-component"
-   "scale"                   "interaction-component"
-   "source"                  "interaction-component"
-   "target"                  "interaction-component"
-   "steps"                   "interaction-component"
-   "correctResponsesPattern" "string"
-   "member"                  "agent"
-   "attachments"             "attachment"})
-
-;; (object-or "statement-object" #{"agent" "group"})
-;; => (s/or :agent ::statement-object/agent :group ::statement-object/group)
-(defn object-or
-  ([object-types]
-   (object-or xs-ns object-types))
-  ([spec-ns object-types]
-   (->> object-types
-        (map (fn [obj-type] [(keyword obj-type) (keyword spec-ns obj-type)]))
-        u/dynamic-or)))
-
-;; (object-property-or #{"agent" "group"} "name")
-;; => (s/or :agent :agent/name :group :group/name)
-(defn object-property-or
-  [object-types prop-name]
-  (->> object-types
-       (map (fn [obj-type] [(keyword obj-type) (keyword obj-type prop-name)]))
-       u/dynamic-or))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -334,11 +295,8 @@
 ;; Actor specs
 
 ;; custom specs that allow us to gen agents or groups
-
 (s/def :actor/objectType #{"Agent" "Group"})
-
-(s/def ::actor
-  (s/or :agent ::xs/agent :group ::xs/group))
+(s/def ::actor (s/or :agent ::xs/agent :group ::xs/group))
 
 (defn- actor-type-dispatch [object-type-map path]
   (let [types (get object-type-map path)]
@@ -554,6 +512,9 @@
   [(conj path p) ::json/any])
 
 (defn path->spec-3
+  "Given a root `spec` and a `path` into it, return the spec for
+   that path, or throw an exception if not possible.
+   Accepts `hint-data` for polymorphic objectTypes and extensions."
   [spec path hint-data]
   (loop [spec   spec
          prefix []
@@ -586,18 +547,6 @@
                          :spec spec
                          :path prefix
                          :hint hint-data}))))))
-
-(comment
-  (path-spec ::xs/statement
-             []
-             "object"
-             {:object-types {["object"] #{"activity"}}})
-  
-  (path->spec-3
-   ::xs/statement
-   ["actor" "objectType"]
-   {:object-types {["actor"] #{"agent" "group"}}})
-  )
 
 (defn path->spec
   "Given a root spec and a path into it, return the spec for
