@@ -13,17 +13,18 @@
 
 (defn spec-hinted-path
   [path]
-  (let [prefix-path* (fn [prefix] (when (prefix-path? prefix path) prefix))]
-    (or
-     ;; SubStatement paths
-     (prefix-path* ["object" "actor"])
-     (prefix-path* ["object" "object"])
-     (prefix-path* ["object" "context" "instructor"])
-     ;; Statement paths
-     (prefix-path* ["actor"])
-     (prefix-path* ["object"])
-     (prefix-path* ["context" "instructor"])
-     (prefix-path* ["authority"]))))
+  (let [prefix-path* (fn [coll prefix]
+                       (cond-> coll (prefix-path? prefix path) (conj prefix)))]
+    (-> []
+        ;; SubStatement paths
+        (prefix-path* ["object" "actor"])
+        (prefix-path* ["object" "object"])
+        (prefix-path* ["object" "context" "instructor"])
+        ;; Statement paths
+        (prefix-path* ["actor"])
+        (prefix-path* ["object"])
+        (prefix-path* ["context" "instructor"])
+        (prefix-path* ["authority"]))))
 
 (def default-spec-hints
   {["object"]                        #{"activity" "agent" "group" "statement-ref" "sub-statement"}
@@ -42,7 +43,8 @@
    "SubStatement" "sub-statement"})
 
 (def spec-hint-properties
-  {"objectType"   #{"activity" "agent" "group" "statement-ref" "sub-statement"}
+  {nil            #{"activity" "agent" "group" "statement-ref" "sub-statement"}
+   "objectType"   #{"activity" "agent" "group" "statement-ref" "sub-statement"}
    "id"           #{"activity" "statement-ref" "sub-statement"}
    "definition"   #{"activity"}
    "name"         #{"agent" "group"}
@@ -55,7 +57,7 @@
    "verb"         #{"sub-statement"}
    "object"       #{"sub-statement"}
    "context"      #{"sub-statement"}
-   "results"      #{"sub-statement"}
+   "result"       #{"sub-statement"}
    "attachments"  #{"sub-statement"}
    "timestamp"    #{"sub-statement"}})
 

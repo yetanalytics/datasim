@@ -295,7 +295,7 @@
        :path     ["context" "contextActivities" "other" '* "id"]}]
      [{:location  "$.context.contextActivities.other[0,1]"
        :selector  "$.id"
-       :presence  :included}]))
+       :presence  "included"}]))
   (testing "selector path with multiple string keys"
     (is-parsed
      [{:location  [[["context"] ["contextActivities"] ["category"] [0 1]]]
@@ -306,7 +306,7 @@
        :path      ["context" "contextActivities" "grouping" '*]}]
      [{:location  "$.context.contextActivities['category','grouping']"
        :selector  "$[0,1]"
-       :presence  :included}]))
+       :presence  "included"}]))
   (testing "selector path with and multiple keys and wildcard"
     (is-parsed
      [{:location  [[["context"] ["contextActivities"] ["parent"] '*]]
@@ -317,7 +317,7 @@
        :path      ["context" "contextActivities" "other" '*]}]
      [{:location  "$.context.contextActivities['parent','other']"
        :selector  "$.*"
-       :presence  :included}]))
+       :presence  "included"}]))
   (testing "path with pipe operator"
     (is-parsed
      [{:location  [[["object"] ["id"]]]
@@ -327,7 +327,181 @@
        :presence  :included
        :path      ["object" "object" "id"]}]
      [{:location  "$.object.id | $.object.object.id"
-       :presence  :included}])))
+       :presence  "included"}])))
+
+(defmacro is-obj-types [object-types rules]
+  `(is (= ~object-types (r/rules->spec-hints (r/parse-rules ~rules)))))
+
+(deftest spec-object-types-test
+  (testing "Statement object based on objectType"
+    (is-obj-types {["object"] #{"activity"}}
+                  [{:location "$.object.objectType"
+                    :all      ["Activity"]}])
+    (is-obj-types {["object"] #{"agent"}}
+                  [{:location "$.object.objectType"
+                    :all      ["Agent"]}])
+    (is-obj-types {["object"] #{"group"}}
+                  [{:location "$.object.objectType"
+                    :all      ["Group"]}])
+    (is-obj-types {["object"] #{"statement-ref"}}
+                  [{:location "$.object.objectType"
+                    :all      ["StatementRef"]}])
+    (is-obj-types {["object"] #{"sub-statement"}}
+                  [{:location "$.object.objectType"
+                    :all      ["SubStatement"]}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.objectType"
+                    :all      ["Agent" "Group"]}]))
+  (testing "SubStatement object based on objectType"
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"activity"}}
+                  [{:location "$.object.object.objectType"
+                    :all      ["Activity"]}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"activity"}}
+                  [{:location "$.object.object.objectType"
+                    :all      ["Activity"]}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"agent"}}
+                  [{:location "$.object.object.objectType"
+                    :all      ["Agent"]}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"group"}}
+                  [{:location "$.object.object.objectType"
+                    :all      ["Group"]}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"statement-ref"}}
+                  [{:location "$.object.object.objectType"
+                    :all      ["StatementRef"]}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"agent" "group"}}
+                  [{:location "$.object.object.objectType"
+                    :all      ["Agent" "Group"]}]))
+  (testing "Actors based on objectType"
+    (is-obj-types {["actor"] #{"agent"}
+                   ["authority"] #{"agent"}
+                   ["context" "instructor"] #{"agent"}}
+                  [{:location "$.actor.objectType"
+                    :all      ["Agent"]}
+                   {:location "$.authority.objectType"
+                    :all      ["Agent"]}
+                   {:location "$.context.instructor.objectType"
+                    :all      ["Agent"]}])
+    (is-obj-types {["actor"] #{"group"}
+                   ["authority"] #{"group"}
+                   ["context" "instructor"] #{"group"}}
+                  [{:location "$.actor.objectType"
+                    :all      ["Group"]}
+                   {:location "$.authority.objectType"
+                    :all      ["Group"]}
+                   {:location "$.context.instructor.objectType"
+                    :all      ["Group"]}])
+    (is-obj-types {["actor"] #{"agent" "group"}
+                   ["authority"] #{"agent" "group"}
+                   ["context" "instructor"] #{"agent" "group"}}
+                  [{:location "$.actor.objectType"
+                    :all      ["Agent" "Group"]}
+                   {:location "$.authority.objectType"
+                    :all      ["Agent" "Group"]}
+                   {:location "$.context.instructor.objectType"
+                    :all      ["Agent" "Group"]}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "actor"] #{"agent" "group"}
+                   ["object" "context" "instructor"] #{"agent" "group"}}
+                  [{:location "$.object.actor.objectType"
+                    :all      ["Agent" "Group"]}
+                   {:location "$.object.context.instructor.objectType"
+                    :all      ["Agent" "Group"]}]))
+  (testing "Objects based on properties"
+    (is-obj-types {["object"] #{"activity" "agent" "group" "statement-ref" "sub-statement"}}
+                  [{:location "$.object"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"activity" "agent" "group" "statement-ref" "sub-statement"}}
+                  [{:location "$.object.objectType"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"activity" "statement-ref" "sub-statement"}}
+                  [{:location "$.object.id"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"activity"}}
+                  [{:location "$.object.definition"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"activity"}}
+                  [{:location "$.object.id"
+                    :presence "included"}
+                   {:location "$.object.definition"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.name"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.mbox"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.mbox_sha1sum"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.openid"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.account"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.account.name"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"agent" "group"}}
+                  [{:location "$.object.account.homePage"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"group"}}
+                  [{:location "$.object.member"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"group"}}
+                  [{:location "$.object.name"
+                    :presence "included"}
+                   {:location "$.object.member"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "actor"] #{"agent" "group"}}
+                  [{:location "$.object.actor"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"sub-statement"}
+                   ["object" "object"] #{"activity" "agent" "group" "statement-ref"}}
+                  [{:location "$.object.object"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"sub-statement"}}
+                  [{:location "$.object.verb"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"sub-statement"}}
+                  [{:location "$.object.context"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"sub-statement"}}
+                  [{:location "$.object.result"
+                    :presence "included"}])
+    (is-obj-types {["object"] #{"sub-statement"}}
+                  [{:location "$.object.timestamp"
+                    :presence "included"}]))
+  (testing "Contradictory types"
+    (is (= ::r/invalid-object-types
+           (try (-> [{:location "$.object.objectType"
+                      :any      ["BadType"]}]
+                    r/parse-rules
+                    r/rules->spec-hints)
+                (catch Exception e (-> e ex-data :type)))))
+    (is (= ::r/invalid-object-types
+           (try (-> [{:location "$.object.id"
+                      :presence "included"}
+                     {:location "$.object.objectType"
+                      :any      ["Agent" "Group"]}]
+                    r/parse-rules
+                    r/rules->spec-hints)
+                (catch Exception e (-> e ex-data :type)))))
+    (is (= ::r/invalid-object-types
+           (try (-> [{:location "$.object.id"
+                      :presence "included"}
+                     {:location "$.object.name"
+                      :presence "included"}]
+                    r/parse-rules
+                    r/rules->spec-hints)
+                (catch Exception e (-> e ex-data :type)))))))
 
 (deftest example-rules-test
   (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]

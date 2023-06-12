@@ -442,10 +442,16 @@
    possible key-value pair is `[\"actor\"] #{\"agent\" \"group\"}`)."
   [parsed-rules]
   (let [prefix-rule-m
-        (-> (group-by (fn [{:keys [path]}]
-                        (xp/spec-hinted-path path))
-                      parsed-rules)
-            (dissoc nil))]
+        (reduce (fn [m* {:keys [path] :as parsed-rule}]
+                  (reduce (fn [m** prefix]
+                            (update m**
+                                    prefix
+                                    (fnil conj [])
+                                    parsed-rule))
+                          m*
+                          (xp/spec-hinted-path path)))
+                {}
+                parsed-rules)]
     (reduce-kv
      (fn [m prefix rules]
        (let [object-type-path
@@ -469,7 +475,7 @@
            (assoc m prefix all-types)
            (throw (ex-info (format "Contradiction on path: $.%s"
                                    (cstr/join "." prefix))
-                           {:type  ::non-constructable-spec-hint
+                           {:type  ::invalid-object-types
                             :path  prefix
                             :rules rules})))))
      {}
