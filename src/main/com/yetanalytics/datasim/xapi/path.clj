@@ -636,7 +636,8 @@
   [spec-hints
    {:keys [verbs verb-ids activities activity-ids activity-types]}
    path]
-  (let [path*    (cond-> path
+  (let [;; If `path` points to a SubStatement property, lop off the prefix
+        path*    (cond-> path
                    (and (#{"object"} (get path 0))
                         (#{"verb" "object" "context"} (get path 1)))
                    (subvec 1))
@@ -657,29 +658,29 @@
       ["object" "definition" "type"]
       (when (activity? (drop-two path)) activity-types)
       ;; Context Activities
-      ["context" "contextActivities" "category" '*]
+      ["context" "contextActivities" "category" *]
       activities
-      ["context" "contextActivities" "grouping" '*]
+      ["context" "contextActivities" "grouping" *]
       activities
-      ["context" "contextActivities" "parent" '*]
+      ["context" "contextActivities" "parent" *]
       activities
-      ["context" "contextActivities" "other" '*]
+      ["context" "contextActivities" "other" *]
       activities
-      ["context" "contextActivities" "category" '* "id"]
+      ["context" "contextActivities" "category" * "id"]
       activity-ids
-      ["context" "contextActivities" "grouping" '* "id"]
+      ["context" "contextActivities" "grouping" * "id"]
       activity-ids
-      ["context" "contextActivities" "parent" '* "id"]
+      ["context" "contextActivities" "parent" * "id"]
       activity-ids
-      ["context" "contextActivities" "other" '* "id"]
+      ["context" "contextActivities" "other" * "id"]
       activity-ids
-      ["context" "contextActivities" "category" '* "definition" "type"]
+      ["context" "contextActivities" "category" * "definition" "type"]
       activity-types
-      ["context" "contextActivities" "grouping" '* "definition" "type"]
+      ["context" "contextActivities" "grouping" * "definition" "type"]
       activity-types
-      ["context" "contextActivities" "parent" '* "definition" "type"]
+      ["context" "contextActivities" "parent" * "definition" "type"]
       activity-types
-      ["context" "contextActivities" "other" '* "definition" "type"]
+      ["context" "contextActivities" "other" * "definition" "type"]
       activity-types
       ;; Otherwise none
       nil)))
