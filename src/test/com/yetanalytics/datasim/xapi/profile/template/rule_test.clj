@@ -5,6 +5,7 @@
             [cheshire.core :as json]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.json.schema :as jschema]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
             [com.yetanalytics.datasim.test-constants :as const])
@@ -784,17 +785,491 @@
 ;; Rule Application Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- apply-rules [statement rules]
+  (let [parsed-rules# (r/parse-rules rules)
+        object-types# (r/rules->spec-hints parsed-rules#)
+        parsed-rules# (map (partial r/add-rule-valuegen
+                                    valuegen-iri-map
+                                    object-types#
+                                    valuegen-valuesets)
+                           parsed-rules#)]
+    (-> statement
+        (r/apply-inclusion-rules parsed-rules# (random/seed-rng 100))
+        (r/apply-exclusion-rules parsed-rules#))))
+
+(defmacro is-actor [expected & rules]
+  `(is (= ~expected
+          (-> (apply-rules ~short-statement ~(vec rules)) (get "actor")))))
+
+(defmacro is-verb [expected & rules]
+  `(is (= ~expected
+          (-> (apply-rules ~short-statement ~(vec rules)) (get "verb")))))
+
+(defmacro is-ctx-activities [activity-property expected & rules]
+  `(is (= ~expected
+          (-> (apply-rules ~long-statement ~(vec rules))
+              (get-in ["context" "contextActivities" ~activity-property])))))
+
+(deftest apply-actor-rules-test
+  (testing "Actor rule:"
+    (testing "replace actor"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:bob@example.org"}
+                {:location "$.actor"
+                 :all      [{"name" "Bob Fakename"
+                             "mbox" "mailto:bob@example.org"}]}))
+    (testing "replace actor objectType"
+      (is-actor {"name" "Alice Faux"
+                 "mbox" "mailto:alice@example.org"
+                 "objectType" "Group"}
+                {:location "$.actor.objectType"
+                 :presence "included"
+                 :all      ["Group"]}))
+    (testing "replace actor objectType and complete transformation to Group"
+      (is-actor {"name" "Alice Faux"
+                 "mbox" "mailto:alice@example.org"
+                 "objectType" "Group"
+                 "member" [{"mbox" "mailto:milt@yetanalytics.com"
+                            "name" "milt"
+                            "objectType" "Agent"}]}
+                {:location "$.actor.objectType"
+                 :presence "included"
+                 :all      ["Group"]}
+                {:location "$.actor.member[0]"
+                 :presence "included"
+                 :all      [{"mbox"       "mailto:milt@yetanalytics.com"
+                             "name"       "milt"
+                             "objectType" "Agent"}]}))
+    (testing "replace actor name"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :all      ["Bob Fakename"]}))
+    (testing "replace actor name via `any`"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :any      ["Bob Fakename"]}))
+    (testing "replace actor name is not applied as name is already included"
+      (is-actor {"name" "Alice Faux"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :any      ["Alice Faux" "Bob Fakename"]}))
+    (testing "replace actor name is not applied due to already matching"
+      (is-actor {"name" "Alice Faux"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :all      ["Alice Faux" "Bob Fakename"]}))
+    (testing "remove actor name via `none`"
+      (is-actor {"name" "g0940tWy7k3GA49j871LLl4W0" ; randomly generated
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :none     ["Alice Faux" "Bob Fakename"]}))
+    (testing "remove actor name via `excluded` (any)"
+      (is-actor {"mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :presence "excluded"
+                 :any     ["Alice Faux" "Bob Fakename"]}))
+    (testing "remove actor name via `excluded` (all)"
+      (is-actor {"mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :presence "excluded"
+                 :none     ["Alice Faux" "Bob Fakename"]}))
+    (testing "remove actor name via `excluded` (none)"
+      (is-actor {"mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :presence "excluded"
+                 :none     ["Alice Faux" "Bob Fakename"]}))
+    (testing "remove actor mbox_sha1sum via `excluded` does nothing"
+      (is-actor {"name" "Alice Faux"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.mbox_sha1sum"
+                 :presence "excluded"}))
+    (testing "remove actor name using both location and selector"
+      (is-actor {"mbox" "mailto:alice@example.org"}
+                {:location "$.actor"
+                 :selector "$.name"
+                 :presence "excluded"}))
+    (testing "remove actor via `excluded`"
+      (is-actor nil
+                {:location "$.actor"
+                 :presence "excluded"}))
+    (testing "remove actor properties"
+      (is-actor nil
+                {:location "$.actor.*"
+                 :presence "excluded"}))
+    (testing "both any + all; former is a superset of the latter"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :any      ["Alice Faux" "Bob Fakename"]
+                 :all      ["Bob Fakename"]}))
+    (testing "both any + all; former is a subset of the latter"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :any      ["Bob Fakename"]
+                 :all      ["Alice Faux" "Bob Fakename"]}))
+    (testing "both any + none"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :any      ["Bob Fakename"]
+                 :none     ["Alice Faux"]}))
+    (testing "both all + none"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :all      ["Bob Fakename"]
+                 :none     ["Alice Faux"]}))
+    (testing "any, all + none"
+      (is-actor {"name" "Bob Fakename"
+                 "mbox" "mailto:alice@example.org"}
+                {:location "$.actor.name"
+                 :all      ["Alice Faux" "Bob Fakename" "Fred Ersatz"]
+                 :any      ["Alice Faux" "Bob Fakename"]
+                 :none     ["Alice Faux"]}))))
+
+(deftest apply-verb-rule
+  (testing "Verb rules:"
+    (testing "replace verb ID using `any`"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"}
+               {:location "$.verb.id"
+                :presence "included"
+                :any      ["https://adlnet.gov/expapi/verbs/launched"
+                           "https://adlnet.gov/expapi/verbs/initialized"]}))
+    (testing "replace verb ID using `all`"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"}
+               {:location "$.verb.id"
+                :presence "included"
+                :all      ["https://adlnet.gov/expapi/verbs/launched"]}))
+    (testing "remove verb ID using `none`"
+      (is-verb {"id" "http://foo.org/verb"} ; taken from valuegen-valueset
+               {:location "$.verb.id"
+                :presence "included"
+                :none     ["https://adlnet.gov/expapi/verbs/launched"]}))
+    (testing "remove verb id using `excluded deletes verb"
+      (is-verb nil
+               {:location "$.verb.id"
+                :presence "excluded"}))
+    (testing "remove verb display using `excluded` does nothing"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"}
+               {:location "$.verb.display"
+                :presence "excluded"}))
+    (testing "insert verb description (`any`)"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
+                "display" {"en-US" "Launched"}}
+               {:location "$.verb.display"
+                :any      [{"en-US" "Launched"}]}))
+    (testing "insert verb description (`all`)"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
+                "display" {"en-US" "Launched"}}
+               {:location "$.verb.display.en-US"
+                :all      ["Launched"]}))
+    (testing "insert verb description (spec gen)"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
+                "display" {"en-US" "zG8V0L1Ft301HRaB06wC5"}}
+               {:location "$.verb.display.en-US"
+                :presence "included"}))
+    (testing "include then exclude verb description, resulting in no net change"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"}
+               {:location "$.verb.display.en-US"
+                :presence "included"}
+               {:location "$.verb.display.en-US"
+                :presence "excluded"}))
+    (testing "add two lang map entires w/ two rules"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
+                "display" {"en-US" "Launched"
+                           "zh-CN" "展开"}}
+               {:location "$.verb.display.en-US"
+                :all      ["Launched"]}
+               {:location "$.verb.display.zh-CN"
+                :all      ["展开"]}))
+    (testing "add two lang map entries w/ three rules"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
+                "display" {"en-US" "Launched"
+                           "zh-CN" "3csI6sZq6uxukVZ964BE5GDrqBoLJ7"}} ; randomly generated
+               {:location "$.verb.display.en-US"
+                :all      ["Launched"]}
+               {:location "$.verb.display.zh-CN"
+                :all      ["展开"]}
+               {:location "$.verb.display.zh-CN" ; overwrites previous rule
+                :none     ["展开"]}))))
+
+(deftest apply-context-rules
+  (testing "Context rules:"
+    (testing "increment one single activity ID"
+      (is-ctx-activities
+       "parent"
+       [{"id" "http://www.example.com/meetings/series/268"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.parent[0].id"
+        :all      ["http://www.example.com/meetings/series/268"]}))
+    (testing "increment potentially multiple IDs using wildcard"
+      (is-ctx-activities
+       "parent"
+       [{"id" "http://www.example.com/meetings/series/268" ; randomly chosen
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.parent[*].id"
+        :all      ["http://www.example.com/meetings/series/268"]}))
+    (testing "replace one activity ID"
+      (is-ctx-activities
+       "category"
+       [{"id" "http://foo.org/activity" ; chosen from valuegen-valueset
+         "objectType" "Activity"
+         "definition" {"name" {"en" "team meeting"}
+                       "description" {"en" "A category of meeting used for regular team meetings."}
+                       "type" "http://example.com/expapi/activities/meetingcategory"}}]
+       {:location "$.context.contextActivities.category[0].id"
+        :none     ["http://www.example.com/meetings/categories/teammeeting"]}))
+    (testing "replace two different activity IDs"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/bar"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/foo"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[0,1].id"
+        :all      ["http://www.example.com/meetings/occurances/foo"
+                   "http://www.example.com/meetings/occurances/bar"]}))
+    (testing "replace and insert activity IDs using wildcard"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/qux" ; randomly chosen
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/foo"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/baz"}]
+       {:location "$.context.contextActivities.other[*].id"
+        :all      ["http://www.example.com/meetings/occurances/foo"
+                   "http://www.example.com/meetings/occurances/bar"
+                   "http://www.example.com/meetings/occurances/baz"
+                   "http://www.example.com/meetings/occurances/qux"]}))
+    (testing "replace and insert multiple activity types"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/34257"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-3"}}]
+       {:location "$.context.contextActivities.other[0,1,2,3,4].definition.type"
+        :all      ["http://www.example.com/activity-type-1"
+                   "http://www.example.com/activity-type-2"
+                   "http://www.example.com/activity-type-3"]}))
+    (testing "replace one activity ID using any"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/34257"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/bar" ; randomly chosen
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[1].id"
+        :any      ["http://www.example.com/meetings/occurances/foo"
+                   "http://www.example.com/meetings/occurances/bar"]}))
+    (testing "replace activity definitions"
+      (is-ctx-activities
+       "category"
+       [{"id"         "http://www.example.com/meetings/categories/teammeeting"
+         "objectType" "Activity"
+         "definition" {"name"        {"en" "team meeting"}
+                       "description" {"en" "foo"}
+                       "type"        "http://example.com/expapi/activities/meetingcategory"}}
+        {"definition" {"description" {"en" "foo"}}}]
+       {:location "$.context.contextActivities.category[0,1].definition.description"
+        :any      [{"en" "foo"}]}))
+    (testing "try creating multiple IDs"
+      (is-ctx-activities
+       "grouping"
+       [{"id" "http://www.example.com/id-3"} ; randomly shuffled
+        {"id" "http://www.example.com/id-1"}
+        {"id" "http://www.example.com/id-2"}]
+       {:location "$.context.contextActivities.grouping[0,1,2].id"
+        :presence "included"
+        :all      ["http://www.example.com/id-1"
+                   "http://www.example.com/id-2"
+                   "http://www.example.com/id-3"]}))
+    (testing "try creating multiple IDs, but only one ID is available"
+      (is-ctx-activities
+       "grouping"
+       [{"id" "http://www.example.com/only-id"}
+        {"id" "http://www.example.com/only-id"}
+        {"id" "http://www.example.com/only-id"}]
+       {:location "$.context.contextActivities.grouping[0,1,2].id"
+        :presence "included"
+        :all      ["http://www.example.com/only-id"]}))
+    (testing "try creating multiple IDs, skipping an array entry"
+      (is-ctx-activities
+       "grouping"
+       [{"id" "http://www.example.com/only-id"}
+        nil
+        {"id" "http://www.example.com/only-id"}]
+       {:location "$.context.contextActivities.grouping[0,2].id"
+        :presence "included"
+        :all      ["http://www.example.com/only-id"]}))
+    (testing "assoc an entry out of bounds"
+      ;; This was the error Cliff encountered when trying to craft a Profile
+      (is-ctx-activities
+       "grouping"
+       [nil
+        {"definition" {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
+       {:location "$.context.contextActivities.grouping[1].definition.type"
+        :presence "included"
+        :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}))
+    (testing "use both location and selector to assoc new activity types"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/34257"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-3"}}]
+       {:location "$.context.contextActivities.other[0,1,2,3,4]"
+        :selector "$.definition.type"
+        :all      ["http://www.example.com/activity-type-1"
+                   "http://www.example.com/activity-type-2"
+                   "http://www.example.com/activity-type-3"]}))
+    ;; FIXME: distinct IDs are ignored w/ pipe operator
+    (testing "use the pipe operator to assoc new activity types"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/34257"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-1"}}]
+       {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
+        :selector "$.definition.type"
+        :all      ["http://www.example.com/activity-type-1"
+                   "http://www.example.com/activity-type-2"
+                   "http://www.example.com/activity-type-3"]}))
+    (testing "use both pipe operator and selector to assoc new activity types"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/34257"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"
+         "definition" {"type" "http://www.example.com/activity-type-1"}}]
+       {:location "$.context.contextActivities"
+        :selector "$.other[0].definition.type | $.other[1].definition.type"
+        :all      ["http://www.example.com/activity-type-1"
+                   "http://www.example.com/activity-type-2"
+                   "http://www.example.com/activity-type-3"]}))
+    ;; TODO: Right now only one value can be replaced in the following
+    ;; test cases since we are dealing with an `id` property and there is
+    ;; only one value in the `any` and `all` colls. We need to discuss if
+    ;; this behavior should be changed in Pathetic.
+    (testing "two `any` rules"
+      ;; FIXME: This is technically wrong, as two `any` rules at the same
+      ;; location would be valid (and in fact this result is wrong, since
+      ;; the intersection w/ the "foo" coll is empty).
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/bar"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[*].id"
+        :any ["http://www.example.com/meetings/occurances/foo"]}
+       {:location "$.context.contextActivities.other[*].id"
+        :any ["http://www.example.com/meetings/occurances/bar"]}))
+    (testing "`all` followed by `any`" ; any overwrites all
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/bar"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[*].id"
+        :all ["http://www.example.com/meetings/occurances/foo"]}
+       {:location "$.context.contextActivities.other[*].id"
+        :any ["http://www.example.com/meetings/occurances/bar"]}))
+    (testing "`any` followed by `all`" ; all overwrites any
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/bar"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[*].id"
+        :any ["http://www.example.com/meetings/occurances/foo"]}
+       {:location "$.context.contextActivities.other[*].id"
+        :all ["http://www.example.com/meetings/occurances/bar"]}))
+    (testing "two `all` rules"
+      (is-ctx-activities
+       "other"
+       [{"id" "http://www.example.com/meetings/occurances/bar"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[*].id"
+        :all ["http://www.example.com/meetings/occurances/foo"]}
+       {:location "$.context.contextActivities.other[*].id"
+        :all ["http://www.example.com/meetings/occurances/bar"]}))
+    (testing "assoc 1th entry before 0th entry"
+      (is-ctx-activities
+       "grouping"
+       [{"definition"
+         {"type" "https://xapinet.com/xapi/blooms/activities/objectives/procedural"}}
+        {"definition"
+         {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
+       {:location "$.context.contextActivities.grouping[1].definition.type"
+        :presence "included"
+        :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}
+       {:location "$.context.contextActivities.grouping[0].definition.type"
+        :presence "included"
+        :all      ["https://xapinet.com/xapi/blooms/activities/objectives/procedural"]}))))
+
+(deftest apply-rules-distinct-test
+  (testing "uses all 3 distinct `all` values for 3 locations"
+    (let [rng      (random/seed-rng 120)
+          rule     {:location "$.context.contextActivities.grouping[0,1,2].id"
+                    :presence "included"
+                    :all      ["http://www.example.com/id-1"
+                               "http://www.example.com/id-2"
+                               "http://www.example.com/id-3"]}
+          expected #{{"id" "http://www.example.com/id-1"}
+                     {"id" "http://www.example.com/id-2"}
+                     {"id" "http://www.example.com/id-3"}}
+          apply-fn #(-> long-statement
+                        (r/apply-inclusion-rules (r/parse-rules [rule]) rng)
+                        (get-in ["context" "contextActivities" "grouping"])
+                        set)
+          actuals  (repeatedly 30 apply-fn)]
+      (is (every? #(= expected %) actuals))))
+  (testing "uses 2 of 3 distinct `all` values for 2 locations"
+    (let [rng      (random/seed-rng 120)
+          rule     {:location "$.context.contextActivities.grouping[0,1].id"
+                    :presence "included"
+                    :all      ["http://www.example.com/id-1"
+                               "http://www.example.com/id-2"
+                               "http://www.example.com/id-3"]}
+          expect-1 #{{"id" "http://www.example.com/id-1"}
+                     {"id" "http://www.example.com/id-2"}}
+          expect-2 #{{"id" "http://www.example.com/id-1"}
+                     {"id" "http://www.example.com/id-3"}}
+          expect-3 #{{"id" "http://www.example.com/id-2"}
+                     {"id" "http://www.example.com/id-3"}}
+          apply-fn #(-> long-statement
+                        (r/apply-inclusion-rules (r/parse-rules [rule]) rng)
+                        (get-in ["context" "contextActivities" "grouping"])
+                        set)
+          actuals  (repeatedly 30 apply-fn)]
+      (is (every? #(#{expect-1 expect-2 expect-3} %) actuals)))))
+
 (defn- apply-rule-gen [statement rule]
   (r/apply-rules-gen statement [rule] :seed gen-seed))
-
-(comment
-  (apply-rule-gen
-   long-statement
-   {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
-    :selector "$.definition.type"
-    :all      ["http://www.example.com/activity-type-1"
-               "http://www.example.com/activity-type-2"
-               "http://www.example.com/activity-type-3"]}))
 
 ;; Apply one rule at a time
 (deftest apply-rule-gen-test
@@ -1348,68 +1823,3 @@
           (is (every? (partial r/follows-rule? processed)
                       (map r/parse-rule rules)))
           (is (nil? (s/explain-data ::xs/statement processed))))))))
-
-(comment
-  (r/apply-rules-gen
-   {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
-    "timestamp" "2015-11-18T12:17:00+00:00",
-    "actor"
-    {"objectType" "Agent",
-     "name" "Project Tin Can API",
-     "mbox" "mailto:user@example.com"},
-    "verb"
-    {"id" "http://example.com/xapi/verbs#sent-a-statement",
-     "display" {"en-US" "sent"}},
-    "object"
-    {"id" "http://example.com/xapi/activity/simplestatement",
-     "definition"
-     {"name" {"en-US" "simple statement"},
-      "description"
-      {"en-US"
-       "A simple Experience API statement. Note that the LRS \n\t\t\t\tdoes not need to have any prior information about the Actor (learner), the \n\t\t\t\tverb, or the Activity/object."}}}}
-   [{:location "$.object.definition.type"}]
-   #_[{:location "$.verb.display.en-US", :all ["Launched"]}]
-    {:location "$.verb.display.zh-CN", :all ["展开"]}
-    {:location "$.verb.display.zh-CN", :none ["展开"]}
-   #_[{:location "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/launchmode']"
-       :presence "included"
-       :all      ["Review" "Normal" "Browse"]}]
-   :seed gen-seed 
-
-   (r/follows-rule?
-    {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
-     "timestamp" "2015-11-18T12:17:00+00:00",
-     "actor"
-     {"objectType" "Agent",
-      "name" "Project Tin Can API",
-      "mbox" "mailto:user@example.com"},
-     "verb"
-     {"id" "http://example.com/xapi/verbs#sent-a-statement",
-      "display" {"en-US" "sent"}},
-     "object"
-     {"objectType" "Agent"
-      "name"       "Owen Overrider"
-      "mbox"       "mailto:owoverrider@example.com"}}
-    (r/parse-rule {:location "$.object.definition.type"
-                   :presence "included"}))
-
-   (r/apply-rules-gen
-    {"id" "fd41c918-b88b-4b20-a0a5-a4c32391aaa0",
-     "timestamp" "2015-11-18T12:17:00+00:00",
-     "actor"
-     {"objectType" "Agent",
-      "name" "Project Tin Can API",
-      "mbox" "mailto:user@example.com"},
-     "verb"
-     {"id" "http://example.com/xapi/verbs#sent-a-statement",
-      "display" {"en-US" "sent"}},
-     "object"
-     {"objectType" "Agent"
-      "name"       "Owen Overrider"
-      "mbox"       "mailto:owoverrider@example.com"}}
-    [{:location "$.object.definition.type"
-      :presence "included"}]
-    #_[{:location "$.context.extensions['https://w3id.org/xapi/cmi5/context/extensions/launchmode']"
-        :presence "included"
-        :all      ["Review" "Normal" "Browse"]}]
-    :seed gen-seed)))

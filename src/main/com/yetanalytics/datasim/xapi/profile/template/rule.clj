@@ -442,16 +442,17 @@
    possible key-value pair is `[\"actor\"] #{\"agent\" \"group\"}`)."
   [parsed-rules]
   (let [prefix-rule-m
-        (reduce (fn [m* {:keys [path] :as parsed-rule}]
-                  (reduce (fn [m** prefix]
-                            (update m**
-                                    prefix
-                                    (fnil conj [])
-                                    parsed-rule))
-                          m*
-                          (xp/spec-hinted-path path)))
-                {}
-                parsed-rules)]
+        (->> parsed-rules
+             (filter
+              (fn [{:keys [presence]}]
+                (not= :excluded presence)))
+             (reduce
+              (fn [m* {:keys [path] :as parsed-rule}]
+                (reduce (fn [m** prefix]
+                          (update m** prefix (fnil conj []) parsed-rule))
+                        m*
+                        (xp/spec-hinted-path path)))
+              {}))]
     (reduce-kv
      (fn [m prefix rules]
        (let [object-type-path
@@ -501,16 +502,21 @@
    an `:all` set containing all appropriate values is introduced, or
    add a `:spec` and `:generator`. This will ensure that during rule
    application, the rule will always be able to come up with a value."
-  [iri-map object-types valuesets {:keys [path valueset none] :as parsed-rule}]
-  (let [?all-set (xp/path->valueset object-types valuesets path)] 
-    (cond-> parsed-rule
-      (and (not valueset) ?all-set)
-      (assoc :all      ?all-set
-             :valueset (rule-value-set-2 ?all-set none))
-      (and (not valueset) (not ?all-set))
-      (merge (rule-generator {:iri-map      iri-map
-                              :object-types object-types}
-                             parsed-rule)))))
+  [iri-map
+   object-types
+   valuesets
+   {:keys [presence path valueset none] :as parsed-rule}]
+  (if (= :excluded presence)
+    parsed-rule
+    (let [?all-set (xp/path->valueset object-types valuesets path)] 
+      (cond-> parsed-rule
+        (and (not valueset) ?all-set)
+        (assoc :all      ?all-set
+               :valueset (rule-value-set-2 ?all-set none))
+        (and (not valueset) (not ?all-set))
+        (merge (rule-generator {:iri-map      iri-map
+                                :object-types object-types}
+                               parsed-rule))))))
 
 ;; Rule Application
 
