@@ -1,9 +1,11 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule-test
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.test.check.generators :as stest]
             [clojure.java.io :as io]
             [cheshire.core :as json]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.json.schema :as jschema]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [clojure.lang ExceptionInfo]))
@@ -502,6 +504,227 @@
                     r/parse-rules
                     r/rules->spec-hints)
                 (catch Exception e (-> e ex-data :type)))))))
+
+(def valuegen-iri-map
+  {"http://foo.org/verb"
+   {:id   "http://foo.org/verb"
+    :type "Verb"}
+   "http://foo.org/activity"
+   {:id   "http://foo.org/activity"
+    :type "Activity"
+    :definition {:type "http://foo.org/activity-type"}}
+   "http://foo.org/activity-type"
+   {:id   "http://foo.org/activity-type"
+    :type "ActivityType"}
+   "http://foo.org/activity-extension"
+   {:id   "http://foo.org/activity-extension"
+    :type "ActivityExtension"
+    :inlineSchema "{\"type\":\"string\"}"}
+   "http://foo.org/context-extension"
+   {:id   "http://foo.org/context-extension"
+    :type "ContextExtension"
+    :inlineSchema "{\"type\":\"integer\"}"}
+   "http://foo.org/result-extension"
+   {:id   "http://foo.org/result-extension"
+    :type "ResultExtension"
+    :inlineSchema "{\"type\":\"boolean\"}"}})
+
+(def valuegen-object-types
+  {["object"] #{"activity"}
+   ["actor"] #{"agent" "group"}})
+
+(def valuegen-object-types-2
+  {["object"] #{"sub-statement"}
+   ["object" "object"] #{"activity"}
+   ["actor"] #{"agent" "group"}
+   ["object" "actor"] #{"agent" "group"}})
+
+(def valuegen-valuesets
+  {:verbs          #{{:id   "http://foo.org/verb"
+                      :type "Verb"}}
+   :verb-ids       #{"http://foo.org/verb"}
+   :activities     #{{:id         "http://foo.org/activity"
+                      :type       "Activity"
+                      :definition {:type "http://foo.org/activity-type"}}}
+   :activity-ids   #{"http://foo.org/activity"}
+   :activity-types #{"http://foo.org/activity-type"}})
+
+(defn- parse-rule-valuegen [rule]
+  (r/add-rule-valuegen valuegen-iri-map
+                       valuegen-object-types
+                       valuegen-valuesets
+                       (first (r/parse-rules [rule]))))
+
+(defn- parse-rule-valuegen-2 [rule]
+  (r/add-rule-valuegen valuegen-iri-map
+                       valuegen-object-types-2
+                       valuegen-valuesets
+                       (first (r/parse-rules [rule]))))
+
+(deftest valuegen-test
+  (testing "Ignore if valueset is already present"
+    (is (= {:location [[["actor"] ["name"]]]
+            :valueset #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
+            :all      #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
+            :path     ["actor" "name"]}
+           (parse-rule-valuegen
+            {:location "$.actor.name"
+             :all      ["Andrew Downes" "Toby Nichols" "Ena Hills"]})))
+    (is (= {:location [[["verb"] ["id"]]]
+            :valueset #{"http://example.org/verb" "http://example.org/verb-2"}
+            :any      #{"http://example.org/verb" "http://example.org/verb-2"}
+            :path     ["verb" "id"]}
+           (parse-rule-valuegen
+            {:location "$.verb.id"
+             :any      ["http://example.org/verb"
+                        "http://example.org/verb-2"]})))
+    (is (= {:location [[["object"] ["verb"] ["id"]]]
+            :valueset #{"http://example.org/verb" "http://example.org/verb-2"}
+            :any      #{"http://example.org/verb" "http://example.org/verb-2"}
+            :path     ["object" "verb" "id"]}
+           (parse-rule-valuegen-2
+            {:location "$.object.verb.id"
+             :any      ["http://example.org/verb"
+                        "http://example.org/verb-2"]}))))
+  (testing "Add valuesets"
+    (is (= {:location [[["verb"]]]
+            :presence :included
+            :path     ["verb"]
+            :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
+            :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
+           (parse-rule-valuegen
+            {:location "$.verb"
+             :presence "included"})))
+    (is (= {:location [[["verb"] ["id"]]]
+            :presence :included
+            :path     ["verb" "id"]
+            :valueset #{"http://foo.org/verb"}
+            :all      #{"http://foo.org/verb"}}
+           (parse-rule-valuegen
+            {:location "$.verb.id"
+             :presence "included"})))
+    (is (= {:location [[["object"]]]
+            :presence :included
+            :path     ["object"]
+            :valueset #{{:id   "http://foo.org/activity"
+                         :type "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}
+            :all      #{{:id   "http://foo.org/activity"
+                         :type "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}}
+           (parse-rule-valuegen
+            {:location "$.object"
+             :presence "included"})))
+    (is (= {:location [[["object"] ["id"]]]
+            :presence :included
+            :path     ["object" "id"]
+            :valueset #{"http://foo.org/activity"}
+            :all      #{"http://foo.org/activity"}}
+           (parse-rule-valuegen
+            {:location "$.object.id"
+             :presence "included"})))
+    (is (= {:location [[["object"] ["definition"] ["type"]]]
+            :presence :included
+            :path     ["object" "definition" "type"]
+            :valueset #{"http://foo.org/activity-type"}
+            :all      #{"http://foo.org/activity-type"}}
+           (parse-rule-valuegen
+            {:location "$.object.definition.type"
+             :presence "included"}))))
+  (testing "Add valuesets (substatements)"
+    (is (= {:location [[["object"] ["verb"]]]
+            :presence :included
+            :path     ["object" "verb"]
+            :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
+            :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
+           (parse-rule-valuegen-2
+            {:location "$.object.verb"
+             :presence "included"})))
+    (is (= {:location [[["object"] ["verb"] ["id"]]]
+            :presence :included
+            :path     ["object" "verb" "id"]
+            :valueset #{"http://foo.org/verb"}
+            :all      #{"http://foo.org/verb"}}
+           (parse-rule-valuegen-2
+            {:location "$.object.verb.id"
+             :presence "included"})))
+    (is (= {:location [[["object"] ["object"]]]
+            :presence :included
+            :path     ["object" "object"]
+            :valueset #{{:id   "http://foo.org/activity"
+                         :type "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}
+            :all      #{{:id   "http://foo.org/activity"
+                         :type "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}}
+           (parse-rule-valuegen-2
+            {:location "$.object.object"
+             :presence "included"})))
+    (is (= {:location [[["object"] ["object"] ["id"]]]
+            :presence :included
+            :path     ["object" "object" "id"]
+            :valueset #{"http://foo.org/activity"}
+            :all      #{"http://foo.org/activity"}}
+           (parse-rule-valuegen-2
+            {:location "$.object.object.id"
+             :presence "included"})))
+    (is (= {:location [[["object"] ["object"] ["definition"] ["type"]]]
+            :presence :included
+            :path     ["object" "object" "definition" "type"]
+            :valueset #{"http://foo.org/activity-type"}
+            :all      #{"http://foo.org/activity-type"}}
+           (parse-rule-valuegen-2
+            {:location "$.object.object.definition.type"
+             :presence "included"})
+           (r/add-rule-valuegen valuegen-iri-map
+                                valuegen-object-types-2
+                                valuegen-valuesets
+                                {:location [[["object"] ["object"] ["definition"] ["type"]]]
+                                 :presence :included
+                                 :path     ["object" "object" "definition" "type"]}))))
+  (testing "Add spec and generator"
+    (is (= :statement/result
+           (:spec (parse-rule-valuegen {:location "$.result"
+                                        :presence "included"}))))
+    (is (= :sub-statement/result
+           (:spec (parse-rule-valuegen-2 {:location "$.object.result"
+                                          :presence "included"}))))
+    (is (string?
+         (stest/generate
+          (:generator (parse-rule-valuegen {:location "$.actor.name"
+                                            :presence "included"})))))
+    (is (string?
+         (stest/generate
+          (:generator (parse-rule-valuegen-2 {:location "$.object.actor.name"
+                                              :presence "included"}))))))
+  (testing "Add spec and generator (extensions)"
+    (is (= ::jschema/string
+           (:spec (parse-rule-valuegen
+                   {:location "$.object.definition.extensions['http://foo.org/activity-extension']"
+                    :presence "included"}))))
+    (is (= ::jschema/integer
+           (:spec (parse-rule-valuegen
+                   {:location "$.context.extensions['http://foo.org/context-extension']"
+                    :presence "included"}))))
+    (is (= ::jschema/boolean
+           (:spec (parse-rule-valuegen
+                   {:location "$.result.extensions['http://foo.org/result-extension']"
+                    :presence "included"}))))
+    (is (string?
+         (stest/generate
+          (:generator (parse-rule-valuegen
+                       {:location "$.object.definition.extensions['http://foo.org/activity-extension']"
+                        :presence "included"})))))
+    (is (int?
+         (stest/generate
+          (:generator (parse-rule-valuegen
+                       {:location "$.context.extensions['http://foo.org/context-extension']"
+                        :presence "included"})))))
+    (is (boolean?
+         (stest/generate
+          (:generator (parse-rule-valuegen
+                       {:location "$.result.extensions['http://foo.org/result-extension']"
+                        :presence "included"})))))))
 
 (deftest example-rules-test
   (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]

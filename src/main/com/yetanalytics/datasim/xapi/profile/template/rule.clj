@@ -484,12 +484,13 @@
 (defn- rule-generator
   "Return "
   [spec-hints {:keys [path]}]
-  (let [spec (xp/path->spec-3 :xapi-schema.spec/statement path spec-hints)]
+  (let [spec (xp/path->spec-3 ::xs/statement path spec-hints)]
     (try {:spec spec
           :generator (s/gen spec)}
          (catch Exception e
            (throw
-            (ex-info "Unable to create generator" #_(format "Unable to create generator for: %s" spec)
+            (ex-info (cond-> "Unable to create generator for spec"
+                       (keyword? spec) (str spec))
                      {:type ::generator-failure
                       :spec spec}
                      e))))))
