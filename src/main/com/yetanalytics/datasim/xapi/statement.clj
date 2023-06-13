@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.statement
   "Generate Statements"
   (:require [clojure.spec.alpha :as s]
-            [clojure.spec.gen.alpha :as sgen]
+            [clojure.test.check.generators :as stest]
             [clojure.set :as cset]
             [clojure.string :as string]
             [clojure.walk :as w]
@@ -80,7 +80,7 @@
     grouping-activity-types :contextGroupingActivityType
     parent-activity-types   :contextParentActivityType
     other-activity-types    :contextOtherActivityType
-    attachment-usage-types  :attachemntUsageType
+    attachment-usage-types  :attachmentUsageType
     ;; TODO: StatementRef properties
     ;; object-statement-ref  :objectStatementRefTemplate
     ;; context-statement-ref :contextStatementRefTemplate
@@ -189,8 +189,8 @@
 
 (def verb-id-gen (s/gen :verb/id))
 
-(defn- generate-verb [_]
-  {"id" (sgen/generate verb-id-gen)})
+(defn- generate-verb [rng _]
+  {"id" (stest/generate verb-id-gen 1 (random/rand-long rng))})
 
 (defn profile->statement-verb
   [{:keys [id prefLabel]}]
@@ -218,21 +218,22 @@
               return-verb)
      ;; Verb w/o ID not found, generate ID
      (some->> verb
-              generate-verb)
+              (generate-verb rng))
      ;; Choose random verb
      (some->> iri-map
               vals
               (filter #(= "Verb" (:type %)))
               (map :id)
               (random/choose rng alignment)
-              (get iri-map)))))
+              (get iri-map)
+              profile->statement-verb))))
 
 ;; Activities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def activity-id-gen (s/gen :activity/id))
 
-(defn- generate-activity [_]
-  {"id" (sgen/generate activity-id-gen)
+(defn- generate-activity [rng _]
+  {"id" (stest/generate activity-id-gen 1 (random/rand-long rng))
    "objectType" "Activity"})
 
 (s/fdef complete-activity
@@ -265,7 +266,7 @@
               return-activity)
      ;; Activity w/o ID not found, assoc generated
      (some->> activity
-              generate-activity)
+              (generate-activity rng))
      ;; Choose random activity
      (some->> activities
               keys
@@ -286,22 +287,25 @@
 (def agent-account-gen (s/gen :agent/account))
 
 (s/fdef complete-agent
-  :args (s/cat :agent map?)
+  :args (s/cat :agent map?
+               :rng ::random/rng)
   :ret ::xs/agent)
 
-(defn complete-agent [agent]
+(defn complete-agent [agent rng]
   (let [ifi     (get-ifi agent)
         account (get agent "account")
         agent*  (assoc agent "objectType" "Agent")]
     (cond
       (nil? ifi)
-      (merge (sgen/generate agent-gen) agent*)
+      (merge (stest/generate agent-gen 1 (random/rand-long rng)) agent*)
       (and account
            (or (not (contains? account "homePage"))
                (not (contains? account "name"))))
       (update agent*
               "account"
-              (partial merge (sgen/generate agent-account-gen)))
+              (partial merge (stest/generate agent-account-gen
+                                             1
+                                             (random/rand-long rng))))
       :else
       agent*)))
 
@@ -312,11 +316,12 @@
 (def group-account-gen (s/gen :group/account))
 
 (s/fdef complete-group
-  :args (s/cat :group map?)
+  :args (s/cat :group map?
+               :rng ::random/rng)
   :ret ::xs/group)
 
 (defn complete-group
-  [group]
+  [group rng]
   (let [ifi     (get-ifi group)
         account (get group "account")
         members (not-empty (get group "member"))
@@ -325,13 +330,15 @@
                   members (update "member" (partial mapv complete-agent)))]
     (cond
       (and (nil? ifi) (nil? members))
-      (merge (sgen/generate group-gen) group*)
+      (merge (stest/generate group-gen 1 (random/rand-long rng)) group*)
       (and account
            (or (not (contains? account "homePage"))
                (not (contains? account "name"))))
       (update group*
               "account"
-              (partial merge (sgen/generate group-account-gen)))
+              (partial merge (stest/generate group-account-gen
+                                             1
+                                             (random/rand-long rng))))
       :else
       group*)))
 
@@ -351,8 +358,8 @@
    rng]
   (let [complete-activities (partial mapv #(complete-activity % inputs rng))]
     (cond-> context
-      instructor (update-in ["instructor"] complete-agent)
-      team       (update-in ["team"] complete-group)
+      instructor (update-in ["instructor"] complete-agent rng)
+      team       (update-in ["team"] complete-group rng)
       category   (update-in ["contextActivities" "category"] complete-activities)
       grouping   (update-in ["contextActivities" "grouping"] complete-activities)
       parent     (update-in ["contextActivities" "parent"] complete-activities)
@@ -363,16 +370,17 @@
 (def attachment-gen (s/gen ::xs/attachment))
 
 (defn- complete-attachment
-  [attachment]
-  (merge (sgen/generate attachment-gen) attachment))
+  [rng attachment]
+  (merge (stest/generate attachment-gen 1 (random/rand-long rng)) attachment))
 
 (s/fdef complete-attachments
-  :args (s/cat :attachments (s/coll-of map?))
+  :args (s/cat :attachments (s/coll-of map?)
+               :rng ::random/rng)
   :ret ::xs/attachments)
 
 (defn complete-attachments
-  [attachments]
-  (mapv complete-attachment attachments))
+  [attachments rng]
+  (mapv (partial complete-attachment rng) attachments))
 
 ;; Authority ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -385,47 +393,51 @@
     (assoc "account" {})))
 
 (s/fdef complete-authority
-  :args (s/cat :authority map?)
+  :args (s/cat :authority map?
+               :rng ::random/rng)
   :ret (s/or :agent ::xs/agent
              :oauth-consumer ::xs/oauth-consumer
              :three-legged-oauth-group ::xs/tlo-group))
 
 (defn complete-authority
-  [{:strs [objectType member] :as authority}]
+  [{:strs [objectType member] :as authority} rng]
   (if (= "Group" objectType)
     ;; Three-legged OAuth Group
-    (complete-group
-     (condp #(= %1 (count %2)) member
-       0 (assoc authority
-                "member"
-                [(complete-agent {"account" {}})
-                 (complete-agent {})])
-       1 (assoc authority
-                "member"
-                [(complete-agent (-> member first replace-ifi-with-account))
-                 (complete-agent {})])
-       2 (assoc authority
-                "member"
-                [(complete-agent (-> member first replace-ifi-with-account))
-                 (complete-agent (-> member second))])
-       (throw (ex-info "Cannot have authority with more than 2 group members"
-                       {:type     ::invalid-3-legged-oauth-authority
-                        :authority authority}))))
+    (-> (condp #(= %1 (count %2)) member
+          0 (assoc authority
+                   "member"
+                   [(complete-agent {"account" {}} rng)
+                    (complete-agent {} rng)])
+          1 (assoc authority
+                   "member"
+                   [(complete-agent (-> member first replace-ifi-with-account) rng)
+                    (complete-agent {} rng)])
+          2 (assoc authority
+                   "member"
+                   [(complete-agent (-> member first replace-ifi-with-account) rng)
+                    (complete-agent (-> member second) rng)])
+          (throw (ex-info "Cannot have authority with more than 2 group members"
+                          {:type     ::invalid-3-legged-oauth-authority
+                           :authority authority})))
+        (complete-group rng))
     ;; Regular Authority Agent
-    (complete-agent authority)))
+    (complete-agent authority rng)))
 
 ;; StatementRef ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def statement-ref-id-gen (s/gen :statement-ref/id))
 
 (s/fdef complete-statement-ref
-  :args (s/cat :statement-ref map?)
+  :args (s/cat :statement-ref map?
+               :rng ::random/rng)
   :ret ::xs/statement-ref)
 
 (defn complete-statement-ref
-  [{:strs [id] :as statement-ref}]
+  [{:strs [id] :as statement-ref} rng]
   (cond-> (assoc statement-ref "objectType" "StatementRef")
-    (nil? id) (assoc "id" (sgen/generate statement-ref-id-gen))))
+    (nil? id) (assoc "id" (stest/generate statement-ref-id-gen
+                                          1
+                                          (random/rand-long rng)))))
 
 ;; SubStatement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -433,9 +445,9 @@
   [object inputs rng]
   (case (get object "objectType")
     "Activity"     (complete-activity object inputs rng)
-    "Agent"        (complete-agent object)
-    "Group"        (complete-group object)
-    "StatementRef" (complete-statement-ref object)
+    "Agent"        (complete-agent object rng)
+    "Group"        (complete-group object rng)
+    "StatementRef" (complete-statement-ref object rng)
     "SubStatement" (throw (ex-info "Cannot have nested SubStatements!"
                                    {:type  ::nested-substatement
                                     :object object}))
@@ -460,22 +472,22 @@
                 (update "object" complete-sub-object inputs rng))
       ;; Optional statement properties
       context     (update "context" complete-context inputs rng)
-      attachments (update "attachments" complete-attachments))))
+      attachments (update "attachments" complete-attachments rng))))
 
 ;; Statement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def id-gen (s/gen :statement/id))
 
-(defn- complete-id [id]
-  (if id id (sgen/generate id-gen)))
+(defn- complete-id [id rng]
+  (if id id (stest/generate id-gen 1 (random/rand-long rng))))
 
 (defn complete-object
   [object inputs rng]
   (case (get object "objectType")
     "Activity"     (complete-activity object inputs rng)
-    "Agent"        (complete-agent object)
-    "Group"        (complete-group object)
-    "StatementRef" (complete-statement-ref object)
+    "Agent"        (complete-agent object inputs)
+    "Group"        (complete-group object inputs)
+    "StatementRef" (complete-statement-ref object rng)
     "SubStatement" (complete-sub-statement inputs rng object)
     (complete-activity object inputs rng)))
 
@@ -493,15 +505,15 @@
         ;; TODO: Check that actor conforms to template
         actor (-> inputs :actor w/stringify-keys)]
     (cond-> (-> statement
-                (update "id" complete-id)
+                (update "id" complete-id rng)
                 (update "actor" merge actor)
                 (update "verb" complete-verb inputs rng)
                 (update "object" complete-object inputs rng))
       ;; Optional statement properties
       ;; Result is not updated since it has no required properties
       context     (update "context" complete-context inputs rng)
-      attachments (update "attachments" complete-attachments)
-      authority   (update "authority" complete-authority))))
+      attachments (update "attachments" complete-attachments rng)
+      authority   (update "authority" complete-authority rng))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Object Override
