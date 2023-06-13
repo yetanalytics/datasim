@@ -13,6 +13,7 @@
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.random :as random]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.xapi.path :as xp]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
             [com.yetanalytics.datasim.json.schema :as j-schema]
             [com.yetanalytics.datasim.xapi.extensions :as ext])
@@ -218,7 +219,8 @@
               return-verb)
      ;; Verb w/o ID not found, generate ID
      (some->> verb
-              (generate-verb rng))
+              (generate-verb rng)
+              merge-verb)
      ;; Choose random verb
      (some->> iri-map
               vals
@@ -266,7 +268,8 @@
               return-activity)
      ;; Activity w/o ID not found, assoc generated
      (some->> activity
-              (generate-activity rng))
+              (generate-activity rng)
+              merge-activity)
      ;; Choose random activity
      (some->> activities
               keys
@@ -327,7 +330,8 @@
         members (not-empty (get group "member"))
         group*  (cond-> group
                   true    (assoc "objectType" "Group")
-                  members (update "member" (partial mapv complete-agent)))]
+                  members (assoc "member" (mapv #(complete-agent % rng)
+                                                members)))]
     (cond
       (and (nil? ifi) (nil? members))
       (merge (stest/generate group-gen 1 (random/rand-long rng)) group*)
@@ -356,14 +360,21 @@
     :as context}
    inputs
    rng]
-  (let [complete-activities (partial mapv #(complete-activity % inputs rng))]
+  (let [complete-activities (partial mapv #(complete-activity % inputs rng))
+        group-instructor?   #(or (-> % (get "objectType") #{"Group"})
+                                 (-> % (contains? "member")))]
     (cond-> context
-      instructor (update-in ["instructor"] complete-agent rng)
-      team       (update-in ["team"] complete-group rng)
-      category   (update-in ["contextActivities" "category"] complete-activities)
-      grouping   (update-in ["contextActivities" "grouping"] complete-activities)
-      parent     (update-in ["contextActivities" "parent"] complete-activities)
-      other      (update-in ["contextActivities" "other"] complete-activities))))
+      (and instructor
+           (group-instructor? instructor))
+      (update-in ["instructor"] complete-group rng)
+      (and instructor
+           (not (group-instructor? instructor)))
+      (update-in ["instructor"] complete-agent rng)
+      team     (update-in ["team"] complete-group rng)
+      category (update-in ["contextActivities" "category"] complete-activities)
+      grouping (update-in ["contextActivities" "grouping"] complete-activities)
+      parent   (update-in ["contextActivities" "parent"] complete-activities)
+      other    (update-in ["contextActivities" "other"] complete-activities))))
 
 ;; Attachments ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -451,7 +462,21 @@
     "SubStatement" (throw (ex-info "Cannot have nested SubStatements!"
                                    {:type  ::nested-substatement
                                     :object object}))
-    (complete-activity object inputs rng)))
+    (let [props (keys object)
+          types (reduce (fn [types* prop]
+                          (-> (get xp/spec-hint-properties prop)
+                              (cset/intersection types*)))
+                        (get xp/default-spec-hints ["object"])
+                        props)]
+      (condp #(contains? %2 %1) types
+        "activity"      (complete-activity object inputs rng)
+        "agent"         (complete-agent object rng)
+        "group"         (complete-group object rng)
+        "statement-ref" (complete-statement-ref object rng)
+        (throw (ex-info "Unknown Statement object type"
+                        {:kind   ::unknown-object-type
+                         :object object
+                         :types  types}))))))
 
 (s/fdef complete-sub-statement
   :args (s/cat :sub-statement map?
@@ -467,6 +492,7 @@
   (let [{:strs [context attachments]} sub-statement
         actor (-> inputs :actor w/stringify-keys)]
     (cond-> (-> sub-statement
+                (assoc "objectType" "SubStatement")
                 (update "actor" merge actor) ; TODO: Check that actor conforms to template
                 (update "verb" complete-verb inputs rng)
                 (update "object" complete-sub-object inputs rng))
@@ -485,11 +511,26 @@
   [object inputs rng]
   (case (get object "objectType")
     "Activity"     (complete-activity object inputs rng)
-    "Agent"        (complete-agent object inputs)
-    "Group"        (complete-group object inputs)
+    "Agent"        (complete-agent object rng)
+    "Group"        (complete-group object rng)
     "StatementRef" (complete-statement-ref object rng)
-    "SubStatement" (complete-sub-statement inputs rng object)
-    (complete-activity object inputs rng)))
+    "SubStatement" (complete-sub-statement object inputs rng)
+    (let [props (keys object)
+          types (reduce (fn [types* prop]
+                          (-> (get xp/spec-hint-properties prop)
+                              (cset/intersection types*)))
+                        (get xp/default-spec-hints ["object"])
+                        props)]
+      (condp #(contains? %2 %1) types
+        "activity"      (complete-activity object inputs rng)
+        "agent"         (complete-agent object rng)
+        "group"         (complete-group object rng)
+        "statement-ref" (complete-statement-ref object rng)
+        "sub-statement" (complete-sub-statement object inputs rng)
+        (throw (ex-info "Unknown Statement object type"
+                        {:kind   ::unknown-object-type
+                         :object object
+                         :types  types}))))))
 
 (s/fdef complete-statement
   :args (s/cat :statement map?
