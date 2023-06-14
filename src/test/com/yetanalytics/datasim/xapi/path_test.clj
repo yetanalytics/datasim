@@ -275,16 +275,18 @@
                 (catch Exception e (-> e ex-data :type))))))
   (testing "extensions get special treatment"
     (is (= :com.yetanalytics.datasim.json/any
-           (path/path->spec :statement/context
-                              ["extensions" "http://foo.org/extension"]
-                              {:iri-map {}})))
-    (is (= :com.yetanalytics.datasim.json.schema/integer
-           (path/path->spec :statement/context
-                              ["extensions" "http://foo.org/extension"]
-                              {:iri-map {"http://foo.org/extension"
-                                         {:id "http://foo.org/extension"
-                                          :type "ContextExtension"
-                                          :inlineSchema "{\"type\": \"integer\"}"}}})))))
+           (path/path->spec
+            :statement/context
+            ["extensions" "http://foo.org/extension"]
+            {:iri-map {}})))
+    (is (= :com.yetanalytics.datasim.json/any
+           (path/path->spec
+            :statement/context
+            ["extensions" "http://foo.org/extension"]
+            {:iri-map {"http://foo.org/extension"
+                       {:id "http://foo.org/extension"
+                        :type "ContextExtension"
+                        :inlineSchema "{\"type\": \"integer\"}"}}})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path to Valueset Tests

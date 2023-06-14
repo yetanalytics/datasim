@@ -46,7 +46,7 @@
 (def spec-hint-properties
   {nil            #{"activity" "agent" "group" "statement-ref" "sub-statement"}
    "objectType"   #{"activity" "agent" "group" "statement-ref" "sub-statement"}
-   "id"           #{"activity" "statement-ref" "sub-statement"}
+   "id"           #{"activity" "statement-ref"}
    "definition"   #{"activity"}
    "name"         #{"agent" "group"}
    "mbox"         #{"agent" "group"}
@@ -62,7 +62,8 @@
    "attachments"  #{"sub-statement"}
    "timestamp"    #{"sub-statement"}})
 
-(defn- prefix-path?
+(defn prefix-path?
+  "Is `prefix` a prefix of the `path` vector?"
   [prefix path]
   (and (<= (count prefix) (count path))
        (->> (map = prefix path) (every? true?))))
@@ -144,15 +145,6 @@
                    :path path
                    :object-types object-types})))
 
-;; TODO: Distinguish between activity, context, and result extensions
-(defn- path-spec-extensions
-  [extension-id {:keys [iri-map]}]
-  (or (some->> extension-id
-               (get iri-map)
-               :inlineSchema
-               (jschema/schema->spec nil))
-      ::json/any))
-
 (defmulti path-spec
   (fn path-spec-dispatch [spec _path _p _hint-data] spec))
 
@@ -221,6 +213,7 @@
   [path (actor-type-dispatch object-types path)])
 
 (defmethod path-spec ::actor [_ path p _]
+  (validate-string-path-key p)
   (case p
     "objectType"
     [(conj path p) :actor/objectType]
@@ -230,6 +223,7 @@
     [(conj path p) (keyword "agent" p)]))
 
 (defmethod path-spec ::xs/account [_ path p _]
+  (validate-string-path-key p)
   [(conj path p) (keyword "account" p)])
 
 ;; Agent specs
@@ -451,17 +445,11 @@
                       ;; Silent traversal along equivalent specs 
                       :else suffix)]
         (recur new-spec prefix* suffix*))
-      (cond
-        ;; Treat extensions specially
-        (= ::json/any spec)
-        (path-spec-extensions (peek prefix) hint-data)
-        ;; Recognized spec
-        (or (s/get-spec spec)
-            (fn? spec)
-            (s/spec? spec))
+      (if (or (s/get-spec spec)
+              (fn? spec)
+              (s/spec? spec))
         spec
         ;; Bad or unrecognized spec
-        :else
         (throw (ex-info "Must return a valid, registered spec or a function or a spec literal"
                         {:type ::invalid-spec
                          :spec spec
@@ -494,7 +482,7 @@
 (defn path->valueset
   "Derive the appropriate set of values, taken from the profile cosmos, from
    `path`."
-  [spec-hints
+  [object-types
    {:keys [verbs verb-ids activities activity-ids activity-types]}
    path]
   (let [;; If `path` points to a SubStatement property, lop off the prefix
@@ -502,7 +490,7 @@
                    (and (#{"object"} (get path 0))
                         (#{"verb" "object" "context"} (get path 1)))
                    (subvec 1))
-        activity? (fn [path] ((get spec-hints path #{}) "activity"))
+        activity? (fn [path] ((get object-types path #{}) "activity"))
         drop-one  (fn [path] (if (< 1 (count path)) (-> path pop) []))
         drop-two  (fn [path] (if (< 2 (count path)) (-> path pop pop) []))]
     (case path*

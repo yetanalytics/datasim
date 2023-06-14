@@ -38,143 +38,23 @@
 ;; Rule Parse/Follow/Match Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def example-rules
-  [;; included presence
-   {:location  "$.id"
-    :presence  "included"
-    :scopeNote {:en "included presence, no value requirement"}}
-   {:location  "$.timestamp"
-    :presence  "included"
-    :scopeNote {:en "included presence, no value requirement, non-ID value"}}
-   {:location  "$.verb.id"
-    :presence  "included"
-    :any       ["http://adlnet.gov/expapi/verbs/launched"
-                "http://adlnet.gov/expapi/verbs/attended"]
-    :scopeNote {:en "included presence, any values"}}
-   {:location  "$.actor.member[*].objectType"
-    :presence  "included"
-    :any       ["Agent" "Group"]
-    :scopeNote {:en "included presence, any values, non-ID value"}}
-   {:location  "$.verb.id"
-    :presence  "included"
-    :all       ["http://adlnet.gov/expapi/verbs/attended"]
-    :scopeNote {:en "included presence, any values"}}
-   {:location  "$.actor.member[*].name"
-    :presence  "included"
-    :all       ["Andrew Downes" "Toby Nichols" "Ena Hills"]
-    :scopeNote {:en "included presence, all values, non-ID value"}}
-   {:location  "$.verb.id"
-    :presence  "included"
-    :none      ["http://adlnet.gov/expapi/verbs/launched"]
-    :scopeNote {:en "included presence, none values"}}
-   {:location  "$.version"
-    :presence  "included"
-    :none      ["1.0.1" "1.0.2" "1.0.3"]
-    :scopeNote {:en "included presence, none values, non-ID value"}}
-   ;; excluded presence
-   {:location  "$.context.contextActivities.grouping"
-    :presence  "excluded"
-    :scopeNote {:en "excluded presence, no value requirement"}}
-   {:location  "$.context.contextActivities.grouping[*].id"
-    :presence  "excluded"
-    :any       ["http://www.example.com/non-existent-activity/1"
-                "http://www.example.com/non-existent-activity/2"
-                "http://www.example.com/non-existent-activity/3"]
-    :scopeNote {:en "excluded presence, any values (values don't matter)"}}
-   {:location  "$.context.contextActivities.grouping[*].objectType"
-    :presence  "excluded"
-    :all       ["Actor" "Group"]
-    :scopeNote {:en "excluded presence, all values (values don't matter)"}}
-   {:location  "$.context.contextActivities.group[*].definition.name"
-    :presence  "excluded"
-    :none      ["bad activity name 1" "bad activity name 2"]
-    :scopeNote {:en "excluded presence, none values (values don't matter)"}}
-   ;; recommended presence
-   {:location  "$.context.contextActivities.parent"
-    :presence  "recommended"
-    :scopeNote {:en "recommended presence, no value req, exists in long statement"}}
-   {:location  "$.context.contextActivities.grouping"
-    :presence  "recommended"
-    :scopeNote {:en "recommended presence, no value req, does not exist in long statement"}}
-   {:location  "$.verb.id"
-    :presence  "recommended"
-    :any       ["http://adlnet.gov/expapi/verbs/launched"
-                "http://adlnet.gov/expapi/verbs/attended"]
-    :scopeNote {:en "recommended presence, any values"}}
-   {:location  "$.actor.member[*].name"
-    :presence  "recommended"
-    :all       ["Andrew Downes" "Toby Nichols" "Ena Hills"]
-    :scopeNote {:en "recommended presence, all values"}}
-   {:location  "$.version"
-    :presence  "recommended"
-    :none      ["1.0.1" "1.0.2" "1.0.3"]
-    :scopeNote {:en "recommended presence, none values"}}
-   ;; no presence
-   {:location  "$.verb.id"
-    :any       ["http://adlnet.gov/expapi/verbs/launched"
-                "http://adlnet.gov/expapi/verbs/attended"]
-    :scopeNote {:en "no presence, any values"}}
-   {:location  "$.actor.member[*].name"
-    :all       ["Andrew Downes" "Toby Nichols" "Ena Hills"]
-    :scopeNote {:en "no presence, all values"}}
-   {:location  "$.version"
-    :none      ["1.0.1" "1.0.2" "1.0.3"]
-    :scopeNote {:en "no presence, none values"}}
-   ;; selector JSONPath
-   {:location  "$.context.contextActivities.parent.*"
-    :selector  "$.id"
-    :any       ["http://www.example.com/meetings/series/266"
-                "http://www.example.com/meetings/series/267"
-                "http://www.example.com/meetings/series/268"]
-    :scopeNote {:en "selector path, any values"}}
-   {:location  "$.context.contextActivities.category.*"
-    :selector  "$.id"
-    :all       ["http://www.example.com/meetings/categories/teammeeting"]
-    :scopeNote {:en "selector path, all values"}}
-   {:location  "$.context.contextActivities.other.*"
-    :selector  "$.id"
-    :none      ["http://www.example.com/meetings/occurances/0"
-                "http://www.example.com/meetings/occurances/1"
-                "http://www.example.com/meetings/occurances/2"]
-    :scopeNote {:en "selector path, none values"}}
-   {:location  "$.context.contextActivities.other[0,1]"
-    :selector  "$.id"
-    :none      ["http://www.example.com/meetings/occurances/0"
-                "http://www.example.com/meetings/occurances/1"
-                "http://www.example.com/meetings/occurances/2"]
-    :scopeNote {:en "selector path, none values, array"}}
-   {:location  "$.context.contextActivities.other[0:1]"
-    :selector  "$.id"
-    :none      ["http://www.example.com/meetings/occurances/0"
-                "http://www.example.com/meetings/occurances/1"
-                "http://www.example.com/meetings/occurances/2"]
-    :scopeNote {:en "selector path, none values, splice"}}
-   ;; object values
-   {:location  "$.result.extensions"
-    :any       [{"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.one"}
-                {"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.two"}]
-    :scopeNote {:en "any value that is a JSON object"}}
-   {:location  "$.result.extensions"
-    :all       [{"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.one"}]
-    :scopeNote {:en "all value that is a JSON object"}}
-   {:location  "$.result.extensions"
-    :none      [{"http://example.com/profiles/meetings/resultextensions/minuteslocation" "X:\\meetings\\minutes\\examplemeeting.two"}]
-    :scopeNote {:en "none value that is a JSON object"}}])
-
 (defmacro is-parsed [parsed-rules rules]
-  `(is (= ~parsed-rules (r/parse-rules ~rules))))
+  `(is (= ~parsed-rules
+          (r/parse-rules ~rules))))
 
 (deftest parse-rules-test
   (testing "included presence, no value requirement"
     (is-parsed [{:location [[["id"]]]
                  :presence :included
-                 :path     ["id"]}]
+                 :path     ["id"]
+                 :spec     :statement/id}]
                [{:location  "$.id"
                  :presence  "included"}]))
   (testing "included presence, no value requirement, with scope note"
     (is-parsed [{:location [[["timestamp"]]]
                  :presence :included
-                 :path     ["timestamp"]}]
+                 :path     ["timestamp"]
+                 :spec     :statement/timestamp}]
                [{:location  "$.timestamp"
                  :presence  "included"
                  :scopeNote {:en-US "This is a scope note"}}]))
@@ -185,7 +65,8 @@
                              "http://adlnet.gov/expapi/verbs/attended"}
                  :any      #{"http://adlnet.gov/expapi/verbs/launched"
                              "http://adlnet.gov/expapi/verbs/attended"}
-                 :path     ["verb" "id"]}]
+                 :path     ["verb" "id"]
+                 :spec     :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :any       ["http://adlnet.gov/expapi/verbs/launched"
@@ -197,7 +78,8 @@
                              "http://adlnet.gov/expapi/verbs/attended"}
                  :all      #{"http://adlnet.gov/expapi/verbs/launched"
                              "http://adlnet.gov/expapi/verbs/attended"}
-                 :path     ["verb" "id"]}]
+                 :path     ["verb" "id"]
+                 :spec     :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :all       ["http://adlnet.gov/expapi/verbs/launched"
@@ -206,7 +88,8 @@
     (is-parsed [{:location [[["verb"] ["id"]]]
                  :presence :included
                  :none     #{"http://adlnet.gov/expapi/verbs/launched"}
-                 :path     ["verb" "id"]}]
+                 :path     ["verb" "id"]
+                 :spec     :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :none      ["http://adlnet.gov/expapi/verbs/launched"]}]))
@@ -217,7 +100,8 @@
                  :any       #{"http://adlnet.gov/expapi/verbs/launched"
                               "http://adlnet.gov/expapi/verbs/attended"}
                  :all       #{"http://adlnet.gov/expapi/verbs/launched"}
-                 :path      ["verb" "id"]}]
+                 :path      ["verb" "id"]
+                 :spec      :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :any       ["http://adlnet.gov/expapi/verbs/launched"
@@ -230,7 +114,8 @@
                  :any       #{"http://adlnet.gov/expapi/verbs/launched"
                               "http://adlnet.gov/expapi/verbs/attended"}
                  :none      #{"http://adlnet.gov/expapi/verbs/attended"}
-                 :path      ["verb" "id"]}]
+                 :path      ["verb" "id"]
+                 :spec      :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :any       ["http://adlnet.gov/expapi/verbs/launched"
@@ -243,7 +128,8 @@
                  :all       #{"http://adlnet.gov/expapi/verbs/launched"
                               "http://adlnet.gov/expapi/verbs/attended"}
                  :none      #{"http://adlnet.gov/expapi/verbs/attended"}
-                 :path      ["verb" "id"]}]
+                 :path      ["verb" "id"]
+                 :spec      :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :all       ["http://adlnet.gov/expapi/verbs/launched"
@@ -260,7 +146,8 @@
                               "http://adlnet.gov/expapi/verbs/initialized"
                               "http://adlnet.gov/expapi/verbs/completed"}
                  :none      #{"http://adlnet.gov/expapi/verbs/initialized"}
-                 :path      ["verb" "id"]}]
+                 :path      ["verb" "id"]
+                 :spec      :verb/id}]
                [{:location  "$.verb.id"
                  :presence  "included"
                  :any       ["http://adlnet.gov/expapi/verbs/launched"
@@ -271,24 +158,28 @@
                              "http://adlnet.gov/expapi/verbs/completed"]
                  :none      ["http://adlnet.gov/expapi/verbs/initialized"]}]))
   (testing "included presence, path with wildcards"
-    (is-parsed [{:location [[["actor"] ["member"] '* ["objectType"]]]
-                 :presence :included
-                 :all      #{"Agent" "Group"}
-                 :valueset #{"Agent" "Group"}
-                 :path     ["actor" "member" '* "objectType"]}]
+    (is-parsed [{:location     [[["actor"] ["member"] '* ["objectType"]]]
+                 :presence     :included
+                 :all          #{"Agent" "Group"}
+                 :valueset     #{"Agent" "Group"}
+                 :path         ["actor" "member" '* "objectType"]
+                 :spec         :agent/objectType
+                 :object-types {["actor"] #{"group"}}}]
                [{:location  "$.actor.member[*].objectType"
                  :presence  "included"
                  :all       ["Agent" "Group"]}]))
   (testing "excluded presence, no value requirement"
     (is-parsed [{:location [[["context"] ["contextActivities"] ["grouping"]]]
                  :presence :excluded
-                 :path     ["context" "contextActivities" "grouping"]}]
+                 :path     ["context" "contextActivities" "grouping"]
+                 :spec     :contextActivities/grouping}]
                [{:location  "$.context.contextActivities.grouping"
                  :presence  "excluded"}]))
   (testing "recommended presence, no value req, exists in long statement"
     (is-parsed [{:location [[["context"] ["contextActivities"] ["parent"]]]
                  :presence :recommended
-                 :path     ["context" "contextActivities" "parent"]}]
+                 :path     ["context" "contextActivities" "parent"]
+                 :spec     :contextActivities/parent}]
                [{:location  "$.context.contextActivities.parent"
                  :presence  "recommended"}]))
   ;; Rule separation now applies
@@ -296,7 +187,8 @@
     (is-parsed
      [{:location [[["context"] ["contextActivities"] ["other"] [0 1] ["id"]]]
        :presence :included
-       :path     ["context" "contextActivities" "other" '* "id"]}]
+       :path     ["context" "contextActivities" "other" '* "id"]
+       :spec     :activity/id}]
      [{:location  "$.context.contextActivities.other[0,1]"
        :selector  "$.id"
        :presence  "included"}]))
@@ -304,10 +196,12 @@
     (is-parsed
      [{:location  [[["context"] ["contextActivities"] ["category"] [0 1]]]
        :presence  :included
-       :path      ["context" "contextActivities" "category" '*]}
+       :path      ["context" "contextActivities" "category" '*]
+       :spec      ::xs/activity}
       {:location  [[["context"] ["contextActivities"] ["grouping"] [0 1]]]
        :presence  :included
-       :path      ["context" "contextActivities" "grouping" '*]}]
+       :path      ["context" "contextActivities" "grouping" '*]
+       :spec      ::xs/activity}]
      [{:location  "$.context.contextActivities['category','grouping']"
        :selector  "$[0,1]"
        :presence  "included"}]))
@@ -315,26 +209,43 @@
     (is-parsed
      [{:location  [[["context"] ["contextActivities"] ["parent"] '*]]
        :presence  :included
-       :path      ["context" "contextActivities" "parent" '*]}
+       :path      ["context" "contextActivities" "parent" '*]
+       :spec      ::xs/activity}
       {:location  [[["context"] ["contextActivities"] ["other"] '*]]
        :presence  :included
-       :path      ["context" "contextActivities" "other" '*]}]
+       :path      ["context" "contextActivities" "other" '*]
+       :spec      ::xs/activity}]
      [{:location  "$.context.contextActivities['parent','other']"
        :selector  "$.*"
        :presence  "included"}]))
   (testing "path with pipe operator"
     (is-parsed
-     [{:location  [[["object"] ["id"]]]
-       :presence  :included
-       :path      ["object" "id"]}
-      {:location  [[["object"] ["object"] ["id"]]]
-       :presence  :included
-       :path      ["object" "object" "id"]}]
-     [{:location  "$.object.id | $.object.object.id"
-       :presence  "included"}])))
+     [{:location     [[["object"] ["objectType"]]]
+       :presence     :included
+       :path         ["object" "objectType"]
+       :spec         :sub-statement/objectType
+       :object-types {["object"] #{"sub-statement"}}}
+      {:location     [[["object"] ["object"] ["objectType"]]]
+       :presence     :included
+       :path         ["object" "object" "objectType"]
+       :spec         :activity/objectType ; defaults to Activity
+       :object-types {["object"] #{"sub-statement"}
+                      ["object" "object"] #{"agent" "group" "activity" "statement-ref"}}}]
+     [{:location  "$.object.objectType | $.object.object.objectType"
+       :presence  "included"}]))
+  ;; Errors
+  (testing "excluded presence, path with wildcards"
+    ;; FIXME: Figure out how to apply rule separation in these cases of
+    ;; wildcards on JSON objects (as opposed to arrays).
+    (is (= ::xp/invalid-path-map-key
+           (try (r/parse-rules
+                 [{:location "$.actor.*"
+                   :presence "excluded"}])
+                (catch Exception e (-> e ex-data :type)))))))
 
 (defmacro is-obj-types [object-types rules]
-  `(is (= ~object-types (r/rules->object-types (r/parse-rules ~rules)))))
+  `(is (= (merge xp/default-spec-hints ~object-types)
+          (->> (r/parse-rules ~rules) r/rules->object-types))))
 
 (deftest spec-object-types-test
   (testing "Statement object based on objectType"
@@ -423,7 +334,7 @@
     (is-obj-types {["object"] #{"activity" "agent" "group" "statement-ref" "sub-statement"}}
                   [{:location "$.object.objectType"
                     :presence "included"}])
-    (is-obj-types {["object"] #{"activity" "statement-ref" "sub-statement"}}
+    (is-obj-types {["object"] #{"activity" "statement-ref"}}
                   [{:location "$.object.id"
                     :presence "included"}])
     (is-obj-types {["object"] #{"activity"}}
@@ -553,37 +464,40 @@
 
 (defn- parse-rule-valuegen [rule]
   (r/add-rule-valuegen valuegen-iri-map
-                       valuegen-object-types
                        valuegen-valuesets
                        (first (r/parse-rules [rule]))))
 
 (defn- parse-rule-sub-valuegen [rule]
   (r/add-rule-valuegen valuegen-iri-map
-                       valuegen-sub-object-types
                        valuegen-valuesets
                        (first (r/parse-rules [rule]))))
 
 (deftest valuegen-test
   (testing "Ignore if valueset is already present"
-    (is (= {:location [[["actor"] ["name"]]]
-            :valueset #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
-            :all      #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
-            :path     ["actor" "name"]}
+    (is (= {:location     [[["actor"] ["name"]]]
+            :valueset     #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
+            :all          #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
+            :path         ["actor" "name"]
+            :spec         :agent/name
+            :object-types {["actor"] #{"agent" "group"}}}
            (parse-rule-valuegen
             {:location "$.actor.name"
              :all      ["Andrew Downes" "Toby Nichols" "Ena Hills"]})))
     (is (= {:location [[["verb"] ["id"]]]
             :valueset #{"http://example.org/verb" "http://example.org/verb-2"}
             :any      #{"http://example.org/verb" "http://example.org/verb-2"}
-            :path     ["verb" "id"]}
+            :path     ["verb" "id"]
+            :spec     :verb/id}
            (parse-rule-valuegen
             {:location "$.verb.id"
              :any      ["http://example.org/verb"
                         "http://example.org/verb-2"]})))
-    (is (= {:location [[["object"] ["verb"] ["id"]]]
-            :valueset #{"http://example.org/verb" "http://example.org/verb-2"}
-            :any      #{"http://example.org/verb" "http://example.org/verb-2"}
-            :path     ["object" "verb" "id"]}
+    (is (= {:location     [[["object"] ["verb"] ["id"]]]
+            :valueset     #{"http://example.org/verb" "http://example.org/verb-2"}
+            :any          #{"http://example.org/verb" "http://example.org/verb-2"}
+            :path         ["object" "verb" "id"]
+            :spec         :verb/id
+            :object-types {["object"] #{"sub-statement"}}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :any      ["http://example.org/verb"
@@ -592,6 +506,7 @@
     (is (= {:location [[["verb"]]]
             :presence :included
             :path     ["verb"]
+            :spec     :statement/verb
             :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
             :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
            (parse-rule-valuegen
@@ -600,90 +515,105 @@
     (is (= {:location [[["verb"] ["id"]]]
             :presence :included
             :path     ["verb" "id"]
+            :spec     :verb/id
             :valueset #{"http://foo.org/verb"}
             :all      #{"http://foo.org/verb"}}
            (parse-rule-valuegen
             {:location "$.verb.id"
              :presence "included"})))
-    (is (= {:location [[["object"]]]
-            :presence :included
-            :path     ["object"]
-            :valueset #{{:id   "http://foo.org/activity"
-                         :type "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}
-            :all      #{{:id   "http://foo.org/activity"
-                         :type "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}}
+    (is (= {:location     [[["object"]]]
+            :presence     :included
+            :path         ["object"]
+            :spec         :statement/object
+            :object-types {["object"] #{"activity" "agent" "group"
+                                        "sub-statement" "statement-ref"}}
+            :valueset     #{{:id         "http://foo.org/activity"
+                             :type       "Activity"
+                             :definition {:type "http://foo.org/activity-type"}}}
+            :all          #{{:id         "http://foo.org/activity"
+                             :type       "Activity"
+                             :definition {:type "http://foo.org/activity-type"}}}}
            (parse-rule-valuegen
             {:location "$.object"
              :presence "included"})))
-    (is (= {:location [[["object"] ["id"]]]
-            :presence :included
-            :path     ["object" "id"]
-            :valueset #{"http://foo.org/activity"}
-            :all      #{"http://foo.org/activity"}}
+    (is (= {:location     [[["object"] ["id"]]]
+            :presence     :included
+            :path         ["object" "id"]
+            :spec         :activity/id
+            :object-types {["object"] #{"activity" "statement-ref"}}
+            :valueset     #{"http://foo.org/activity"}
+            :all          #{"http://foo.org/activity"}}
            (parse-rule-valuegen
             {:location "$.object.id"
              :presence "included"})))
-    (is (= {:location [[["object"] ["definition"] ["type"]]]
-            :presence :included
-            :path     ["object" "definition" "type"]
-            :valueset #{"http://foo.org/activity-type"}
-            :all      #{"http://foo.org/activity-type"}}
+    (is (= {:location     [[["object"] ["definition"] ["type"]]]
+            :presence     :included
+            :path         ["object" "definition" "type"]
+            :spec         :definition/type
+            :object-types {["object"] #{"activity"}}
+            :valueset     #{"http://foo.org/activity-type"}
+            :all          #{"http://foo.org/activity-type"}}
            (parse-rule-valuegen
             {:location "$.object.definition.type"
              :presence "included"}))))
   (testing "Add valuesets (substatements)"
-    (is (= {:location [[["object"] ["verb"]]]
-            :presence :included
-            :path     ["object" "verb"]
-            :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
-            :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
+    (is (= {:location     [[["object"] ["verb"]]]
+            :presence     :included
+            :path         ["object" "verb"]
+            :spec         :sub-statement/verb
+            :object-types {["object"] #{"sub-statement"}}
+            :valueset     #{{:id "http://foo.org/verb" :type "Verb"}}
+            :all          #{{:id "http://foo.org/verb" :type "Verb"}}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb"
              :presence "included"})))
-    (is (= {:location [[["object"] ["verb"] ["id"]]]
-            :presence :included
-            :path     ["object" "verb" "id"]
-            :valueset #{"http://foo.org/verb"}
-            :all      #{"http://foo.org/verb"}}
+    (is (= {:location     [[["object"] ["verb"] ["id"]]]
+            :presence     :included
+            :path         ["object" "verb" "id"]
+            :spec         :verb/id
+            :object-types {["object"] #{"sub-statement"}}
+            :valueset     #{"http://foo.org/verb"}
+            :all          #{"http://foo.org/verb"}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :presence "included"})))
-    (is (= {:location [[["object"] ["object"]]]
-            :presence :included
-            :path     ["object" "object"]
-            :valueset #{{:id   "http://foo.org/activity"
-                         :type "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}
-            :all      #{{:id   "http://foo.org/activity"
-                         :type "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}}
+    (is (= {:location     [[["object"] ["object"]]]
+            :presence     :included
+            :path         ["object" "object"]
+            :spec         :sub-statement/object
+            :object-types {["object"]          #{"sub-statement"}
+                           ["object" "object"] #{"activity" "agent" "group" "statement-ref"}}
+            :valueset     #{{:id         "http://foo.org/activity"
+                             :type       "Activity"
+                             :definition {:type "http://foo.org/activity-type"}}}
+            :all          #{{:id         "http://foo.org/activity"
+                             :type       "Activity"
+                             :definition {:type "http://foo.org/activity-type"}}}}
            (parse-rule-sub-valuegen
             {:location "$.object.object"
              :presence "included"})))
-    (is (= {:location [[["object"] ["object"] ["id"]]]
-            :presence :included
-            :path     ["object" "object" "id"]
-            :valueset #{"http://foo.org/activity"}
-            :all      #{"http://foo.org/activity"}}
+    (is (= {:location     [[["object"] ["object"] ["id"]]]
+            :presence     :included
+            :path         ["object" "object" "id"]
+            :spec         :activity/id
+            :object-types {["object"]          #{"sub-statement"}
+                           ["object" "object"] #{"activity" "statement-ref"}}
+            :valueset     #{"http://foo.org/activity"}
+            :all          #{"http://foo.org/activity"}}
            (parse-rule-sub-valuegen
             {:location "$.object.object.id"
              :presence "included"})))
-    (is (= {:location [[["object"] ["object"] ["definition"] ["type"]]]
-            :presence :included
-            :path     ["object" "object" "definition" "type"]
-            :valueset #{"http://foo.org/activity-type"}
-            :all      #{"http://foo.org/activity-type"}}
+    (is (= {:location     [[["object"] ["object"] ["definition"] ["type"]]]
+            :presence     :included
+            :path         ["object" "object" "definition" "type"]
+            :spec         :definition/type
+            :object-types {["object"]          #{"sub-statement"}
+                           ["object" "object"] #{"activity"}}
+            :valueset     #{"http://foo.org/activity-type"}
+            :all          #{"http://foo.org/activity-type"}}
            (parse-rule-sub-valuegen
             {:location "$.object.object.definition.type"
-             :presence "included"})
-           (r/add-rule-valuegen valuegen-iri-map
-                                valuegen-sub-object-types
-                                valuegen-valuesets
-                                {:location [[["object"] ["object"] ["definition"] ["type"]]]
-                                 :presence :included
-                                 :path     ["object" "object" "definition" "type"]}))))
+             :presence "included"}))))
   (testing "Add spec and generator"
     (is (= :statement/result
            (:spec (parse-rule-valuegen {:location "$.result"
@@ -841,14 +771,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- apply-rules [statement rules]
-  (let [parsed-rules# (r/parse-rules rules)
-        object-types# (r/rules->object-types parsed-rules#)
-        parsed-rules# (map (partial r/add-rule-valuegen
-                                    valuegen-iri-map
-                                    object-types#
-                                    valuegen-valuesets)
-                           parsed-rules#)]
-    (r/apply-rules statement parsed-rules# (random/seed-rng 100))))
+  (let [parsed-rules (r/parse-rules rules)
+        object-types (r/rules->object-types parsed-rules)
+        parsed-rules (map (partial r/add-rule-valuegen
+                                   valuegen-iri-map
+                                   valuegen-valuesets)
+                          parsed-rules)]
+    (r/apply-rules statement parsed-rules (random/seed-rng 100))))
 
 (defmacro is-actor [expected & rules]
   `(is (= ~expected
@@ -949,7 +878,7 @@
                  :presence "excluded"}))
     (testing "remove actor properties"
       (is-actor nil
-                {:location "$.actor.*"
+                {:location "$.actor"
                  :presence "excluded"}))
     (testing "both any + all; former is a superset of the latter"
       (is-actor {"name" "Bob Fakename"
@@ -1392,10 +1321,8 @@
 
 (defn- parse-template [iri-map valuesets {:keys [rules]}]
   (let [parsed-rules (r/parse-rules rules)
-        object-types (r/rules->object-types parsed-rules)
         parsed-rules (map (fn [parsed-rule]
                             (r/add-rule-valuegen iri-map
-                                                 object-types
                                                  valuesets
                                                  parsed-rule))
                           parsed-rules)]

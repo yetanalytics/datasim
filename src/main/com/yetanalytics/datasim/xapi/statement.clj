@@ -165,12 +165,13 @@
     object-statement-ref :objectStatementRefTemplate
     profile-id           :inScheme
     rules                :rules}]
-  (let [parsed-rules   (rule/parse-rules rules)
-        spec-hints     (cond-> (rule/rules->object-types parsed-rules)
+  (let [parsed-rules   (cond
                          object-activity-type
-                         (update ["object"] cset/intersection #{"activity"})
+                         (rule/parse-rules :activity-type rules)
                          object-statement-ref
-                         (update ["object"] cset/intersection #{"statement-ref"}))
+                         (rule/parse-rules :statement-ref rules)
+                         :else
+                         (rule/parse-rules rules))
         ;; TODO: More efficient data structures
         verbs          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
         verb-ids       (->> verbs (map :id) set)
@@ -182,7 +183,7 @@
                         :activities     activityies
                         :activity-ids   activity-ids
                         :activity-types activity-types}]
-    (mapv (partial rule/add-rule-valuegen iri-map spec-hints value-sets)
+    (mapv (partial rule/add-rule-valuegen iri-map value-sets)
           parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
