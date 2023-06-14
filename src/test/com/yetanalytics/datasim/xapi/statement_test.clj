@@ -132,7 +132,15 @@
     (let [statement (gen-statement {})]
       (is (s/valid? ::xs/statement statement))
       (is (statement-inputs? statement))
-      ;; This UUID should be generated deterministically
+      ;; This UUID should be generated deterministically via rng
+      (is (= "4f083ce3-f12b-4b4b-86ee-9d82b52c856d"
+             (get statement "id")))))
+  
+  (testing "Template specifies ID"
+    (let [statement (gen-statement {:rules [{:location "$.id"
+                                             :presence "included"}]})]
+      (is (s/valid? ::xs/statement statement))
+      (is (statement-inputs? statement))
       (is (= "4f083ce3-f12b-4b4b-86ee-9d82b52c856d"
              (get statement "id")))))
 
@@ -964,3 +972,140 @@
                                            "homePage" "hizkf://lcdssef.ljjdknrxt.gmkz/yoha"}
                              "objectType" "Agent"}]}
              (get statement "authority"))))))
+
+(defn- gen-statement-override [object-override partial-template]
+  (let [valid-args*
+        (-> valid-args
+            (assoc-in [:alignment "https://example.org/activity/a" :object-override]
+                      object-override)
+            (update-in [:alignment] dissoc "https://example.org/activity/c"))]
+    (->> partial-template
+         (merge {:id       "https://template-1"
+                 :type     "StatementTemplate"
+                 :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
+         (assoc valid-args* :template)
+         generate-statement)))
+
+(deftest statement-object-override-test
+  (testing "Override with Activity"
+    (testing "with no Template properties or rules"
+      (let [override  {:objectType "Activity"
+                       :id         "https://www.whatever.com/activities#course1"
+                       :definition {:name        {:en-US "Course 1"}
+                                    :description {:en-US "Course Description 1"}
+                                    :type        "http://adlnet.gov/expapi/activities/course"}}
+            statement (gen-statement-override override {})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= (w/stringify-keys override)
+               (get statement "object")))))
+
+    (testing "with Agent/Group object rules"
+      (let [override  {:objectType "Activity"
+                       :id         "https://www.whatever.com/activities#course1"
+                       :definition {:name        {:en-US "Course 1"}
+                                    :description {:en-US "Course Description 1"}
+                                    :type        "http://adlnet.gov/expapi/activities/course"}}
+            template  {:rules [{:location "$.object.objectType"
+                                :all      ["Agent" "Group"]}
+                               {:location "$.object.mbox"
+                                :presence "included"}]}
+            statement (gen-statement-override override template)]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= (w/stringify-keys override)
+               (get statement "object"))))))
+
+  (testing "Override with Agent"
+    (testing "with no Template properties or rules"
+      (let [override  {:objectType "Agent"
+                       :name       "My Override"
+                       :mbox       "mailto:myoverride@example.com"}
+            statement (gen-statement-override override {})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= (w/stringify-keys override)
+               (get statement "object")))))
+    
+    (testing "with objectActivityType property"
+      (let [override  {:objectType "Agent"
+                       :name       "My Override"
+                       :mbox       "mailto:myoverride@example.com"}
+            template  {:objectActivityType
+                       "https://w3id.org/xapi/cmi5/activitytype/course"}
+            statement (gen-statement-override override template)]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= (w/stringify-keys override)
+               (get statement "object")))))
+    
+    (testing "with Activity object rules"
+      (let [override  {:objectType "Agent"
+                       :name       "My Override"
+                       :mbox       "mailto:myoverride@example.com"}
+            template  {:rules
+                       [{:location "$.object.objectType"
+                         :all      ["Activity"]}
+                        {:location "$.object.id"
+                         :all      ["https://example.org/course/1550503926"]}]}
+            statement (gen-statement-override override template)]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= (w/stringify-keys override)
+               (get statement "object"))))))
+
+  (testing "Override with Activity or Agent"
+    (testing "with equal probability"
+      (let [override-1
+            {:objectType "Activity"
+             :id         "https://www.whatever.com/activities#course1"
+             :definition {:name        {:en-US "Course 1"}
+                          :description {:en-US "Course Description 1"}
+                          :type        "http://adlnet.gov/expapi/activities/course"}}
+            override-2
+            {:objectType "Agent"
+             :name       "My Override"
+             :mbox       "mailto:myoverride@example.com"}
+            alignments
+            {"https://example.org/activity/a"
+             {:weight 0.5, :object-override override-1}
+             "https://example.org/activity/c"
+             {:weight 0.5, :object-override override-2}}
+            statement
+            (generate-statement (assoc valid-args
+                                       :alignment alignments
+                                       :template  {:id       "https://template-1"
+                                                   :type     "StatementTemplate"
+                                                   :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (or (= (w/stringify-keys override-1)
+                   (get statement "object"))
+                (= (w/stringify-keys override-2)
+                   (get statement "object"))))))
+    (testing "with only Agent with nonzero probability"
+      (let [override-1
+            {:objectType "Activity"
+             :id         "https://www.whatever.com/activities#course1"
+             :definition {:name        {:en-US "Course 1"}
+                          :description {:en-US "Course Description 1"}
+                          :type        "http://adlnet.gov/expapi/activities/course"}}
+            override-2
+            {:objectType "Agent"
+             :name       "My Override"
+             :mbox       "mailto:myoverride@example.com"}
+            alignments
+            {"https://example.org/activity/a"
+             {:weight -1.0, :object-override override-1}
+             "https://example.org/activity/c"
+             {:weight 1.0, :object-override override-2}}
+            statement
+            (generate-statement (assoc valid-args
+                                       :alignment alignments
+                                       :template  {:id       "https://template-1"
+                                                   :type     "StatementTemplate"
+                                                   :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= (w/stringify-keys override-2)
+               (get statement "object")))))))

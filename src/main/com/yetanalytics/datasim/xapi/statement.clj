@@ -112,16 +112,11 @@
                {"id" profile-version-id})))
 
 (defn base-statement
-  [template-base {:keys [sim-t registration object-override]} rng]
-  (cond-> (-> template-base
-              (assoc-in ["id"]
-                        (random/rand-uuid rng))
-              (assoc-in ["timestamp"]
-                        (.toString (Instant/ofEpochMilli sim-t)))
-              (assoc-in ["context" "registration"]
-                        registration))
-    object-override
-    (assoc "object" object-override)))
+  [template-base {:keys [sim-t registration]} rng]
+  (-> template-base
+      (assoc-in ["id"] (random/rand-uuid rng))
+      (assoc-in ["timestamp"] (.toString (Instant/ofEpochMilli sim-t)))
+      (assoc-in ["context" "registration"] registration)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Rule Application
