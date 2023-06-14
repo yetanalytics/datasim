@@ -482,9 +482,9 @@
                                     :object object}))
     (let [props (keys object)
           types (reduce (fn [types* prop]
-                          (-> (get xp/spec-hint-properties prop)
+                          (-> (get xp/spec-hint-properties-m prop)
                               (cset/intersection types*)))
-                        (get xp/default-spec-hints ["object"])
+                        (get xp/default-object-type-m ["object"])
                         props)]
       (condp #(contains? %2 %1) types
         "activity"      (complete-activity object inputs rng)
@@ -535,9 +535,9 @@
     "SubStatement" (complete-sub-statement object inputs rng)
     (let [props (keys object)
           types (reduce (fn [types* prop]
-                          (-> (get xp/spec-hint-properties prop)
+                          (-> (get xp/spec-hint-properties-m prop)
                               (cset/intersection types*)))
-                        (get xp/default-spec-hints ["object"])
+                        (get xp/default-object-type-m ["object"])
                         props)]
       (condp #(contains? %2 %1) types
         "activity"      (complete-activity object inputs rng)

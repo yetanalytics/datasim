@@ -244,7 +244,7 @@
                 (catch Exception e (-> e ex-data :type)))))))
 
 (defmacro is-obj-types [object-types rules]
-  `(is (= (merge xp/default-spec-hints ~object-types)
+  `(is (= (merge xp/default-object-type-m ~object-types)
           (->> (r/parse-rules ~rules) r/rules->object-types))))
 
 (deftest spec-object-types-test

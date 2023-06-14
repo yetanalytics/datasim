@@ -1,7 +1,6 @@
 (ns com.yetanalytics.datasim.xapi.path
   "Given a path into an xAPI structure, return a spec from xapi-schema"
   (:require [com.yetanalytics.datasim.json :as json]
-            [com.yetanalytics.datasim.json.schema :as jschema]
             [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]))
@@ -19,13 +18,24 @@
 ;; Note that these functions are tested by the rule-test namespace instead
 ;; of the path-test namespace.
 
+;; object type strings match the keyword names found in xapi-schema, e.g
+;; `:statement-object/statement-ref`
+
 (def object-type-strings
   #{"activity" "agent" "group" "statement-ref" "sub-statement"})
 
 (s/def ::object-types
   (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
-(def default-spec-hints
+(def object-type-kebab-case
+  {"Activity"     "activity"
+   "Agent"        "agent"
+   "Group"        "group"
+   "StatementRef" "statement-ref"
+   "SubStatement" "sub-statement"})
+
+(def default-object-type-m
+  "Map from paths to their default objectTypes, if there were no constraints."
   {;; Objects
    ["object"] #{"activity" "agent" "group" "statement-ref" "sub-statement"}
    ["object" "object"] #{"activity" "agent" "group" "statement-ref"}
@@ -36,14 +46,9 @@
    ["object" "context" "instructor"] #{"agent" "group"}
    ["authority"]                     #{"agent" "group"}})
 
-(def object-type-kebab-case
-  {"Activity"     "activity"
-   "Agent"        "agent"
-   "Group"        "group"
-   "StatementRef" "statement-ref"
-   "SubStatement" "sub-statement"})
-
-(def spec-hint-properties
+(def spec-hint-properties-m
+  "Map from property to the object types that the containing object can be.
+   For example, `id` can be found in both activities and statement-refs."
   {nil            #{"activity" "agent" "group" "statement-ref" "sub-statement"}
    "objectType"   #{"activity" "agent" "group" "statement-ref" "sub-statement"}
    "id"           #{"activity" "statement-ref"}
@@ -68,14 +73,18 @@
   (and (<= (count prefix) (count path))
        (->> (map = prefix path) (every? true?))))
 
-(s/fdef spec-hinted-path
+(s/fdef object-type-paths
   :args (s/cat :path ::path)
   :ret (s/coll-of ::path))
 
-(defn spec-hinted-path
+(defn object-type-paths
   "Does `path` point to anywhere that can have multiple object types?
    Includes actor, object, context instructors, authority, and their
-   SubStatement equivalents. Returns a coll of possible path prefixes"
+   SubStatement equivalents. Returns a coll of possible path prefixes.
+   
+   Returns `nil` if `path` does not potentially point to multiple object
+   types (so, for example, context activities don't count since they
+   can only be activities)."
   [path]
   (let [prefix-path* (fn [coll prefix]
                        (cond-> coll (prefix-path? prefix path) (conj prefix)))]
@@ -90,23 +99,24 @@
         (prefix-path* ["context" "instructor"])
         (prefix-path* ["authority"]))))
 
-(s/fdef paths->spec-hints
+(s/fdef path-object-type-set
   :args (s/cat :initial-type-set
                (s/? (s/coll-of object-type-strings :kind set?))
                :prefix ::path
-               :paths (s/coll-of ::path)))
+               :paths (s/coll-of ::path))
+  :ret (s/coll-of object-type-strings :kind set?))
 
-(defn paths->spec-hints
+(defn path-object-type-set
   "Derive the set of possible object types based off of all the `paths`,
    starting with an optional `initial-type-set`."
   ([prefix paths]
-   (paths->spec-hints (default-spec-hints prefix) prefix paths))
+   (path-object-type-set (default-object-type-m prefix) prefix paths))
   ([initial-type-set prefix paths]
    (let [prop-idx (count prefix)]
      (reduce (fn [acc path]
                (let [prop-set (->> prop-idx
                                    (get path)
-                                   (get spec-hint-properties))]
+                                   (get spec-hint-properties-m))]
                  (cset/intersection acc prop-set)))
              initial-type-set
              paths))))
@@ -146,6 +156,8 @@
                    :object-types object-types})))
 
 (defmulti path-spec
+  "Return a `[path spec]` pair, where `path` is the new path that
+   points to the value in the statement validated by `spec`."
   (fn path-spec-dispatch [spec _path _p _hint-data] spec))
 
 (defmethod path-spec :default [spec path p _]

@@ -74,7 +74,7 @@
           (reduce (fn [m** prefix]
                     (update m** prefix (fnil conj []) parsed-rule))
                   m*
-                  (xp/spec-hinted-path path)))
+                  (xp/object-type-paths path)))
         {["object"]                        []
          ["object" "object"]               []
          ["actor"]                         []
@@ -106,10 +106,10 @@
        (let [?object-types (rule-object-types prefix parsed-rules)
              rule-paths    (map :path rules)
              object-types  (if ?object-types
-                             (xp/paths->spec-hints ?object-types
+                             (xp/path-object-type-set ?object-types
                                                    prefix
                                                    rule-paths)
-                             (xp/paths->spec-hints prefix
+                             (xp/path-object-type-set prefix
                                                    rule-paths))]
          (if (not-empty object-types)
            (assoc m prefix object-types)
@@ -256,7 +256,7 @@
    may be provided if the containing Template contains an Object-related
    Determining property."
   ([rules]
-   (parse-rules* (xp/default-spec-hints ["object"]) rules))
+   (parse-rules* (xp/default-object-type-m ["object"]) rules))
   ([object-property rules]
    (case object-property
      :activity-type (parse-rules* #{"activity"} rules)
