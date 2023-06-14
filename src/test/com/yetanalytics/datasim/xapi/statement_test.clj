@@ -80,33 +80,6 @@
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftest generate-statement-test
-  (testing "given valid args,"
-    (testing "produces a valid xapi statement"
-      (is (s/valid? ::xs/statement (generate-statement valid-args)))
-      (testing "no matter what seed is used"
-        (are [seed] (->> (assoc valid-args :seed seed)
-                         generate-statement
-                         (s/valid? ::xs/statement))
-          -94832 0 39 9600)))
-    (testing "is deterministic"
-      (is (->> #(generate-statement valid-args)
-               (repeatedly 100)
-               (apply distinct?)
-               not)))
-    (testing "object override works"
-      (let [valid-args'
-            (-> valid-args
-                (assoc-in
-                 [:alignment "https://example.org/activity/a" :object-override]
-                 object-override)
-                (update-in [:alignment] dissoc "https://example.org/activity/c"))]
-        (is (s/valid? ::xs/statement (generate-statement valid-args')))
-        (is (= object-override
-               (-> (generate-statement valid-args')
-                   (get "object")
-                   w/keywordize-keys)))))))
-
 (defn- gen-statement [partial-template]
   (->> partial-template
        (merge {:id       "https://template-1"
@@ -127,7 +100,7 @@
               (get-in ["context" "contextActivities" "category"])
               last))))
 
-(deftest generate-statement-test-2
+(deftest generate-statement-test
   (testing "Template specifies no properties or rules"
     (let [statement (gen-statement {})]
       (is (s/valid? ::xs/statement statement))
@@ -144,7 +117,24 @@
       (is (= "4f083ce3-f12b-4b4b-86ee-9d82b52c856d"
              (get statement "id")))))
 
-  ;; Statement Verb ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Actor
+  
+  (testing "Template specifies Actor"
+    ;; TODO: Throw an error or show warning if actor rules exist?
+    (testing "name and mbox property - always overwritten"
+      (let [statement
+            (gen-statement {:rules [{:location "$.actor.name"
+                                     :all      ["Alice Faux"]}
+                                    {:location "$.actor.mbox"
+                                     :all      ["mailto:alice@example.org"]}]})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (not= "Alice Faux"
+                  (get-in statement ["actor" "name"])))
+        (is (not= "mailto:alice@example.org"
+                  (get-in statement ["actor" "mbox"]))))))
+  
+  ;; Verb
 
   (testing "Template specifies Verb"
     (testing "ID property"
@@ -236,7 +226,7 @@
         ;; This rule is egregiously invalid
         (is (not (s/valid? ::xs/statement statement))))))
 
-  ;; Statement Activity Object ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Activity Object
 
   (testing "Template specifies Activity Object"
     (testing "activity type property"
@@ -329,7 +319,7 @@
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object"))))))
 
-  ;; Statement Actor Object ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Agent/Group Object
 
   (testing "Template specifies Agent/Group Object"
     (testing "name and objectType rule"
@@ -538,7 +528,7 @@
                   "mbox"       "mailto:wbkivamvqjp@vmuonfkuxufx.qkr"}]}
                (get statement "object"))))))
 
-  ;; Statement StatementRef Object ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; StatementRef Object
 
   (testing "Template specifies StatementRef"
     (testing "ID and objectType rule"
@@ -599,7 +589,7 @@
         (is (= {"id" "00000000-0000-4000-8000-123412341234"}
                (get statement "object"))))))
 
-  ;; Statement SubStatement Object ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; SubStatement Object
 
   (testing "Template specifies SubStatement Object"
     (testing "objectType rule"
@@ -745,7 +735,7 @@
                  "sha2"        "39E3969BCDED0A6362E4EDBFC2DABD7A6D3F78E74971B98EC466C7988541FB0C"}]
                (get-in statement ["object" "attachments"]))))))
 
-  ;; Statement Context ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Context
 
   (testing "Template specifies Context"
     (testing "activity type properties"
@@ -865,7 +855,7 @@
                               "homePage" "hfzs://lulqixugpx.ckpsmcqvrd.aff/ausyu"}}
                (get-in statement ["context" "instructor"]))))))
 
-  ;; Extensions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Extensions
 
   ;; TODO: Add Activity Extensions
   (testing "Template specifies Extensions on"
@@ -928,7 +918,7 @@
         (is (statement-inputs? stmt))
         (is (string? (get-in stmt ["result" "extensions" ext-id]))))))
   
-  ;; Miscellaneous ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Miscellaneous
 
   (testing "Template specifies attachmentUsageType properties"
     (let [statement
@@ -986,7 +976,7 @@
          (assoc valid-args* :template)
          generate-statement)))
 
-(deftest statement-object-override-test
+(deftest generate-statemnet-override-test
   (testing "Override with Activity"
     (testing "with no Template properties or rules"
       (let [override  {:objectType "Activity"
@@ -1109,3 +1099,30 @@
         (is (statement-inputs? statement))
         (is (= (w/stringify-keys override-2)
                (get statement "object")))))))
+
+(deftest generate-statement-repeat-test
+  (testing "given valid args,"
+    (testing "produces a valid xapi statement"
+      (is (s/valid? ::xs/statement (generate-statement valid-args)))
+      (testing "no matter what seed is used"
+        (are [seed] (->> (assoc valid-args :seed seed)
+                         generate-statement
+                         (s/valid? ::xs/statement))
+          -94832 0 39 9600)))
+    (testing "is deterministic"
+      (is (->> #(generate-statement valid-args)
+               (repeatedly 100)
+               (apply distinct?)
+               not)))
+    (testing "object override works"
+      (let [valid-args'
+            (-> valid-args
+                (assoc-in
+                 [:alignment "https://example.org/activity/a" :object-override]
+                 object-override)
+                (update-in [:alignment] dissoc "https://example.org/activity/c"))]
+        (is (s/valid? ::xs/statement (generate-statement valid-args')))
+        (is (= object-override
+               (-> (generate-statement valid-args')
+                   (get "object")
+                   w/keywordize-keys)))))))
