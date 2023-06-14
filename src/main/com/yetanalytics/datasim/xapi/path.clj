@@ -190,7 +190,7 @@
         ::xs/activity
         (throw-unsupported-object-types :statement/object path types)))))
 
-(defmethod path-spec :statement/object [_ path _ {:keys [object-types]}]
+(defmethod path-spec :statement/object [_ path _ object-types]
   ;; path = ["object"]
   [path (statement-object-spec-dispatch object-types path)])
 
@@ -221,7 +221,7 @@
       #{"group"}         ::xs/group
       (throw-unsupported-object-types ::xs/actor path types))))
 
-(defmethod path-spec ::xs/actor [_ path _ {:keys [object-types]}]
+(defmethod path-spec ::xs/actor [_ path _ object-types]
   [path (actor-type-dispatch object-types path)])
 
 (defmethod path-spec ::actor [_ path p _]
@@ -294,7 +294,7 @@
         ::xs/activity
         (throw-unsupported-object-types :sub-statement/object path types)))))
 
-(defmethod path-spec :sub-statement/object [_ path _ {:keys [object-types]}]
+(defmethod path-spec :sub-statement/object [_ path _ object-types]
   ;; path = ["object" "object"]
   [path (sub-statement-type-dispatch path object-types)])
 
@@ -431,8 +431,7 @@
 (s/fdef path->spec
   :args (s/cat :spec (s/or :keyword s/get-spec :spec-obj s/spec?)
                :path ::path
-               :hint-data (s/keys :req-un [::object-types
-                                           ::iri-map]))
+               :object-types ::object-types)
   :ret (s/or :keyword s/get-spec
              :function fn?
              :spec-obj s/spec?))
@@ -440,13 +439,13 @@
 (defn path->spec
   "Given a root `spec` and a `path` into it, return the spec for
    that path, or throw an exception if not possible.
-   Accepts `hint-data` for polymorphic objectTypes and extensions."
-  [spec path hint-data]
+   Accepts `object-types` for polymorphic objectTypes."
+  [spec path object-types]
   (loop [spec   spec
          prefix []
          suffix path]
     (if-some [p (first suffix)]
-      (let [[prefix* new-spec] (path-spec spec prefix p hint-data)
+      (let [[prefix* new-spec] (path-spec spec prefix p object-types)
             suffix* (cond
                       ;; Short-circuit on extension
                       (= ::json/any new-spec)
@@ -463,10 +462,10 @@
         spec
         ;; Bad or unrecognized spec
         (throw (ex-info "Must return a valid, registered spec or a function or a spec literal"
-                        {:type ::invalid-spec
-                         :spec spec
-                         :path prefix
-                         :hint hint-data}))))))
+                        {:type         ::invalid-spec
+                         :spec         spec
+                         :path         prefix
+                         :object-types object-types}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path -> Valueset

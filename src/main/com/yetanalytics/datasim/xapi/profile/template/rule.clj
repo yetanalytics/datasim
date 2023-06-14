@@ -243,7 +243,7 @@
 
 (defn- add-rule-spec
   [{:keys [path object-types] :as rule}]
-  (let [spec (xp/path->spec ::xs/statement path {:object-types object-types})]
+  (let [spec (xp/path->spec ::xs/statement path object-types)]
     (assoc rule :spec spec)))
 
 (defn- parse-rules*
