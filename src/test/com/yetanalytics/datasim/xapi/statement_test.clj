@@ -32,13 +32,6 @@
 (def alignments*
   (-> const/simple-input (get-in [:alignments :alignment-vector 0 :alignments])))
 
-(def object-override
-  {:objectType "Activity"
-   :id         "https://www.whatever.com/activities#course1"
-   :definition {:name        {:en-US "Course 1"}
-                :description {:en-US "Course Description 1"}
-                :type        "http://adlnet.gov/expapi/activities/course"}})
-
 (def alignments
   (reduce
    (fn [acc {:keys [component weight objectOverride]}]
