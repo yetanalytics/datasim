@@ -498,16 +498,6 @@
     :type "ResultExtension"
     :inlineSchema "{\"type\":\"boolean\"}"}})
 
-(def valuegen-object-types
-  {["object"] #{"activity"}
-   ["actor"] #{"agent" "group"}})
-
-(def valuegen-sub-object-types
-  {["object"] #{"sub-statement"}
-   ["object" "object"] #{"activity"}
-   ["actor"] #{"agent" "group"}
-   ["object" "actor"] #{"agent" "group"}})
-
 (def valuegen-valuesets
   {:verbs          #{{:id   "http://foo.org/verb"
                       :type "Verb"}}
