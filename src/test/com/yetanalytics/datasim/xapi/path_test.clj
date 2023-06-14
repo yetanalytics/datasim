@@ -36,9 +36,6 @@
 ;; Path to Spec Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftest spec-map-test
-  (is (s/valid? ::path/spec-map path/spec-map)))
-
 (def object-types
   {["object"] #{"activity"}
    ["context" "instructor"] #{"agent"}
@@ -54,7 +51,7 @@
     ;; paths and leaf values
     (is (every?
          (fn [[path v]]
-           (let [spec (path/path->spec-3 ::xs/statement
+           (let [spec (path/path->spec ::xs/statement
                                          path
                                          {:object-types object-types})]
              (and spec
@@ -62,7 +59,7 @@
          (kv-map long-statement)))
     (is (every?
          (fn [[path v]]
-           (let [spec (path/path->spec-3 :statement/attachments
+           (let [spec (path/path->spec :statement/attachments
                                          path
                                          {:object-types object-types})]
              (and spec
@@ -70,7 +67,7 @@
          (kv-map sample-attachments)))
     (is (every?
          (fn [[path v]]
-           (let [spec (path/path->spec-3 ::xs/sub-statement
+           (let [spec (path/path->spec ::xs/sub-statement
                                          (into path)
                                          {:object-types object-types})]
              (and spec
@@ -81,208 +78,208 @@
                      (dissoc "id" "stored" "version" "authority"))))))
   (testing "works for arbitrary and relative paths"
     (is (= :score/max
-           (path/path->spec-3 ::xs/result
+           (path/path->spec ::xs/result
                               ["score" "max"]
                               {})))
     (is (= :activity/id
-           (path/path->spec-3 ::xs/context
+           (path/path->spec ::xs/context
                               ["contextActivities" "grouping" '* "id"]
                               {})))
     (is (= :group/account
-           (path/path->spec-3 ::xs/group
+           (path/path->spec ::xs/group
                               ["account"]
                               {})))
     (is (= :account/homePage
-           (path/path->spec-3 ::xs/group
+           (path/path->spec ::xs/group
                               ["account" "homePage"]
                               {})))
     (is (= ::xs/interaction-component
-           (path/path->spec-3 :activity/definition
+           (path/path->spec :activity/definition
                               ["choices" '*]
                               {})))
     (is (= ::xs/interaction-component
-           (path/path->spec-3 :definition/scale
+           (path/path->spec :definition/scale
                               ['*]
                               {})))
     (is (= :interaction-component/id
-           (path/path->spec-3 :definition/source
+           (path/path->spec :definition/source
                               ['* "id"]
                               {})))
     (is (= :interaction-component/description
-           (path/path->spec-3 :definition/target
+           (path/path->spec :definition/target
                               ['* "description"]
                               {})))
     (is (= ::xs/language-map-text
-           (path/path->spec-3 :definition/steps
+           (path/path->spec :definition/steps
                               ['* "description" "en-US"]
                               {}))))
   (testing "can return custom specs"
     (is (= :actor/objectType
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["actor" "objectType"]
                               {:object-types {["actor"] #{"agent" "group"}}})))
     (is (= :correctResponsesPattern/string
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "definition" "correctResponsesPattern" '*]
                               {:object-types {["object"] #{"activity"}}}))))
   (testing "can work with different object types"
     ;; Actors
     (is (= :agent/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["actor" "name"]
                               {:object-types
                                {["actor"] #{"agent"}}})))
     (is (= :agent/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["actor" "name"]
                               {:object-types
                                {["actor"] #{"agent" "group"}}})))
     (is (= :group/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["actor" "name"]
                               {:object-types
                                {["actor"] #{"group"}}})))
     (is (= :group/member
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["actor" "member"]
                               {:object-types
                                {["actor"] #{"agent" "group"}}})))
     ;; Statement objects
     (is (= :agent/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "name"]
                               {:object-types
                                {["object"] #{"agent" "group"}}})))
     (is (= :agent/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "name"]
                               {:object-types
                                {["object"] #{"agent"}}})))
     (is (= :group/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "name"]
                               {:object-types
                                {["object"] #{"group"}}})))
     (is (= :statement-ref/id
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "id"]
                               {:object-types
                                {["object"] #{"statement-ref"}}})))
     (is (= :sub-statement/verb
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "verb"]
                               {:object-types
                                {["object"] #{"sub-statement"}}})))
     (is (= :activity/id
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "id"]
                               {:object-types
                                {["object"] #{"activity" "statement-ref"}}})))
     ;; Sub-statement objects
     (is (= :agent/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object" "name"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"agent" "group"}}})))
     (is (= :agent/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object" "name"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"agent"}}})))
     (is (= :group/name
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object" "name"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"group"}}})))
     (is (= :activity/id
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object" "id"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"activity"}}})))
     (is (= :statement-ref/id
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object" "id"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"statement-ref"}}})))
     (is (= :activity/id
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object" "id"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"activity" "statement-ref"}}})))
     ;; Bad type combos
     (is (= ::path/unsuppored-object-types
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["object" "id"]
                                    {:object-types
                                     {["object"] #{"sub-statement" "statement-ref"}}})
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::path/unsuppored-object-types
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["object" "object" "id"]
                                    {:object-types
                                     {["object"] #{"sub-statement"}
                                      ["object" "object"] #{"sub-statement"}}})
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::path/unsuppored-object-types
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["actor" "id"]
                                    {:object-types {["actor"] #{"sub-statement"}}})
                 (catch Exception e (-> e ex-data :type)))))
     ;; if we go one level up we don't care about bad object types
     (is (= :statement/object
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object"]
                               {:object-types
                                {["object"] #{"sub-statement" "statement-ref"}}})))
     (is (= :sub-statement/object
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["object" "object"]
                               {:object-types
                                {["object"] #{"sub-statement"}
                                 ["object" "object"] #{"sub-statement"}}})))
     (is (= :statement/actor
-           (path/path->spec-3 ::xs/statement
+           (path/path->spec ::xs/statement
                               ["actor"]
                               {:object-types {["actor"] #{"sub-statement"}}}))))
   (testing "bad paths or specs"
     (is (= ::path/invalid-spec
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["actor" "badSpec"]
                                    {:object-types {["actor"] #{"agent"}}})
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::path/unknown-path-spec
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["actor" "zoo" "wee" "mama"]
                                    {:object-types {["actor"] #{"agent"}}})
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::path/invalid-path-map-key
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["object" '*]
                                    {:object-types {["object"] #{"activity"}}})
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::path/invalid-path-array-key
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["context" "contextActivities" "grouping" "foo"]
                                    {})
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::path/invalid-path-spec-key
-           (try (path/path->spec-3 ::xs/statement
+           (try (path/path->spec ::xs/statement
                                    ["verb" "display" '*]
                                    {})
                 (catch Exception e (-> e ex-data :type))))))
   (testing "extensions get special treatment"
     (is (= :com.yetanalytics.datasim.json/any
-           (path/path->spec-3 :statement/context
+           (path/path->spec :statement/context
                               ["extensions" "http://foo.org/extension"]
                               {:iri-map {}})))
     (is (= :com.yetanalytics.datasim.json.schema/integer
-           (path/path->spec-3 :statement/context
+           (path/path->spec :statement/context
                               ["extensions" "http://foo.org/extension"]
                               {:iri-map {"http://foo.org/extension"
                                          {:id "http://foo.org/extension"

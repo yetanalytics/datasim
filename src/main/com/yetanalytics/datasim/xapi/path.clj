@@ -9,29 +9,27 @@
 (s/def ::path
   (s/coll-of (s/or :key string? :index #{(symbol "*")}) :kind vector?))
 
-(defn prefix-path?
-  [prefix path]
-  (and (<= (count prefix) (count path))
-       (->> (map = prefix path) (every? true?))))
+(s/def ::iri-map
+  (s/map-of string? any?))
 
-(defn spec-hinted-path
-  [path]
-  (let [prefix-path* (fn [coll prefix]
-                       (cond-> coll (prefix-path? prefix path) (conj prefix)))]
-    (-> []
-        ;; SubStatement paths
-        (prefix-path* ["object" "actor"])
-        (prefix-path* ["object" "object"])
-        (prefix-path* ["object" "context" "instructor"])
-        ;; Statement paths
-        (prefix-path* ["actor"])
-        (prefix-path* ["object"])
-        (prefix-path* ["context" "instructor"])
-        (prefix-path* ["authority"]))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Path -> Object Types
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Note that these functions are tested by the rule-test namespace instead
+;; of the path-test namespace.
+
+(def object-type-strings
+  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
+
+(s/def ::object-types
+  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
 (def default-spec-hints
-  {["object"]                        #{"activity" "agent" "group" "statement-ref" "sub-statement"}
-   ["object" "object"]               #{"activity" "agent" "group" "statement-ref"}
+  {;; Objects
+   ["object"] #{"activity" "agent" "group" "statement-ref" "sub-statement"}
+   ["object" "object"] #{"activity" "agent" "group" "statement-ref"}
+   ;; Actors
    ["actor"]                         #{"agent" "group"}
    ["object" "actor"]                #{"agent" "group"}
    ["context" "instructor"]          #{"agent" "group"}
@@ -64,7 +62,42 @@
    "attachments"  #{"sub-statement"}
    "timestamp"    #{"sub-statement"}})
 
+(defn- prefix-path?
+  [prefix path]
+  (and (<= (count prefix) (count path))
+       (->> (map = prefix path) (every? true?))))
+
+(s/fdef spec-hinted-path
+  :args (s/cat :path ::path)
+  :ret (s/coll-of ::path))
+
+(defn spec-hinted-path
+  "Does `path` point to anywhere that can have multiple object types?
+   Includes actor, object, context instructors, authority, and their
+   SubStatement equivalents. Returns a coll of possible path prefixes"
+  [path]
+  (let [prefix-path* (fn [coll prefix]
+                       (cond-> coll (prefix-path? prefix path) (conj prefix)))]
+    (-> []
+        ;; SubStatement paths
+        (prefix-path* ["object" "actor"])
+        (prefix-path* ["object" "object"])
+        (prefix-path* ["object" "context" "instructor"])
+        ;; Statement paths
+        (prefix-path* ["actor"])
+        (prefix-path* ["object"])
+        (prefix-path* ["context" "instructor"])
+        (prefix-path* ["authority"]))))
+
+(s/fdef paths->spec-hints
+  :args (s/cat :initial-type-set
+               (s/? (s/coll-of object-type-strings :kind set?))
+               :prefix ::path
+               :paths (s/coll-of ::path)))
+
 (defn paths->spec-hints
+  "Derive the set of possible object types based off of all the `paths`,
+   starting with an optional `initial-type-set`."
   ([prefix paths]
    (paths->spec-hints (default-spec-hints prefix) prefix paths))
   ([initial-type-set prefix paths]
@@ -78,136 +111,8 @@
              paths))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def :spec-map.map-spec/keys
-  qualified-keyword?)
-
-(s/def :spec-map.map-spec/vals
-  qualified-keyword?)
-
-(s/def :spec-map/map-spec
-  (s/keys :req-un [:spec-map.map-spec/keys
-                   :spec-map.map-spec/vals]))
-
-(s/def ::spec-map
-  (s/map-of
-   qualified-keyword?
-   (s/or :ns string?
-         :keyword qualified-keyword?
-         :fn fn?
-         :vector vector?
-         :map :spec-map/map-spec)))
-
-(def spec-map
-  {::xs/statement                       "statement"
-
-   :statement/actor                    ::xs/actor
-   :statement/verb                     ::xs/verb
-   :statement/object                   (fn [{:strs [objectType]
-                                             :as   object}]
-                                         (case objectType
-                                           "StatementRef" ::xs/statement-ref
-                                           "SubStatement" ::xs/sub-statement
-                                           "Agent"        ::xs/agent
-                                           "Group"        ::xs/group
-                                           ::xs/activity))
-   :statement/result                   ::xs/result
-   :statement/context                  ::xs/context
-   :statement/authority                ::xs/actor
-   :statement/attachments              ::xs/attachments
-
-   ::xs/attachments                     [::xs/attachment]
-
-   ::xs/attachment                      "attachment"
-
-   :attachment/display                 ::xs/language-map
-   :attachment/description             ::xs/language-map
-   ::xs/actor                           (fn [{:strs [objectType]
-                                              :as   actor}]
-                                          (if (= "Group" objectType)
-                                            ::xs/group
-                                            ::xs/agent))
-
-   ::xs/agent                           "agent"
-
-   :agent/account                      ::xs/account
-
-   ::xs/group                           "group"
-
-   :group/account                      ::xs/account
-   :group/member                       [::xs/agent]
-
-   ::xs/account                         "account"
-
-   ::xs/verb                            "verb"
-   :verb/display                       ::xs/language-map
-
-   ::xs/statement-ref                   "statement-ref"
-
-   ::xs/sub-statement                   "sub-statement"
-
-   :sub-statement/actor                ::xs/actor
-   :sub-statement/verb                 ::xs/verb
-   :sub-statement/result               ::xs/result
-   :sub-statement/context              ::xs/context
-   :sub-statement/attachments          ::xs/attachments
-
-   :sub-statement/object               (fn [{:strs [objectType]
-                                             :as   object}]
-                                         (case objectType
-                                           "StatementRef" ::xs/statement-ref
-                                           "Agent"        ::xs/agent
-                                           "Group"        ::xs/group
-                                           ::xs/activity))
-
-   ::xs/activity                        "activity"
-
-   :activity/definition                "definition"
-
-   :definition/name                    ::xs/language-map
-   :definition/description             ::xs/language-map
-   :definition/choices                 ::xs/interaction-components
-   :definition/scale                   ::xs/interaction-components
-   :definition/source                  ::xs/interaction-components
-   :definition/target                  ::xs/interaction-components
-   :definition/steps                   ::xs/interaction-components
-   :definition/extensions              ::xs/extensions
-
-   :definition/correctResponsesPattern [string?]
-
-   ::xs/interaction-components          [::xs/interaction-component]
-
-   ::xs/interaction-component           "interaction-component"
-
-   :interaction-component/description  ::xs/language-map
-
-   ::xs/result                          "result"
-
-   :result/extensions                  ::xs/extensions
-
-   :result/score                       "score"
-
-   ::xs/context                         "context"
-
-   :context/instructor                 ::xs/actor
-   :context/team                       ::xs/group
-   :context/contextActivities          ::xs/context-activities
-   :context/statement                  ::xs/statement-ref
-   :context/extensions                 ::xs/extensions
-
-   ::xs/context-activities              "contextActivities"
-
-   :contextActivities/parent           ::xs/context-activities-array
-   :contextActivities/grouping         ::xs/context-activities-array
-   :contextActivities/category         ::xs/context-activities-array
-   :contextActivities/other            ::xs/context-activities-array
-
-   ::xs/context-activities-array        [::xs/activity]
-
-   ::xs/language-map                    {:keys ::xs/language-tag
-                                         :vals ::xs/language-map-text}
-   ::xs/extensions                      {:keys ::xs/iri
-                                         :vals ::json/any}})
+;; Path -> Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- validate-string-path-key [path-key]
   (when-not (string? path-key)
@@ -517,7 +422,16 @@
   (validate-spec-path-key ::xs/iri p)
   [(conj path p) ::json/any])
 
-(defn path->spec-3
+(s/fdef path->spec
+  :args (s/cat :spec (s/or :keyword s/get-spec :spec-obj s/spec?)
+               :path ::path
+               :hint-data (s/keys :req-un [::object-types
+                                           ::iri-map]))
+  :ret (s/or :keyword s/get-spec
+             :function fn?
+             :spec-obj s/spec?))
+
+(defn path->spec
   "Given a root `spec` and a `path` into it, return the spec for
    that path, or throw an exception if not possible.
    Accepts `hint-data` for polymorphic objectTypes and extensions."
@@ -554,85 +468,28 @@
                          :path prefix
                          :hint hint-data}))))))
 
-(defn path->spec
-  "Given a root spec and a path into it, return the spec for
-  that path or nil if it is not possible. Accepts hint data to dispatch
-  multi-specs and the like"
-  ([spec path]
-   (path->spec spec path nil))
-  ([spec path hint-data]
-   (if (empty? path)
-     (do
-       (assert (or (s/get-spec spec)
-                   (fn? spec)
-                   (s/spec? spec))
-               "Must return a valid, registered spec or a function or a spec literal")
-       spec)
-     (if-let [spec-entry (get spec-map spec)]
-       (let [p-key (first path)]
-         (cond
-           ;; direct ref to another spec, these should be traversed silently
-           (keyword? spec-entry)
-           (recur
-            spec-entry
-            path
-            hint-data)
-
-           ;; an ns name, which gets used to speculatively form a keyword
-           (string? spec-entry)
-           (let [spec-ns spec-entry]
-             (assert (string? p-key) "Path key for a map must be a string")
-             (recur
-              (keyword spec-ns p-key)
-              (rest path)
-              (get hint-data p-key)))
-
-           ;; A vector just specifies that there is a homogenous array
-           (vector? spec-entry)
-           (let [[element-spec] spec-entry]
-             (assert (number? p-key) "Path key for array must be a number")
-             (recur
-              element-spec
-              (rest path)
-              (get hint-data p-key)))
-
-           ;; inference by dispatch function, must have data present or it uses
-           ;; defaults
-           (fn? spec-entry)
-           (let [inferred-spec (spec-entry hint-data)]
-             (recur
-              inferred-spec
-              path
-              hint-data))
-           ;; arbitrary maps
-           (map? spec-entry)
-           (let [{keys-spec :keys
-                  vals-spec :vals} spec-entry]
-             (assert (string? p-key) "Path key for arbitrary map must be a string")
-             (if (s/valid? keys-spec p-key)
-               (if (= vals-spec ::json/any)
-                 ;; don't loop, any path under any-json is any-json
-                 ::json/any
-                 (recur
-                  vals-spec
-                  (rest path)
-                  (get hint-data p-key)))
-               (throw (ex-info "invalid key for string map"
-                               {:type ::invalid-arbitrary-key
-                                :key p-key
-                                :spec spec
-                                :keys-spec keys-spec}))))))
-       (throw (ex-info "No spec in map"
-                       {:type ::no-spec-in-map
-                        :spec spec}))))))
-
-(comment
-  (path->spec
-   ::xs/statement
-   ["object"]
-   {"object" {"objectType" "Activity"}}))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Path -> Valueset
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Technically these specs should be more specific than `any?` for entries
+;; but at this stage we don't really care.
+(s/def ::verbs (s/coll-of any? :kind set?))
+(s/def ::verb-ids (s/coll-of any? :kind set?))
+(s/def ::activities (s/coll-of any? :kind set?))
+(s/def ::activity-ids (s/coll-of any? :kind set?))
+(s/def ::activity-types (s/coll-of any? :kind set?))
+
+(s/fdef path->valueset
+  :args (s/cat :spec-hints (s/keys :req-un [::object-types
+                                            ::iri-map])
+               :valuesets (s/keys :req-un [::verbs
+                                           ::verb-ids
+                                           ::activities
+                                           ::activity-ids
+                                           ::activity-types])
+               :path ::path)
+  :ret (s/nilable set?))
 
 (defn path->valueset
   "Derive the appropriate set of values, taken from the profile cosmos, from

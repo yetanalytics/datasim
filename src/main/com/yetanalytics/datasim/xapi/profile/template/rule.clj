@@ -224,16 +224,15 @@
 
 (defn- rule-generator
   [spec-hints {:keys [path]}]
-  (let [spec (xp/path->spec-3 ::xs/statement path spec-hints)]
+  (let [spec (xp/path->spec ::xs/statement path spec-hints)]
     (try {:spec spec
           :generator (s/gen spec)}
          (catch Exception e
-           (throw
-            (ex-info (cond-> "Unable to create generator for spec"
-                       (keyword? spec) (str spec))
-                     {:type ::generator-failure
-                      :spec spec}
-                     e))))))
+           (throw (ex-info (cond-> "Unable to create generator for spec"
+                             (keyword? spec) (str spec))
+                           {:type ::generator-failure
+                            :spec spec}
+                           e))))))
 
 (defn add-rule-valuegen
   "If `parsed-rule` does not already have a `valueset`, then either
