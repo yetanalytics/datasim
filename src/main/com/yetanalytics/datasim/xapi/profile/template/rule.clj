@@ -131,21 +131,35 @@
              sel selector]
          (vec (concat loc sel)))))
 
+(defn- throw-empty-valueset
+  [valueset ?any ?all ?none] 
+  (if (empty? valueset)
+    (throw (ex-info "Intersection of all and any is empty"
+                    (cond-> {:type ::invalid-rule-values}
+                      ?any  (assoc :any ?any)
+                      ?all  (assoc :all ?all)
+                      :none (assoc :none ?none))))
+    valueset))
+
 (defn- rule-value-set
   ([?all ?none]
    (rule-value-set nil ?all ?none))
   ([?any ?all ?none]
    (cond
      (and ?any ?all ?none)
-     (cset/difference (cset/intersection ?any ?all) ?none)
+     (-> (cset/difference (cset/intersection ?any ?all) ?none)
+         (throw-empty-valueset ?any ?all ?none))
      (and ?any ?none)
-     (cset/difference ?any ?none)
+     (-> (cset/difference ?any ?none)
+         (throw-empty-valueset ?any nil ?none))
      (and ?all ?none)
-     (cset/difference ?all ?none)
+     (-> (cset/difference ?all ?none)
+         (throw-empty-valueset nil ?all ?none))
      (and ?any ?all)
-     (cset/intersection ?any ?all)
-     ?all   ?all
-     ?any   ?any
+     (-> (cset/intersection ?any ?all)
+         (throw-empty-valueset ?any ?all nil))
+     ?all  ?all
+     ?any  ?any
      :else nil)))
 
 (defn- parse-rule
@@ -198,7 +212,7 @@
                      (assoc-in rule [:location 0 idx] [loc-e])))
             :else
             (throw (ex-info "Rule location cannot mix integer and string keys."
-                            {:type ::invalid-rule
+                            {:type ::invalid-rule-location
                              :rule parsed-rule}))))
         (vec rules)))))
 
@@ -322,14 +336,6 @@
   [coll]
   (boolean (not-empty coll)))
 
-(defn- match-rule
-  "Return the matched values given by `location` and `selector`, or an empty
-   coll if no values can be matched."
-  [statement {:keys [location selector] :as _parsed-rule}]
-  (cond-> (path/get-values* statement location)
-    selector
-    (->> (mapcat #(path/get-values* % selector)) vec)))
-
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
                :parsed-rule ::parsed-rule)
@@ -342,9 +348,9 @@
    auto-passes, but otherwise we won't be able to apply rules in those
    cases, so we validate anyways (though we pass if no values are
    matchable)."
-  [statement {:keys [any all none presence] :as parsed-rule}]
+  [statement {:keys [location any all none presence] :as _parsed-rule}]
   (let [strict? (not= :recommended presence)
-        ?values (not-empty (match-rule statement parsed-rule))]
+        ?values (not-empty (path/get-values* statement location))]
     (and (case presence
            :included (some? ?values)
            :excluded (nil? ?values)

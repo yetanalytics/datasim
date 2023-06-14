@@ -1,13 +1,13 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule-test
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require [clojure.test :refer [deftest testing is]]
             [clojure.test.check.generators :as stest]
-            [clojure.java.io :as io]
-            [cheshire.core :as json]
+            [clojure.java.io    :as io]
+            [cheshire.core      :as json]
             [clojure.spec.alpha :as s]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.random :as random]
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.random      :as random]
             [com.yetanalytics.datasim.json.schema :as jschema]
-            [com.yetanalytics.datasim.xapi.path :as xp]
+            [com.yetanalytics.datasim.xapi.path   :as xp]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [clojure.lang ExceptionInfo]))
@@ -15,8 +15,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def gen-seed 100)
 
 (def short-statement
   {"id"        "59de1b06-bb6c-4708-a51a-b3d403c491db"
@@ -241,7 +239,65 @@
            (try (r/parse-rules
                  [{:location "$.actor.*"
                    :presence "excluded"}])
-                (catch Exception e (-> e ex-data :type)))))))
+                (catch ExceptionInfo e (-> e ex-data :type))))))
+  (testing "mixing integer and string keys"
+    (is (= ::r/invalid-rule-location
+           (try (r/parse-rules
+                 [{:location "$.actor[0,'name']"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::r/invalid-rule-location
+           (try (r/parse-rules
+                 [{:location "$.actor"
+                   :selector "$[0,'name']"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type))))))
+  (testing "non-existent verb property"
+    (is (= ::xp/unknown-path-spec
+           (try (r/parse-rules
+                 [{:location "$.verb.foo.bar.baz"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::xp/invalid-spec
+           (try (r/parse-rules
+                 [{:location "$.verb.zooWeeMama"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::xp/invalid-spec
+           (try (r/parse-rules
+                 [{:location "$.verb.name"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type))))))
+  (testing "non-existent object property"
+    (is (= ::r/invalid-object-types
+           (try (r/parse-rules
+                 [{:location "$.object.zooWeeMama"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::r/invalid-object-types
+           (try (r/parse-rules
+                 [{:location "$.object.authority"
+                   :presence "included"}])
+                (catch ExceptionInfo e (-> e ex-data :type))))))
+  (testing "empty valueset"
+    (is (= ::r/invalid-rule-values
+           (try (r/parse-rules
+                 [{:location "$.actor.name"
+                   :any      ["Alice Faux"]
+                   :all      ["Bob Fakename"]}])
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::r/invalid-rule-values
+           (try (r/parse-rules
+                 [{:location "$.actor.name"
+                   :any      ["Alice Faux"]
+                   :none     ["Alice Faux"]}]) 
+                (catch ExceptionInfo e (-> e ex-data :type)))))
+    (is (= ::r/invalid-rule-values
+           (try (r/parse-rules
+                 [{:location "$.actor.name"
+                   :all      ["Bob Fakename"]
+                   :none     ["Bob Fakename"]}])
+                (catch ExceptionInfo e (-> e ex-data :type)))))))
 
 (defmacro is-obj-types [object-types rules]
   `(is (= (merge xp/default-object-type-m ~object-types)
@@ -772,7 +828,6 @@
 
 (defn- apply-rules [statement rules]
   (let [parsed-rules (r/parse-rules rules)
-        object-types (r/rules->object-types parsed-rules)
         parsed-rules (map (partial r/add-rule-valuegen
                                    valuegen-iri-map
                                    valuegen-valuesets)
@@ -1249,69 +1304,6 @@
                         set)
           actuals  (repeatedly 30 apply-fn)]
       (is (every? #(#{expect-1 expect-2 expect-3} %) actuals)))))
-
-#_(deftest apply-rules-gen-exception-test
-  (testing "apply-rules-gen throws exceptions if rules are invalid"
-    ;; Flat-out invalid Statement property
-    (is (= ::r/undefined-path
-           (try (r/apply-rules-gen
-                 short-statement
-                 [{:location "$.object.zooWeeMama"
-                   :presence "included"}]
-                 :seed gen-seed)
-                nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))
-    ;; Actor name in an Activity object
-    (is (= ::r/undefined-path
-           (try (r/apply-rules-gen
-                 short-statement
-                 [{:location "$.object.name"
-                   :presence "included"}]
-                 :seed gen-seed)
-                nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))
-    ;; Activity definition in an Actor object
-    (is (= ::r/undefined-path
-           (try (r/apply-rules-gen
-                 short-statement
-                 [;; First replace the Activity object with an Actor object
-                  {:location "$.object"
-                   :all      [{"objectType" "Agent"
-                               "name"       "Owen Overrider"
-                               "mbox"       "mailto:owoverrider@example.com"}]}
-                  {:location "$.object.definition.type"
-                   :presence "included"}]
-                 :seed gen-seed)
-                nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))
-    ;; Rule value pool is empty
-    (is (= ::r/invalid-rule-values
-           (try (r/apply-rules-gen
-                 short-statement
-                 [{:location "$.actor.name"
-                   :any      ["Alice Faux"]
-                   :all      ["Bob Fakename"]}]
-                 :seed gen-seed)
-                nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))
-    (is (= ::r/invalid-rule-values
-           (try (r/apply-rules-gen
-                 short-statement
-                 [{:location "$.actor.name"
-                   :any      ["Alice Faux"]
-                   :none     ["Alice Faux"]}]
-                 :seed gen-seed)
-                nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))
-    (is (= ::r/invalid-rule-values
-           (try (r/apply-rules-gen
-                 short-statement
-                 [{:location "$.actor.name"
-                   :all      ["Bob Fakename"]
-                   :none     ["Bob Fakename"]}]
-                 :seed gen-seed)
-                nil
-                (catch ExceptionInfo e (-> e ex-data :type)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CMI5 Rule Tests
