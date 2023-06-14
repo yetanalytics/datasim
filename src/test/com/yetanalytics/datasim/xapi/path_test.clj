@@ -213,7 +213,8 @@
                                  ["actor" "id"]
                                  {["actor"] #{"sub-statement"}})
                 (catch Exception e (-> e ex-data :type)))))
-    ;; if we go one level up we don't care about bad object types
+    ;; If we go one level up we don't throw ::unsuppored-object-types ens
+    ;; TODO: Should these throw these exns instead?
     (is (= :statement/object
            (path/path->spec ::xs/statement
                             ["object"]

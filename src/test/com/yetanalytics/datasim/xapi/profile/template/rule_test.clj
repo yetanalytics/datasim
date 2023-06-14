@@ -570,7 +570,7 @@
     (is (= {:location     [[["object"]]]
             :presence     :included
             :path         ["object"]
-            :spec         :statement/object
+            :spec         :statement/object ; TODO: ::xs/activity instead?
             :object-types {["object"] #{"activity" "agent" "group"
                                         "sub-statement" "statement-ref"}}
             :valueset     #{{:id         "http://foo.org/activity"

@@ -172,6 +172,10 @@
 
 ;; Statement specs
 
+;; TODO: Should ["object"] return ::xs/activity, etc. instead of
+;; :statement/object? Likewise for ["actor"], ["context" "instructor"],
+;; and ["authority"].
+
 (defmethod path-spec ::xs/statement [_ path p _]
   (validate-string-path-key p)
   [(conj path p) (keyword "statement" p)])
@@ -276,6 +280,10 @@
   [(conj path p) (keyword "statement-ref" p)])
 
 ;; Sub Statement specs
+
+;; TODO: Should ["object" "object"] return ::xs/activity, etc. instead of
+;; :sub-statement/object? Likewise for ["object" "actor"] and
+;; ["object" "context" "instructor"].
 
 (defmethod path-spec ::xs/sub-statement [_ path p _]
   (validate-string-path-key p)
@@ -490,6 +498,10 @@
                :path ::path)
   :ret (s/nilable set?))
 
+;; TODO: We can change this to a spec->valueset function in a straightforward
+;; fashion; however, we cannot do so until we make the specs returned for
+;; ["object"] by `path->spec` be `::xs/activity` or the like, instead of
+;; `:statement/object` like it currently does.
 (defn path->valueset
   "Derive the appropriate set of values, taken from the profile cosmos, from
    `path`."
