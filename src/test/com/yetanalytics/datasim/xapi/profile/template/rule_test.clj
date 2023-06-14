@@ -7,6 +7,7 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.json.schema :as jschema]
+            [com.yetanalytics.datasim.xapi.path :as xp]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [clojure.lang ExceptionInfo]))
@@ -333,7 +334,7 @@
        :presence  "included"}])))
 
 (defmacro is-obj-types [object-types rules]
-  `(is (= ~object-types (r/rules->spec-hints (r/parse-rules ~rules)))))
+  `(is (= ~object-types (r/rules->object-types (r/parse-rules ~rules)))))
 
 (deftest spec-object-types-test
   (testing "Statement object based on objectType"
@@ -487,7 +488,7 @@
            (try (-> [{:location "$.object.objectType"
                       :any      ["BadType"]}]
                     r/parse-rules
-                    r/rules->spec-hints)
+                    r/rules->object-types)
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::r/invalid-object-types
            (try (-> [{:location "$.object.id"
@@ -495,7 +496,7 @@
                      {:location "$.object.objectType"
                       :any      ["Agent" "Group"]}]
                     r/parse-rules
-                    r/rules->spec-hints)
+                    r/rules->object-types)
                 (catch Exception e (-> e ex-data :type)))))
     (is (= ::r/invalid-object-types
            (try (-> [{:location "$.object.id"
@@ -503,7 +504,7 @@
                      {:location "$.object.name"
                       :presence "included"}]
                     r/parse-rules
-                    r/rules->spec-hints)
+                    r/rules->object-types)
                 (catch Exception e (-> e ex-data :type)))))))
 
 (def valuegen-iri-map
@@ -534,7 +535,7 @@
   {["object"] #{"activity"}
    ["actor"] #{"agent" "group"}})
 
-(def valuegen-object-types-2
+(def valuegen-sub-object-types
   {["object"] #{"sub-statement"}
    ["object" "object"] #{"activity"}
    ["actor"] #{"agent" "group"}
@@ -556,9 +557,9 @@
                        valuegen-valuesets
                        (first (r/parse-rules [rule]))))
 
-(defn- parse-rule-valuegen-2 [rule]
+(defn- parse-rule-sub-valuegen [rule]
   (r/add-rule-valuegen valuegen-iri-map
-                       valuegen-object-types-2
+                       valuegen-sub-object-types
                        valuegen-valuesets
                        (first (r/parse-rules [rule]))))
 
@@ -583,7 +584,7 @@
             :valueset #{"http://example.org/verb" "http://example.org/verb-2"}
             :any      #{"http://example.org/verb" "http://example.org/verb-2"}
             :path     ["object" "verb" "id"]}
-           (parse-rule-valuegen-2
+           (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :any      ["http://example.org/verb"
                         "http://example.org/verb-2"]}))))
@@ -638,7 +639,7 @@
             :path     ["object" "verb"]
             :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
             :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
-           (parse-rule-valuegen-2
+           (parse-rule-sub-valuegen
             {:location "$.object.verb"
              :presence "included"})))
     (is (= {:location [[["object"] ["verb"] ["id"]]]
@@ -646,7 +647,7 @@
             :path     ["object" "verb" "id"]
             :valueset #{"http://foo.org/verb"}
             :all      #{"http://foo.org/verb"}}
-           (parse-rule-valuegen-2
+           (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :presence "included"})))
     (is (= {:location [[["object"] ["object"]]]
@@ -658,7 +659,7 @@
             :all      #{{:id   "http://foo.org/activity"
                          :type "Activity"
                          :definition {:type "http://foo.org/activity-type"}}}}
-           (parse-rule-valuegen-2
+           (parse-rule-sub-valuegen
             {:location "$.object.object"
              :presence "included"})))
     (is (= {:location [[["object"] ["object"] ["id"]]]
@@ -666,7 +667,7 @@
             :path     ["object" "object" "id"]
             :valueset #{"http://foo.org/activity"}
             :all      #{"http://foo.org/activity"}}
-           (parse-rule-valuegen-2
+           (parse-rule-sub-valuegen
             {:location "$.object.object.id"
              :presence "included"})))
     (is (= {:location [[["object"] ["object"] ["definition"] ["type"]]]
@@ -674,11 +675,11 @@
             :path     ["object" "object" "definition" "type"]
             :valueset #{"http://foo.org/activity-type"}
             :all      #{"http://foo.org/activity-type"}}
-           (parse-rule-valuegen-2
+           (parse-rule-sub-valuegen
             {:location "$.object.object.definition.type"
              :presence "included"})
            (r/add-rule-valuegen valuegen-iri-map
-                                valuegen-object-types-2
+                                valuegen-sub-object-types
                                 valuegen-valuesets
                                 {:location [[["object"] ["object"] ["definition"] ["type"]]]
                                  :presence :included
@@ -688,7 +689,7 @@
            (:spec (parse-rule-valuegen {:location "$.result"
                                         :presence "included"}))))
     (is (= :sub-statement/result
-           (:spec (parse-rule-valuegen-2 {:location "$.object.result"
+           (:spec (parse-rule-sub-valuegen {:location "$.object.result"
                                           :presence "included"}))))
     (is (string?
          (stest/generate
@@ -696,7 +697,7 @@
                                             :presence "included"})))))
     (is (string?
          (stest/generate
-          (:generator (parse-rule-valuegen-2 {:location "$.object.actor.name"
+          (:generator (parse-rule-sub-valuegen {:location "$.object.actor.name"
                                               :presence "included"}))))))
   (testing "Add spec and generator (extensions)"
     (is (= ::jschema/string
@@ -727,59 +728,113 @@
                        {:location "$.result.extensions['http://foo.org/result-extension']"
                         :presence "included"})))))))
 
-(deftest example-rules-test
-  (let [rule-tuples (map (fn [{:keys [scopeNote] :as rule}]
-                           [scopeNote (r/parse-rule rule)])
-                         example-rules)]
-    (testing "Parse rule test:"
-      (doseq [[rule-name parsed-rule] rule-tuples]
-        (testing rule-name
-          (is (nil? (s/explain-data ::r/parsed-rule parsed-rule))))))
-    (testing "Follows rule test:"
-      (doseq [[rule-name parsed-rule] rule-tuples]
-        (testing rule-name
-          (is (r/follows-rule? long-statement parsed-rule)))))))
-
-(deftest not-follows-rule-test
-  (testing "Does not follow rules"
-    (are [statement rule]
-         (->> rule r/parse-rule (r/follows-rule? statement) not)
-      ;; No ID
-      (dissoc short-statement "id")
-      (get example-rules 0)
-      ;; Bad Verb ID
-      (assoc-in short-statement
-                ["verb" "id"]
-                "http://foo.org")
-      (get example-rules 2)
-      ;; Bad Verb ID 2
-      (assoc-in short-statement
-                ["verb" "id"]
-                "http://adlnet.gov/expapi/verbs/launched")
-      (get example-rules 6)
-      ;; Out-of-place grouping contextActivity
-      (assoc-in short-statement
-                ["context" "contextActivities" "grouping"]
-                [{"id" "https://w3id.org/xapi/tla/v0.13"}])
-      (get example-rules 8)))
-  (testing "Not following rules w/ recommended presence"
-    (are [statement rule]
-         (->> rule r/parse-rule (r/follows-rule? statement) not)
-      ;; Bad Verb ID - recommended presence
-      (assoc-in short-statement
-                ["verb" "id"]
-                "http://foo.org")
-      (get example-rules 14)
-      ;; Bad Actor Name - recommended presence
-      (assoc-in short-statement
-                ["actor" "member"]
-                [{"name" "Foo Bar" "mbox" "mailto:foo@example.com"}])
-      (get example-rules 15)
-      ;; Version Present - recommended presence
-      (assoc-in short-statement
-                ["version"]
-                "1.0.2")
-      (get example-rules 16))))
+(deftest follows-rule-test
+  (testing "Follows rules -"
+    (testing "statement has ID"
+      (is (->> [{:location  "$.id"
+                 :presence  "included"}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement))))
+    (testing "statement has specified verb IDs"
+      ;; long-statement has "attended" verb
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "included"
+                 :all       ["http://adlnet.gov/expapi/verbs/attended"
+                             "http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)))
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "included"
+                 :any       ["http://adlnet.gov/expapi/verbs/attended"
+                             "http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)))
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "included"
+                 :none      ["http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)))
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "included" ; only "attended" is left in valueset
+                 :all       ["http://adlnet.gov/expapi/verbs/attended"
+                             "http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/initialized"]
+                 :any       ["http://adlnet.gov/expapi/verbs/attended"
+                             "http://adlnet.gov/expapi/verbs/initialized"]
+                 :none      ["http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement))))
+    (testing "statement has specified verb IDs (recommended presence)"
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "recommended"
+                 :all       ["http://adlnet.gov/expapi/verbs/attended"
+                             "http://adlnet.gov/expapi/verbs/launched"
+                             "http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)))
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "recommended"
+                 :any       ["http://adlnet.gov/expapi/verbs/attended"
+                             "http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)))
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "recommended"
+                 :none      ["http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement))))
+    (testing "statement does not have grouping context activities"
+      (is (->> [{:location  "$.context.contextActivities.grouping.*"
+                 :presence  "excluded"}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement))))
+    (testing "statement does not have grouping context activities (recommended presence)"
+      (is (->> [{:location  "$.context.contextActivities.grouping.*"
+                 :presence  "recommended"}] ; ok w/o any, all, or none sets
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)))))
+  (testing "Does not follow rule -"
+    (testing "statement does not have ID"
+      (is (->> [{:location  "$.id"
+                 :presence  "included"}]
+               r/parse-rules
+               first
+               (r/follows-rule? (dissoc short-statement "id"))
+               not)))
+    (testing "statement has bad verb ID"
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "included"
+                 :any       ["http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)
+               not)))
+    (testing "statement has bad verb ID (recommended presence)"
+      (is (->> [{:location  "$.verb.id"
+                 :presence  "recommended" ; fails due to presence of all value
+                 :any       ["http://adlnet.gov/expapi/verbs/initialized"]}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)
+               not)))
+    (testing "statement has excluded property (category context activity)"
+      (is (->> [{:location "$.context.contextActivities.category.*"
+                 :presence "excluded"}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)
+               not)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Application Tests
@@ -787,15 +842,13 @@
 
 (defn- apply-rules [statement rules]
   (let [parsed-rules# (r/parse-rules rules)
-        object-types# (r/rules->spec-hints parsed-rules#)
+        object-types# (r/rules->object-types parsed-rules#)
         parsed-rules# (map (partial r/add-rule-valuegen
                                     valuegen-iri-map
                                     object-types#
                                     valuegen-valuesets)
                            parsed-rules#)]
-    (-> statement
-        (r/apply-inclusion-rules parsed-rules# (random/seed-rng 100))
-        (r/apply-exclusion-rules parsed-rules#))))
+    (r/apply-rules statement parsed-rules# (random/seed-rng 100))))
 
 (defmacro is-actor [expected & rules]
   `(is (= ~expected
@@ -1268,461 +1321,7 @@
           actuals  (repeatedly 30 apply-fn)]
       (is (every? #(#{expect-1 expect-2 expect-3} %) actuals)))))
 
-(defn- apply-rule-gen [statement rule]
-  (r/apply-rules-gen statement [rule] :seed gen-seed))
-
-;; Apply one rule at a time
-(deftest apply-rule-gen-test
-  ;; Actors
-  (testing "apply-rules-gen for Actors in short statement"
-    (are [new-actor rule]
-         (= new-actor
-            (-> (apply-rule-gen short-statement rule) (get "actor")))
-      ;; Replace actor
-      {"name" "Bob Fakename"
-       "mbox" "mailto:bob@example.org"}
-      {:location "$.actor"
-       :all      [{"name" "Bob Fakename"
-                   "mbox" "mailto:bob@example.org"}]}
-      ;; Replace actor type
-      {"name" "Alice Faux"
-       "mbox" "mailto:alice@example.org"
-       "objectType" "Group"}
-      {:location "$.actor.objectType"
-       :presence "included"
-       :all      ["Group"]}
-      ;; Replace actor name
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :all      ["Bob Fakename"]}
-      ;; Replace actor name via "any"
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :any      ["Bob Fakename"]}
-      ;; Replace actor name - not applied since name is already included
-      {"name" "Alice Faux"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :any      ["Alice Faux" "Bob Fakename"]}
-      ;; Replace actor name - not applied due to already matching
-      {"name" "Alice Faux"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :all      ["Alice Faux" "Bob Fakename"]}
-      ;; Remove actor name via "none"
-      {"name" "g0940tWy7k3GA49j871LLl4W0" ; randomly generated
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :none     ["Alice Faux" "Bob Fakename"]}
-      ;; Remove actor name via "excluded" ("any" values)
-      {"mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :presence "excluded"
-       :any     ["Alice Faux" "Bob Fakename"]}
-      ;; Remove actor name via "excluded" ("all" values)
-      {"mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :presence "excluded"
-       :none     ["Alice Faux" "Bob Fakename"]}
-      ;; Remove actor name via "excluded" ("none" values)
-      {"mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :presence "excluded"
-       :none     ["Alice Faux" "Bob Fakename"]}
-      ;; Remove actor name using both location and selector
-      {"mbox" "mailto:alice@example.org"}
-      {:location "$.actor"
-       :selector "$.name"
-       :presence "excluded"}
-      ;; Remove actor via "excluded"
-      nil
-      {:location "$.actor"
-       :presence "excluded"}
-      ;; Remove actor properties
-      nil
-      {:location "$.actor.*"
-       :presence "excluded"}
-      ;; Both `any` and `all` - former is superset of latter
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :any      ["Alice Faux" "Bob Fakename"]
-       :all      ["Bob Fakename"]}
-      ;; Both `any` and `all` - former is subset of latter
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :any      ["Bob Fakename"]
-       :all      ["Alice Faux" "Bob Fakename"]}
-      ;; Both `any` and `none`
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :any      ["Bob Fakename"]
-       :none     ["Alice Faux"]}
-      ;; Both `all` and `none`
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :all      ["Bob Fakename"]
-       :none     ["Alice Faux"]}
-      ;; Everything: `any`, `all`, and `none`
-      {"name" "Bob Fakename"
-       "mbox" "mailto:alice@example.org"}
-      {:location "$.actor.name"
-       :all      ["Alice Faux" "Bob Fakename" "Fred Ersatz"]
-       :any      ["Alice Faux" "Bob Fakename"]
-       :none     ["Alice Faux"]}))
-  ;; Verbs
-  (testing "apply-rules-gen for Verbs in short statement"
-    (are [new-verb rule]
-         (= new-verb
-            (-> (apply-rule-gen short-statement rule) (get "verb")))
-      ;; Replace verb ID using "any"
-      {"id" "https://adlnet.gov/expapi/verbs/launched"}
-      {:location "$.verb.id"
-       :presence "included"
-       :any      ["https://adlnet.gov/expapi/verbs/launched"
-                  "https://adlnet.gov/expapi/verbs/initialized"]}
-      ;; Replace verb ID using "all"
-      {"id" "https://adlnet.gov/expapi/verbs/launched"}
-      {:location "$.verb.id"
-       :presence "included"
-       :all      ["https://adlnet.gov/expapi/verbs/launched"]}
-      ;; Remove verb ID using "none"
-      {"id" "tnwjfgj://dtiwcirffy.mkkt.efbk/xeozmjldyx"} ; randomly generated
-      {:location "$.verb.id"
-       :presence "included"
-       :none     ["https://adlnet.gov/expapi/verbs/launched"]}
-      ;; Remove verb using "excluded"
-      nil
-      {:location "$.verb.id"
-       :presence "excluded"}
-      ;; Insert verb description ("any")
-      {"id" "https://adlnet.gov/expapi/verbs/launched"
-       "display" {"en-US" "Launched"}}
-      {:location "$.verb.display"
-       :any      [{"en-US" "Launched"}]}
-      ;; Insert verb description ("all")
-      {"id" "https://adlnet.gov/expapi/verbs/launched"
-       "display" {"en-US" "Launched"}}
-      {:location "$.verb.display.en-US"
-       :all      ["Launched"]}))
-  ;; Context Activities
-  (testing "apply-rules-gen for Context activities in long statement"
-    (are [activity-property new-context rule]
-         (= new-context
-            (-> (apply-rule-gen long-statement rule)
-                (get-in ["context" "contextActivities" activity-property])))
-      ;; Increment one single ID
-      "parent" [{"id" "http://www.example.com/meetings/series/268"
-                 "objectType" "Activity"}]
-      {:location "$.context.contextActivities.parent[0].id"
-       :all      ["http://www.example.com/meetings/series/268"]}
-      ;; Increment potentially multiple IDs using wildcard
-      ;; Values are randomly chosen
-      "parent" [{"id" "http://www.example.com/meetings/series/268"
-                 "objectType" "Activity"}]
-      {:location "$.context.contextActivities.parent[*].id"
-       :all      ["http://www.example.com/meetings/series/268"]}
-      ;; Replace ID
-      "category" [{"id" "tnwjfgj://dtiwcirffy.mkkt.efbk/xeozmjldyx" ; randomly generated
-                   "objectType" "Activity"
-                   "definition" {"name" {"en" "team meeting"}
-                                 "description" {"en" "A category of meeting used for regular team meetings."}
-                                 "type" "http://example.com/expapi/activities/meetingcategory"}}]
-      {:location "$.context.contextActivities.category[0].id"
-       :none     ["http://www.example.com/meetings/categories/teammeeting"]}
-      ;; Replace two different IDs
-      "other" [{"id" "http://www.example.com/meetings/occurances/bar"
-                "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/foo"
-                "objectType" "Activity"}]
-      {:location "$.context.contextActivities.other[0,1].id"
-       :all      ["http://www.example.com/meetings/occurances/foo"
-                  "http://www.example.com/meetings/occurances/bar"]}
-      ;; Replace and insert IDs using wildcard
-      ;; Values are randomly chosen
-      "other" [{"id" "http://www.example.com/meetings/occurances/qux"
-                "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/foo"
-                "objectType" "Activity"}
-               {"id" "http://www.example.com/meetings/occurances/baz"}]
-      {:location "$.context.contextActivities.other[*].id"
-       :all      ["http://www.example.com/meetings/occurances/foo"
-                  "http://www.example.com/meetings/occurances/bar"
-                  "http://www.example.com/meetings/occurances/baz"
-                  "http://www.example.com/meetings/occurances/qux"]}
-      ;; Replace and insert multiple activity types
-      ;; Activity types are selected randomly
-      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-3"}}
-               {"id" "http://www.example.com/meetings/occurances/3425567"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-2"}}
-               {"definition" {"type" "http://www.example.com/activity-type-2"}}
-               {"definition" {"type" "http://www.example.com/activity-type-2"}}
-               {"definition" {"type" "http://www.example.com/activity-type-3"}}]
-      {:location "$.context.contextActivities.other[0,1,2,3,4].definition.type"
-       :all      ["http://www.example.com/activity-type-1"
-                  "http://www.example.com/activity-type-2"
-                  "http://www.example.com/activity-type-3"]}
-      ;; Replace one ID with "any"
-      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
-                "objectType" "Activity"}
-               ;; selected via deteministed seeded rng
-               {"id" "http://www.example.com/meetings/occurances/bar"
-                "objectType" "Activity"}]
-      {:location "$.context.contextActivities.other[1].id"
-       :any      ["http://www.example.com/meetings/occurances/foo"
-                  "http://www.example.com/meetings/occurances/bar"]}
-      ;; Replace Activity definitions
-      "category" [{"id"         "http://www.example.com/meetings/categories/teammeeting"
-                   "objectType" "Activity"
-                   "definition" {"name"        {"en" "team meeting"}
-                                 "description" {"en" "foo"}
-                                 "type"        "http://example.com/expapi/activities/meetingcategory"}}
-                  {"definition" {"description" {"en" "foo"}}}]
-      {:location "$.context.contextActivities.category[0,1].definition.description"
-       :any      [{"en" "foo"}]}
-      ;; Try creating multiple IDs
-      ;; Collection is randomly shuffled
-      "grouping" [{"id" "http://www.example.com/id-3"}
-                  {"id" "http://www.example.com/id-1"}
-                  {"id" "http://www.example.com/id-2"}]
-      {:location "$.context.contextActivities.grouping[0,1,2].id"
-       :presence "included"
-       :all      ["http://www.example.com/id-1"
-                  "http://www.example.com/id-2"
-                  "http://www.example.com/id-3"]}
-      ;; Try creating multiple IDs, but only one ID is available
-      ;; IDs should be distinct, but since the profile says otherwise
-      "grouping" [{"id" "http://www.example.com/only-id"}
-                  {"id" "http://www.example.com/only-id"}
-                  {"id" "http://www.example.com/only-id"}]
-      {:location "$.context.contextActivities.grouping[0,1,2].id"
-       :presence "included"
-       :all      ["http://www.example.com/only-id"]}
-      ;; Same thing as above but skipping an entry
-      "grouping" [{"id" "http://www.example.com/only-id"}
-                  nil
-                  {"id" "http://www.example.com/only-id"}]
-      {:location "$.context.contextActivities.grouping[0,2].id"
-       :presence "included"
-       :all      ["http://www.example.com/only-id"]}
-      ;; Assoc an entry out of bounds
-      ;; (this was the error Cliff encountered when trying to craft a Profile)
-      "grouping" [nil {"definition" {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
-      {:location "$.context.contextActivities.grouping[1].definition.type"
-       :presence "included"
-       :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}
-      ;; Use both location and selector
-      ;; Activity types are chosen randomly
-      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-3"}}
-               {"id" "http://www.example.com/meetings/occurances/3425567"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-2"}}
-               {"definition" {"type" "http://www.example.com/activity-type-2"}}
-               {"definition" {"type" "http://www.example.com/activity-type-2"}}
-               {"definition" {"type" "http://www.example.com/activity-type-3"}}]
-      {:location "$.context.contextActivities.other[0,1,2,3,4]"
-       :selector "$.definition.type"
-       :all      ["http://www.example.com/activity-type-1"
-                  "http://www.example.com/activity-type-2"
-                  "http://www.example.com/activity-type-3"]}
-      ;; Use the pipe operator on location
-      ;; Activity types are chosen randomly
-      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-1"}}
-               {"id" "http://www.example.com/meetings/occurances/3425567"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-2"}}]
-      {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
-       :selector "$.definition.type"
-       :all      ["http://www.example.com/activity-type-1"
-                  "http://www.example.com/activity-type-2"
-                  "http://www.example.com/activity-type-3"]}
-      ;; Use the pipe operator on selector
-      ;; Activity types are chosen randomly
-      "other" [{"id" "http://www.example.com/meetings/occurances/34257"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-1"}}
-               {"id" "http://www.example.com/meetings/occurances/3425567"
-                "objectType" "Activity"
-                "definition" {"type" "http://www.example.com/activity-type-2"}}]
-      {:location "$.context.contextActivities"
-       :selector "$.other[0].definition.type | $.other[1].definition.type"
-       :all      ["http://www.example.com/activity-type-1"
-                  "http://www.example.com/activity-type-2"
-                  "http://www.example.com/activity-type-3"]})))
-
-;; Apply a collection of rules
-(deftest apply-rule-coll-gen-test
-  (testing "apply-rules-gen with multiple rules for Actors"
-    ;; Turn the Actor into a Group using repeated rule applications
-    (is (= {"name" "Alice Faux"
-            "mbox" "mailto:alice@example.org"
-            "objectType" "Group"
-            "member" [{"mbox" "mailto:milt@yetanalytics.com"
-                       "name" "milt"
-                       "objectType" "Agent"}]}
-           (-> short-statement
-               (r/apply-rules-gen
-                [{:location "$.actor.objectType"
-                  :presence "included"
-                  :all      ["Group"]}
-                 {:location "$.actor.member[0]"
-                  :presence "included"
-                  :all      [{"mbox"       "mailto:milt@yetanalytics.com"
-                              "name"       "milt"
-                              "objectType" "Agent"}]}]
-                :seed gen-seed)
-               (get "actor")))))
-  (testing "apply-rules-gen with multiple rules for Verbs"
-    ;; Add two lang map entires at once
-    (is (= {"id" "https://adlnet.gov/expapi/verbs/launched"
-            "display" {"en-US" "Launched"
-                       "zh-CN" "展开"}}
-           (-> short-statement
-               (r/apply-rules-gen
-                [{:location "$.verb.display.en-US"
-                  :all      ["Launched"]}
-                 {:location "$.verb.display.zh-CN"
-                  :all      ["展开"]}]
-                :seed gen-seed)
-               (get "verb"))))
-    ;; Add, then try to remove, lang map entries
-    (is (= {"id" "https://adlnet.gov/expapi/verbs/launched"
-            "display" {"en-US" "Launched"
-                       "zh-CN" "3csI6sZq6uxukVZ964BE5GDrqBoLJ7"}} ; randomly gen
-           (-> short-statement
-               (r/apply-rules-gen
-                [{:location "$.verb.display.en-US"
-                  :all      ["Launched"]}
-                 {:location "$.verb.display.zh-CN"
-                  :all      ["展开"]}
-                 {:location "$.verb.display.zh-CN"
-                  :none     ["展开"]}]
-                :seed gen-seed)
-               (get "verb")))))
-  ;; TODO: Right now only one value can be replaced in the following
-  ;; test cases since we are dealing with an `id` property and there is
-  ;; only one value in the `any` and `all` colls. We need to discuss if
-  ;; this behavior should be changed in Pathetic.
-  (testing "apply-rules-gen with multiple rules for Context Activities"
-    ;; two "any" rules
-    ;; FIXME: This is technically wrong, as two `any` rules at the same
-    ;; location would be valid (and in fact this result is wrong, since
-    ;; the intersection w/ the "foo" coll is empty).
-    (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/3425567"
-             "objectType" "Activity"}]
-           (-> long-statement
-               (r/apply-rules-gen
-                [{:location "$.context.contextActivities.other[*].id"
-                  :any ["http://www.example.com/meetings/occurances/foo"]}
-                 {:location "$.context.contextActivities.other[*].id"
-                  :any ["http://www.example.com/meetings/occurances/bar"]}]
-                :seed gen-seed)
-               (get-in ["context" "contextActivities" "other"]))))
-    ;; "all" followed by "any" - "any" overwrites "all"
-    (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/3425567"
-             "objectType" "Activity"}]
-           (-> long-statement
-               (r/apply-rules-gen
-                [{:location "$.context.contextActivities.other[*].id"
-                  :all ["http://www.example.com/meetings/occurances/foo"]}
-                 {:location "$.context.contextActivities.other[*].id"
-                  :any ["http://www.example.com/meetings/occurances/bar"]}]
-                :seed gen-seed)
-               (get-in ["context" "contextActivities" "other"]))))
-    ;; "any" followed by "all" - "all" overwrites "any"
-    (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/3425567"
-             "objectType" "Activity"}]
-           (-> long-statement
-               (r/apply-rules-gen
-                [{:location "$.context.contextActivities.other[*].id"
-                  :any ["http://www.example.com/meetings/occurances/foo"]}
-                 {:location "$.context.contextActivities.other[*].id"
-                  :all ["http://www.example.com/meetings/occurances/bar"]}]
-                :seed gen-seed)
-               (get-in ["context" "contextActivities" "other"]))))
-    ;; two "all" rules - second "all" overwrites first
-    (is (= [{"id" "http://www.example.com/meetings/occurances/bar"
-             "objectType" "Activity"}
-            {"id" "http://www.example.com/meetings/occurances/3425567"
-             "objectType" "Activity"}]
-           (-> long-statement
-               (r/apply-rules-gen
-                [{:location "$.context.contextActivities.other[*].id"
-                  :all ["http://www.example.com/meetings/occurances/foo"]}
-                 {:location "$.context.contextActivities.other[*].id"
-                  :all ["http://www.example.com/meetings/occurances/bar"]}]
-                :seed gen-seed)
-               (get-in ["context" "contextActivities" "other"]))))
-    ;; assoc the 1st entry in an array before the 0th entry
-    (is (= [{"definition" {"type" "https://xapinet.com/xapi/blooms/activities/objectives/procedural"}}
-            {"definition" {"type" "https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"}}]
-           (-> long-statement
-               (r/apply-rules-gen
-                [{:location "$.context.contextActivities.grouping[1].definition.type"
-                  :presence "included"
-                  :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}
-                 {:location "$.context.contextActivities.grouping[0].definition.type"
-                  :presence "included"
-                  :all      ["https://xapinet.com/xapi/blooms/activities/objectives/procedural"]}]
-                :seed gen-seed)
-               (get-in ["context" "contextActivities" "grouping"]))))))
-
-(deftest apply-rule-gen-distinct-test
-  (testing "apply-rules-gen uses all 3 distinct `all` values for 3 locations"
-   (let [rule     {:location "$.context.contextActivities.grouping[0,1,2].id"
-                   :presence "included"
-                   :all      ["http://www.example.com/id-1"
-                              "http://www.example.com/id-2"
-                              "http://www.example.com/id-3"]}
-         expected #{{"id" "http://www.example.com/id-1"}
-                    {"id" "http://www.example.com/id-2"}
-                    {"id" "http://www.example.com/id-3"}}
-         actuals  (repeatedly
-                   30
-                   #(-> long-statement
-                        (r/apply-rules-gen [rule] :seed gen-seed)
-                        (get-in ["context" "contextActivities" "grouping"])
-                        set))]
-     (is (every? #(= expected %) actuals))))
-  (testing "apply-rules-gen uses 2 of 3 distinct `all` values for 2 locations"
-    (let [rule     {:location "$.context.contextActivities.grouping[0,1].id"
-                    :presence "included"
-                    :all      ["http://www.example.com/id-1"
-                               "http://www.example.com/id-2"
-                               "http://www.example.com/id-3"]}
-          expect-1 #{{"id" "http://www.example.com/id-1"}
-                     {"id" "http://www.example.com/id-2"}}
-          expect-2 #{{"id" "http://www.example.com/id-1"}
-                     {"id" "http://www.example.com/id-3"}}
-          expect-3 #{{"id" "http://www.example.com/id-2"}
-                     {"id" "http://www.example.com/id-3"}}
-          actuals  (repeatedly
-                    30
-                    #(-> long-statement
-                         (r/apply-rules-gen [rule] :seed gen-seed)
-                         (get-in ["context" "contextActivities" "grouping"])
-                         set))]
-      (is (every? #(#{expect-1 expect-2 expect-3} %) actuals)))))
-
-(deftest apply-rules-gen-exception-test
+#_(deftest apply-rules-gen-exception-test
   (testing "apply-rules-gen throws exceptions if rules are invalid"
     ;; Flat-out invalid Statement property
     (is (= ::r/undefined-path
@@ -1789,37 +1388,59 @@
 ;; CMI5 Rule Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Macro to help us with testing a collection of templates
+
+(defn- parse-template [iri-map valuesets {:keys [rules]}]
+  (let [parsed-rules (r/parse-rules rules)
+        object-types (r/rules->object-types parsed-rules)
+        parsed-rules (map (fn [parsed-rule]
+                            (r/add-rule-valuegen iri-map
+                                                 object-types
+                                                 valuesets
+                                                 parsed-rule))
+                          parsed-rules)]
+    parsed-rules))
+
+(defmacro test-templates
+  [testname statement iri-map valuesets templates]
+  `(testing ~testname
+     ~@(map
+        (fn [{:keys [id] :as template}]
+          `(testing ~id
+             (let [rng#   (random/seed-rng 100)
+                   rules# (parse-template ~iri-map ~valuesets ~template)
+                   stmt#  (r/apply-rules ~statement rules# rng#)]
+               (is (every? #(s/valid? ::r/parsed-rule %) rules#))
+               (is (every? #(r/follows-rule? stmt# %) rules#))
+               (is (s/valid? ::xs/statement stmt#)))))
+        ;; need to eval compile-time var
+        (eval templates))))
+
 ;; We can pull some actual rules from cmi5
+
+(def cmi5-iri-map
+  (->> const/cmi5-profile
+       :concepts
+       (reduce (fn [m {:keys [id] :as x}] (assoc m id x)) {})))
+
+(def cmi5-valuesets
+  (let [concepts   (:concepts const/cmi5-profile)
+        verbs      (filter #(= "Verb" (:type %)) concepts)
+        activities (filter #(= "Activity" (:type %)) concepts)
+        act-types  (filter #(= "ActivityType" (:type %)) concepts)]
+    {:verbs          (set verbs)
+     :verb-ids       (set (map :id verbs))
+     :activities     (set activities)
+     :activity-ids   (set (map :id activities))
+     :activity-types (set (map :id act-types))}))
 
 (def cmi5-templates
   (:templates const/cmi5-profile))
-
-(def cmi5-template-rules
-  (mapcat :rules cmi5-templates))
 
 (def cmi5-statement ; simple statement used for cmi5 tests
   (with-open [r (io/reader const/simple-statement-filepath)]
     (json/parse-stream r)))
 
 (deftest cmi5-rule-tests
-  ;; Individual Rule Parsing
-  (testing "parse cmi5 rules"
-    (is (every?
-         (comp nil? (partial s/explain-data ::r/parsed-rule))
-         (map r/parse-rule cmi5-template-rules))))
-  ;; Individual Rule Application
-  (testing "apply cmi5 Rule:"
-    (doseq [{:keys [rules]} cmi5-templates
-            rule rules]
-      (testing (format "Rule: %s" rule)
-        (let [processed (r/apply-rules-gen cmi5-statement [rule] :seed gen-seed)]
-          (is (r/follows-rule? processed (r/parse-rule rule)))
-          (is (nil? (s/explain-data ::xs/statement processed)))))))
-  ;; Collected Rules Application
-  (testing "apply cmi5 Template:"
-    (doseq [{:keys [id rules]} cmi5-templates]
-      (testing (format "Template: %s" id)
-        (let [processed (r/apply-rules-gen cmi5-statement rules :seed gen-seed)]
-          (is (every? (partial r/follows-rule? processed)
-                      (map r/parse-rule rules)))
-          (is (nil? (s/explain-data ::xs/statement processed))))))))
+  (test-templates
+   "cmi5 template" cmi5-statement cmi5-iri-map cmi5-valuesets cmi5-templates))

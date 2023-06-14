@@ -6,6 +6,9 @@
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]))
 
+(s/def ::path
+  (s/coll-of (s/or :key string? :index #{(symbol "*")}) :kind vector?))
+
 (defn prefix-path?
   [prefix path]
   (and (<= (count prefix) (count path))

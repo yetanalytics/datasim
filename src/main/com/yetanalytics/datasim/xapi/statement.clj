@@ -166,7 +166,7 @@
     profile-id           :inScheme
     rules                :rules}]
   (let [parsed-rules   (rule/parse-rules rules)
-        spec-hints     (cond-> (rule/rules->spec-hints parsed-rules)
+        spec-hints     (cond-> (rule/rules->object-types parsed-rules)
                          object-activity-type
                          (update ["object"] cset/intersection #{"activity"})
                          object-statement-ref
