@@ -7,6 +7,7 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.input] ; for input spec
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.path :as xp]
@@ -17,40 +18,78 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; The duration, in milliseconds, of the returned statement
-;; This is so we can resume processing AFTER the statement timestamp + duration
-(s/def ::end-ms
-  pos-int?)
+;; Inputs
 
-(s/def ::timestamp-ms
-  pos-int?)
+;; Input for the whole simulation.
+(s/def ::input :com.yetanalytics.datasim/input)
+
+;; Flat map of profile iris to objects
+(s/def ::iri-map ::profile/iri-map)
+
+;; All the activities we can use, by activity type:
+;; a map of activity type IRIs to activity IRIs to activities
+(s/def ::activities
+  (s/map-of ::xs/iri
+            (s/map-of ::xs/iri
+                      ::xs/activity)))
+
+;; The actor for the statement (may have to stringify keys?)
+(s/def ::actor ::xs/actor)
+
+;; The alignment, a map of IRI to a map of `:weights` from -1.0 to 1.0 and
+;; a nilable `:object-override` object.
+(s/def ::alignment ::alignments/alignment)
+
+;; The statement template to generate from
+(s/def ::template ::template/template)
+
+;; Antecedent patterns to the current template, and whether or not they're primary.
+;; TODO: replace `map?` with a real spec
+(s/def ::pattern-ancestors
+  (s/every map?))
+
+;; Simulation time, in ms since epoch.
+(s/def ::sim-t pos-int?)
+
+;; A seed to generate with. Note that if you're calling more seeded
+;; generators, you'll need to make a seed from this one for each.
+(s/def ::seed ::random/seed)
+
+;; A registration UUID string.
+(s/def ::registration
+  ::xs/uuid)
+
+;; TODO: subregistration from :pattern-ancestors logic
+;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
+;;    -> subregistration extension key
+;;    -> only necessary when a primary pattern contains another primary pattern
+(s/def ::sub-registration
+  any?) ; TODO: replace `any?` with real spec
+
+(s/def ::inputs
+  (s/keys :req-un [::input
+                   ::iri-map
+                   ::activities
+                   ::actor
+                   ::alignment
+                   ::template
+                   ::pattern-ancestors
+                   ::sim-t
+                   ::seed
+                   ::registration]
+          :opt-un [::sub-registration]))
+
+;; Metadata
+
+;; The duration, in milliseconds, of the returned statement.
+;; This is so we can resume processing AFTER the statement timestamp + duration.
+(s/def ::end-ms pos-int?)
+
+(s/def ::timestamp-ms pos-int?)
 
 (s/def ::meta
   (s/keys :req-un [::timestamp-ms
                    ::end-ms]))
-
-(s/def ::alignment
-  ::alignments/alignment)
-
-(s/def ::sim-t pos-int?)
-
-#_(s/def ::seed int?)
-
-(s/def ::registration
-  ::xs/uuid)
-
-(s/def ::sub-registration
-  ::xs/uuid)
-
-;; TODO: this is a stub for the real ones
-(s/def ::pattern-ancestors
-  (s/every map?))
-
-;; a stub for a map of activities by IRI
-(s/def ::activities
-  (s/map-of ::xs/iri ;; activity type
-            (s/map-of ::xs/iri
-                      ::xs/activity)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
@@ -579,42 +618,10 @@
    :template     template})
 
 (s/fdef generate-statement
-  :args
-  (s/cat
-   :args-map
-   (s/keys
-    :req-un [;; input for the whole simulation
-             :com.yetanalytics.datasim/input
-             ;; flat map of profile iris to objects
-             ::profile/iri-map
-             ;; all the activities we can use, by activity type
-             ::activities
-             ;; the actor for the statement
-             ;; (may have to stringify keys?)
-             ::xs/actor
-             ;; their alignment, a map of IRI to -1.0->1.0
-             ::alignment
-             ;; a statement template to generate from
-             ::template/template
-             ;; antecedent patterns to the current template, and whether or not
-             ;; they are primary
-             ::pattern-ancestors
-             ;; Simulation time, in ms since epoch
-             ::sim-t
-             ;; A seed to generate with. Note that if you're calling more seeded
-             ;; generators, you'll need to make a seed from this one for each.
-             ::random/seed
-             ;; A registration UUID string
-             ::registration]
-    :opt-un [::sub-registration]))
+  :args (s/cat :args-map ::inputs)
   :ret (s/and ::xs/statement
               (s/conformer meta)
               ::meta))
-
-;; TODO: subregistration from :pattern-ancestors logic
-;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
-;;    -> subregistration extension key
-;;    -> only necessary when a primary pattern contains another primary pattern
 
 (defn generate-statement
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
