@@ -169,44 +169,51 @@
 ;; Rule Valuegen
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- rules->prefix-rule-m
+  "Construct a map from path prefixes to rules."
+  [parsed-rules]
+  (->> parsed-rules
+       (filter ; no excluded rules in the coll
+        (fn [{:keys [presence]}]
+          (not= :excluded presence)))
+       (reduce ; group rules by specific path prefixes (e.g. ["object"])
+        (fn [m* {:keys [path] :as parsed-rule}]
+          (reduce (fn [m** prefix]
+                    (update m** prefix (fnil conj []) parsed-rule))
+                  m*
+                  (xp/spec-hinted-path path)))
+        {})))
+
+(defn- rule-object-types
+  "Return the valueset at the `prefix + \"objectType\"` path."
+  [prefix parsed-rules]
+  (let [object-type-path (conj prefix "objectType")]
+    (some (fn [{:keys [path valueset]}]
+            (when (= object-type-path path)
+              (->> valueset
+                   (map xp/object-type-kebab-case)
+                   set
+                   not-empty)))
+          parsed-rules)))
+
 (defn rules->object-types
   "Derive object types from `parsed-rules` and return a map from paths
    to the set of possible object types at that location (e.g. one
    possible key-value pair is `[\"actor\"] #{\"agent\" \"group\"}`)."
   [parsed-rules]
-  (let [prefix-rule-m
-        (->> parsed-rules
-             (filter
-              (fn [{:keys [presence]}]
-                (not= :excluded presence)))
-             (reduce
-              (fn [m* {:keys [path] :as parsed-rule}]
-                (reduce (fn [m** prefix]
-                          (update m** prefix (fnil conj []) parsed-rule))
-                        m*
-                        (xp/spec-hinted-path path)))
-              {}))]
+  (let [prefix-rule-m (rules->prefix-rule-m parsed-rules)]
     (reduce-kv
      (fn [m prefix rules]
-       (let [object-type-path
-             (conj prefix "objectType")
-             ?object-types
-             (some (fn [{:keys [path valueset]}]
-                     (when (= object-type-path path)
-                       (->> valueset
-                            (map xp/object-type-kebab-case)
-                            set
-                            not-empty)))
-                   rules)
-             paths
-             (map :path rules)
-             init-types
-             (or ?object-types
-                 (xp/default-spec-hints prefix))
-             all-types
-             (xp/paths->spec-hints init-types prefix paths)]
-         (if (not-empty all-types)
-           (assoc m prefix all-types)
+       (let [?object-types (rule-object-types prefix parsed-rules)
+             rule-paths    (map :path rules)
+             object-types  (if ?object-types
+                             (xp/paths->spec-hints ?object-types
+                                                   prefix
+                                                   rule-paths)
+                             (xp/paths->spec-hints prefix
+                                                   rule-paths)) ]
+         (if (not-empty object-types)
+           (assoc m prefix object-types)
            (throw (ex-info (format "Contradiction on path: $.%s"
                                    (cstr/join "." prefix))
                            {:type  ::invalid-object-types

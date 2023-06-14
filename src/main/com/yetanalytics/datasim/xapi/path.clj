@@ -65,15 +65,17 @@
    "timestamp"    #{"sub-statement"}})
 
 (defn paths->spec-hints
-  [initial-type-set prefix paths]
-  (let [prop-idx (count prefix)]
-    (reduce (fn [acc path]
-              (let [prop-set (->> prop-idx
-                                  (get path)
-                                  (get spec-hint-properties))]
-                (cset/intersection acc prop-set)))
-            initial-type-set
-            paths)))
+  ([prefix paths]
+   (paths->spec-hints (default-spec-hints prefix) prefix paths))
+  ([initial-type-set prefix paths]
+   (let [prop-idx (count prefix)]
+     (reduce (fn [acc path]
+               (let [prop-set (->> prop-idx
+                                   (get path)
+                                   (get spec-hint-properties))]
+                 (cset/intersection acc prop-set)))
+             initial-type-set
+             paths))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
