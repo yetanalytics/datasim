@@ -12,6 +12,10 @@
             [clojure.zip :as z])
   (:import [java.util Random]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/def ::_profile-id ::profile/id)
 
 (s/def ::iri-map
@@ -21,6 +25,10 @@
             (s/or :concept ::concept/concept
                   :pattern ::pattern/pattern
                   :template ::template/template)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profile -> IRI Map
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef profiles->map
   :args (s/cat :profiles (s/every ::profile/profile))
@@ -39,6 +47,10 @@
                      ::_profile-id
                      profile-id)])))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Registration Sequence
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn loc-iri-map
   "Given a zipper loc, get the map of profile subobjects by IRI"
   [loc]
@@ -48,10 +60,6 @@
   "Given a zipper loc, look up the object from the IRI"
   [loc]
   (get (loc-iri-map loc) (z/node loc)))
-
-(defn root-node?
-  [node-iri]
-  (= ::root node-iri))
 
 (defn pattern-zip
   "Given one or more profiles, create a zipper that traverses the patterns and
@@ -204,6 +212,10 @@
        (registration-seq
         root-loc
         rng))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Primary Pattern Selection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef select-primary-patterns
   :args (s/cat :iri-map ::iri-map
