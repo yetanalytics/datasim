@@ -2,6 +2,7 @@
   "Understanding elements of xAPI profiles
   Generate Profile walks"
   (:require [clojure.spec.alpha :as s]
+            [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.random :as random]
@@ -39,6 +40,16 @@
 
 (s/def ::type-iri-map
   (s/map-of profile-types (s/map-of iri/iri-spec profile-object-spec)))
+
+;; TODO: Consolidate these specs with those in `xapi.statement`
+(s/def ::seed int?)
+(s/def ::pattern-ancestors (s/every ::pattern/pattern))
+
+(s/def ::registration-map
+  (s/keys :req-un [::template/template
+                   ::xs/registration
+                   ::seed
+                   ::pattern-ancestors]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile -> IRI Map
@@ -312,6 +323,12 @@
       (->> pattern-zip walk-once (keep loc->reg-map))
       ;; Continue with a different registration
       (registration-seq-2* type-iri-map pattern-zip rng)))))
+
+(s/fdef registration-seq-2
+  :args (s/cat :type-iri-map ::type-iri-map
+               :alignment map? ; TODO: Better spec
+               :seed number?)
+  :ret (s/every ::registration-map :kind #(instance? clojure.lang.LazySeq %)))
 
 ;; TODO: Configurable keep-max arg
 (defn registration-seq-2

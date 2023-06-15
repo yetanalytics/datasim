@@ -179,10 +179,10 @@
   :ret cmi5-general-pattern?)
 
 (defn gen-single-walk [seed]
-  (let [{:keys [profiles alignments]} const/simple-input
+  (let [{:keys [profiles]} const/simple-input
         profile-map (profile/profiles->type-iri-map profiles)
         seeded-rng  (random/seed-rng seed)]
-    (->> (profile/rand-pattern-zip-2 profile-map alignments seeded-rng)
+    (->> (profile/rand-pattern-zip-2 profile-map {} seeded-rng)
          profile/walk-once
          (keep (fn [loc]
                  (get-in profile-map ["StatementTemplate" (z/node loc)]))))))
@@ -193,9 +193,13 @@
           (stest/summarize-results (stest/check `gen-single-walk))]
       (is (= total check-passed)))))
 
-(comment
-  (time
-   (dotimes [_ 300] (gen-single-walk 10))))
+(deftest registration-seq-test
+  (testing "registration-seq"
+    (let [{:keys [profiles]} const/simple-input
+          profile-map (profile/profiles->type-iri-map profiles)]
+      (->> (profile/registration-seq-2 profile-map {} 100)
+           (take 30)
+           (every? #(s/valid? ::profile/registration-map %))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cmi5 + tla profiles tests

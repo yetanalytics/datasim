@@ -20,6 +20,8 @@
 
 ;; Inputs
 
+;; TODO: Consolidate some of these specs with those in `xapi.profile`
+
 ;; Input for the whole simulation.
 (s/def ::input :com.yetanalytics.datasim/input)
 
