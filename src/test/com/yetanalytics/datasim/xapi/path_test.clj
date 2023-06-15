@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.xapi.path-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
             [cheshire.core :as json]
@@ -265,151 +265,46 @@
            (path/path->spec
             :statement/context
             ["extensions" "http://foo.org/extension"]
-            {})))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Path to Valueset Tests
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def valuesets
-  {:verbs          #{{:id   "http://foo.org/verb"
-                      :type "Verb"}}
-   :verb-ids       "http://foo.org/verb"
-   :activities     #{{:id         "http://foo.org/activity"
-                      :definition {:type "http://foo.org/activity-type"}}}
-   :activity-ids   #{"http://foo.org/activity"}
-   :activity-types #{"http://foo.org/activity-type"}})
-
-(defn- path->valueset [p]
-  (path/path->valueset {["object"] #{"activity"}}
-                       valuesets
-                       p))
-
-(defn- path->valueset-sub [p]
-  (path/path->valueset {["object"] #{"sub-statement"}
-                        ["object" "object"] #{"activity"}}
-                       valuesets
-                       p))
-
-(deftest valueset-test
-  (testing "statement valueset"
-    (is (= (:verbs valuesets)
-           (path->valueset
-            ["verb"])))
-    (is (= (:verb-ids valuesets)
-           (path->valueset
-            ["verb" "id"])))
-    (is (= (:activities valuesets)
-           (path->valueset
-            ["object"])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset
-            ["object" "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset
-            ["object" "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset
-            ["context" "contextActivities" "category" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset
-            ["context" "contextActivities" "category" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset
-            ["context" "contextActivities" "category" '* "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset
-            ["context" "contextActivities" "grouping" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset
-            ["context" "contextActivities" "grouping" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset
-            ["context" "contextActivities" "grouping" '* "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset
-            ["context" "contextActivities" "parent" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset
-            ["context" "contextActivities" "parent" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset
-            ["context" "contextActivities" "parent" '* "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset
-            ["context" "contextActivities" "other" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset
-            ["context" "contextActivities" "other" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset
-            ["context" "contextActivities" "other" '* "definition" "type"])))
-    ;; These paths do not return valuesets
-    (is (nil? (path->valueset ["actor"])))
-    (is (nil? (path->valueset ["context" "contextActivities" "category"])))
-    (is (nil? (path->valueset ["context" "contextActivities" "grouping"])))
-    (is (nil? (path->valueset ["context" "contextActivities" "parent"])))
-    (is (nil? (path->valueset ["context" "contextActivities" "other"]))))
-  (testing "sub-statement valueset"
-    (is (= (:verbs valuesets)
-           (path->valueset-sub
-            ["object" "verb"])))
-    (is (= (:verb-ids valuesets)
-           (path->valueset-sub
-            ["object" "verb" "id"])))
-    (is (= (:activities valuesets)
-           (path->valueset-sub
-            ["object" "object"])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset-sub
-            ["object" "object" "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset-sub
-            ["object" "object" "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "category" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "category" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "category" '* "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "grouping" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "grouping" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "grouping" '* "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "parent" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "parent" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "parent" '* "definition" "type"])))
-    (is (= (:activities valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "other" '*])))
-    (is (= (:activity-ids valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "other" '* "id"])))
-    (is (= (:activity-types valuesets)
-           (path->valueset-sub
-            ["object" "context" "contextActivities" "other" '* "definition" "type"])))
-    ;; These paths do not return valuesets
-    (is (nil? (path->valueset-sub
-               ["object" "actor"])))
-    (is (nil? (path->valueset-sub
-               ["object" "context" "contextActivities" "category"])))
-    (is (nil? (path->valueset-sub
-               ["object" "context" "contextActivities" "grouping"])))
-    (is (nil? (path->valueset-sub
-               ["object" "context" "contextActivities" "parent"])))
-    (is (nil? (path->valueset-sub
-               ["object" "context" "contextActivities" "other"])))))
+            {}))))
+  (testing "are correct for paths that have valuesets"
+    (are [spec path] (path/path->spec ::xs/statement
+                                      path
+                                      {["object"] #{"activity"}})
+      ::xs/verb        ["verb"]
+      :verb/id         ["verb" "id"]
+      ::xs/activity    ["object"]
+      ::xs/activity    ["context" "contextActivities" "category" '*]
+      ::xs/activity    ["context" "contextActivities" "grouping" '*]
+      ::xs/activity    ["context" "contextActivities" "parent" '*]
+      ::xs/activity    ["context" "contextActivities" "other" '*]
+      :activity/id     ["object" "id"]
+      :activity/id     ["context" "contextActivities" "category" '* "id"]
+      :activity/id     ["context" "contextActivities" "grouping" '* "id"]
+      :activity/id     ["context" "contextActivities" "parent" '* "id"]
+      :activity/id     ["context" "contextActivities" "other" '* "id"]
+      :definition/type ["object" "definition" "type"]
+      :definition/type ["context" "contextActivities" "category" '* "definition" "type"]
+      :definition/type ["context" "contextActivities" "grouping" '* "definition" "type"]
+      :definition/type ["context" "contextActivities" "parent" '* "definition" "type"]
+      :definition/type ["context" "contextActivities" "other" '* "definition" "type"])
+    (are [spec path] (path/path->spec ::xs/statement
+                                      path
+                                      {["object"] #{"sub-statement"}
+                                       ["object" "object"] #{"activity"}})
+      ::xs/verb        ["object" "verb"]
+      :verb/id         ["object" "verb" "id"]
+      ::xs/activity    ["object" "object"]
+      ::xs/activity    ["object" "context" "contextActivities" "category" '*]
+      ::xs/activity    ["object" "context" "contextActivities" "grouping" '*]
+      ::xs/activity    ["object" "context" "contextActivities" "parent" '*]
+      ::xs/activity    ["object" "context" "contextActivities" "other" '*]
+      :activity/id     ["object" "object" "id"]
+      :activity/id     ["object" "context" "contextActivities" "category" '* "id"]
+      :activity/id     ["object" "context" "contextActivities" "grouping" '* "id"]
+      :activity/id     ["object" "context" "contextActivities" "parent" '* "id"]
+      :activity/id     ["object" "context" "contextActivities" "other" '* "id"]
+      :definition/type ["object" "object" "definition" "type"]
+      :definition/type ["object" "context" "contextActivities" "category" '* "definition" "type"]
+      :definition/type ["object" "context" "contextActivities" "grouping" '* "definition" "type"]
+      :definition/type ["object" "context" "contextActivities" "parent" '* "definition" "type"]
+      :definition/type ["object" "context" "contextActivities" "other" '* "definition" "type"])))

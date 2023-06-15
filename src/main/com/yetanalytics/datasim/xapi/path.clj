@@ -8,9 +8,6 @@
 (s/def ::path
   (s/coll-of (s/or :key string? :index #{(symbol "*")}) :kind vector?))
 
-(s/def ::iri-map
-  (s/map-of string? any?))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path -> Object Types
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,7 +64,7 @@
    "attachments"  #{"sub-statement"}
    "timestamp"    #{"sub-statement"}})
 
-(defn prefix-path?
+(defn- prefix-path?
   "Is `prefix` a prefix of the `path` vector?"
   [prefix path]
   (and (<= (count prefix) (count path))
@@ -188,10 +185,6 @@
 (defmethod path-spec :default [_ _ _ _] nil)
 
 ;; Statement specs
-
-;; TODO: Should ["object"] return ::xs/activity, etc. instead of
-;; :statement/object? Likewise for ["actor"], ["context" "instructor"],
-;; and ["authority"].
 
 (defmethod path-spec ::xs/statement [_ path p _]
   (advance-object-spec "statement" path p))
@@ -324,10 +317,6 @@
   (advance-object-spec "statement-ref" path p))
 
 ;; Sub Statement specs
-
-;; TODO: Should ["object" "object"] return ::xs/activity, etc. instead of
-;; :sub-statement/object? Likewise for ["object" "actor"] and
-;; ["object" "context" "instructor"].
 
 (defmethod path-spec ::xs/sub-statement [_ path p _]
   (advance-object-spec "sub-statement" path p))
@@ -513,85 +502,3 @@
                  :path         path
                  :object-types object-types}))
         :else spec))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Path -> Valueset
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Technically these specs should be more specific than `any?` for entries
-;; but at this stage we don't really care.
-(s/def ::verbs (s/coll-of any? :kind set?))
-(s/def ::verb-ids (s/coll-of any? :kind set?))
-(s/def ::activities (s/coll-of any? :kind set?))
-(s/def ::activity-ids (s/coll-of any? :kind set?))
-(s/def ::activity-types (s/coll-of any? :kind set?))
-
-(s/fdef path->valueset
-  :args (s/cat :spec-hints (s/keys :req-un [::object-types
-                                            ::iri-map])
-               :valuesets (s/keys :req-un [::verbs
-                                           ::verb-ids
-                                           ::activities
-                                           ::activity-ids
-                                           ::activity-types])
-               :path ::path)
-  :ret (s/nilable set?))
-
-;; TODO: We can change this to a spec->valueset function in a straightforward
-;; fashion; however, we cannot do so until we make the specs returned for
-;; ["object"] by `path->spec` be `::xs/activity` or the like, instead of
-;; `:statement/object` like it currently does.
-(defn path->valueset
-  "Derive the appropriate set of values, taken from the profile cosmos, from
-   `path`."
-  [object-types
-   {:keys [verbs verb-ids activities activity-ids activity-types]}
-   path]
-  (let [;; If `path` points to a SubStatement property, lop off the prefix
-        path*    (cond-> path
-                   (and (#{"object"} (get path 0))
-                        (#{"verb" "object" "context"} (get path 1)))
-                   (subvec 1))
-        activity? (fn [path] ((get object-types path #{}) "activity"))
-        drop-one  (fn [path] (if (< 1 (count path)) (-> path pop) []))
-        drop-two  (fn [path] (if (< 2 (count path)) (-> path pop pop) []))]
-    (case path*
-      ;; Verbs
-      ["verb"]
-      verbs
-      ["verb" "id"]
-      verb-ids
-      ;; Object Activities
-      ["object"]
-      (when (activity? path) activities)
-      ["object" "id"]
-      (when (activity? (drop-one path)) activity-ids)
-      ["object" "definition" "type"]
-      (when (activity? (drop-two path)) activity-types)
-      ;; Context Activities
-      ["context" "contextActivities" "category" *]
-      activities
-      ["context" "contextActivities" "grouping" *]
-      activities
-      ["context" "contextActivities" "parent" *]
-      activities
-      ["context" "contextActivities" "other" *]
-      activities
-      ["context" "contextActivities" "category" * "id"]
-      activity-ids
-      ["context" "contextActivities" "grouping" * "id"]
-      activity-ids
-      ["context" "contextActivities" "parent" * "id"]
-      activity-ids
-      ["context" "contextActivities" "other" * "id"]
-      activity-ids
-      ["context" "contextActivities" "category" * "definition" "type"]
-      activity-types
-      ["context" "contextActivities" "grouping" * "definition" "type"]
-      activity-types
-      ["context" "contextActivities" "parent" * "definition" "type"]
-      activity-types
-      ["context" "contextActivities" "other" * "definition" "type"]
-      activity-types
-      ;; Otherwise none
-      nil)))

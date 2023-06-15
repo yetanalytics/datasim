@@ -37,9 +37,6 @@
 (s/def ::valueset
   (s/every ::j/any :kind set? :into #{} :min-count 1))
 
-(s/def ::object-types
-  ::xp/object-types)
-
 (s/def ::spec
   (s/or :keyword s/get-spec :pred s/spec?))
 
@@ -54,7 +51,6 @@
                    ::any
                    ::all
                    ::none
-                   ::object-types
                    ::valueset
                    ::generator]))
 
@@ -233,16 +229,8 @@
                  (first loc-elements))))
        (assoc parsed-rule :path)))
 
-(defn- add-rule-object-types
-  [object-types {:keys [path] :as rule}]
-  (let [obj-types (->> object-types
-                       (filter (fn [[prefix _]] (xp/prefix-path? prefix path)))
-                       (into {}))]
-    (cond-> rule
-      (not-empty obj-types) (assoc :object-types obj-types))))
-
 (defn- add-rule-spec
-  [{:keys [path object-types] :as rule}]
+  [object-types {:keys [path] :as rule}]
   (let [spec (xp/path->spec ::xs/statement path object-types)]
     (assoc rule :spec spec)))
 
@@ -255,9 +243,7 @@
         object-types* (rules->object-types parsed-rules)
         object-types  (-> object-types*
                           (update ["object"] cset/intersection init-obj-types))]
-    (->> parsed-rules
-         (map (partial add-rule-object-types object-types))
-         (mapv add-rule-spec))))
+    (mapv (partial add-rule-spec object-types) parsed-rules)))
 
 (s/fdef parse-rules
   :args (s/cat :object-property (s/? #{:activity-type :statement-ref})
@@ -280,6 +266,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Extra Values/Gen
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- spec->valueset
+  [{:keys [verbs verb-ids activities activity-ids activity-types]}
+   spec]
+  (case spec
+    ::xs/verb        verbs
+    :verb/id         verb-ids
+    ::xs/activity    activities
+    :activity/id     activity-ids
+    :definition/type activity-types
+    nil))
 
 ;; TODO: Distinguish between activity, context, and result extensions
 (defn- extension-spec
@@ -308,13 +305,13 @@
    Also revises any extension specs."
   [iri-map
    valuesets
-   {:keys [presence path valueset none spec object-types] :as parsed-rule}]
+   {:keys [presence path valueset none spec] :as parsed-rule}]
   (if (= :excluded presence)
     parsed-rule
     (let [spec*    (if (= ::j/any spec) ; only extensions have this spec
                      (extension-spec iri-map (peek path) spec)
                      spec)
-          ?all-set (not-empty (xp/path->valueset object-types valuesets path))]
+          ?all-set (not-empty (spec->valueset valuesets spec))]
       (cond-> (assoc parsed-rule :spec spec*)
         (and (not valueset)
              ?all-set)

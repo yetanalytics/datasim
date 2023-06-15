@@ -156,13 +156,12 @@
                              "http://adlnet.gov/expapi/verbs/completed"]
                  :none      ["http://adlnet.gov/expapi/verbs/initialized"]}]))
   (testing "included presence, path with wildcards"
-    (is-parsed [{:location     [[["actor"] ["member"] '* ["objectType"]]]
-                 :presence     :included
-                 :all          #{"Agent" "Group"}
-                 :valueset     #{"Agent" "Group"}
-                 :path         ["actor" "member" '* "objectType"]
-                 :spec         :agent/objectType
-                 :object-types {["actor"] #{"group"}}}]
+    (is-parsed [{:location [[["actor"] ["member"] '* ["objectType"]]]
+                 :presence :included
+                 :all      #{"Agent" "Group"}
+                 :valueset #{"Agent" "Group"}
+                 :path     ["actor" "member" '* "objectType"]
+                 :spec     :agent/objectType}]
                [{:location  "$.actor.member[*].objectType"
                  :presence  "included"
                  :all       ["Agent" "Group"]}]))
@@ -218,17 +217,14 @@
        :presence  "included"}]))
   (testing "path with pipe operator"
     (is-parsed
-     [{:location     [[["object"] ["objectType"]]]
-       :presence     :included
-       :path         ["object" "objectType"]
-       :spec         :sub-statement/objectType
-       :object-types {["object"] #{"sub-statement"}}}
+     [{:location [[["object"] ["objectType"]]]
+       :presence :included
+       :path     ["object" "objectType"]
+       :spec     :sub-statement/objectType}
       {:location     [[["object"] ["object"] ["objectType"]]]
        :presence     :included
        :path         ["object" "object" "objectType"]
-       :spec         :activity/objectType ; defaults to Activity
-       :object-types {["object"] #{"sub-statement"}
-                      ["object" "object"] #{"agent" "group" "activity" "statement-ref"}}}]
+       :spec         :activity/objectType}] ; defaults to Activity
      [{:location  "$.object.objectType | $.object.object.objectType"
        :presence  "included"}]))
   ;; Errors
@@ -520,12 +516,11 @@
 
 (deftest valuegen-test
   (testing "Ignore if valueset is already present"
-    (is (= {:location     [[["actor"] ["name"]]]
-            :valueset     #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
-            :all          #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
-            :path         ["actor" "name"]
-            :spec         :agent/name
-            :object-types {["actor"] #{"agent" "group"}}}
+    (is (= {:location [[["actor"] ["name"]]]
+            :valueset #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
+            :all      #{"Andrew Downes" "Toby Nichols" "Ena Hills"}
+            :path     ["actor" "name"]
+            :spec     :agent/name}
            (parse-rule-valuegen
             {:location "$.actor.name"
              :all      ["Andrew Downes" "Toby Nichols" "Ena Hills"]})))
@@ -538,12 +533,11 @@
             {:location "$.verb.id"
              :any      ["http://example.org/verb"
                         "http://example.org/verb-2"]})))
-    (is (= {:location     [[["object"] ["verb"] ["id"]]]
-            :valueset     #{"http://example.org/verb" "http://example.org/verb-2"}
-            :any          #{"http://example.org/verb" "http://example.org/verb-2"}
-            :path         ["object" "verb" "id"]
-            :spec         :verb/id
-            :object-types {["object"] #{"sub-statement"}}}
+    (is (= {:location [[["object"] ["verb"] ["id"]]]
+            :valueset #{"http://example.org/verb" "http://example.org/verb-2"}
+            :any      #{"http://example.org/verb" "http://example.org/verb-2"}
+            :path     ["object" "verb" "id"]
+            :spec     :verb/id}
            (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :any      ["http://example.org/verb"
@@ -567,96 +561,84 @@
            (parse-rule-valuegen
             {:location "$.verb.id"
              :presence "included"})))
-    (is (= {:location     [[["object"]]]
-            :presence     :included
-            :path         ["object"]
-            :spec         ::xs/activity
-            :object-types {["object"] #{"activity" "agent" "group"
-                                        "sub-statement" "statement-ref"}}
-            :valueset     #{{:id         "http://foo.org/activity"
-                             :type       "Activity"
-                             :definition {:type "http://foo.org/activity-type"}}}
-            :all          #{{:id         "http://foo.org/activity"
-                             :type       "Activity"
-                             :definition {:type "http://foo.org/activity-type"}}}}
+    (is (= {:location [[["object"]]]
+            :presence :included
+            :path     ["object"]
+            :spec     ::xs/activity 
+            :valueset #{{:id         "http://foo.org/activity"
+                         :type       "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}
+            :all      #{{:id         "http://foo.org/activity"
+                         :type       "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}}
            (parse-rule-valuegen
             {:location "$.object"
              :presence "included"})))
-    (is (= {:location     [[["object"] ["id"]]]
-            :presence     :included
-            :path         ["object" "id"]
-            :spec         :activity/id
-            :object-types {["object"] #{"activity" "statement-ref"}}
-            :valueset     #{"http://foo.org/activity"}
-            :all          #{"http://foo.org/activity"}}
+    (is (= {:location [[["object"] ["id"]]]
+            :presence :included
+            :path     ["object" "id"]
+            :spec     :activity/id
+            :valueset #{"http://foo.org/activity"}
+            :all      #{"http://foo.org/activity"}}
            (parse-rule-valuegen
             {:location "$.object.id"
              :presence "included"})))
-    (is (= {:location     [[["object"] ["definition"] ["type"]]]
-            :presence     :included
-            :path         ["object" "definition" "type"]
-            :spec         :definition/type
-            :object-types {["object"] #{"activity"}}
-            :valueset     #{"http://foo.org/activity-type"}
-            :all          #{"http://foo.org/activity-type"}}
+    (is (= {:location [[["object"] ["definition"] ["type"]]]
+            :presence :included
+            :path     ["object" "definition" "type"]
+            :spec     :definition/type
+            :valueset #{"http://foo.org/activity-type"}
+            :all      #{"http://foo.org/activity-type"}}
            (parse-rule-valuegen
             {:location "$.object.definition.type"
              :presence "included"}))))
   (testing "Add valuesets (substatements)"
-    (is (= {:location     [[["object"] ["verb"]]]
-            :presence     :included
-            :path         ["object" "verb"]
-            :spec         ::xs/verb
-            :object-types {["object"] #{"sub-statement"}}
-            :valueset     #{{:id "http://foo.org/verb" :type "Verb"}}
-            :all          #{{:id "http://foo.org/verb" :type "Verb"}}}
+    (is (= {:location [[["object"] ["verb"]]]
+            :presence :included
+            :path     ["object" "verb"]
+            :spec     ::xs/verb
+            :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
+            :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb"
              :presence "included"})))
-    (is (= {:location     [[["object"] ["verb"] ["id"]]]
-            :presence     :included
-            :path         ["object" "verb" "id"]
-            :spec         :verb/id
-            :object-types {["object"] #{"sub-statement"}}
-            :valueset     #{"http://foo.org/verb"}
-            :all          #{"http://foo.org/verb"}}
+    (is (= {:location [[["object"] ["verb"] ["id"]]]
+            :presence :included
+            :path     ["object" "verb" "id"]
+            :spec     :verb/id
+            :valueset #{"http://foo.org/verb"}
+            :all      #{"http://foo.org/verb"}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :presence "included"})))
-    (is (= {:location     [[["object"] ["object"]]]
-            :presence     :included
-            :path         ["object" "object"]
-            :spec         ::xs/activity
-            :object-types {["object"]          #{"sub-statement"}
-                           ["object" "object"] #{"activity" "agent" "group" "statement-ref"}}
-            :valueset     #{{:id         "http://foo.org/activity"
-                             :type       "Activity"
-                             :definition {:type "http://foo.org/activity-type"}}}
-            :all          #{{:id         "http://foo.org/activity"
-                             :type       "Activity"
-                             :definition {:type "http://foo.org/activity-type"}}}}
+    (is (= {:location [[["object"] ["object"]]]
+            :presence :included
+            :path     ["object" "object"]
+            :spec     ::xs/activity
+            :valueset #{{:id         "http://foo.org/activity"
+                         :type       "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}
+            :all      #{{:id         "http://foo.org/activity"
+                         :type       "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}}
            (parse-rule-sub-valuegen
             {:location "$.object.object"
              :presence "included"})))
-    (is (= {:location     [[["object"] ["object"] ["id"]]]
-            :presence     :included
-            :path         ["object" "object" "id"]
-            :spec         :activity/id
-            :object-types {["object"]          #{"sub-statement"}
-                           ["object" "object"] #{"activity" "statement-ref"}}
-            :valueset     #{"http://foo.org/activity"}
-            :all          #{"http://foo.org/activity"}}
+    (is (= {:location [[["object"] ["object"] ["id"]]]
+            :presence :included
+            :path     ["object" "object" "id"]
+            :spec     :activity/id
+            :valueset #{"http://foo.org/activity"}
+            :all      #{"http://foo.org/activity"}}
            (parse-rule-sub-valuegen
             {:location "$.object.object.id"
              :presence "included"})))
-    (is (= {:location     [[["object"] ["object"] ["definition"] ["type"]]]
-            :presence     :included
-            :path         ["object" "object" "definition" "type"]
-            :spec         :definition/type
-            :object-types {["object"]          #{"sub-statement"}
-                           ["object" "object"] #{"activity"}}
-            :valueset     #{"http://foo.org/activity-type"}
-            :all          #{"http://foo.org/activity-type"}}
+    (is (= {:location [[["object"] ["object"] ["definition"] ["type"]]]
+            :presence :included
+            :path     ["object" "object" "definition" "type"]
+            :spec     :definition/type
+            :valueset #{"http://foo.org/activity-type"}
+            :all      #{"http://foo.org/activity-type"}}
            (parse-rule-sub-valuegen
             {:location "$.object.object.definition.type"
              :presence "included"}))))
