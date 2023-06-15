@@ -336,6 +336,15 @@
   [coll]
   (boolean (not-empty coll)))
 
+(defn- follows-rule-values?
+  [?any ?all ?none ?values]
+  (and (or (not ?all)
+           (and ?values (cset/superset? ?all (set ?values))))
+       (or (not ?any)
+           (not-empty? (cset/intersection (set ?values) ?any)))
+       (or (not ?none)
+           (empty? (cset/intersection (set ?values) ?none)))))
+
 (s/fdef follows-rule?
   :args (s/cat :statement ::xs/statement
                :parsed-rule ::parsed-rule)
@@ -344,28 +353,24 @@
 (defn follows-rule?
   "Simple predicate check to see if `parsed-rule` satisfies `statement`.
    
-   Note: normally if `presence` is `recommended`, then validation
-   auto-passes, but otherwise we won't be able to apply rules in those
-   cases, so we validate anyways (though we pass if no values are
-   matchable)."
+   Note that in this function, `recommended` presence acts exactly like
+   `included` presence. This is more strict than what the xAPI Profile spec
+   specifies (in which `recommended` rules do not require values to be
+   present at the location), but this is so `recommended` rules
+   can still be applied to the `statement`."
   [statement {:keys [location any all none presence] :as _parsed-rule}]
-  (let [strict? (not= :recommended presence)
-        ?values (not-empty (path/get-values* statement location))]
-    (and (case presence
-           :included (some? ?values)
-           :excluded (nil? ?values)
-           true)
-         (or (= :excluded presence)
-             (and (or (not all)
-                      (not (or strict? ?values))
-                      (and ?values
-                           (cset/superset? all (set ?values))))
-                  (or (not any)
-                      (not (or strict? ?values))
-                      (not-empty? (cset/intersection (set ?values) any)))
-                  (or (not none)
-                      (not (or strict? ?values))
-                      (empty? (cset/intersection (set ?values) none))))))))
+  (let [?values (not-empty (path/get-values* statement location))]
+    (case presence
+      :excluded    ; values must not be present
+      (nil? ?values)
+      :recommended ; values must be present, must always follow rule vals
+      (and (some? ?values)
+           (follows-rule-values? any all none ?values))
+      :included    ; values must be present, must always follow rule vals
+      (and (some? ?values)
+           (follows-rule-values? any all none ?values))
+      ; no presence, values can be missing but must follow rule vals if present
+      (follows-rule-values? any all none ?values))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Application

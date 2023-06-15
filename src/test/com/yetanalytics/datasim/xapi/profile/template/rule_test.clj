@@ -773,12 +773,6 @@
                  :presence  "excluded"}]
                r/parse-rules
                first
-               (r/follows-rule? long-statement))))
-    (testing "statement does not have grouping context activities (recommended presence)"
-      (is (->> [{:location  "$.context.contextActivities.grouping.*"
-                 :presence  "recommended"}] ; ok w/o any, all, or none sets
-               r/parse-rules
-               first
                (r/follows-rule? long-statement)))))
   (testing "Does not follow rule -"
     (testing "statement does not have ID"
@@ -807,6 +801,22 @@
     (testing "statement has excluded property (category context activity)"
       (is (->> [{:location "$.context.contextActivities.category.*"
                  :presence "excluded"}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)
+               not)))
+    (testing "statement does not have grouping context activities (included presence)"
+      (is (->> [{:location  "$.context.contextActivities.grouping.*"
+                 :presence  "included"}]
+               r/parse-rules
+               first
+               (r/follows-rule? long-statement)
+               not)))
+    ;; This will normally pass validation under the xAPI spec, but we are
+    ;; having `recommended` behave exactly as `included`
+    (testing "statement does not have grouping context activities (recommended presence)"
+      (is (->> [{:location  "$.context.contextActivities.grouping.*"
+                 :presence  "recommended"}]
                r/parse-rules
                first
                (r/follows-rule? long-statement)
@@ -998,6 +1008,11 @@
                 "display" {"en-US" "zG8V0L1Ft301HRaB06wC5"}}
                {:location "$.verb.display.en-US"
                 :presence "included"}))
+    (testing "insert verb description (recommended presence, spec gen)"
+      (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
+                "display" {"en-US" "zG8V0L1Ft301HRaB06wC5"}}
+               {:location "$.verb.display.en-US"
+                :presence "recommended"}))
     (testing "include then exclude verb description, resulting in no net change"
       (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"}
                {:location "$.verb.display.en-US"
