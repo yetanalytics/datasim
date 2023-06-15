@@ -375,7 +375,11 @@
 
 (def max-enumerated-paths 10)
 
-(def distinct-value-properties #{"id"})
+;; IDs and IFIs (including account properties).
+;; Technically Agent/Group names don't HAVE to be distinct, but it would
+;; be weird if names get repeated all the time.
+(def distinct-value-properties
+  #{"id" "mbox" "mbox_sha1sum" "openid" "account" "homePage" "name"})
 
 ;; Generators
 
@@ -396,14 +400,10 @@
 ;; Rule Application
 
 (defn- distinct-values?
-  "Do some `parsed-paths` end at a distinct value property (e.g. `id`)?"
-  [parsed-paths]
-  (->> parsed-paths
-       (map last)
-       (filter coll?)
-       (map set)
-       (some #(not-empty (cset/intersection % distinct-value-properties)))
-       boolean))
+  "Does the rule `path` point to a property with distinct values like an
+   ID or IFI?"
+  [{:keys [path]}]
+  (contains? distinct-value-properties (last path)))
 
 ;; TODO: There are still some significant limits to this approach:
 ;; - There would be no way to add rules outside of the `any` coll, even if
@@ -460,7 +460,7 @@
 
 (defn- apply-inclusion-rule
   [statement {:keys [location valueset generator none] :as rule} rng]
-  (let [distincts? (distinct-values? location)
+  (let [distincts? (distinct-values? rule)
         enum-max   (if (and distincts? valueset)
                      (count valueset)
                      max-enumerated-paths)
