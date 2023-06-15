@@ -788,13 +788,14 @@
                        :presence "included"
                        :all      ["https://example.org/course/two"]}]})]
         (is (s/valid? ::xs/statement statement))
-        ;; FIXME: profile context category activity should not be overwritten
-        (is (not (statement-inputs? statement)))
+        ;; Profile context category activity gets restored during completion
+        (is (statement-inputs? statement))
         (is (= {"category" [{"id" "https://example.org/course/zero"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                             {"id" "https://example.org/course/one"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}
-                            {"id" "https://example.org/course/two"}]}
+                            {"id" "https://example.org/course/two"}
+                            {"id" "https://w3id.org/xapi/cmi5/v1.0"}]}
                (get-in statement ["context" "contextActivities"])))))
 
     (testing "team and instructor"

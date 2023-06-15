@@ -92,6 +92,23 @@
                    ::end-ms]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- time-ms->timestamp
+  [time-ms]
+  (.toString (Instant/ofEpochMilli time-ms)))
+
+(def additional-time-ms-mean 600000.0)
+
+(def additional-time-ms-sd 0.5)
+
+(defn- end-time-ms [start-time-ms rng]
+  (->> (random/rand-gauss rng additional-time-ms-mean additional-time-ms-sd)
+       long
+       (+ start-time-ms)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -148,7 +165,7 @@
   [template-base {:keys [sim-t registration]} rng]
   (-> template-base
       (assoc-in ["id"] (random/rand-uuid rng))
-      (assoc-in ["timestamp"] (.toString (Instant/ofEpochMilli sim-t)))
+      (assoc-in ["timestamp"] (time-ms->timestamp sim-t))
       (assoc-in ["context" "registration"] registration)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -374,12 +391,15 @@
   [{:strs [instructor team]
     {:strs [category grouping parent other]} "contextActivities"
     :as context}
-   inputs
-   rng]
+   {{profile-ver-id :inScheme} :template
+    registration :registration :as inputs}
+   rng
+   & {:keys [sub-statement?] :or {sub-statement? false}}]
   (let [complete-activities (partial mapv #(complete-activity % inputs rng))
         group-instructor?   #(or (-> % (get "objectType") #{"Group"})
                                  (-> % (contains? "member")))]
     (cond-> context
+      ;; Context Agents + Groups
       (and instructor
            (group-instructor? instructor))
       (update-in ["instructor"] complete-group rng)
@@ -387,10 +407,24 @@
            (not (group-instructor? instructor)))
       (update-in ["instructor"] complete-agent rng)
       team     (update-in ["team"] complete-group rng)
+      ;; Context Activities
       category (update-in ["contextActivities" "category"] complete-activities)
       grouping (update-in ["contextActivities" "grouping"] complete-activities)
       parent   (update-in ["contextActivities" "parent"] complete-activities)
-      other    (update-in ["contextActivities" "other"] complete-activities))))
+      other    (update-in ["contextActivities" "other"] complete-activities)
+      ;; Restore profile version ID if needed
+      ;; TODO: WARNING if the Template actively overwrites or contradicts
+      (and (not sub-statement?)
+           (->> (get-in context ["contextActivities" "category"])
+                (some (fn [{id "id"}] (#{profile-ver-id} id)))
+                not))
+      (update-in ["contextActivities" "category"] conj {"id" profile-ver-id})
+      ;; Restore registration if needed
+      ;; TODO: WARNING if the Template actively overwrites
+      (and (not sub-statement?)
+           (->> (get context "registration")
+                (not= registration)))
+      (assoc-in ["registration"] registration))))
 
 ;; Attachments ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -426,8 +460,8 @@
              :oauth-consumer ::xs/oauth-consumer
              :three-legged-oauth-group ::xs/tlo-group))
 
-;; TODO: Should this function even exist, or should we ban authorities from
-;; being set.
+;; TODO: WARNING if Template actually requires an authority (since it's
+;; supposed to only be set by the LRS)
 (defn complete-authority
   [{:strs [objectType member] :as authority} rng]
   (if (= "Group" objectType)
@@ -515,15 +549,10 @@
                 (update "verb" complete-verb inputs rng)
                 (update "object" complete-sub-object inputs rng))
       ;; Optional statement properties
-      context     (update "context" complete-context inputs rng)
+      context     (update "context" complete-context inputs rng :sub-statement? true)
       attachments (update "attachments" complete-attachments rng))))
 
 ;; Statement ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def id-gen (s/gen :statement/id))
-
-(defn- complete-id [id rng]
-  (if id id (stest/generate id-gen 1 (random/rand-long rng))))
 
 (defn- complete-object
   [object inputs rng]
@@ -560,11 +589,11 @@
 
 (defn complete-statement
   [statement inputs rng]
-  (let [{:strs [context attachments authority]} statement
-        ;; TODO: Check that actor conforms to template
+  (let [;; TODO: WARNING if Template contradicts on actor
+        ;; TODO: WARNING if Template overwrites ID or timestamp
+        {:strs [context attachments authority]} statement
         actor (-> inputs :actor w/stringify-keys)]
     (cond-> (-> statement
-                (update "id" complete-id rng)
                 (update "actor" merge actor)
                 (update "verb" complete-verb inputs rng)
                 (update "object" complete-object inputs rng))
@@ -614,7 +643,7 @@
    - `:template`: The template used to generate the statement, which will be
      useful for a bunch of things."
   [template sim-t rng]
-  {:end-ms       (+ sim-t (long (random/rand-gauss rng 600000.0 0.5)))
+  {:end-ms       (end-time-ms sim-t rng)
    :timestamp-ms sim-t
    :template     template})
 
@@ -624,6 +653,8 @@
               (s/conformer meta)
               ::meta))
 
+;; TODO: ERROR/WARNING if generated statement fails spec (e.g. a required
+;; property is excluded)
 (defn generate-statement
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
   [{{:keys [profiles]} :input

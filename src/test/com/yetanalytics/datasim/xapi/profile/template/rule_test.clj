@@ -1164,8 +1164,9 @@
         :all      ["http://www.example.com/activity-type-1"
                    "http://www.example.com/activity-type-2"
                    "http://www.example.com/activity-type-3"]}))
-    ;; FIXME: distinct IDs are ignored w/ pipe operator
     (testing "use the pipe operator to assoc new activity types"
+      ;; IDs are no longer considered distinct if they are used across
+      ;; a JSONPath pipe operator
       (is-ctx-activities
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
@@ -1211,6 +1212,7 @@
         :any ["http://www.example.com/meetings/occurances/foo"]}
        {:location "$.context.contextActivities.other[*].id"
         :any ["http://www.example.com/meetings/occurances/bar"]}))
+    ;; TODO: ERROR on blatantly contradictory rules
     (testing "`all` followed by `any`" ; any overwrites all
       (is-ctx-activities
        "other"
@@ -1222,6 +1224,7 @@
         :all ["http://www.example.com/meetings/occurances/foo"]}
        {:location "$.context.contextActivities.other[*].id"
         :any ["http://www.example.com/meetings/occurances/bar"]}))
+    ;; TODO: ERROR on blatantly contradictory rules
     (testing "`any` followed by `all`" ; all overwrites any
       (is-ctx-activities
        "other"
@@ -1233,6 +1236,7 @@
         :any ["http://www.example.com/meetings/occurances/foo"]}
        {:location "$.context.contextActivities.other[*].id"
         :all ["http://www.example.com/meetings/occurances/bar"]}))
+    ;; TODO: ERROR on blatantly contradictory rules
     (testing "two `all` rules"
       (is-ctx-activities
        "other"
