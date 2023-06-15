@@ -23,6 +23,13 @@
     (is (s/valid? ::profile/iri-map
                   (profile/profiles->map (:profiles const/simple-input))))))
 
+(deftest profile->type-iri-map-test
+  (testing "profiles->type-iri-map function"
+    (is (->> const/simple-input
+             :profiles
+             profile/profiles->type-iri-map
+             (s/valid? ::profile/type-iri-map)))))
+
 (deftest pattern-zip-test
   (testing "pattern-zip function"
     (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)

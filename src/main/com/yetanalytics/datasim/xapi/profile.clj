@@ -26,6 +26,20 @@
                   :pattern ::pattern/pattern
                   :template ::template/template)))
 
+(def profile-types
+  #{"Verb" "ActivityType" "AttachmentUsageTypes"
+    "ActivityExtension" "ContextExtension" "ResultExtension"
+    "StateResource" "AgentProfileResource" "ActivityProfileResource"
+    "Activity" "StatementTemplate" "Pattern"})
+
+(def profile-object-spec
+  (s/or :concept  ::concept/concept
+        :pattern  ::pattern/pattern
+        :template ::template/template))
+
+(s/def ::type-iri-map
+  (s/map-of profile-types (s/map-of iri/iri-spec profile-object-spec)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile -> IRI Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -46,6 +60,30 @@
           [id (assoc thing
                      ::_profile-id
                      profile-id)])))
+
+(s/fdef profiles->type-iri-map
+  :args (s/cat :profiles (s/every ::profile/profile))
+  :ret ::type-iri-map)
+
+(defn profiles->type-iri-map
+  "Given a collection of profiles, return a map of type (e.g. \"Verb\",
+   \"StatementTemplate\", \"Pattern\"), to a map from object ID IRIs to
+   the objects themselves."
+  [profiles]
+  (let [concepts  (mapcat :concepts profiles)
+        templates (mapcat :templates profiles)
+        patterns  (mapcat :patterns profiles)]
+    (->> (cond-> (group-by :type concepts)
+           (not-empty templates) (assoc "StatementTemplate" templates)
+           (not-empty patterns)  (assoc "Pattern" patterns))
+         (reduce-kv
+          (fn [m type objects]
+            (->> objects
+                 (reduce (fn [m* {:keys [id] :as object}]
+                           (assoc m* id object))
+                         {})
+                 (assoc m type)))
+          {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Registration Sequence
