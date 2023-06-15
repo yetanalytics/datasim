@@ -170,14 +170,14 @@
     (is-parsed [{:location [[["context"] ["contextActivities"] ["grouping"]]]
                  :presence :excluded
                  :path     ["context" "contextActivities" "grouping"]
-                 :spec     :contextActivities/grouping}]
+                 :spec     ::xs/context-activities-array}]
                [{:location  "$.context.contextActivities.grouping"
                  :presence  "excluded"}]))
   (testing "recommended presence, no value req, exists in long statement"
     (is-parsed [{:location [[["context"] ["contextActivities"] ["parent"]]]
                  :presence :recommended
                  :path     ["context" "contextActivities" "parent"]
-                 :spec     :contextActivities/parent}]
+                 :spec     ::xs/context-activities-array}]
                [{:location  "$.context.contextActivities.parent"
                  :presence  "recommended"}]))
   ;; Rule separation now applies
@@ -552,7 +552,7 @@
     (is (= {:location [[["verb"]]]
             :presence :included
             :path     ["verb"]
-            :spec     :statement/verb
+            :spec     ::xs/verb
             :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
             :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
            (parse-rule-valuegen
@@ -570,7 +570,7 @@
     (is (= {:location     [[["object"]]]
             :presence     :included
             :path         ["object"]
-            :spec         :statement/object ; TODO: ::xs/activity instead?
+            :spec         ::xs/activity
             :object-types {["object"] #{"activity" "agent" "group"
                                         "sub-statement" "statement-ref"}}
             :valueset     #{{:id         "http://foo.org/activity"
@@ -606,7 +606,7 @@
     (is (= {:location     [[["object"] ["verb"]]]
             :presence     :included
             :path         ["object" "verb"]
-            :spec         :sub-statement/verb
+            :spec         ::xs/verb
             :object-types {["object"] #{"sub-statement"}}
             :valueset     #{{:id "http://foo.org/verb" :type "Verb"}}
             :all          #{{:id "http://foo.org/verb" :type "Verb"}}}
@@ -626,7 +626,7 @@
     (is (= {:location     [[["object"] ["object"]]]
             :presence     :included
             :path         ["object" "object"]
-            :spec         :sub-statement/object
+            :spec         ::xs/activity
             :object-types {["object"]          #{"sub-statement"}
                            ["object" "object"] #{"activity" "agent" "group" "statement-ref"}}
             :valueset     #{{:id         "http://foo.org/activity"
@@ -661,10 +661,10 @@
             {:location "$.object.object.definition.type"
              :presence "included"}))))
   (testing "Add spec and generator"
-    (is (= :statement/result
+    (is (= ::xs/result
            (:spec (parse-rule-valuegen {:location "$.result"
                                         :presence "included"}))))
-    (is (= :sub-statement/result
+    (is (= ::xs/result
            (:spec (parse-rule-sub-valuegen {:location "$.object.result"
                                           :presence "included"}))))
     (is (string?
@@ -1209,14 +1209,9 @@
         :all      ["http://www.example.com/activity-type-1"
                    "http://www.example.com/activity-type-2"
                    "http://www.example.com/activity-type-3"]}))
-    ;; TODO: Right now only one value can be replaced in the following
-    ;; test cases since we are dealing with an `id` property and there is
-    ;; only one value in the `any` and `all` colls. We need to discuss if
-    ;; this behavior should be changed in Pathetic.
+    ;; Note for `any` rules that values get appended instead of overwriting
+    ;; previous values
     (testing "two `any` rules (wildcard)"
-      ;; FIXME: This is technically wrong, as two `any` rules at the same
-      ;; location would be valid (and in fact this result is wrong, since
-      ;; the intersection w/ the "foo" coll is empty).
       (is-ctx-activities
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"

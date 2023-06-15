@@ -125,24 +125,49 @@
 ;; Path -> Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- validate-string-path-key [path-key]
-  (when-not (string? path-key)
-    (throw (ex-info (format "Key %s is not a string key" path-key)
+(defn- advance-object-spec
+  "Return the spec `:spec-ns/p` if `p` is an object property, or return
+   `nil` if `p` is also `nil`, signifying that the object map spec is
+   the final spec."
+  [spec-ns path p]
+  (cond
+    (nil? p)
+    nil
+    (string? p)
+    [(conj path p) (keyword spec-ns p)]
+    :else
+    (throw (ex-info (format "Key %s is not a string key" p)
                     {:type ::invalid-path-map-key
-                     :key  path-key}))))
+                     :key  p}))))
 
-(defn- validate-wildcard-path-key [path-key]
-  (when-not (= '* path-key)
-    (throw (ex-info (format "Key %s does not represent an array index" path-key)
+(defn- advance-array-spec
+  "Return `spec` if `p` indicates that it is an array index key, or return `nil`
+   if `p` is also `nil`, signifying that the array spec is the final spec."
+  [spec path p]
+  (cond
+    (nil? p)
+    nil
+    (#{'*} p)
+    [(conj path p) spec]
+    :else
+    (throw (ex-info (format "Key %s does not represent an array index" p)
                     {:type ::invalid-path-array-key
-                     :key  path-key}))))
+                     :key  p}))))
 
-(defn- validate-spec-path-key [spec path-key]
-  (when-not (s/valid? spec path-key)
-    (throw (ex-info (format "Key %s does not conform to spec" path-key)
+(defn- advance-custom-map-spec
+  "Return `val-spec` if `p` satisfies `key-spec`, or return `nil` if `p` is
+   also `nil`, indicating that the parent map spec is the final spec."
+  [key-spec val-spec path p]
+  (cond
+    (nil? p)
+    nil
+    (s/valid? key-spec p)
+    [(conj path p) val-spec]
+    :else
+    (throw (ex-info (format "Key %s does not conform to spec" key-spec)
                     {:type ::invalid-path-spec-key
-                     :key  path-key
-                     :spec spec}))))
+                     :key  p
+                     :spec key-spec}))))
 
 (defn- throw-unsupported-object-types
   [spec path object-types]
@@ -160,15 +185,7 @@
    points to the value in the statement validated by `spec`."
   (fn path-spec-dispatch [spec _path _p _hint-data] spec))
 
-(defmethod path-spec :default [spec path p _]
-  (throw (ex-info
-          (if (keyword? spec)
-            (format "Spec %s is a scalar or not defined in xapi-schema" spec)
-            (format "Spec is not a keyword"))
-          {:type ::unknown-path-spec
-           :spec spec
-           :path path
-           :next p})))
+(defmethod path-spec :default [_ _ _ _] nil)
 
 ;; Statement specs
 
@@ -177,8 +194,7 @@
 ;; and ["authority"].
 
 (defmethod path-spec ::xs/statement [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "statement" p)])
+  (advance-object-spec "statement" path p))
 
 (defn- statement-object-spec-dispatch
   [object-type-m path]
@@ -229,24 +245,22 @@
   [path (actor-type-dispatch object-types path)])
 
 (defmethod path-spec ::actor [_ path p _]
-  (validate-string-path-key p)
   (case p
     "objectType"
-    [(conj path p) :actor/objectType]
+    (advance-object-spec "actor" path p)
     "member"
-    [(conj path p) :group/member]
-    ;; else
-    [(conj path p) (keyword "agent" p)]))
+    (advance-object-spec "group" path p)
+    ;; agent + group shared specs are the same so this is okay
+    (advance-object-spec "agent" path p)))
 
 (defmethod path-spec ::xs/account [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "account" p)])
+  (advance-object-spec "account" path p))
+
 
 ;; Agent specs
 
 (defmethod path-spec ::xs/agent [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "agent" p)])
+  (advance-object-spec "agent" path p))
 
 (defmethod path-spec :agent/account [_ path _ _]
   [path ::xs/account])
@@ -254,21 +268,18 @@
 ;; Group specs
 
 (defmethod path-spec ::xs/group [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "group" p)])
+  (advance-object-spec "group" path p))
 
 (defmethod path-spec :group/account [_ path _ _]
   [path ::xs/account])
 
 (defmethod path-spec :group/member [_ path p _]
-  (validate-wildcard-path-key p)
-  [(conj path p) ::xs/agent])
+  (advance-array-spec ::xs/agent path p))
 
 ;; Verb specs
 
 (defmethod path-spec ::xs/verb [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "verb" p)])
+  (advance-object-spec "verb" path p))
 
 (defmethod path-spec :verb/display [_ path _ _]
   [path ::xs/language-map])
@@ -276,8 +287,7 @@
 ;; Statement Ref specs
 
 (defmethod path-spec ::xs/statement-ref [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "statement-ref" p)])
+  (advance-object-spec "statement-ref" path p))
 
 ;; Sub Statement specs
 
@@ -286,8 +296,7 @@
 ;; ["object" "context" "instructor"].
 
 (defmethod path-spec ::xs/sub-statement [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "sub-statement" p)])
+  (advance-object-spec "sub-statement" path p))
 
 (defn- sub-statement-type-dispatch [path object-type-map]
   (let [types (get object-type-map path)]
@@ -320,12 +329,10 @@
 ;; Activity specs
 
 (defmethod path-spec ::xs/activity [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "activity" p)])
+  (advance-object-spec "activity" path p))
 
 (defmethod path-spec :activity/definition [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "definition" p)])
+  (advance-object-spec "definition" path p))
 
 (defmethod path-spec :definition/name [_ path _ _]
   [path ::xs/language-map])
@@ -350,16 +357,13 @@
 (s/def :correctResponsesPattern/string string?)
 
 (defmethod path-spec :definition/correctResponsesPattern [_ path p _]
-  (validate-wildcard-path-key p)
-  [(conj path p) :correctResponsesPattern/string])
+  (advance-array-spec :correctResponsesPattern/string path p))
 
 (defmethod path-spec ::xs/interaction-components [_ path p _]
-  (validate-wildcard-path-key p)
-  [(conj path p) ::xs/interaction-component])
+  (advance-array-spec ::xs/interaction-component path p))
 
 (defmethod path-spec ::xs/interaction-component [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "interaction-component" p)])
+  (advance-object-spec "interaction-component" path p))
 
 (defmethod path-spec :interaction-component/description [_ path _ _]
   [path ::xs/language-map])
@@ -367,36 +371,30 @@
 ;; Result specs
 
 (defmethod path-spec ::xs/result [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "result" p)])
+  (advance-object-spec "result" path p))
 
 (defmethod path-spec :result/extensions [_ path _ _]
   [path ::xs/extensions])
 
 (defmethod path-spec :result/score [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "score" p)])
+  (advance-object-spec "score" path p))
 
 ;; Context specs
 
 (defmethod path-spec ::xs/context [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "context" p)])
+  (advance-object-spec "context" path p))
 
 (defmethod path-spec :context/instructor [_ path _ _]
   [path ::xs/actor])
 (defmethod path-spec :context/team [_ path _ _]
   [path ::xs/group])
-(defmethod path-spec :context/contextActivities [_ path _ _]
-  [path ::xs/context-activities])
 (defmethod path-spec :context/statement [_ path _ _]
   [path ::xs/statement-ref])
 (defmethod path-spec :context/extensions [_ path _ _]
   [path ::xs/extensions])
 
-(defmethod path-spec ::xs/context-activities [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "contextActivities" p)])
+(defmethod path-spec :context/contextActivities [_ path p _]
+  (advance-object-spec "contextActivities" path p))
 
 (defmethod path-spec :contextActivities/parent [_ path _ _]
   [path ::xs/context-activities-array])
@@ -408,18 +406,15 @@
   [path ::xs/context-activities-array])
 
 (defmethod path-spec ::xs/context-activities-array [_ path p _]
-  (validate-wildcard-path-key p)
-  [(conj path p) ::xs/activity])
+  (advance-array-spec ::xs/activity path p))
 
 ;; Attachment specs
 
 (defmethod path-spec ::xs/attachments [_ path p _]
-  (validate-wildcard-path-key p)
-  [(conj path p) ::xs/attachment])
+  (advance-array-spec ::xs/attachment path p))
 
 (defmethod path-spec ::xs/attachment [_ path p _]
-  (validate-string-path-key p)
-  [(conj path p) (keyword "attachment" p)])
+  (advance-object-spec "attachment" path p))
 
 (defmethod path-spec :attachment/display [_ path _ _]
   [path ::xs/language-map])
@@ -429,12 +424,10 @@
 ;; Map axiom specs
 
 (defmethod path-spec ::xs/language-map [_ path p _]
-  (validate-spec-path-key ::xs/language-tag p)
-  [(conj path p) ::xs/language-map-text])
+  (advance-custom-map-spec ::xs/language-tag ::xs/language-map-text path p))
 
 (defmethod path-spec ::xs/extensions [_ path p _]
-  (validate-spec-path-key ::xs/iri p)
-  [(conj path p) ::json/any])
+  (advance-custom-map-spec ::xs/iri ::json/any path p))
 
 (s/fdef path->spec
   :args (s/cat :spec (s/or :keyword s/get-spec :spec-obj s/spec?)
@@ -452,9 +445,9 @@
   (loop [spec   spec
          prefix []
          suffix path]
-    (if-some [p (first suffix)]
-      (let [[prefix* new-spec] (path-spec spec prefix p object-types)
-            suffix* (cond
+    (if-some [[prefix* new-spec]
+              (path-spec spec prefix (first suffix) object-types)]
+      (let [suffix* (cond
                       ;; Short-circuit on extension
                       (= ::json/any new-spec)
                       []
@@ -464,16 +457,28 @@
                       ;; Silent traversal along equivalent specs 
                       :else suffix)]
         (recur new-spec prefix* suffix*))
-      (if (or (s/get-spec spec)
-              (fn? spec)
-              (s/spec? spec))
-        spec
-        ;; Bad or unrecognized spec
-        (throw (ex-info "Must return a valid, registered spec or a function or a spec literal"
-                        {:type         ::invalid-spec
-                         :spec         spec
-                         :path         prefix
-                         :object-types object-types}))))))
+      (cond
+        ;; Path does not point to valid spec or statement location
+        (not-empty suffix)
+        (throw (ex-info
+                (if (keyword? spec)
+                  (format "Spec %s is a scalar or not defined in xapi-schema" spec)
+                  (format "Spec is not a keyword"))
+                {:type         ::unknown-path-spec
+                 :spec         spec
+                 :path         path
+                 :object-types object-types}))
+        ;; Spec is not registered in xapi-schema or is otherwise invalid
+        (not (or (s/get-spec spec)
+                 (fn? spec)
+                 (s/spec? spec)))
+        (throw (ex-info
+                "Must return a valid, registered spec or a function or a spec literal"
+                {:type         ::invalid-spec
+                 :spec         spec
+                 :path         path
+                 :object-types object-types}))
+        :else spec))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path -> Valueset

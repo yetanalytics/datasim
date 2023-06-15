@@ -85,7 +85,7 @@
            (path/path->spec ::xs/context
                             ["contextActivities" "grouping" '* "id"]
                             {})))
-    (is (= :group/account
+    (is (= ::xs/account
            (path/path->spec ::xs/group
                             ["account"]
                             {})))
@@ -105,7 +105,7 @@
            (path/path->spec :definition/source
                             ['* "id"]
                             {})))
-    (is (= :interaction-component/description
+    (is (= ::xs/language-map
            (path/path->spec :definition/target
                             ['* "description"]
                             {})))
@@ -136,7 +136,7 @@
            (path/path->spec ::xs/statement
                             ["actor" "name"]
                             {["actor"] #{"group"}})))
-    (is (= :group/member
+    (is (= :group/member ; shouldn't happen in actual use...
            (path/path->spec ::xs/statement
                             ["actor" "member"]
                             {["actor"] #{"agent" "group"}})))
@@ -157,7 +157,7 @@
            (path/path->spec ::xs/statement
                             ["object" "id"]
                             {["object"] #{"statement-ref"}})))
-    (is (= :sub-statement/verb
+    (is (= ::xs/verb
            (path/path->spec ::xs/statement
                             ["object" "verb"]
                             {["object"] #{"sub-statement"}})))
@@ -213,21 +213,22 @@
                                  ["actor" "id"]
                                  {["actor"] #{"sub-statement"}})
                 (catch Exception e (-> e ex-data :type)))))
-    ;; If we go one level up we don't throw ::unsuppored-object-types ens
-    ;; TODO: Should these throw these exns instead?
-    (is (= :statement/object
-           (path/path->spec ::xs/statement
-                            ["object"]
-                            {["object"] #{"sub-statement" "statement-ref"}})))
-    (is (= :sub-statement/object
-           (path/path->spec ::xs/statement
-                            ["object" "object"]
-                            {["object"] #{"sub-statement"}
-                             ["object" "object"] #{"sub-statement"}})))
-    (is (= :statement/actor
-           (path/path->spec ::xs/statement
-                            ["actor"]
-                            {["actor"] #{"sub-statement"}}))))
+    (is (= ::path/unsuppored-object-types
+           (try (path/path->spec ::xs/statement
+                                 ["object"]
+                                 {["object"] #{"sub-statement" "statement-ref"}})
+                (catch Exception e (-> e ex-data :type)))))
+    (is (= ::path/unsuppored-object-types
+           (try (path/path->spec ::xs/statement
+                                 ["object" "object"]
+                                 {["object"] #{"sub-statement"}
+                                  ["object" "object"] #{"sub-statement"}})
+                (catch Exception e (-> e ex-data :type)))))
+    (is (= ::path/unsuppored-object-types
+           (try (path/path->spec ::xs/statement
+                                 ["actor"]
+                                 {["actor"] #{"sub-statement"}})
+                (catch Exception e (-> e ex-data :type))))))
   (testing "bad paths or specs"
     (is (= ::path/invalid-spec
            (try (path/path->spec ::xs/statement
