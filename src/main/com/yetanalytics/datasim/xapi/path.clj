@@ -210,6 +210,15 @@
         ::xs/activity
         (throw-unsupported-object-types :statement/object path types)))))
 
+(defn- statement-authority-spec-dispatch
+  [object-type-m path]
+  (let [types (get object-type-m path)]
+    (case types
+      #{"agent" "group"} ::authority
+      #{"agent"}         ::xs/agent
+      #{"group"}         ::xs/tlo-group
+      (throw-unsupported-object-types ::xs/actor path types))))
+
 (defmethod path-spec :statement/object [_ path _ object-types]
   ;; path = ["object"]
   [path (statement-object-spec-dispatch object-types path)])
@@ -222,16 +231,21 @@
   [path ::xs/result])
 (defmethod path-spec :statement/context [_ path _ _]
   [path ::xs/context])
-(defmethod path-spec :statement/authority [_ path _ _]
-  [path ::xs/actor])
 (defmethod path-spec :statement/attachments [_ path _ _]
   [path ::xs/attachments])
+(defmethod path-spec :statement/authority [_ path _ object-types]
+  [path (statement-authority-spec-dispatch object-types path)])
 
-;; Actor specs
+;; Actor + Authority specs
 
 ;; custom specs that allow us to gen agents or groups
 (s/def :actor/objectType #{"Agent" "Group"})
+
 (s/def ::actor (s/or :agent ::xs/agent :group ::xs/group))
+
+(s/def ::authority (s/or :agent ::xs/agent
+                         :oauth-consumer ::xs/oauth-consumer
+                         :three-legged-oauth-group ::xs/tlo-group))
 
 (defn- actor-type-dispatch [object-type-map path]
   (let [types (get object-type-map path)]
@@ -256,6 +270,14 @@
 (defmethod path-spec ::xs/account [_ path p _]
   (advance-object-spec "account" path p))
 
+(defmethod path-spec ::authority [_ path p _]
+  (case p
+    "objectType"
+    (advance-object-spec "actor" path p)
+    "member"
+    (advance-object-spec "tlo-group" path p)
+    ;; agent + group shared specs are the same so this is okay
+    (advance-object-spec "agent" path p)))
 
 ;; Agent specs
 
@@ -263,6 +285,12 @@
   (advance-object-spec "agent" path p))
 
 (defmethod path-spec :agent/account [_ path _ _]
+  [path ::xs/account])
+
+(defmethod path-spec ::xs/oauth-consumer [_ path p _]
+  (advance-object-spec "oauth-consumer" path p))
+
+(defmethod path-spec :oauth-consumer/account [_ path _ _]
   [path ::xs/account])
 
 ;; Group specs
@@ -275,6 +303,12 @@
 
 (defmethod path-spec :group/member [_ path p _]
   (advance-array-spec ::xs/agent path p))
+
+(defmethod path-spec ::xs/tlo-group [_ path p _]
+  (advance-object-spec "tlo-group" path p))
+
+(defmethod path-spec :tlo-group/member [_ path p _]
+  (advance-array-spec ::xs/oauth-consumer path p))
 
 ;; Verb specs
 

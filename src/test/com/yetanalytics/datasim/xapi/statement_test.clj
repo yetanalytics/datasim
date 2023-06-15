@@ -122,8 +122,8 @@
         (is (not= "mailto:alice@example.org"
                   (get-in statement ["actor" "mbox"]))))))
   
-  ;; Verb
-
+  ;; Verb 
+  
   (testing "Template specifies Verb"
     (testing "ID property"
       (let [statement
@@ -215,7 +215,7 @@
         (is (not (s/valid? ::xs/statement statement))))))
 
   ;; Activity Object
-
+  
   (testing "Template specifies Activity Object"
     (testing "activity type property"
       (let [statement
@@ -308,7 +308,7 @@
                (get statement "object"))))))
 
   ;; Agent/Group Object
-
+  
   (testing "Template specifies Agent/Group Object"
     (testing "name and objectType rule"
       (let [statement
@@ -518,7 +518,7 @@
                (get statement "object"))))))
 
   ;; StatementRef Object
-
+  
   (testing "Template specifies StatementRef"
     (testing "ID and objectType rule"
       (let [statement
@@ -579,7 +579,7 @@
                (get statement "object"))))))
 
   ;; SubStatement Object
-
+  
   (testing "Template specifies SubStatement Object"
     (testing "objectType rule"
       (let [statement
@@ -725,7 +725,7 @@
                (get-in statement ["object" "attachments"]))))))
 
   ;; Context
-
+  
   (testing "Template specifies Context"
     (testing "activity type properties"
       (let [statement
@@ -846,7 +846,7 @@
                (get-in statement ["context" "instructor"]))))))
 
   ;; Extensions
-
+  
   ;; TODO: Add Activity Extensions
   (testing "Template specifies Extensions on"
     (testing "Context"
@@ -909,7 +909,7 @@
         (is (string? (get-in stmt ["result" "extensions" ext-id]))))))
   
   ;; Miscellaneous
-
+  
   (testing "Template specifies attachmentUsageType properties"
     (let [statement
           (gen-statement
@@ -932,8 +932,7 @@
                "sha2" "7E77EC5BC52256B5F8804ED073E39B3371518AF9E62EA42007E8222A9D1A96C4"}]
              (get statement "attachments")))))
 
-  ;; TODO: Should authorities even be completed since they're supposed to only
-  ;; be set by the accepting LRS
+  ;; TODO: WARNING if authority is set by non-LRS
   (testing "Template specifies authority rules"
     (let [statement
           (gen-statement
@@ -951,7 +950,25 @@
                             {"account"    {"name"     "i1VMk4"
                                            "homePage" "hizkf://lcdssef.ljjdknrxt.gmkz/yoha"}
                              "objectType" "Agent"}]}
-             (get statement "authority"))))))
+             (get statement "authority"))))
+    
+    (let [statement
+          (gen-statement
+           {:rules [{:location "$.authority.objectType"
+                     :all      ["Agent"]}]})]
+      (is (s/valid? ::xs/statement statement))
+      (is (statement-inputs? statement))
+      (is (= {"objectType" "Agent"
+              "account"    {"name"     "Z"
+                            "homePage" "hfzs://lulqixugpx.ckpsmcqvrd.aff/ausyu"}}
+             (get statement "authority")))))
+  
+  (testing "Template specifies authority rules - invalid"
+    (let [statement
+          (gen-statement
+           {:rules [{:location "$.authority.member[0,1,2]"
+                     :presence "included"}]})]
+      (is (not (s/valid? ::xs/statement statement))))))
 
 (defn- gen-statement-override [object-override partial-template]
   (let [valid-args*

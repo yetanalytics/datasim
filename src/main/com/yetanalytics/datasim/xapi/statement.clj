@@ -379,6 +379,23 @@
       :else
       group*)))
 
+;; Agents and Groups ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef complete-actor
+  :args (s/cat :actor map?
+               :rng ::random/rng)
+  :ret (s/or :agent ::xs/agent
+             :group ::xs/group))
+
+;; TODO: WARNING if Template actually requires an authority (since it's
+;; supposed to only be set by the LRS)
+(defn complete-actor
+  [{:strs [objectType member] :as authority} rng]
+  (if (or (= "Group" objectType)
+          (some? member))
+    (complete-group authority rng)
+    (complete-agent authority rng)))
+
 ;; Context ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef complete-context
@@ -395,18 +412,11 @@
     registration :registration :as inputs}
    rng
    & {:keys [sub-statement?] :or {sub-statement? false}}]
-  (let [complete-activities (partial mapv #(complete-activity % inputs rng))
-        group-instructor?   #(or (-> % (get "objectType") #{"Group"})
-                                 (-> % (contains? "member")))]
+  (let [complete-activities (partial mapv #(complete-activity % inputs rng))]
     (cond-> context
       ;; Context Agents + Groups
-      (and instructor
-           (group-instructor? instructor))
-      (update-in ["instructor"] complete-group rng)
-      (and instructor
-           (not (group-instructor? instructor)))
-      (update-in ["instructor"] complete-agent rng)
-      team     (update-in ["team"] complete-group rng)
+      instructor (update-in ["instructor"] complete-actor rng)
+      team       (update-in ["team"] complete-group rng)
       ;; Context Activities
       category (update-in ["contextActivities" "category"] complete-activities)
       grouping (update-in ["contextActivities" "grouping"] complete-activities)
@@ -444,47 +454,6 @@
   (mapv (partial complete-attachment rng) attachments))
 
 ;; Authority ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- replace-ifi-with-account
-  [{:strs [mbox mbox_sha1sum openid account] :as agent}]
-  (cond-> agent
-    (or mbox mbox_sha1sum openid)
-    (dissoc "mbox" "mbox_sha1sum" "openid")
-    (not account)
-    (assoc "account" {})))
-
-(s/fdef complete-authority
-  :args (s/cat :authority map?
-               :rng ::random/rng)
-  :ret (s/or :agent ::xs/agent
-             :oauth-consumer ::xs/oauth-consumer
-             :three-legged-oauth-group ::xs/tlo-group))
-
-;; TODO: WARNING if Template actually requires an authority (since it's
-;; supposed to only be set by the LRS)
-(defn complete-authority
-  [{:strs [objectType member] :as authority} rng]
-  (if (= "Group" objectType)
-    ;; Three-legged OAuth Group
-    (-> (condp #(= %1 (count %2)) member
-          0 (assoc authority
-                   "member"
-                   [(complete-agent {"account" {}} rng)
-                    (complete-agent {} rng)])
-          1 (assoc authority
-                   "member"
-                   [(complete-agent (-> member first replace-ifi-with-account) rng)
-                    (complete-agent {} rng)])
-          2 (assoc authority
-                   "member"
-                   [(complete-agent (-> member first replace-ifi-with-account) rng)
-                    (complete-agent (-> member second) rng)])
-          (throw (ex-info "Cannot have authority with more than 2 group members"
-                          {:type     ::invalid-3-legged-oauth-authority
-                           :authority authority})))
-        (complete-group rng))
-    ;; Regular Authority Agent
-    (complete-agent authority rng)))
 
 ;; StatementRef ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -601,7 +570,7 @@
       ;; Result is not updated since it has no required properties
       context     (update "context" complete-context inputs rng)
       attachments (update "attachments" complete-attachments rng)
-      authority   (update "authority" complete-authority rng))))
+      authority   (update "authority" complete-actor rng))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Object Override
