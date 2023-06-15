@@ -1198,28 +1198,43 @@
     ;; test cases since we are dealing with an `id` property and there is
     ;; only one value in the `any` and `all` colls. We need to discuss if
     ;; this behavior should be changed in Pathetic.
-    (testing "two `any` rules"
+    (testing "two `any` rules (wildcard)"
       ;; FIXME: This is technically wrong, as two `any` rules at the same
       ;; location would be valid (and in fact this result is wrong, since
       ;; the intersection w/ the "foo" coll is empty).
       (is-ctx-activities
        "other"
-       [{"id" "http://www.example.com/meetings/occurances/bar"
+       [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"}
         {"id" "http://www.example.com/meetings/occurances/3425567"
-         "objectType" "Activity"}]
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/foo"}
+        {"id" "http://www.example.com/meetings/occurances/bar"}]
        {:location "$.context.contextActivities.other[*].id"
         :any ["http://www.example.com/meetings/occurances/foo"]}
        {:location "$.context.contextActivities.other[*].id"
         :any ["http://www.example.com/meetings/occurances/bar"]}))
+    (testing "two `any` rules (indexes)"
+      (is-ctx-activities
+       "other"
+       [{"id"         "http://www.example.com/meetings/occurances/bar"
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"}]
+       {:location "$.context.contextActivities.other[0].id"
+        :any ["http://www.example.com/meetings/occurances/foo"]}
+       {:location "$.context.contextActivities.other[0].id"
+        :any ["http://www.example.com/meetings/occurances/bar"]}))
+    ;; FIXME: Should have replaced entirety of other coll, not just first entry
     ;; TODO: ERROR on blatantly contradictory rules
     (testing "`all` followed by `any`" ; any overwrites all
       (is-ctx-activities
        "other"
-       [{"id" "http://www.example.com/meetings/occurances/bar"
+       [{"id" "http://www.example.com/meetings/occurances/foo"
          "objectType" "Activity"}
         {"id" "http://www.example.com/meetings/occurances/3425567"
-         "objectType" "Activity"}]
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/bar"}]
        {:location "$.context.contextActivities.other[*].id"
         :all ["http://www.example.com/meetings/occurances/foo"]}
        {:location "$.context.contextActivities.other[*].id"
@@ -1231,7 +1246,8 @@
        [{"id" "http://www.example.com/meetings/occurances/bar"
          "objectType" "Activity"}
         {"id" "http://www.example.com/meetings/occurances/3425567"
-         "objectType" "Activity"}]
+         "objectType" "Activity"}
+        {"id" "http://www.example.com/meetings/occurances/foo"}]
        {:location "$.context.contextActivities.other[*].id"
         :any ["http://www.example.com/meetings/occurances/foo"]}
        {:location "$.context.contextActivities.other[*].id"

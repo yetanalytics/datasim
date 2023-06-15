@@ -126,7 +126,8 @@
     (let [double-input (update const/simple-input :profiles conj const/mom-profile)]
       (testing "respects gen-profiles param"
         (is (= [[{"id" cmi5-version-id}]
-                [{"id" cmi5-moveon-id}]]
+                [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
+                 {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
                (-> double-input
                    (update :parameters
                            assoc
@@ -135,7 +136,7 @@
                    (->> (map get-context-category-activities))
                    distinct))))
       (testing "respects gen-patterns param"
-        (is (= [nil [{"id" tla-version-id}]]
+        (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
                (-> double-input
                    (update :parameters
                            assoc
@@ -144,7 +145,7 @@
                    (->> (map get-context-category-activities))
                    distinct))))
       (testing "allows referential use of non-gen profiles"
-        (is (= [nil [{"id" tla-version-id}]]
+        (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
                (-> double-input
                    (update :profiles conj const/referential-profile)
                    (update :parameters

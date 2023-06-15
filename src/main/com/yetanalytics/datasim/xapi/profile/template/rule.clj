@@ -405,18 +405,16 @@
   [{:keys [path]}]
   (contains? distinct-value-properties (last path)))
 
-;; TODO: There are still some significant limits to this approach:
-;; - There would be no way to add rules outside of the `any` coll, even if
-;;   they are allowed by the spec.
-;; - If there are multiple `any` rules at the same location, their values
-;;   will overwrite each other instead of being appended to each other.
-;; - Multiple `all` rules at the same location will contradict each other.
-
+;; TODO: ERROR when multiple `all` rules at same location contradict each other.
 (defn- rule-value-coll
   "Turn `value-set` into the ordered collection of values to apply at the
    locations. If `distinct-vals?` is true (and there are enough locations
    to put them) than any values are present exactly once; otherwise repeat
-   some values until there are enough for `num-locations`."
+   some values until there are enough for `num-locations`.
+   
+   Note that this approach has the limitation of not being able to add rules
+   outside the `any` coll (and the rule doesn't also have `any`); however,
+   this is something we can live with for our purposes."
   [value-set rng num-locations distinct-vals?]
   (if (and distinct-vals?
            (>= (count value-set) num-locations))
@@ -459,14 +457,14 @@
   :ret ::xs/statement)
 
 (defn- apply-inclusion-rule
-  [statement {:keys [location valueset generator none] :as rule} rng]
+  [statement {:keys [location valueset all generator none] :as rule} rng]
   (let [distincts? (distinct-values? rule)
         enum-max   (if (and distincts? valueset)
                      (count valueset)
                      max-enumerated-paths)
         enum-limit (inc (random/rand-int* rng enum-max))
         opt-map    {:multi-value?     true
-                    :wildcard-append? false
+                    :wildcard-append? (not (some? all)) ; any only = append
                     :wildcard-limit   enum-limit}
         paths      (path/speculate-paths* statement location opt-map)
         num-paths  (count paths)
