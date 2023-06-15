@@ -205,14 +205,14 @@
    The zipper can then be walked; traversal will be done in a deterministic,
    pseudorandom fashion, in which `rng` and `alignment` is used to choose
    the children of each node in the zipper."
-  [type-iri-map rng alignment & {:keys [repeat-max]
+  [type-iri-map alignment rng & {:keys [repeat-max]
                                  :or   {repeat-max 5}}]
-  (let [pat-iri-map      (get type-iri-map "Pattern")
-        primary-patterns (->> pat-iri-map vals (filterv :primary))
-        root-pattern     {:id         ::root
-                          :type       "Pattern"
-                          :alternates primary-patterns}
-        pat-iri-map*     (assoc pat-iri-map ::root root-pattern)]
+  (let [pat-iri-map     (get type-iri-map "Pattern")
+        primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
+        root-pattern    {:id         ::root
+                         :type       "Pattern"
+                         :alternates primary-pat-ids}
+        pat-iri-map*    (assoc pat-iri-map ::root root-pattern)]
     (-> (z/zipper
          (fn branch? [node-id] ; it is a branch if it's a pattern
            (contains? pat-iri-map* node-id))

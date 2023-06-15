@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
+            [clojure.zip :as z]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.test-constants :as const]))
@@ -179,21 +180,22 @@
 
 (defn gen-single-walk [seed]
   (let [{:keys [profiles alignments]} const/simple-input
-        profile-map (profile/profiles->map profiles)
+        profile-map (profile/profiles->type-iri-map profiles)
         seeded-rng  (random/seed-rng seed)]
-    (->> (profile/rand-pattern-zip profile-map
-                                   alignments
-                                   seeded-rng)
+    (->> (profile/rand-pattern-zip-2 profile-map alignments seeded-rng)
          profile/walk-once
          (keep (fn [loc]
-                 (let [{obj-type :type :as loc-obj} (profile/loc-object loc)]
-                   (when (= "StatementTemplate" obj-type) loc-obj)))))))
+                 (get-in profile-map ["StatementTemplate" (z/node loc)]))))))
 
 (deftest zip-walk-test
   (testing "rand-pattern-zip followed by walk-once"
     (let [{total :total check-passed :check-passed}
           (stest/summarize-results (stest/check `gen-single-walk))]
       (is (= total check-passed)))))
+
+(comment
+  (time
+   (dotimes [_ 300] (gen-single-walk 10))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cmi5 + tla profiles tests
