@@ -152,31 +152,37 @@
 ;; Skeleton
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- update-alignment
+  [{existing-count  :count
+    existing-weight :weight}
+   {new-weight   :weight
+    obj-override :objectOverride}]
+  (let [count  (inc existing-count)
+        weight (-> (* existing-count existing-weight)
+                   (+ new-weight)
+                   (/ count))]
+    {:weight          weight
+     :count           count
+     :object-override obj-override}))
+
 (defn get-actor-alignments
+  "Return `alignments` as a map from the component IDs to their alignment
+   data, i.e. a map of `:weight`, `:count`, and `:object-override`. Only
+   alignments that contain `actor-id`, `group-id`, or `role` will be
+   included in the returned map."
   [alignments actor-id group-id role]
-  (reduce (fn [alignment-map alignment]
-            (let [iri (:component alignment)]
-              (if (contains? alignment-map iri)
-                (let [existing (get alignment-map iri)
-                      existing-count (:count existing)
-                      count (+ existing-count 1)
-                      weight (/ (+ (* existing-count (:weight existing))
-                                   (:weight alignment))
-                                count)
-                      obj-override (:object-override existing)]
-                  (assoc alignment-map iri {:weight weight
-                                            :count count
-                                            :object-override obj-override}))
-                (assoc alignment-map iri
-                       {:weight (:weight alignment)
-                        :count 1
-                        :object-override (:objectOverride alignment)}))))
-          {}
-          (for [{alignments :alignments :as actor-alignment} alignments
-                :when (contains? (set [actor-id group-id role])
-                                 (:id actor-alignment))
-                alignment alignments]
-            alignment)))
+  (let [actor-alignment-ids (set [actor-id group-id role])]
+    (reduce (fn [alignment-map {component-iri :component :as alignment}]
+              (update alignment-map
+                      component-iri
+                      (fnil update-alignment {:weight 0.0 :count 0})
+                      alignment))
+            {}
+            (for [{alignment-maps :alignments
+                   alignment-id   :id} alignments
+                  :when (actor-alignment-ids alignment-id)
+                  alignment alignment-maps]
+              alignment))))
 
 (comment
 
