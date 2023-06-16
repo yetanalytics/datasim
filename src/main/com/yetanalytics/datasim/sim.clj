@@ -301,7 +301,7 @@
 
                       ;; infinite seq of maps containing registration uuid,
                       ;; statement template, and a seed for generation
-                      actor-reg-seq (p/registration-seq-2
+                      actor-reg-seq (p/registration-seq
                                      type-iri-map actor-alignment actor-reg-seed)
 
                       ;; additional seed for further gen
@@ -464,7 +464,7 @@
 
   (let [agent-chan
         (-> (sim-chans i)
-            (get "mbox::mailto:alice@example.org"))]
+            (get "mbox::mailto:alicefaux@example.org"))]
     (a/go-loop [cnt 0]
       (when-let [s (a/<! agent-chan)]
         (when (= 0
@@ -481,12 +481,8 @@
      i
      (assoc-in [:parameters :end] "2021-01-01T00:00:00.000000Z")))
 
-  (-> ii
-      sim-chan
-      (->> (a/into []))
-      a/<!!
-      count
-      time)
+  (time
+   (-> ii sim-chan (->> (a/into [])) a/<!! count))
 
   (time
    (count (sim-seq ii)))

@@ -180,20 +180,20 @@
         pattern-zip (pattern-zip type-iri-map alignment rng)]
     (registration-seq-instance* type-iri-map pattern-zip rng)))
 
-(s/fdef registration-seq-2
+(s/fdef registration-seq
   :args (s/cat :type-iri-map ::type-iri-map
                :alignment map? ; TODO: Better spec
                :seed number?)
   :ret (s/every ::registration-map :kind #(instance? clojure.lang.LazySeq %)))
 
-(defn- registration-seq-2*
+(defn- registration-seq*
   [type-iri-map pattern-zip rng]
   (lazy-seq
    (concat (registration-seq-instance* type-iri-map pattern-zip rng)
-           (registration-seq-2* type-iri-map pattern-zip rng))))
+           (registration-seq* type-iri-map pattern-zip rng))))
 
 ;; TODO: Configurable keep-max arg
-(defn registration-seq-2
+(defn registration-seq
   "Given `seed`, `alignment` and a `type-iri-map`, return an infinite lazy seq
    of registration maps with the following properties:
    - `:registration` is a UUID string that will be the Statement's Context
@@ -207,7 +207,7 @@
   [type-iri-map alignment seed]
   (let [^Random rng (random/seed-rng seed)
         pattern-zip (pattern-zip type-iri-map alignment rng)]
-    (registration-seq-2* type-iri-map pattern-zip rng)))
+    (registration-seq* type-iri-map pattern-zip rng)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Primary Pattern Selection

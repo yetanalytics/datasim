@@ -159,7 +159,7 @@
 (defn- gen-registration-seq [seed limit]
   (let [{:keys [profiles]} const/simple-input
         profile-map (profile/profiles->type-iri-map profiles)]
-    (->> (profile/registration-seq-2 profile-map {} seed)
+    (->> (profile/registration-seq profile-map {} seed)
          (take limit))))
 
 (deftest registration-seq-test
