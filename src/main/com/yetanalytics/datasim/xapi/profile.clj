@@ -55,23 +55,6 @@
 ;; Profile -> IRI Map
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/fdef profiles->map
-  :args (s/cat :profiles (s/every ::profile/profile))
-  :ret ::iri-map)
-
-(defn profiles->map
-  "Given any number of profiles, return all IRIs mapped to what they reference"
-  [profiles]
-  (assert (seq profiles) "At least one profile is required.")
-  (into {}
-        (for [{profile-id :id
-               :as profile} profiles
-              [_ things] (select-keys profile [:concepts :patterns :templates])
-              {:keys [id] :as thing} things]
-          [id (assoc thing
-                     ::_profile-id
-                     profile-id)])))
-
 (defn- assoc-profile-id [{profile-id :id :as profile}]
   (let [update-object  (fn [obj] (assoc obj ::_profile-id profile-id))
         update-objects (fn [objects] (map update-object objects))]
@@ -109,116 +92,7 @@
 ;; Registration Sequence
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn loc-iri-map
-  "Given a zipper loc, get the map of profile subobjects by IRI"
-  [loc]
-  (get (meta loc) ::iri-map))
-
-(defn loc-object
-  "Given a zipper loc, look up the object from the IRI"
-  [loc]
-  (get (loc-iri-map loc) (z/node loc)))
-
-(defn pattern-zip
-  "Given one or more profiles, create a zipper that traverses the patterns and
-  templates. Root is a special keyword ::root with the primary patterns as
-  `alternates` children."
-  [iri-map']
-  (let [primary-pattern-iris
-        (keep
-         (fn [{id :id
-               node-type :type
-               primary :primary}]
-           (when (and (= node-type "Pattern")
-                      primary)
-             id))
-         (vals iri-map'))]
-    (assert (seq primary-pattern-iris)
-            "Profile input must contain primary patterns!")
-    ;; Add the virtual top level before proceeding
-    (let [iri-map (assoc iri-map'
-                         ::root
-                         {:id ::root
-                          :type "Pattern"
-                          :alternates (into [] primary-pattern-iris)})]
-      (->
-       (z/zipper
-        (fn branch? [node-iri]
-          (let [{node-type :type} (get iri-map node-iri)]
-            (= node-type "Pattern")))
-        ;; The default children function leaves all options open
-        ;; We can override :zip/children to make it decide things.
-        (fn children [node-iri]
-          (let [{:keys [sequence
-                        alternates
-                        optional
-                        oneOrMore
-                        zeroOrMore
-                        ]} (get iri-map node-iri)]
-            (or sequence
-                alternates
-                (and optional
-                     [optional])
-                (and oneOrMore
-                     [oneOrMore])
-                (and zeroOrMore
-                     [zeroOrMore]))))
-        ;; Make node doesn't really mean much here, as we don't edit.
-        (fn make-node
-          [node-iri kid-iris]
-          node-iri)
-        ::root)
-       ;; We store the map in meta, which is always preserved
-       (vary-meta assoc ::iri-map iri-map)))))
-
-(defn rand-pattern-zip
-  "Building on the comprehension from pattern-zip, return a zipper that uses a
-  deterministic pseudorandom walk for choosing children/paths."
-  [iri-map'
-   alignment
-   ^Random rng
-   & {:keys [repeat-max]
-      :or {repeat-max 5}}]
-  (let [pzip (pattern-zip iri-map')
-        iri-map (::iri-map (meta pzip))]
-    (vary-meta pzip
-               assoc
-               :zip/children
-               (fn rand-children
-                 [node-iri]
-                 (let [{:keys [id
-                               type
-                               primary
-
-                               alternates
-                               optional
-                               oneOrMore
-                               sequence
-                               zeroOrMore
-                               ]
-                        {label :en} :prefLabel
-                        :as profile-obj} (get iri-map node-iri)]
-                   (assert profile-obj "Can't navigate if not a pattern")
-                   (cond
-                     alternates
-                     [(random/choose rng alignment alternates)]
-
-                     optional
-                     (if-let [yeah (random/choose rng alignment [nil optional])]
-                       [optional]
-                       [])
-                     ;; TODO: Figure out effect, if any
-                     oneOrMore
-                     (repeat (inc (random/rand-int* rng repeat-max))
-                             oneOrMore)
-                     zeroOrMore
-                     (repeat (random/rand-int* rng repeat-max)
-                             zeroOrMore)
-                     sequence
-                     sequence
-                     ))))))
-
-(defn rand-pattern-zip-2
+(defn- pattern-zip
   "Create a zipper over the Patterns and Statement Templates found in
    `type-iri-map`. A special `::root` sentinel Pattern is created as an
    alternates Pattern of all the primary Patterns in the profiles.
@@ -233,78 +107,38 @@
                          :type       "Pattern"
                          :alternates primary-pat-ids}
         pat-iri-map*    (assoc pat-iri-map ::root root-pattern)]
-    (-> (z/zipper
-         (fn branch? [node-id] ; it is a branch if it's a pattern
-           (contains? pat-iri-map* node-id))
-         (fn children [node-id]
-           (let [{:keys [sequence alternates optional oneOrMore zeroOrMore]}
-                 (get pat-iri-map* node-id)]
-             (cond
-               sequence   sequence
-               alternates [(random/choose rng alignment alternates)]
-               optional   (or (some->> [nil optional]
-                                       (random/choose rng alignment)
-                                       vector)
-                              [])
-               oneOrMore  (repeat (inc (random/rand-int* rng repeat-max))
-                                  oneOrMore)
-               zeroOrMore (repeat (random/rand-int* rng repeat-max)
-                                  zeroOrMore))))
-         (fn make-node [node-iri _kid-iris] ; this is a no-op
-           node-iri)
-         ::root)
-        (vary-meta assoc ::pattern-iri-map pat-iri-map*))))
+    (z/zipper
+     (fn branch? [node-id] ; it is a branch if it's a pattern
+       (contains? pat-iri-map* node-id))
+     (fn children [node-id] ; choose children using rng
+       (let [{:keys [sequence alternates optional oneOrMore zeroOrMore]}
+             (get pat-iri-map* node-id)]
+         (cond
+           sequence   sequence
+           alternates [(random/choose rng alignment alternates)]
+           optional   (or (some->> [nil optional]
+                                   (random/choose rng alignment)
+                                   vector)
+                          [])
+           oneOrMore  (repeat (inc (random/rand-int* rng repeat-max))
+                              oneOrMore)
+           zeroOrMore (repeat (random/rand-int* rng repeat-max)
+                              zeroOrMore))))
+     (fn make-node [node-id _child-ids] ; this is a no-op
+       node-id)
+     ::root)))
 
-(defn walk-once
-  "From the root of a pattern zip, perform a single walk of a primary pattern,
-  returning a seq of locs"
+(defn- walk-once
+  "From the root of a pattern zip, perform a single walk of a primary Pattern,
+   returning a seq of locs. Which primary Pattern is walked will be chosen
+   in a pseudorandom, deterministic fashion (see how the root node is
+   constructed in `pattern-zip`)."
   [loc]
   (->> loc
        (iterate z/next)
        (take-while (complement z/end?))
-       ;; cut the root node off the top
-       rest
-       ;; empty seq nodes will be nil, so only keep the good'ns
-       (filter z/node)))
-
-(defn registration-seq
-  "Given a seed, alignment and profiles, return an infinite seq of maps where
-  `:registration` is a string uuid
-  `:template` is a statement template
-  `:seed` is a derived seed for generating the statement."
-  ([iri-map
-    alignment
-    seed]
-   (lazy-seq
-    (let [^Random rng (random/seed-rng seed)
-          root-loc (rand-pattern-zip iri-map alignment rng)]
-      (registration-seq root-loc rng))))
-  ([root-loc
-    ^Random rng]
-   (lazy-seq
-    (let [registration (random/rand-uuid rng)]
-      (concat
-       (->> root-loc
-            ;; do one deterministic walk
-            walk-once
-            ;; Get the statement templates
-            (keep (fn [loc]
-                    (let [{obj-type :type
-                           :as o} (loc-object loc)
-                          iri-map (::iri-map (meta loc))]
-                      (when (= "StatementTemplate" obj-type)
-                        {:registration registration
-                         :template o
-                         :seed (random/rand-long rng)
-                         :pattern-ancestors
-                         (into []
-                               (for [iri (rest (z/path loc))
-                                     :let [{:keys [primary]} (get iri-map iri)]]
-                                 {:id iri
-                                  :primary (true? primary)}))})))))
-       (registration-seq
-        root-loc
-        rng))))))
+       rest              ; cut the root node off the top
+       (filter z/node))) ; empty seq nodes will be `nil`, so filter them out
 
 ;; This `registration-seq-instance` public function exists in order to test
 ;; pattern zip creation and registration seq generation; it's not used in
@@ -316,7 +150,7 @@
                :seed number?)
   :ret (s/every ::registration-map))
 
-(defn registration-seq-instance*
+(defn- registration-seq-instance*
   [type-iri-map pattern-zip rng]
   (let [registration   (random/rand-uuid rng)
         node->template (fn [node-id]
@@ -343,7 +177,7 @@
    it will generate one Pattern's seq, instead of continuing infinitely."
   [type-iri-map alignment seed]
   (let [^Random rng (random/seed-rng seed)
-        pattern-zip (rand-pattern-zip-2 type-iri-map alignment rng)]
+        pattern-zip (pattern-zip type-iri-map alignment rng)]
     (registration-seq-instance* type-iri-map pattern-zip rng)))
 
 (s/fdef registration-seq-2
@@ -372,7 +206,7 @@
    Each registration map will be able to generate a single Statement."
   [type-iri-map alignment seed]
   (let [^Random rng (random/seed-rng seed)
-        pattern-zip (rand-pattern-zip-2 type-iri-map alignment rng)]
+        pattern-zip (pattern-zip type-iri-map alignment rng)]
     (registration-seq-2* type-iri-map pattern-zip rng)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -382,34 +216,9 @@
 (s/fdef select-primary-patterns
   :args (s/cat :iri-map ::iri-map
                :params ::params/parameters)
-  :ret ::iri-map)
+  :ret ::type-iri-map)
 
 (defn select-primary-patterns
-  "Given an iri-map and params, select primary patterns for generation"
-  [iri-map
-   {:keys [gen-profiles
-           gen-patterns]}]
-  (let [?profile-set (some-> gen-profiles not-empty set)
-        ?pattern-set (some-> gen-patterns not-empty set)]
-    (reduce-kv
-     (fn [m k {obj-type :type
-               profile-id ::_profile-id
-               :keys [id primary]
-               :as v}]
-       (assoc m k
-              (cond-> v
-                (and (= obj-type "Pattern")
-                     primary)
-                (assoc :primary
-                       (and
-                        (or (nil? ?profile-set)
-                            (contains? ?profile-set profile-id))
-                        (or (nil? ?pattern-set)
-                            (contains? ?pattern-set id)))))))
-     (empty iri-map)
-     iri-map)))
-
-(defn select-primary-patterns-2
   "Given `type-iri-map` and the `gen-profiles` and `gen-patterns` params,
    update the Pattern map to further specify primary patterns for generation.
    Primary patterns in this context must be specified by `gen-profiles` or

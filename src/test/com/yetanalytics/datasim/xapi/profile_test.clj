@@ -14,13 +14,8 @@
 (def tla-id "https://w3id.org/xapi/tla")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Basic Tests
+;; Profile Map Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(deftest profiles->map-test
-  (testing "profiles->map function"
-    (is (s/valid? ::profile/iri-map
-                  (profile/profiles->map (:profiles const/simple-input))))))
 
 (deftest profile->type-iri-map-test
   (testing "profiles->type-iri-map function"
@@ -28,32 +23,6 @@
              :profiles
              profile/profiles->type-iri-map
              (s/valid? ::profile/type-iri-map)))))
-
-(deftest pattern-zip-test
-  (testing "pattern-zip function"
-    (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)
-           (-> const/simple-input
-               :profiles
-               profile/profiles->map
-               profile/pattern-zip
-               meta
-               keys)))
-    (is (s/valid? ::profile/iri-map
-                  (-> const/simple-input
-                      :profiles
-                      profile/profiles->map
-                      profile/pattern-zip
-                      profile/loc-iri-map
-                      (dissoc ::profile/root))))
-    (is (= {:id         ::profile/root
-            :type       "Pattern"
-            :alternates [cmi5-pattern-id]}
-           (-> const/simple-input
-               :profiles
-               profile/profiles->map
-               profile/pattern-zip
-               profile/loc-iri-map
-               ::profile/root)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cmi5 profile primary pattern
@@ -172,11 +141,11 @@
   (s/cat :satisfieds cmi5-satisfieds?
          :typical-sessions cmi5-typical-sessions?))
 
-(s/fdef gen-registration-seq-inst
+(s/fdef gen-reg-seq-instance
   :args (s/cat :seed int?)
   :ret (s/and cmi5-general-pattern?))
 
-(defn gen-registration-seq-inst [seed]
+(defn gen-reg-seq-instance [seed]
   (let [{:keys [profiles]} const/simple-input
         profile-map (profile/profiles->type-iri-map profiles)]
     (->> (profile/registration-seq-instance profile-map {} seed)
@@ -194,9 +163,9 @@
          (take limit))))
 
 (deftest registration-seq-test
-  (testing "Walk and generate seq for a single profile"
+  (testing "Walk and generate seq for a single pattern"
     (let [{total :total check-passed :check-passed}
-          (stest/summarize-results (stest/check `gen-registration-seq-inst))]
+          (stest/summarize-results (stest/check `gen-reg-seq-instance))]
       (is (= total check-passed))))
   (testing "Walk and generate seq continuously"
     (let [{total :total check-passed :check-passed}
@@ -217,7 +186,7 @@
 (deftest select-primary-patterns-test
   (testing "with no params, returns iri map"
     (is (= combined-iri-map
-           (profile/select-primary-patterns-2
+           (profile/select-primary-patterns
             combined-iri-map
             {}))))
   (testing "profile selection implies patterns"
@@ -227,13 +196,13 @@
             {:gen-profiles [cmi5-id tla-id]})))
     (testing "unless also specified"
       (is (not= combined-iri-map
-                (profile/select-primary-patterns-2
+                (profile/select-primary-patterns
                  combined-iri-map
                  {:gen-profiles [cmi5-id tla-id]
                   :gen-patterns [cmi5-pattern-id]})))))
   (testing "filters by profile"
     (is (= [cmi5-pattern-id]
-           (-> (profile/select-primary-patterns-2
+           (-> (profile/select-primary-patterns
                 combined-iri-map
                 {:gen-profiles [cmi5-id]})
                (get "Pattern")
@@ -241,7 +210,7 @@
                primary-pattern-ids))))
   (testing "filters by pattern"
     (is (= [cmi5-pattern-id]
-           (-> (profile/select-primary-patterns-2
+           (-> (profile/select-primary-patterns
                 combined-iri-map
                 {:gen-patterns [cmi5-pattern-id]})
                (get "Pattern")

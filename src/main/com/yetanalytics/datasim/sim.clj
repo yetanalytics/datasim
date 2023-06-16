@@ -265,11 +265,9 @@
                          lunch-hour-seq])
         ;; activities used in the sim
         activities (activity/derive-cosmos input (.nextLong sim-rng))
-        iri-map (-> (p/profiles->map profiles)
-                    ;; Select which primary patterns to generate from
-                    (p/select-primary-patterns parameters))
         type-iri-map (-> (p/profiles->type-iri-map profiles)
-                         (p/select-primary-patterns-2 parameters))]
+                         ;; Select which primary patterns to generate from
+                         (p/select-primary-patterns parameters))]
     ;; Now, for each actor we 'initialize' what is needed for the sim
     (into {}
           (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
@@ -297,8 +295,8 @@
 
                       ;; infinite seq of maps containing registration uuid,
                       ;; statement template, and a seed for generation
-                      actor-reg-seq (p/registration-seq
-                                     iri-map actor-alignment actor-reg-seed)
+                      actor-reg-seq (p/registration-seq-2
+                                     type-iri-map actor-alignment actor-reg-seed)
 
                       ;; additional seed for further gen
                       actor-seed (.nextLong sim-rng)
