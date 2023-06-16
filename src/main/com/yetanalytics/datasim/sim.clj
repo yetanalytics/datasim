@@ -147,6 +147,9 @@
                  :seed seed
                  :rng rng})))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Skeleton
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-actor-alignments
   [alignments actor-id group-id role]
@@ -173,10 +176,6 @@
                                  (:id actor-alignment))
                 alignment alignments]
             alignment)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Skeleton
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
@@ -315,12 +314,12 @@
                   (fn [s]
                     (>= from-ms (-> s meta :timestamp-ms))))))]))))
 
-(s/def ::select-agents
-  (s/every ::xapi/agent-id))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence Simulation (Sync)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::select-agents
+  (s/every ::xapi/agent-id))
 
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input
