@@ -217,17 +217,7 @@
                     (let [t-end (.toEpochMilli (t/instant end))]
                       (- t-end t-zero)))
         ;; Useful time seqs
-        {:keys [;; week-seq
-                min-seq
-                ;; t-seq
-                ;; doy-seq
-                ;; moh-seq
-                ;; day-seq
-                ;; sec-seq
-                ;; dom-seq
-                ;; hod-seq
-                ;; hour-seq
-                ;; dow-seq
+        {:keys [min-seq
                 mod-seq
                 day-night-seq]} (if ?sample-n
                                   (ts/time-seqs :t-zero t-zero

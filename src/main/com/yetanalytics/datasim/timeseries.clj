@@ -369,9 +369,25 @@
                as))
        xs))
 
+;; TODO: Uncomment commented-out time seq code; either return all or add an
+;; arg to select which ones to return
 (defn time-seqs
   "Given a t-zero (simulation start), an upper bound of sample-n milliseconds
-  and an optional local timezone, return a map of useful lazy time sequences."
+  and an optional local timezone, return a map of useful lazy time sequences.
+   
+   Time sequences in the map:
+   - `:t-seq`
+   - `:sec-seq`
+   - `:min-seq`
+   - `:hour-seq`
+   - `:day-seq`
+   - `:week-seq`
+   - `:moh-seq` (minute of hour)
+   - `:hod-seq` (hour of day)
+   - `:dow-seq` (day of week)
+   - `:dom-seq` (day of month)
+   - `:doy-seq` (day of year)
+   - `:day-night-seq`"
   [& {:keys [t-zero
              sample-n
              ^java.time.ZoneRegion zone]
