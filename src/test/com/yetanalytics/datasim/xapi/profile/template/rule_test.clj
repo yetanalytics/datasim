@@ -470,29 +470,29 @@
                     r/rules->object-types)
                 (catch Exception e (-> e ex-data :type)))))))
 
-(def valuegen-iri-map
-  {"http://foo.org/verb"
-   {:id   "http://foo.org/verb"
-    :type "Verb"}
-   "http://foo.org/activity"
-   {:id   "http://foo.org/activity"
-    :type "Activity"
-    :definition {:type "http://foo.org/activity-type"}}
-   "http://foo.org/activity-type"
-   {:id   "http://foo.org/activity-type"
-    :type "ActivityType"}
-   "http://foo.org/activity-extension"
-   {:id   "http://foo.org/activity-extension"
-    :type "ActivityExtension"
-    :inlineSchema "{\"type\":\"string\"}"}
-   "http://foo.org/context-extension"
-   {:id   "http://foo.org/context-extension"
-    :type "ContextExtension"
-    :inlineSchema "{\"type\":\"integer\"}"}
-   "http://foo.org/result-extension"
-   {:id   "http://foo.org/result-extension"
-    :type "ResultExtension"
-    :inlineSchema "{\"type\":\"boolean\"}"}})
+(def valuegen-type-iri-map
+  {"Verb"              {"http://foo.org/verb"
+                        {:id   "http://foo.org/verb"
+                         :type "Verb"}}
+   "Activity"          {"http://foo.org/activity"
+                        {:id         "http://foo.org/activity"
+                         :type       "Activity"
+                         :definition {:type "http://foo.org/activity-type"}}}
+   "ActivityType"      {"http://foo.org/activity-type"
+                        {:id   "http://foo.org/activity-type"
+                         :type "ActivityType"}}
+   "ActivityExtension" {"http://foo.org/activity-extension"
+                        {:id           "http://foo.org/activity-extension"
+                         :type         "ActivityExtension"
+                         :inlineSchema "{\"type\":\"string\"}"}}
+   "ContextExtension"  {"http://foo.org/context-extension"
+                        {:id           "http://foo.org/context-extension"
+                         :type         "ContextExtension"
+                         :inlineSchema "{\"type\":\"integer\"}"}}
+   "ResultExtension"   {"http://foo.org/result-extension"
+                        {:id           "http://foo.org/result-extension"
+                         :type         "ResultExtension"
+                         :inlineSchema "{\"type\":\"boolean\"}"}}})
 
 (def valuegen-valuesets
   {:verbs          #{{:id   "http://foo.org/verb"
@@ -505,12 +505,12 @@
    :activity-types #{"http://foo.org/activity-type"}})
 
 (defn- parse-rule-valuegen [rule]
-  (r/add-rule-valuegen valuegen-iri-map
+  (r/add-rule-valuegen valuegen-type-iri-map
                        valuegen-valuesets
                        (first (r/parse-rules [rule]))))
 
 (defn- parse-rule-sub-valuegen [rule]
-  (r/add-rule-valuegen valuegen-iri-map
+  (r/add-rule-valuegen valuegen-type-iri-map
                        valuegen-valuesets
                        (first (r/parse-rules [rule]))))
 
@@ -811,7 +811,7 @@
 (defn- apply-rules [statement rules]
   (let [parsed-rules (r/parse-rules rules)
         parsed-rules (map (partial r/add-rule-valuegen
-                                   valuegen-iri-map
+                                   valuegen-type-iri-map
                                    valuegen-valuesets)
                           parsed-rules)]
     (r/apply-rules statement parsed-rules (random/seed-rng 100))))
@@ -1313,23 +1313,23 @@
 
 ;; Macro to help us with testing a collection of templates
 
-(defn- parse-template [iri-map valuesets {:keys [rules]}]
+(defn- parse-template [type-iri-map valuesets {:keys [rules]}]
   (let [parsed-rules (r/parse-rules rules)
         parsed-rules (map (fn [parsed-rule]
-                            (r/add-rule-valuegen iri-map
+                            (r/add-rule-valuegen type-iri-map
                                                  valuesets
                                                  parsed-rule))
                           parsed-rules)]
     parsed-rules))
 
 (defmacro test-templates
-  [testname statement iri-map valuesets templates]
+  [testname statement type-iri-map valuesets templates]
   `(testing ~testname
      ~@(map
         (fn [{:keys [id] :as template}]
           `(testing ~id
              (let [rng#   (random/seed-rng 100)
-                   rules# (parse-template ~iri-map ~valuesets ~template)
+                   rules# (parse-template ~type-iri-map ~valuesets ~template)
                    stmt#  (r/apply-rules ~statement rules# rng#)]
                (is (every? #(s/valid? ::r/parsed-rule %) rules#))
                (is (every? #(r/follows-rule? stmt# %) rules#))
@@ -1339,10 +1339,18 @@
 
 ;; We can pull some actual rules from cmi5
 
-(def cmi5-iri-map
+(def cmi5-type-iri-map
   (->> const/cmi5-profile
        :concepts
-       (reduce (fn [m {:keys [id] :as x}] (assoc m id x)) {})))
+       (group-by :type)
+       (reduce-kv
+        (fn [m type concepts]
+          (->> concepts
+               (reduce (fn [m* {:keys [id] :as concept}]
+                         (assoc m* id concept))
+                       {})
+               (assoc m type)))
+        {})))
 
 (def cmi5-valuesets
   (let [concepts   (:concepts const/cmi5-profile)
@@ -1363,5 +1371,8 @@
     (json/parse-stream r)))
 
 (deftest cmi5-rule-tests
-  (test-templates
-   "cmi5 template" cmi5-statement cmi5-iri-map cmi5-valuesets cmi5-templates))
+  (test-templates "cmi5 template"
+                  cmi5-statement
+                  cmi5-type-iri-map
+                  cmi5-valuesets
+                  cmi5-templates))

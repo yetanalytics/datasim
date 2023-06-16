@@ -280,12 +280,15 @@
 
 ;; TODO: Distinguish between activity, context, and result extensions
 (defn- extension-spec
-  [iri-map extension-id spec]
-  (or (some->> extension-id
-               (get iri-map)
-               :inlineSchema
-               (jschema/schema->spec nil))
-      spec))
+  [type-iri-map extension-id spec]
+  (let [act-iri-map (get type-iri-map "ActivityExtension")
+        ctx-iri-map (get type-iri-map "ContextExtension")
+        res-iri-map (get type-iri-map "ResultExtension")
+        ext->spec   #(some->> % :inlineSchema (jschema/schema->spec nil))]
+    (or (some->> extension-id (get act-iri-map) ext->spec)
+        (some->> extension-id (get ctx-iri-map) ext->spec)
+        (some->> extension-id (get res-iri-map) ext->spec)
+        spec)))
 
 (defn- spec-generator [spec]
   (try (s/gen spec)
@@ -303,13 +306,13 @@
    add a `:spec` and `:generator`. This will ensure that during rule
    application, the rule will always be able to come up with a value.
    Also revises any extension specs."
-  [iri-map
+  [type-iri-map
    valuesets
    {:keys [presence path valueset none spec] :as parsed-rule}]
   (if (= :excluded presence)
     parsed-rule
     (let [spec*    (if (= ::j/any spec) ; only extensions have this spec
-                     (extension-spec iri-map (peek path) spec)
+                     (extension-spec type-iri-map (peek path) spec)
                      spec)
           ?all-set (not-empty (spec->valueset valuesets spec))]
       (cond-> (assoc parsed-rule :spec spec*)

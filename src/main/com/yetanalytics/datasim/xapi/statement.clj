@@ -25,8 +25,8 @@
 ;; Input for the whole simulation.
 (s/def ::input :com.yetanalytics.datasim/input)
 
-;; Flat map of profile iris to objects
-(s/def ::iri-map ::profile/iri-map)
+;; Map of profile types -> IDs -> objects
+(s/def ::type-iri-map ::profile/type-iri-map)
 
 ;; All the activities we can use, by activity type:
 ;; a map of activity type IRIs to activity IRIs to activities
@@ -70,7 +70,7 @@
 
 (s/def ::inputs
   (s/keys :req-un [::input
-                   ::iri-map
+                   ::type-iri-map
                    ::activities
                    ::actor
                    ::alignment
@@ -178,8 +178,8 @@
   "Return a collection of parsed rules derived from the template `rules`.
    Uses information from `iri-map` and `activities` maps, as well as from
    object-related Determining Properties, to complete the parsed rules."
-  [iri-map
-   activities
+  [type-iri-map
+   activity-map
    {object-activity-type :objectActivityType
     object-statement-ref :objectStatementRefTemplate
     profile-id           :inScheme
@@ -191,18 +191,19 @@
                          (rule/parse-rules :statement-ref rules)
                          :else
                          (rule/parse-rules rules))
-        ;; TODO: More efficient data structures
-        verbs          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
-        verb-ids       (->> verbs (map :id) set)
-        activityies    (->> activities vals (mapcat vals) (into #{{"id" profile-id}}))
-        activity-ids   (->> activities vals (mapcat keys) (into #{profile-id}))
-        activity-types (->> activities keys set)
+        prof-act-set   #{{"id" profile-id}}
+        prof-id-set    #{profile-id}
+        verbs          (->> (get type-iri-map "Verb") vals set)
+        verb-ids       (->> (get type-iri-map "Verb") keys set)
+        activities     (->> activity-map vals (mapcat vals) (into prof-act-set))
+        activity-ids   (->> activity-map vals (mapcat keys) (into prof-id-set))
+        activity-types (->> activity-map keys set)
         value-sets     {:verbs          verbs
                         :verb-ids       verb-ids
-                        :activities     activityies
+                        :activities     activities
                         :activity-ids   activity-ids
                         :activity-types activity-types}]
-    (mapv (partial rule/add-rule-valuegen iri-map value-sets)
+    (mapv (partial rule/add-rule-valuegen type-iri-map value-sets)
           parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -236,18 +237,19 @@
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
-               :inputs (s/keys :req-un [::profile/iri-map ::alignment])
+               :inputs (s/keys :req-un [::type-iri-map ::alignment])
                :rng    ::random/rng)
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{:strs [id] :as verb} {:keys [iri-map alignment]} rng]
-  (let [return-verb (fn [_] verb)
+  [{:strs [id] :as verb} {:keys [type-iri-map alignment]} rng]
+  (let [iri-map     (get type-iri-map "Verb")
+        return-verb (fn [_] verb)
         merge-verb  (fn [v] (merge-nested v verb))]
     (or
      ;; Verb found by ID
      (some->> id
-              (get iri-map)
+              iri-map
               profile->statement-verb
               merge-verb)
      ;; Verb w/ ID not found, return as-is
@@ -259,9 +261,7 @@
               merge-verb)
      ;; Choose random verb
      (some->> iri-map
-              vals
-              (filter #(= "Verb" (:type %)))
-              (map :id)
+              keys
               (random/choose rng alignment)
               (get iri-map)
               profile->statement-verb))))
@@ -503,7 +503,7 @@
 
 (s/fdef complete-sub-statement
   :args (s/cat :sub-statement map?
-               :inputs (s/keys :req-un [::profile/iri-map
+               :inputs (s/keys :req-un [::type-iri-map
                                         ::activities
                                         ::alignment])
                :rng ::random/rng)
@@ -552,7 +552,7 @@
 
 (s/fdef complete-statement
   :args (s/cat :statement map?
-               :inputs (s/keys :req-un [::profile/iri-map
+               :inputs (s/keys :req-un [::type-iri-map
                                         ::activities
                                         ::alignment])
                :rng ::random/rng)
@@ -629,7 +629,7 @@
 (defn generate-statement
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
   [{{:keys [profiles]} :input
-    iri-map            :iri-map
+    type-iri-map       :type-iri-map
     activities         :activities
     actor              :actor
     alignment          :alignment
@@ -644,7 +644,7 @@
         ;; TODO: Precompile these two so that they don't happen on
         ;; every statement gen
         template-base  (template->base-statement template)
-        template-rules (template-rules iri-map activities template)
+        template-rules (template-rules type-iri-map activities template)
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng alignment)

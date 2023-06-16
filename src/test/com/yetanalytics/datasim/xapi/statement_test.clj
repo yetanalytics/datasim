@@ -20,8 +20,8 @@
 
 (def top-seed 42)
 
-(def profile-iri-map
-  (-> const/simple-input :profiles profile/profiles->map))
+(def profile-type-iri-map
+  (-> const/simple-input :profiles profile/profiles->type-iri-map))
 
 (def activities
   (-> const/simple-input (activity/derive-cosmos 100)))
@@ -41,7 +41,8 @@
    alignments*))
 
 (def template
-  (get profile-iri-map "https://w3id.org/xapi/cmi5#satisfied"))
+  (get-in profile-type-iri-map
+          ["StatementTemplate" "https://w3id.org/xapi/cmi5#satisfied"]))
 
 (def pattern-ancestors
   [{:id      "https://w3id.org/xapi/cmi5#toplevel"
@@ -54,12 +55,12 @@
 
 (def valid-args
   {:input             const/simple-input
-   :iri-map           profile-iri-map
+   :type-iri-map      profile-type-iri-map
    :activities        activities
    :actor             actor
    :alignment         alignments
    :sim-t             0
-   :seed              top-seed #_(random/rand-long top-rng)
+   :seed              top-seed
    :template          template
    :pattern-ancestors pattern-ancestors
    :registration      registration})
@@ -123,7 +124,7 @@
                   (get-in statement ["actor" "mbox"]))))))
   
   ;; Verb 
-  
+
   (testing "Template specifies Verb"
     (testing "ID property"
       (let [statement
@@ -593,8 +594,8 @@
         (is (= {"objectType" "SubStatement"
                 "actor"      {"name" "Bob Fakename"
                               "mbox" "mailto:bobfake@example.org"}
-                "verb"       {"id" "https://w3id.org/xapi/adl/verbs/waived"
-                              "display" {"en" "waived"}}
+                "verb"       {"id" "https://w3id.org/xapi/adl/verbs/abandoned"
+                              "display" {"en" "abandoned"}}
                 "object"     {"id" "https://example.org/course/1550503926"
                               "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}}
                (get statement "object")))))

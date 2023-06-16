@@ -73,7 +73,7 @@
 (s/fdef statement-seq
   :args (s/cat
          :input :com.yetanalytics.datasim/input
-         :iri-map ::p/iri-map
+         :type-iri-map ::p/type-iri-map
          :activities ::activity/cosmos
          :actor ::xs/agent
          :alignment :alignment-map/alignments
@@ -82,7 +82,7 @@
 
 (defn statement-seq
   [input
-   iri-map
+   type-iri-map
    activities
    actor
    alignment
@@ -113,7 +113,7 @@
              statement (statement/generate-statement
                         (merge (first reg-seq)
                                {:input input
-                                :iri-map iri-map
+                                :type-iri-map type-iri-map
                                 :activities activities
                                 :actor actor
                                 :alignment alignment
@@ -131,7 +131,7 @@
          (cons statement
                (statement-seq
                 input
-                iri-map
+                type-iri-map
                 activities
                 actor
                 alignment
@@ -267,7 +267,9 @@
         activities (activity/derive-cosmos input (.nextLong sim-rng))
         iri-map (-> (p/profiles->map profiles)
                     ;; Select which primary patterns to generate from
-                    (p/select-primary-patterns parameters))]
+                    (p/select-primary-patterns parameters))
+        type-iri-map (-> (p/profiles->type-iri-map profiles)
+                         (p/select-primary-patterns-2 parameters))]
     ;; Now, for each actor we 'initialize' what is needed for the sim
     (into {}
           (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
@@ -306,7 +308,7 @@
             [actor-id
              (cond->> (statement-seq
                        input
-                       iri-map
+                       type-iri-map
                        activities
                        actor-xapi
                        actor-alignment
