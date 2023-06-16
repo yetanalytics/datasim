@@ -165,7 +165,7 @@
      :count           count
      :object-override obj-override}))
 
-(defn get-actor-alignments
+(defn- get-actor-alignments
   "Return `alignments` as a map from the component IDs to their alignment
    data, i.e. a map of `:weight`, `:count`, and `:object-override`. Only
    alignments that contain `actor-id`, `group-id`, or `role` will be
