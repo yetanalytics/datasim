@@ -255,8 +255,6 @@
          ::root)
         (vary-meta assoc ::pattern-iri-map pat-iri-map*))))
 
-;; TODO: Pass antecedent patterns in the result of registration seq
-
 (defn walk-once
   "From the root of a pattern zip, perform a single walk of a primary pattern,
   returning a seq of locs"
@@ -308,30 +306,45 @@
         root-loc
         rng))))))
 
-(defn- registration-seq-2*
+;; This `registration-seq-instance` public function exists in order to test
+;; pattern zip creation and registration seq generation; it's not used in
+;; production (but `registration-seq-instance*` is).
+
+(s/fdef registration-seq-instance
+  :args (s/cat :type-iri-map ::type-iri-map
+               :alignment map? ; TODO: Better spec
+               :seed number?)
+  :ret (s/every ::registration-map))
+
+(defn registration-seq-instance*
   [type-iri-map pattern-zip rng]
-  (lazy-seq
-   (let [registration   (random/rand-uuid rng)
-         node->template (fn [node-id]
-                          (get-in type-iri-map ["StatementTemplate" node-id]))
-         node->pattern  (fn [node-id]
-                          (get-in type-iri-map ["Pattern" node-id]))
-         loc->reg-map   (fn [loc]
-                          (when-some [template (node->template (z/node loc))]
-                            {:registration registration
-                             :template     template
-                             :seed         (random/rand-long rng)
+  (let [registration   (random/rand-uuid rng)
+        node->template (fn [node-id]
+                         (get-in type-iri-map ["StatementTemplate" node-id]))
+        node->pattern  (fn [node-id]
+                         (get-in type-iri-map ["Pattern" node-id]))
+        loc->reg-map   (fn [loc]
+                         (when-some [template (node->template (z/node loc))]
+                           {:registration registration
+                            :template     template
+                            :seed         (random/rand-long rng)
                              ;; Every previous node that is a Pattern
-                             :pattern-ancestors (->> loc
-                                                     z/path
-                                                     rest
-                                                     (keep node->pattern)
-                                                     vec)}))]
-     (concat
-      ;; Do one deterministc walk, then get the Statement Templates
-      (->> pattern-zip walk-once (keep loc->reg-map))
-      ;; Continue with a different registration
-      (registration-seq-2* type-iri-map pattern-zip rng)))))
+                            :pattern-ancestors (->> loc
+                                                    z/path
+                                                    rest
+                                                    (keep node->pattern)
+                                                    vec)}))]
+    ;; Do one deterministc walk, then get the Statement Templates
+    (->> pattern-zip walk-once (keep loc->reg-map))))
+
+(defn registration-seq-instance
+  "Given `seed`, `alignment` and a `type-iri-map`, return a sequence
+   of registration maps. This is similar to `registration-seq` except that
+   it will generate one Pattern's seq, instead of continuing infinitely."
+  [type-iri-map alignment seed]
+  (let [^Random rng (random/seed-rng seed)
+        pattern-zip (rand-pattern-zip-2 type-iri-map alignment rng)]
+    (registration-seq-instance* type-iri-map pattern-zip rng)))
 
 (s/fdef registration-seq-2
   :args (s/cat :type-iri-map ::type-iri-map
@@ -339,21 +352,28 @@
                :seed number?)
   :ret (s/every ::registration-map :kind #(instance? clojure.lang.LazySeq %)))
 
+(defn- registration-seq-2*
+  [type-iri-map pattern-zip rng]
+  (lazy-seq
+   (concat (registration-seq-instance* type-iri-map pattern-zip rng)
+           (registration-seq-2* type-iri-map pattern-zip rng))))
+
 ;; TODO: Configurable keep-max arg
 (defn registration-seq-2
   "Given `seed`, `alignment` and a `type-iri-map`, return an infinite lazy seq
-   of maps with the following properties:
+   of registration maps with the following properties:
    - `:registration` is a UUID string that will be the Statement's Context
      Registration property
    - `:template` is the Statement Template used to generate the Statement
    - `:seed` is a derived seed for generating the Statement
    - `:pattern-ancestors` is the vector of Patterns leading up to the Statement
-     Template in the current Pattern path."
+     Template in the current Pattern path.
+   
+   Each registration map will be able to generate a single Statement."
   [type-iri-map alignment seed]
-  (lazy-seq
-   (let [^Random rng (random/seed-rng seed)
-         pattern-zip (rand-pattern-zip-2 type-iri-map alignment rng)]
-     (registration-seq-2* type-iri-map pattern-zip rng))))
+  (let [^Random rng (random/seed-rng seed)
+        pattern-zip (rand-pattern-zip-2 type-iri-map alignment rng)]
+    (registration-seq-2* type-iri-map pattern-zip rng)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Primary Pattern Selection

@@ -2,9 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
-            [clojure.zip :as z]
             [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -174,32 +172,36 @@
   (s/cat :satisfieds cmi5-satisfieds?
          :typical-sessions cmi5-typical-sessions?))
 
-(s/fdef gen-single-walk
+(s/fdef gen-registration-seq-inst
   :args (s/cat :seed int?)
-  :ret cmi5-general-pattern?)
+  :ret (s/and cmi5-general-pattern?))
 
-(defn gen-single-walk [seed]
+(defn gen-registration-seq-inst [seed]
   (let [{:keys [profiles]} const/simple-input
-        profile-map (profile/profiles->type-iri-map profiles)
-        seeded-rng  (random/seed-rng seed)]
-    (->> (profile/rand-pattern-zip-2 profile-map {} seeded-rng)
-         profile/walk-once
-         (keep (fn [loc]
-                 (get-in profile-map ["StatementTemplate" (z/node loc)]))))))
+        profile-map (profile/profiles->type-iri-map profiles)]
+    (->> (profile/registration-seq-instance profile-map {} seed)
+         (map :template))))
 
-(deftest zip-walk-test
-  (testing "rand-pattern-zip followed by walk-once"
-    (let [{total :total check-passed :check-passed}
-          (stest/summarize-results (stest/check `gen-single-walk))]
-      (is (= total check-passed)))))
+(s/fdef gen-registration-seq
+  :args (s/cat :seed int? :limit int?)
+  :ret (s/every ::profile/registration-map
+                :kind #(instance? clojure.lang.LazySeq %)))
+
+(defn- gen-registration-seq [seed limit]
+  (let [{:keys [profiles]} const/simple-input
+        profile-map (profile/profiles->type-iri-map profiles)]
+    (->> (profile/registration-seq-2 profile-map {} seed)
+         (take limit))))
 
 (deftest registration-seq-test
-  (testing "registration-seq"
-    (let [{:keys [profiles]} const/simple-input
-          profile-map (profile/profiles->type-iri-map profiles)]
-      (->> (profile/registration-seq-2 profile-map {} 100)
-           (take 30)
-           (every? #(s/valid? ::profile/registration-map %))))))
+  (testing "Walk and generate seq for a single profile"
+    (let [{total :total check-passed :check-passed}
+          (stest/summarize-results (stest/check `gen-registration-seq-inst))]
+      (is (= total check-passed))))
+  (testing "Walk and generate seq continuously"
+    (let [{total :total check-passed :check-passed}
+          (stest/summarize-results (stest/check `gen-registration-seq))]
+      (is (= total check-passed)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cmi5 + tla profiles tests
