@@ -72,6 +72,38 @@
 ;; Statement Sequence
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def min-ms 60000) ; The amount of milliseconds in one minute
+
+(defn- actual-start-time
+  "Set the actual time of the generated Statement to a time somwhere between
+   `time-ms` and `time-ms + 1 min`, rather than always at `time-ms`.
+   
+   This is for additional spiciness :)"
+  [time-ms rng]
+  (long (+ time-ms (random/rand-int* rng min-ms))))
+
+(defn- drop-time-probs
+  "Given `prob-seq` consisting of `[time-ms prob]` pairs, drop the first couple
+   of pairs; `prob` is the probability that on a given pair the dropping
+   stops and `[[time-ms prob] & rest]` is returned."
+  [prob-seq rng]
+  (->> prob-seq
+       (drop-while
+        (fn [[_time-ms prob]]
+          (or
+           ;; micro-optimization - don't bother with rng if `prob` is 0
+           (zero? prob)
+           ;; choose `minutes` with probability `prob`
+           (>= (random/rand* rng) prob))))
+       not-empty))
+
+(defn- drop-past-time-probs
+  "Drop all `[time prob]` pairs where `time` occurs before `end-ms`."
+  [prob-seq end-ms]
+  (drop-while
+   (fn [[time-ms _prob]] (< time-ms end-ms))
+   prob-seq))
+
 (s/fdef statement-seq
   :args (s/cat
          :input :com.yetanalytics.datasim/input
@@ -82,70 +114,39 @@
          :actor-map :skeleton/actor-map)
   :ret :skeleton/statement-seq)
 
-(defn statement-seq
+(defn- statement-seq
+  "Return a lazy sequence of generated Statements; generation ends once
+   `prob-seq` is exhausted."
   [input
    type-iri-map
    activities
    actor
    alignment
-   {:keys [prob-seq
-           reg-seq
-           seed
-           rng]
-    :as actor-map}]
-  (lazy-seq
-   (let [^Random rng (or rng (random/seed-rng seed))]
-     (when-let [[[t _] & rest-prob]
-                (->> prob-seq
-                     (drop-while
-                      (fn [[t prob]]
-                        (or (zero? prob)
-                            (>= (random/rand* rng) prob))))
-                     not-empty)]
-       (let [;; for additional spiciness, set the actual time of activity
-             ;; (or at least that passed to the statement generator) to a time
-             ;; somewhere between t and t+1m
-             t-actual (long (+ t (random/rand-int* rng 60000)))
-
-             ;; t -> t-actual -> <statement generator> -> timestamp, duration
-             ;; the sequence should resume after timestamp + duration.
-
-             ;; TODO: The statement gen function will return a statement
-             ;; with duration ms in the meta.
-             statement (statement/generate-statement
-                        (merge (first reg-seq)
-                               {:input input
-                                :type-iri-map type-iri-map
-                                :activities activities
-                                :actor actor
-                                :alignment alignment
-                                :sim-t t-actual}))
-
-             #_statement #_(with-meta
-                         (assoc (first reg-seq)
-                                :t (.toString (Instant/ofEpochMilli t-actual)))
-                         {:end-ms (+ t-actual
-                                     (long
-                                      (random/rand-gauss
-                                       rng 600000.0 0.5)))})
-             ;; Get the length of time the statement took from the gen function.
-             {:keys [end-ms]} (meta statement)]
-         (cons statement
-               (statement-seq
-                input
-                type-iri-map
-                activities
-                actor
-                alignment
-                {:prob-seq (drop-while
-                            (comp
-                             (partial >
-                                      end-ms)
-                             first)
-                            rest-prob)
-                 :reg-seq (rest reg-seq)
-                 :seed seed
-                 :rng rng})))))))
+   {:keys [prob-seq reg-seq seed]}]
+  (let [time-rng       (random/seed-rng seed)
+        input-map-base {:input        input
+                        :type-iri-map type-iri-map
+                        :activities   activities
+                        :actor        actor
+                        :alignment    alignment}
+        ;; time-ms -> start-ms -> <statement generator> -> end-ms
+        ;; the sequence should resume after end-ms
+        statement-seq*
+        (fn statement-seq* [prob-seq reg-seq]
+          (lazy-seq
+           (when-some [[[time-ms _] & rest-prob-seq]
+                       (drop-time-probs prob-seq time-rng)]
+             (let [start-ms  (actual-start-time time-ms time-rng)
+                   input-map (merge input-map-base
+                                    (first reg-seq)
+                                    {:sim-t start-ms})
+                   statement (statement/generate-statement input-map)
+                   end-ms    (:end-ms (meta statement))]
+               (cons statement
+                     (statement-seq*
+                      (drop-past-time-probs rest-prob-seq end-ms)
+                      (rest reg-seq)))))))]
+    (statement-seq* prob-seq reg-seq)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
@@ -176,6 +177,42 @@
                                  (:id actor-alignment))
                 alignment alignments]
             alignment)))
+
+(comment
+
+  (:mod-seq
+   (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now))))
+
+  (let [group-arma
+        (ts/arma-seq {:phi [0.5 0.2]
+                      :theta []
+                      :std 0.25
+                      :c 0.0
+                      :seed 100})
+        actor-arma
+        (ts/arma-seq {:phi [0.5 0.2]
+                      :theta []
+                      :std 0.25
+                      :c 0.0
+                      :seed 222})
+        {:keys [day-night-seq mod-seq]}
+        (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now)))
+        lunch-hour-seq
+        (map (fn [x]
+               (if (<= 720 x 780)
+                 1.0
+                 -1.0))
+             mod-seq)
+        activity-prob-mask
+        (ts/op-seq max
+                   [group-arma
+                    day-night-seq
+                    lunch-hour-seq])]
+    (ts/op-seq
+     (fn [arma-n mask-n]
+       (let [avg-n (-> (- arma-n mask-n) (/ 2))]
+         (double (maths/min-max 0.0 avg-n 1.0))))
+     [actor-arma activity-prob-mask])))
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id

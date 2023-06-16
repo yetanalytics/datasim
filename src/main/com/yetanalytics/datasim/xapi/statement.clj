@@ -604,6 +604,7 @@
 ;; Statement Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: Add duration ms in the meta?
 (defn- statement-meta
   "Return a map of statement metadata, consisting of a map of the following:
    - `:end-ms`: The time (in milliseconds since the epoch) after which the
