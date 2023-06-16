@@ -4,6 +4,8 @@
    [clojure.spec.alpha :as s]
    [clojure.core.async :as a]
    [clojure.core.async.impl.protocols :as ap]
+   [java-time :as t]
+   [xapi-schema.spec :as xs]
    [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
@@ -15,17 +17,13 @@
    [com.yetanalytics.datasim.util.sequence :as su]
    [com.yetanalytics.datasim.util.async :as au]
    [com.yetanalytics.datasim.random :as random]
-   [com.yetanalytics.pan.objects.template :as template]
-   [xapi-schema.spec :as xs]
-   [java-time :as t])
-  (:import [java.time Instant ZoneRegion]
+   [com.yetanalytics.pan.objects.template :as template])
+  (:import [java.time ZoneRegion]
            [java.util Random]))
 
-
-;; this don't work
-(def unrealized-lazy-seq-spec
-  (s/and #(instance? clojure.lang.LazySeq %)
-          (complement realized?)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; "skeleton" is a map of agent ids to maps with setup info for the agent.
 
@@ -69,6 +67,10 @@
    ;; stubbed
    map?
    #_::xs/statement))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Sequence
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef statement-seq
   :args (s/cat
@@ -171,6 +173,10 @@
                                  (:id actor-alignment))
                 alignment alignments]
             alignment)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Skeleton
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
@@ -322,6 +328,10 @@
 (s/def ::select-agents
   (s/every ::xapi/agent-id))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Sequence Simulation (Sync)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input
                :options (s/keys*
@@ -345,6 +355,10 @@
       (cond->>
         ?max-statements
         (take ?max-statements))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Sequence Simulation (Async)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- chan?
   [x]
@@ -427,6 +441,7 @@
        (vals chan-map))
       (a/merge (vals chan-map)
                buffer-size))))
+
 
 (comment
 
