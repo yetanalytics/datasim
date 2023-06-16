@@ -206,7 +206,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def combined-iri-map
-  (profile/profiles->map [const/cmi5-profile const/mom-profile]))
+  (profile/profiles->type-iri-map [const/cmi5-profile const/mom-profile]))
 
 (defn- primary-pattern-ids
   [patterns]
@@ -215,7 +215,7 @@
 (deftest select-primary-patterns-test
   (testing "with no params, returns iri map"
     (is (= combined-iri-map
-           (profile/select-primary-patterns
+           (profile/select-primary-patterns-2
             combined-iri-map
             {}))))
   (testing "profile selection implies patterns"
@@ -225,21 +225,23 @@
             {:gen-profiles [cmi5-id tla-id]})))
     (testing "unless also specified"
       (is (not= combined-iri-map
-                (profile/select-primary-patterns
+                (profile/select-primary-patterns-2
                  combined-iri-map
                  {:gen-profiles [cmi5-id tla-id]
                   :gen-patterns [cmi5-pattern-id]})))))
   (testing "filters by profile"
     (is (= [cmi5-pattern-id]
-           (-> (profile/select-primary-patterns
+           (-> (profile/select-primary-patterns-2
                 combined-iri-map
                 {:gen-profiles [cmi5-id]})
+               (get "Pattern")
                vals
                primary-pattern-ids))))
   (testing "filters by pattern"
     (is (= [cmi5-pattern-id]
-           (-> (profile/select-primary-patterns
+           (-> (profile/select-primary-patterns-2
                 combined-iri-map
                 {:gen-patterns [cmi5-pattern-id]})
+               (get "Pattern")
                vals
                primary-pattern-ids)))))

@@ -72,6 +72,14 @@
                      ::_profile-id
                      profile-id)])))
 
+(defn- assoc-profile-id [{profile-id :id :as profile}]
+  (let [update-object  (fn [obj] (assoc obj ::_profile-id profile-id))
+        update-objects (fn [objects] (map update-object objects))]
+    (-> profile
+        (update :concepts update-objects)
+        (update :patterns update-objects)
+        (update :templates update-objects))))
+
 (s/fdef profiles->type-iri-map
   :args (s/cat :profiles (s/every ::profile/profile))
   :ret ::type-iri-map)
@@ -81,7 +89,8 @@
    \"StatementTemplate\", \"Pattern\"), to a map from object ID IRIs to
    the objects themselves."
   [profiles]
-  (let [concepts  (mapcat :concepts profiles)
+  (let [profiles  (map assoc-profile-id profiles)
+        concepts  (mapcat :concepts profiles)
         templates (mapcat :templates profiles)
         patterns  (mapcat :patterns profiles)]
     (->> (cond-> (group-by :type concepts)
@@ -385,22 +394,30 @@
    update the Pattern map to further specify primary patterns for generation.
    Primary patterns in this context must be specified by `gen-profiles` or
    `gen-patterns`, or else they will no longer be counted as primary patterns."
-  [{:keys [gen-profiles gen-patterns]} type-iri-map]
-  (let [?profile-set (some-> gen-profiles not-empty set)
-        ?pattern-set (some-> gen-patterns not-empty set)
-        primary-pat? (fn [primary profile-id pattern-id]
-                       (boolean
-                        (and primary
-                             (or (nil? ?profile-set)
-                                 (contains? ?profile-set profile-id))
-                             (or (nil? ?pattern-set)
-                                 (contains? ?pattern-set pattern-id)))))]
+  [type-iri-map {:keys [gen-profiles gen-patterns]}]
+  (let [?profile-set   (some-> gen-profiles not-empty set)
+        ?pattern-set   (some-> gen-patterns not-empty set)
+        primary-pat?   (fn [profile-id pattern-id]
+                         (and (or (nil? ?profile-set)
+                                  (contains? ?profile-set profile-id))
+                              (or (nil? ?pattern-set)
+                                  (contains? ?pattern-set pattern-id))))
+        update-pattern (fn [{profile-id ::_profile-id
+                             pattern-id :id
+                             primary?   :primary
+                             :as pattern}]
+                         (cond-> pattern
+                           primary?
+                           (assoc :primary
+                                  (primary-pat? profile-id pattern-id))))]
+    ;; TODO: Use clojure.core/update-vals instead once we update to Clojure 1.11
     (update type-iri-map
             "Pattern"
-            (partial reduce-kv
-                     (fn [m k {pat-id :id prof-id ::_profile-id}]
-                       (update-in m [k :primary] primary-pat? pat-id prof-id))
-                     {}))))
+            (fn [iri-map]
+              (reduce-kv
+               (fn [m k pattern] (assoc m k (update-pattern pattern)))
+               (empty iri-map)
+               iri-map)))))
 
 (comment
 
