@@ -621,14 +621,6 @@
 
 ;; TODO: Add duration ms in the meta?
 (defn- statement-meta
-  "Return a map of statement metadata, consisting of a map of the following:
-   - `:end-ms`: The time (in milliseconds since the epoch) after which the
-     actor can continue the activity.
-   - `timestamp-ms: The time of the timestamp (in milliseconds since the epoch).
-     Note that it just has to be greater that `sim-t` and less than or equal
-     to `end-ms`; for the stub we just make it `sim-t`.
-   - `:template`: The template used to generate the statement, which will be
-     useful for a bunch of things."
   [template sim-t rng]
   {:end-ms       (end-time-ms sim-t rng)
    :timestamp-ms sim-t
@@ -643,6 +635,31 @@
 ;; TODO: ERROR/WARNING if generated statement fails spec (e.g. a required
 ;; property is excluded)
 (defn generate-statement
+  "Generate a single xAPI Statement. The `inputs` map accepts the following
+   map arguments:
+   
+   | Argument | Description
+   | ---      | ---
+   | `type-iri-map`       | A map from Profile object types to IDs to the object maps.
+   | `activity-map`       | A map from Activity Type IDs to Activity IDs to the Activity maps.
+   | `statement-base-map` | A map from Template IDs to the Statement base created using `template->statement-base`.
+   | `parsed-rules-map`   | A map from Template IDs to its parsed rules parsed using `template->parsed-rules`.
+   | `actor`              | The Actor used in the Statement.
+   | `alignment`          | The alignment map used for choosing Statement elements.
+   | `template`           | The Template used to generate this Statement.
+   | `registration`       | The registration UUID for the overall generated Statement sequence.
+   | `seed`               | The seed used to generate random numbers during generation.
+   | `pattern-ancestors`  | The coll of Patterns visited en route to `template`.
+   | `sub-registration`   | (NOT YET IMPLEMENTED) The sub-registration object of the Statement.
+   | `sim-t`              | The time (in ms) of this simulation.
+   
+   Returns a Statement with a map of the following as metadata:
+
+   | Metadata       | Description
+   | ---            | ---
+   | `end-ms`       | The time (in epoch ms) after which the `actor` can continue.
+   | `timestamp-ms` | The time of the timestamp (in epoch ms). It must be `> sim-t` and `<= end-ms`; for simplicity we just make it `sim-t`.
+   | `template`     | The Template used to generate this Statement"
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
   [{:keys [type-iri-map
            activity-map
