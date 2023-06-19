@@ -318,41 +318,47 @@
         type-iri-map    (-> (p/profiles->type-iri-map profiles)
                             (p/select-primary-patterns parameters))]
     ;; Now, for each actor we initialize what is needed for the sim
-    (into {}
-          (for [[actor-id actor] (->> actor-seq
-                                      (map (juxt xapiu/agent-id identity))
-                                      (sort-by first))
-                :let [actor-arma-seed (.nextLong sim-rng)
-                      actor-arma-seq  (arma-seq actor-arma-seed)
-                      actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
-                                                                prob-mask-seq)
-                      actor-prob-seq  (map vector min-seq actor-prob-seq*)
-                      actor-group-id  (get actor-group-map actor-id)
-                      actor-role      (:role actor)
-                      actor-alignment (get-actor-alignments alignments
-                                                            actor-id
-                                                            actor-group-id
-                                                            actor-role)
-                      actor-reg-seed  (.nextLong sim-rng)
-                      actor-reg-seq   (p/registration-seq type-iri-map
-                                                          actor-alignment
-                                                          actor-reg-seed)
-                      ;; Additional seed for further gen
-                      actor-seed      (.nextLong sim-rng)
-                      ;; Dissoc `:role` since it is not an xAPI property
-                      actor-xapi      (dissoc actor :role)]]
-            [actor-id
-             (cond->> (statement-seq
-                       input
-                       type-iri-map
-                       activity-map
-                       actor-xapi
-                       actor-alignment
-                       {:seed     actor-seed
-                        :prob-seq actor-prob-seq
-                        :reg-seq  actor-reg-seq})
-               ?t-from
-               (drop-statements-from-time ?t-from))]))))
+    (->> actor-seq
+         (sort-by xapiu/agent-id)
+         (reduce
+          (fn [m actor]
+            (let [;; Actor basics + alignment
+                  actor-id        (xapiu/agent-id actor)
+                  actor-role      (:role actor)
+                  actor-group-id  (get actor-group-map actor-id)
+                  actor-alignment (get-actor-alignments alignments
+                                                        actor-id
+                                                        actor-group-id
+                                                        actor-role)
+                  ;; Actor probability seq
+                  actor-arma-seed (.nextLong sim-rng)
+                  actor-arma-seq  (arma-seq actor-arma-seed)
+                  actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
+                                                            prob-mask-seq)
+                  actor-prob-seq  (map vector min-seq actor-prob-seq*)
+                  ;; Actor registration seq
+                  actor-reg-seed  (.nextLong sim-rng)
+                  actor-reg-seq   (p/registration-seq type-iri-map
+                                                      actor-alignment
+                                                      actor-reg-seed)
+                  ;; Additional seed for further gen
+                  actor-seed      (.nextLong sim-rng)
+                  ;; Dissoc `:role` since it is not an xAPI property
+                  actor-xapi      (dissoc actor :role)
+                  ;; Statement seq
+                  actor-stmt-seq  (cond->> (statement-seq
+                                            input
+                                            type-iri-map
+                                            activity-map
+                                            actor-xapi
+                                            actor-alignment
+                                            {:seed     actor-seed
+                                             :prob-seq actor-prob-seq
+                                             :reg-seq  actor-reg-seq})
+                                    ?t-from
+                                    (drop-statements-from-time ?t-from))]
+              (assoc m actor-id actor-stmt-seq)))
+          {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence Simulation (Sync)
