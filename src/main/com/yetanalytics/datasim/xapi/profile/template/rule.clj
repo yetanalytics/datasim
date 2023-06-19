@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule
   "Apply statement template rules for generation"
-  (:require [clojure.set                   :as cset]
+  (:require [clojure.core.memoize          :as memo]
+            [clojure.set                   :as cset]
             [clojure.string                :as cstr]
             [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as gen]
@@ -121,6 +122,14 @@
 ;; Rule Parse
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- parse-json-path*
+  [json-path-str]
+  (path/parse-paths json-path-str {:strict? true}))
+
+(def ^:private parse-json-path
+  "Memoized version of `parse-json-path*`."
+  (memo/lru parse-json-path* {} :lru/threshold 4096))
+
 (defn- join-location-and-selector
   [location selector]
   (vec (for [loc location
@@ -167,10 +176,9 @@
    - Add a `valueset` that consists of the intersection of `any` and
      `all` minus `none`."
   [{:keys [location selector presence any all none]}]
-  (let [opts  {:strict? true}
-        paths (cond-> (path/parse-paths location opts)
+  (let [paths (cond-> (parse-json-path location)
                 selector
-                (join-location-and-selector (path/parse-paths selector opts)))
+                (join-location-and-selector (parse-json-path selector)))
         ?any  (not-empty (set any))
         ?all  (not-empty (set all))
         ?none (not-empty (set none))]
