@@ -2,6 +2,7 @@
   "Understanding elements of xAPI profiles
   Generate Profile walks"
   (:require [clojure.spec.alpha :as s]
+            [clojure.zip :as z]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.iri :as iri]
@@ -10,7 +11,7 @@
             [com.yetanalytics.pan.objects.concept :as concept]
             [com.yetanalytics.pan.objects.pattern :as pattern]
             [com.yetanalytics.pan.objects.template :as template]
-            [clojure.zip :as z])
+            [com.yetanalytics.datasim.xapi.statement :as stmt])
   (:import [java.util Random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,6 +88,39 @@
                          {})
                  (assoc m type)))
           {}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profile Templates Prep
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef profiles->base-statement-map
+  :args (s/cat :profiles (s/every ::profile/profile))
+  :ret (s/map-of ::template/id map?))
+
+(defn profiles->base-statement-map
+  "Given `profiles`, return a map from those profiles' Statement Template
+   IDs to the base xAPI Statements they form."
+  [profiles]
+  (let [template-coll        (mapcat :templates profiles)
+        ->id-statement-pairs (juxt :id stmt/template->base-statement)]
+    (->> template-coll (map ->id-statement-pairs) (into {}))))
+
+;; TODO: More precise activity-map and parsed-rule specs
+(s/fdef profiles->parsed-rule-map
+  :args (s/cat :profiles (s/every ::profile/profile)
+               :type-iri-map ::type-iri-map
+               :activity-map map?)
+  :ret (s/map-of ::template/id map?))
+
+(defn profiles->parsed-rule-map
+  "Given `profiles`, as well as `type-iri-map` and `activity-map` (the latter
+   of which are ultimately derived from `profiles`), return a map from template
+   IDs to those Statement Template's parsed rules"
+  [profiles type-iri-map activity-map]
+  (let [template-coll    (mapcat :templates profiles)
+        template->rules  (partial stmt/template->parsed-rules type-iri-map activity-map)
+        ->id-rules-pairs (juxt :id template->rules)]
+    (->> template-coll (map ->id-rules-pairs) (into {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Registration Sequence

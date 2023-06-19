@@ -117,16 +117,20 @@
    `prob-seq` is exhausted."
   [input
    type-iri-map
-   activities
+   activity-map
+   statement-base-map
+   parsed-rules-map
    actor
    alignment
    {:keys [prob-seq reg-seq seed]}]
   (let [time-rng       (random/seed-rng seed)
-        input-map-base {:input        input
-                        :type-iri-map type-iri-map
-                        :activities   activities
-                        :actor        actor
-                        :alignment    alignment}
+        input-map-base {:input              input
+                        :type-iri-map       type-iri-map
+                        :activities         activity-map
+                        :statement-base-map statement-base-map
+                        :parsed-rules-map   parsed-rules-map
+                        :actor              actor
+                        :alignment          alignment}
         ;; time-ms -> start-ms -> <statement generator> -> end-ms
         ;; the sequence should resume after end-ms
         statement-seq*
@@ -315,7 +319,13 @@
         activity-seed   (.nextLong sim-rng)
         activity-map    (activity/derive-cosmos input activity-seed)
         type-iri-map    (-> (p/profiles->type-iri-map profiles)
-                            (p/select-primary-patterns parameters))]
+                            (p/select-primary-patterns parameters))
+        ;; Pre-parse templates into statement bases and rules, as a
+        ;; form of optimization
+        template-base-m (p/profiles->base-statement-map profiles)
+        template-rule-m (p/profiles->parsed-rule-map profiles
+                                                     type-iri-map
+                                                     activity-map)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
          (sort-by xapiu/agent-id)
@@ -349,6 +359,8 @@
                                             input
                                             type-iri-map
                                             activity-map
+                                            template-base-m
+                                            template-rule-m
                                             actor-xapi
                                             actor-alignment
                                             {:seed     actor-seed

@@ -9,7 +9,6 @@
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.input] ; for input spec
             [com.yetanalytics.datasim.input.alignments :as alignments]
-            [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.path :as xp]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule])
   (:import [java.time Instant]))
@@ -26,7 +25,9 @@
 (s/def ::input :com.yetanalytics.datasim/input)
 
 ;; Map of profile types -> IDs -> objects
-(s/def ::type-iri-map ::profile/type-iri-map)
+;; TODO: Real specs
+(s/def ::type-iri-map
+  (s/map-of string? (s/map-of string? map?)))
 
 ;; All the activities we can use, by activity type:
 ;; a map of activity type IRIs to activity IRIs to activities
@@ -122,7 +123,11 @@
   [attachment-usage-type]
   {"usageType" attachment-usage-type})
 
-(defn- template->base-statement
+(s/fdef template->base-statement
+  :args (s/cat :template ::template/template)
+  :ret map?)
+
+(defn template->base-statement
   "Form the base of a statement from the Determining Properties of
    the Template. Elements of array-valued properties (the context
    activity types and the attachment usage types) are added in order."
@@ -174,7 +179,13 @@
 ;; Statement Rule Application
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- template-rules
+(s/fdef template->parsed-rules
+  :args (s/cat :type-iri-map ::type-iri-map
+               :activity-map ::activities
+               :template     ::template/template)
+  :ret ::rule/parsed-rule)
+
+(defn template->parsed-rules
   "Return a collection of parsed rules derived from the template `rules`.
    Uses information from `iri-map` and `activities` maps, as well as from
    object-related Determining Properties, to complete the parsed rules."
@@ -630,22 +641,26 @@
 (defn generate-statement
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
   [{{:keys [profiles]} :input
+    template           :template
     type-iri-map       :type-iri-map
     activities         :activities
+    statement-base-map :statement-base-map
+    parsed-rules-map   :parsed-rules-map
     actor              :actor
     alignment          :alignment
     sim-t              :sim-t
     seed               :seed
-    template           :template
     pattern-ancestors  :pattern-ancestors
     registration       :registration
     ?sub-registration  :sub-registration
     :as inputs}]
   (let [;; Prep
-        ;; TODO: Precompile these two so that they don't happen on
-        ;; every statement gen
-        template-base  (template->base-statement template)
-        template-rules (template-rules type-iri-map activities template)
+        template-base
+        (or (get statement-base-map (:id template))
+            (template->base-statement template))
+        template-rules
+        (or (get parsed-rules-map (:id template))
+            (template->parsed-rules type-iri-map activities template))
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng alignment)
