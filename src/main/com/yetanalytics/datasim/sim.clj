@@ -151,6 +151,23 @@
 ;; Skeleton
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Data structure helpers
+
+(defn- personaes->group-actor-id-map
+  "Convert `personae-array` into a map from group IDs, which represent
+   each personae in the array, to actor IDs, representing each group member."
+  [personae-array]
+  (reduce
+   (fn [m {actors :member :as personae}]
+     (let [group-id (xapiu/agent-id personae)]
+       (reduce
+        (fn [m* actor]
+          (assoc m* (xapiu/agent-id actor) group-id))
+        m
+        actors)))
+   {}
+   personae-array))
+
 (defn- update-alignment
   [{existing-count  :count
     existing-weight :weight}
@@ -183,41 +200,76 @@
                   alignment alignment-maps]
               alignment))))
 
-(comment
+;; Timestamp helpers
 
-  (:mod-seq
-   (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now))))
+(defn- timezone->region ^ZoneRegion [tz]
+  (t/zone-id tz))
 
-  (let [group-arma
-        (ts/arma-seq {:phi [0.5 0.2]
-                      :theta []
-                      :std 0.25
-                      :c 0.0
-                      :seed 100})
-        actor-arma
-        (ts/arma-seq {:phi [0.5 0.2]
-                      :theta []
-                      :std 0.25
-                      :c 0.0
-                      :seed 222})
-        {:keys [day-night-seq mod-seq]}
-        (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now)))
-        lunch-hour-seq
-        (map (fn [x]
-               (if (<= 720 x 780)
-                 1.0
-                 -1.0))
-             mod-seq)
-        activity-prob-mask
-        (ts/op-seq max
-                   [group-arma
-                    day-night-seq
-                    lunch-hour-seq])]
-    (ts/op-seq
-     (fn [arma-n mask-n]
-       (let [avg-n (-> (- arma-n mask-n) (/ 2))]
-         (double (maths/min-max 0.0 avg-n 1.0))))
-     [actor-arma activity-prob-mask])))
+(defn- timestamp->millis [ts]
+  (.toEpochMilli (t/instant ts)))
+
+(defn- drop-statements-from-time
+  "Drop any `statements` whose `:timestamp-ms` metadata comes after
+   `from-ms`."
+  [from-ms statements]
+  (drop-while
+   (fn [statement]
+     (>= from-ms (-> statement meta :timestamp-ms)))
+   statements))
+
+;; Time/probability sequence helpers
+
+;; Right now we are using common ARMA settings, this may change
+(def common-arma
+  {:phi   [0.5 0.2]
+   :theta []
+   :std   0.25
+   :c     0.0})
+
+(defn- arma-seq [seed]
+  (ts/arma-seq (assoc common-arma :seed seed)))
+
+(defn- lunch-hour-seq
+  "Map `minute-of-day-seq` into a sequence of `1.0`, if the corresponding
+   minute of the day is between 12:00 and 13:00 (the \"lunch hour\"),
+   and `-1.0`, if it is any other time."
+  [minute-of-day-seq]
+  (map (fn [min-of-day]
+         (if (<= 720 min-of-day 780) 1.0 -1.0))
+       minute-of-day-seq))
+
+(defn- arma-time-seqs->prob-mask-seq
+  "Derive a lazy sequence of probability mask values for actor events.
+   
+   The mask seq can be plotted as a time series. One will see a
+   generally-sinusoidal value, as `day-night-seq` is sinusoidal,
+   with the highest y-value during the night and lowest during the day;
+   random variation is introduced by `group-arma-seq` and the y-value is
+   fixed at `1.0` during the \"lunch hour\" (12:00 to 13:00)
+   thanks to `(lunch-hour-seq min-of-day-seq)`.
+   
+   These values will be inverted since each mask value will be subtracted
+   from each value in `actor-arma-seq` in order to form each actor
+   event probability."
+  [arma-seq day-night-seq min-of-day-seq]
+  (map max
+       arma-seq
+       day-night-seq
+       (lunch-hour-seq min-of-day-seq)))
+
+(defn- arma-mask-seqs->prob-seq
+  "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
+   value, then use that value to derive a probability value in `[0,1]`.
+   Note that a higher `prob-mask-seq` value will result in a lower probability."
+  [arma-seq prob-mask-seq]
+  (let [clamp-probability #(maths/min-max 0.0 % 1.0)]
+    (map (fn [arma-val prob-mask-val]
+           (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
+               (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
+               clamp-probability
+               double))
+         arma-seq
+         prob-mask-seq)))
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id
@@ -228,133 +280,79 @@
   :ret ::skeleton)
 
 (defn build-skeleton
-  "Given simulation input, return a skeleton with statement
-  sequences per actor from `start` of sim.
-
-  Should be run once (in a single thread)
-  Spooky."
+  "Given simulation input, return a skeleton with statement sequences per
+   actor from `start` of sim. Should be run once (in a single thread).
+  
+   Spooky."
   [{:keys [profiles personae-array parameters alignments]
     :as   input}]
   (let [;; Input parameters and alignments
         {:keys [start end timezone seed] ?from-stamp :from} parameters
         {alignments :alignment-vector} alignments
-        ;; Set timezone and time
-        ^ZoneRegion zone (t/zone-id timezone)
-        t-zero (.toEpochMilli (t/instant start))
-        ;; Get actors and map actor IDs to (identified) group IDs
-        actor-id-to-group-id-m (reduce
-                                (fn [m {actors :member :as personae}]
-                                  (let [group-id (xapiu/agent-id personae)]
-                                    (reduce
-                                     (fn [m' actor]
-                                       (assoc m' (xapiu/agent-id actor) group-id))
-                                     m
-                                     actors)))
-                                {}
-                                personae-array)
-        actors (apply concat (map :member personae-array))
-        ;; If there's an end we need to set a ?sample-n for takes
-        ?sample-n (when end
-                    (let [t-end (.toEpochMilli (t/instant end))]
-                      (- t-end t-zero)))
-        ;; Useful time seqs
-        {:keys [min-seq
-                mod-seq
-                day-night-seq]} (if ?sample-n
-                                  (ts/time-seqs :t-zero t-zero
-                                                :sample-n ?sample-n
-                                                :zone zone)
-                                  (ts/time-seqs :t-zero t-zero
-                                                :zone zone))
-
-        ;; Right now we are using common ARMA settings, this may change
-        common-arma {:phi [0.5 0.2]
-                     :theta []
-                     :std 0.25
-                     :c 0.0}
         ;; RNG for generating the rest of the seeds
-        ^Random sim-rng (Random. seed)
-
-        ;; Generate a seed for the group
-        group-seed (.nextLong sim-rng)
-
-        ;; Generate an ARMA seq for the group
-        group-arma (ts/arma-seq (merge common-arma
-                                       {:seed group-seed}))
-
-        ;; We're going to make a probability 'mask' out of the group arma and
-        ;; the day-night cycle. We'll also add the lunch our, when nothing
-        ;; should start. All of this should probably be configurable later on.
-
-        ;; The lunch hour seq is derived from what minute in the day it is
-        lunch-hour-seq (map
-                        (fn [x]
-                          (if (<= 720 x 780)
-                            1.0
-                            -1.0))
-                        mod-seq)
-
-        ;; Compose the activity probability mask from the group-arma, day-night,
-        ;; and lunch seqs
-        mask (ts/op-seq max
-                        [group-arma
-                         day-night-seq
-                         lunch-hour-seq])
-        ;; activities used in the sim
-        activities (activity/derive-cosmos input (.nextLong sim-rng))
-        type-iri-map (-> (p/profiles->type-iri-map profiles)
-                         ;; Select which primary patterns to generate from
-                         (p/select-primary-patterns parameters))]
-    ;; Now, for each actor we 'initialize' what is needed for the sim
+        ;; TODO: Switch `.nextLong` calls to `random/rand-int` or other fn
+        sim-rng     (random/seed-rng seed)
+        ;; Set timezone region and timestamps
+        zone-region (timezone->region timezone)
+        t-start     (timestamp->millis start)
+        ?t-from     (some-> ?from-stamp timestamp->millis)
+        ?t-end      (some-> end timestamp->millis)
+        ?sample-n   (some-> ?t-end (- t-start))
+        ;; Derive the actor event probability mask sequence.
+        {:keys
+         [day-night-seq
+          min-seq
+          mod-seq]}     (ts/time-seqs :t-zero t-start
+                                      :sample-n ?sample-n
+                                      :zone zone-region)
+        mask-arma-seed  (.nextLong sim-rng)
+        mask-arma-seq   (arma-seq mask-arma-seed)
+        prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
+                                                       day-night-seq
+                                                       mod-seq)
+        ;; Derive actor, activity, and profile object colls and maps
+        actor-seq       (apply concat (map :member personae-array))
+        actor-group-map (personaes->group-actor-id-map personae-array)
+        activity-seed   (.nextLong sim-rng)
+        activity-map    (activity/derive-cosmos input activity-seed)
+        type-iri-map    (-> (p/profiles->type-iri-map profiles)
+                            (p/select-primary-patterns parameters))]
+    ;; Now, for each actor we initialize what is needed for the sim
     (into {}
-          (for [[actor-id actor] (sort-by first (map (juxt xapiu/agent-id
-                                                           identity)
-                                                     actors))
-                :let [;; seed specifically for the ARMA model
-                      actor-arma-seed (.nextLong sim-rng)
-                      ;; an arma seq
-                      actor-arma (ts/arma-seq
-                                  (merge common-arma
-                                         {:seed actor-arma-seed}))
-                      actor-prob (map vector
-                                      min-seq
-                                      (ts/op-seq
-                                       (fn [a b]
-                                         (double
-                                          (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
-                                       [actor-arma mask]))
-                      actor-alignment (get-actor-alignments
-                                       alignments
-                                       actor-id
-                                       (get actor-id-to-group-id-m actor-id)
-                                       (:role actor))
-                      actor-reg-seed (.nextLong sim-rng)
-
-                      ;; infinite seq of maps containing registration uuid,
-                      ;; statement template, and a seed for generation
-                      actor-reg-seq (p/registration-seq
-                                     type-iri-map actor-alignment actor-reg-seed)
-
-                      ;; additional seed for further gen
-                      actor-seed (.nextLong sim-rng)
-
-                      ;; Dissoc :role since it is not an xAPI property
-                      actor-xapi (dissoc actor :role)]]
+          (for [[actor-id actor] (->> actor-seq
+                                      (map (juxt xapiu/agent-id identity))
+                                      (sort-by first))
+                :let [actor-arma-seed (.nextLong sim-rng)
+                      actor-arma-seq  (arma-seq actor-arma-seed)
+                      actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
+                                                                prob-mask-seq)
+                      actor-prob-seq  (map vector min-seq actor-prob-seq*)
+                      actor-group-id  (get actor-group-map actor-id)
+                      actor-role      (:role actor)
+                      actor-alignment (get-actor-alignments alignments
+                                                            actor-id
+                                                            actor-group-id
+                                                            actor-role)
+                      actor-reg-seed  (.nextLong sim-rng)
+                      actor-reg-seq   (p/registration-seq type-iri-map
+                                                          actor-alignment
+                                                          actor-reg-seed)
+                      ;; Additional seed for further gen
+                      actor-seed      (.nextLong sim-rng)
+                      ;; Dissoc `:role` since it is not an xAPI property
+                      actor-xapi      (dissoc actor :role)]]
             [actor-id
              (cond->> (statement-seq
                        input
                        type-iri-map
-                       activities
+                       activity-map
                        actor-xapi
                        actor-alignment
-                       {:seed actor-seed
-                        :prob-seq actor-prob
-                        :reg-seq actor-reg-seq})
-               ?from-stamp
-               (drop-while
-                (let [from-ms (t/to-millis-from-epoch ^String ?from-stamp)]
-                  (fn [s]
-                    (>= from-ms (-> s meta :timestamp-ms))))))]))))
+                       {:seed     actor-seed
+                        :prob-seq actor-prob-seq
+                        :reg-seq  actor-reg-seq})
+               ?t-from
+               (drop-statements-from-time ?t-from))]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence Simulation (Sync)
@@ -545,3 +543,36 @@
   (xapiu/agent-id {:name "Bob Fakename"
                    :mbox "mailto:bob@example.org"
                    :role "Lead Developer"}))
+
+(comment
+  ;; incanter is available if the :dev alias is present
+  (require '[incanter.core :as core])
+  (require '[incanter.charts :as chart])
+  
+  (def time-seqs
+    (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now))))
+  
+  (def prob-mask-arma-seq
+    (arma-seq 100))
+  
+  (def prob-mask-seq
+    (arma-time-seqs->prob-mask-seq prob-mask-arma-seq
+                                   (:day-night-seq time-seqs)
+                                   (:mod-seq time-seqs))) 
+  
+  (def prob-seq
+    (arma-mask-seqs->prob-seq (arma-seq 120) prob-mask-seq))
+
+  ;; Graphs should show a approximately sinusoidal pattern; graphing
+  ;; `prob-seq` should show how probabilities are zero during the night
+  ;; and the lunch hour, while varying sinusoidally during the rest of
+  ;; the day.
+
+  (core/view
+   (chart/line-chart (range 2000)
+                     (take 2000 prob-mask-seq)))
+  
+  (core/view
+   (chart/line-chart (range 2000)
+                     (take 2000 prob-seq)))
+  )
