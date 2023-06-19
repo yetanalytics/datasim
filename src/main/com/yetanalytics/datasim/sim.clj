@@ -17,8 +17,7 @@
    [com.yetanalytics.datasim.util.async :as au]
    [com.yetanalytics.datasim.random :as random]
    [com.yetanalytics.pan.objects.template :as template])
-  (:import [java.time ZoneRegion]
-           [java.util Random]))
+  (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -375,21 +374,13 @@
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
-  [{{?max-statements :max} :parameters
-    :as input}
+  [{{?max-statements :max} :parameters :as input}
    & {:keys [select-agents]}]
-  (-> (build-skeleton input)
-      (cond->
-        select-agents
-        (select-keys select-agents))
-      ;; take the actor statement seqs
-      vals
-      (->> (su/seq-sort
-            (comp :timestamp-ms
-                  meta)))
-      (cond->>
-        ?max-statements
-        (take ?max-statements))))
+  (let [skeleton (cond-> (build-skeleton input)
+                   select-agents
+                   (select-keys select-agents))]
+    (cond->> (->> skeleton vals (su/seq-sort (comp :timestamp-ms meta)))
+      ?max-statements (take ?max-statements))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence Simulation (Async)
@@ -399,9 +390,7 @@
   [x]
   (satisfies? ap/Channel x))
 
-;; since we divide input.parameters.max by the number of agents in the sim when
-;; generating in parallel, we can add a bit to each to get over max, or a lot to
-;; account for an imbalance in activity at the tail of the sim
+;; simulate multiple channels
 
 (s/def ::pad-chan-max
   pos-int?)
@@ -415,33 +404,46 @@
                  chan?))
 
 (defn sim-chans
-  "Given input, build a skeleton and produce a map of agent channels.
+  "Given input, build a skeleton and produce a map from agent IFIs to
+   agent statement simulation channels.
 
-  Uses the core.async thread pool for concurrency.
+   Uses the `core.async` thread pool for concurrency.
 
-  Note that input.parameters.max is implemented via division and may
-  have unexpected results. input.parameters.end is preferable"
-  [{{?max-statements :max} :parameters
-    :as input}
+   Note that the `:max` parameter is used as a quotient and may
+   have unexpected results if it is zero. The `:end` parameter is preferable.
+   
+   The `:max` parameter is divided by the number of agents in the simulation.
+   Thus `pad-chan-max` is provided as a kwarg so we can add that amount to
+   the length of each channel's statement seq - either a little bit to get over
+   `:max`, or a lot to account for an imbalance in activity at the tail end
+   of the simulation."
+  [{{?max-statements :max} :parameters :as input}
    & {:keys [select-agents
              pad-chan-max]
       :or {pad-chan-max 1}}]
   (let [skeleton (cond-> (build-skeleton input)
                    select-agents
                    (select-keys select-agents))
-        ?take-n (when ?max-statements
-                  (+ pad-chan-max
-                     (quot ?max-statements
-                           (count skeleton))))]
-
+        ?take-n  (when ?max-statements ; TODO: Handle division by zero error
+                   (->> (count skeleton)
+                        (quot ?max-statements)
+                        (+ pad-chan-max)))]
+    ;; TODO: Use reduce-vals after updating to Clojure 1.11
     (reduce-kv
-     (fn [m k v]
-       (let [agent-seq v]
-         (assoc m k (cond->> (a/to-chan! v)
-                      ?take-n
-                      (a/take ?take-n)))))
+     (fn [m k agent-seq]
+       (assoc m k (cond->> (a/to-chan! agent-seq)
+                    ?take-n
+                    (a/take ?take-n))))
      (empty skeleton)
      skeleton)))
+
+;; simulate single channel
+
+(defn- compare-timestamp-ms-meta
+  [stmt-1 stmt-2]
+  (compare
+   (-> stmt-1 meta :timestamp-ms)
+   (-> stmt-2 meta :timestamp-ms)))
 
 (s/def ::sort boolean?)
 (s/def ::buffer-size pos-int?)
@@ -456,27 +458,22 @@
   :ret chan?)
 
 (defn sim-chan
-  "Merged output of `sim-chans` for parallel gen"
+  "Merged output of `sim-chans` for parallel generation."
   [input
-   & {:keys [sort
-             buffer-size]
+   & {:keys [sort buffer-size]
       :or {sort true
            buffer-size 100}
       :as kwargs}]
   (let [chan-map (apply sim-chans
                         input
-                        (mapcat identity kwargs))]
+                        (mapcat identity kwargs))
+        chans    (vals chan-map)]
     (if sort
-      (au/sequence-messages
-       (a/chan buffer-size)
-       (fn [x y]
-         (compare
-          (-> x meta :timestamp-ms)
-          (-> y meta :timestamp-ms)))
-       (vals chan-map))
-      (a/merge (vals chan-map)
-               buffer-size))))
-
+      (->> chans
+           (au/sequence-messages (a/chan buffer-size)
+                                 compare-timestamp-ms-meta))
+      (-> chans
+          (a/merge buffer-size)))))
 
 (comment
   (require '[clojure.pprint :as pprint]
