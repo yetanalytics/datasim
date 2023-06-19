@@ -102,7 +102,7 @@
    IDs to the base xAPI Statements they form."
   [profiles]
   (let [template-coll        (mapcat :templates profiles)
-        ->id-statement-pairs (juxt :id stmt/template->base-statement)]
+        ->id-statement-pairs (juxt :id stmt/template->statement-base)]
     (->> template-coll (map ->id-statement-pairs) (into {}))))
 
 ;; TODO: More precise activity-map and parsed-rule specs

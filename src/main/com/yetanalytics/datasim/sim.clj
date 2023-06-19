@@ -5,7 +5,6 @@
    [clojure.core.async :as a]
    [clojure.core.async.impl.protocols :as ap]
    [java-time :as t]
-   [xapi-schema.spec :as xs]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
    [com.yetanalytics.datasim.xapi.profile :as p]
@@ -15,8 +14,7 @@
    [com.yetanalytics.datasim.util.maths :as maths]
    [com.yetanalytics.datasim.util.sequence :as su]
    [com.yetanalytics.datasim.util.async :as au]
-   [com.yetanalytics.datasim.random :as random]
-   [com.yetanalytics.pan.objects.template :as template])
+   [com.yetanalytics.datasim.random :as random])
   (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -26,7 +24,7 @@
 ;; "skeleton" is a map of agent ids to maps with setup info for the agent.
 
 ;; A tuple of [timestamp probability]
-(s/def :prob-seq/moment
+(def prob-seq-moment-spec
   (s/tuple pos-int?
            (s/double-in
             :min 0.0
@@ -34,37 +32,26 @@
             :infinite? false
             :NaN? false)))
 
-(s/def :actor-map/prob-seq
-  (s/every :prob-seq/moment))
+(s/def ::probability-seq
+  (s/every prob-seq-moment-spec))
 
-
-(s/def :stub/registration
-  ::xs/uuid)
-
-(s/def :stub/seed
+(s/def ::seed
   int?)
 
-(s/def :reg-seq/stub
-  (s/keys :req-un [:stub/registration
-                   ::template/template
-                   :stub/seed]))
-
-(s/def :actor-map/reg-seq
-  (s/every :reg-seq/stub))
-
-(s/def :skeleton/actor-map
-  (s/keys :req-un [:actor-map/prob-seq
-                   :actor-map/reg-seq
-                   :actor-map/seed
-                   ]))
+(s/def ::registration-seq
+  (s/every ::p/registration-map))
 
 ;; Based on the probability of activity at a given minute, and an infinite seq
 ;; of profile walks, emit statements for one actor
 (s/def :skeleton/statement-seq
   (s/every
-   ;; stubbed
+   ;; stubbed - TODO: Reinstate real spec
    map?
    #_::xs/statement))
+
+(s/def ::skeleton
+  (s/map-of ::xapi/agent-id
+            :skeleton/statement-seq))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence
@@ -103,34 +90,22 @@
    prob-seq))
 
 (s/fdef statement-seq
-  :args (s/cat
-         :input :com.yetanalytics.datasim/input
-         :type-iri-map ::p/type-iri-map
-         :activities ::activity/cosmos
-         :actor ::xs/agent
-         :alignment :alignment-map/alignments
-         :actor-map :skeleton/actor-map)
+  :args (s/cat :inputs (s/keys :req-un [::statement/type-iri-map
+                                        ::statement/activity-map
+                                        ::statement/statement-base-map
+                                        ::statement/parsed-rules-map
+                                        ::statement/actor
+                                        ::statement/alignment])
+               :probability-seq  ::probability-seq
+               :registration-seq ::registration-seq
+               :seed             ::seed)
   :ret :skeleton/statement-seq)
 
 (defn- statement-seq
   "Return a lazy sequence of generated Statements; generation ends once
-   `prob-seq` is exhausted."
-  [input
-   type-iri-map
-   activity-map
-   statement-base-map
-   parsed-rules-map
-   actor
-   alignment
-   {:keys [prob-seq reg-seq seed]}]
-  (let [time-rng       (random/seed-rng seed)
-        input-map-base {:input              input
-                        :type-iri-map       type-iri-map
-                        :activities         activity-map
-                        :statement-base-map statement-base-map
-                        :parsed-rules-map   parsed-rules-map
-                        :actor              actor
-                        :alignment          alignment}
+   `probability-seq` is exhausted."
+  [inputs probability-seq registration-seq seed]
+  (let [time-rng (random/seed-rng seed)
         ;; time-ms -> start-ms -> <statement generator> -> end-ms
         ;; the sequence should resume after end-ms
         statement-seq*
@@ -139,7 +114,7 @@
            (when-some [[[time-ms _] & rest-prob-seq]
                        (drop-time-probs prob-seq time-rng)]
              (let [start-ms  (actual-start-time time-ms time-rng)
-                   input-map (merge input-map-base
+                   input-map (merge inputs
                                     (first reg-seq)
                                     {:sim-t start-ms})
                    statement (statement/generate-statement input-map)
@@ -148,7 +123,7 @@
                      (statement-seq*
                       (drop-past-time-probs rest-prob-seq end-ms)
                       (rest reg-seq)))))))]
-    (statement-seq* prob-seq reg-seq)))
+    (statement-seq* probability-seq registration-seq)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
@@ -274,10 +249,6 @@
          arma-seq
          prob-mask-seq)))
 
-(s/def ::skeleton
-  (s/map-of ::xapi/agent-id
-            :skeleton/statement-seq))
-
 (s/fdef build-skeleton
   :args (s/cat :input :com.yetanalytics.datasim/input)
   :ret ::skeleton)
@@ -325,7 +296,13 @@
         template-base-m (p/profiles->base-statement-map profiles)
         template-rule-m (p/profiles->parsed-rule-map profiles
                                                      type-iri-map
-                                                     activity-map)]
+                                                     activity-map)
+
+        ;; Generate statement base inputs
+        base-input-map  {:type-iri-map       type-iri-map
+                         :activity-map       activity-map
+                         :statement-base-map template-base-m
+                         :parsed-rules-map   template-rule-m}]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
          (sort-by xapiu/agent-id)
@@ -355,17 +332,14 @@
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq
+                  actor-input     (merge base-input-map
+                                         {:actor     actor-xapi
+                                          :alignment actor-alignment})
                   actor-stmt-seq  (cond->> (statement-seq
-                                            input
-                                            type-iri-map
-                                            activity-map
-                                            template-base-m
-                                            template-rule-m
-                                            actor-xapi
-                                            actor-alignment
-                                            {:seed     actor-seed
-                                             :prob-seq actor-prob-seq
-                                             :reg-seq  actor-reg-seq})
+                                            actor-input
+                                            actor-prob-seq
+                                            actor-reg-seq
+                                            actor-seed)
                                     ?t-from
                                     (drop-statements-from-time ?t-from))]
               (assoc m actor-id actor-stmt-seq)))

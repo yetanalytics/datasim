@@ -21,17 +21,20 @@
 
 ;; TODO: Consolidate some of these specs with those in `xapi.profile`
 
-;; Input for the whole simulation.
-(s/def ::input :com.yetanalytics.datasim/input)
-
 ;; Map of profile types -> IDs -> objects
 ;; TODO: Real specs
 (s/def ::type-iri-map
   (s/map-of string? (s/map-of string? map?)))
 
+(s/def ::statement-base-map
+  (s/map-of ::template/id map?))
+
+(s/def ::parsed-rules-map
+  (s/map-of ::template/id ::rule/parsed-rule))
+
 ;; All the activities we can use, by activity type:
 ;; a map of activity type IRIs to activity IRIs to activities
-(s/def ::activities
+(s/def ::activity-map
   (s/map-of ::xs/iri
             (s/map-of ::xs/iri
                       ::xs/activity)))
@@ -70,16 +73,17 @@
   any?) ; TODO: replace `any?` with real spec
 
 (s/def ::inputs
-  (s/keys :req-un [::input
-                   ::type-iri-map
-                   ::activities
+  (s/keys :req-un [::type-iri-map
+                   ::activity-map
+                   ::statement-base-map
+                   ::parsed-rules-map
                    ::actor
                    ::alignment
                    ::template
                    ::pattern-ancestors
-                   ::sim-t
                    ::seed
-                   ::registration]
+                   ::registration
+                   ::sim-t]
           :opt-un [::sub-registration]))
 
 ;; Metadata
@@ -123,11 +127,11 @@
   [attachment-usage-type]
   {"usageType" attachment-usage-type})
 
-(s/fdef template->base-statement
+(s/fdef template->statement-base
   :args (s/cat :template ::template/template)
   :ret map?)
 
-(defn template->base-statement
+(defn template->statement-base
   "Form the base of a statement from the Determining Properties of
    the Template. Elements of array-valued properties (the context
    activity types and the attachment usage types) are added in order."
@@ -181,7 +185,7 @@
 
 (s/fdef template->parsed-rules
   :args (s/cat :type-iri-map ::type-iri-map
-               :activity-map ::activities
+               :activity-map ::activity-map
                :template     ::template/template)
   :ret ::rule/parsed-rule)
 
@@ -287,28 +291,28 @@
 
 (s/fdef complete-activity
   :args (s/cat :activity (s/nilable map?)
-               :inputs   (s/keys :req-un [::activities ::alignment])
+               :inputs   (s/keys :req-un [::activity-map ::alignment])
                :rng      ::random/rng)
   :ret ::xs/activity)
 
 (defn complete-activity
   [{:strs [id] {:strs [type]} "definition" :as activity}
-   {:keys [activities alignment]}
+   {:keys [activity-map alignment]}
    rng]
   (let [return-activity (fn [_] activity)
         merge-activity  (fn [a] (merge-nested a activity))]
     (or
      ;; Get activity by ID
      (some->> id
-              (get (reduce merge {} (vals activities)))
+              (get (reduce merge {} (vals activity-map)))
               merge-activity)
      ;; Get activity by type
      (some->> type
-              (get activities)
+              (get activity-map)
               keys
               (random/choose rng alignment)
               (conj [type])
-              (get-in activities)
+              (get-in activity-map)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
      (some->> id
@@ -318,13 +322,13 @@
               (generate-activity rng)
               merge-activity)
      ;; Choose random activity
-     (some->> activities
+     (some->> activity-map
               keys
               (random/choose rng alignment)
-              (get activities)
+              (get activity-map)
               keys
               (random/choose rng alignment)
-              (get (reduce merge {} (vals activities)))))))
+              (get (reduce merge {} (vals activity-map)))))))
 
 ;; Agents ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -413,7 +417,7 @@
 
 (s/fdef complete-context
   :args (s/cat :context (s/nilable map?)
-               :inputs  (s/keys :req-un [::activities ::alignment])
+               :inputs  (s/keys :req-un [::activity-map ::alignment])
                :rng     ::random/rng)
   :ret ::xs/context)
 
@@ -515,7 +519,7 @@
 (s/fdef complete-sub-statement
   :args (s/cat :sub-statement map?
                :inputs (s/keys :req-un [::type-iri-map
-                                        ::activities
+                                        ::activity-map
                                         ::alignment])
                :rng ::random/rng)
   :ret ::xs/sub-statement)
@@ -564,7 +568,7 @@
 (s/fdef complete-statement
   :args (s/cat :statement map?
                :inputs (s/keys :req-un [::type-iri-map
-                                        ::activities
+                                        ::activity-map
                                         ::alignment])
                :rng ::random/rng)
   :ret ::xs/statement)
@@ -640,27 +644,26 @@
 ;; property is excluded)
 (defn generate-statement
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
-  [{{:keys [profiles]} :input
-    template           :template
-    type-iri-map       :type-iri-map
-    activities         :activities
-    statement-base-map :statement-base-map
-    parsed-rules-map   :parsed-rules-map
-    actor              :actor
-    alignment          :alignment
-    sim-t              :sim-t
-    seed               :seed
-    pattern-ancestors  :pattern-ancestors
-    registration       :registration
-    ?sub-registration  :sub-registration
+  [{:keys [type-iri-map
+           activity-map
+           statement-base-map
+           parsed-rules-map
+           actor
+           alignment
+           template
+           seed
+           pattern-ancestors
+           registration
+           sub-registration
+           sim-t]
     :as inputs}]
   (let [;; Prep
         template-base
         (or (get statement-base-map (:id template))
-            (template->base-statement template))
+            (template->statement-base template))
         template-rules
         (or (get parsed-rules-map (:id template))
-            (template->parsed-rules type-iri-map activities template))
+            (template->parsed-rules type-iri-map activity-map template))
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng alignment)
