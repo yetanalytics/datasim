@@ -6,7 +6,6 @@
    [clojure.core.async.impl.protocols :as ap]
    [java-time :as t]
    [xapi-schema.spec :as xs]
-   [com.yetanalytics.datasim.input :as input]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
    [com.yetanalytics.datasim.xapi.profile :as p]
@@ -476,54 +475,46 @@
 
 
 (comment
+  (require '[clojure.pprint :as pprint]
+           '[com.yetanalytics.datasim.input :as input])
+  
+  (def input-1
+    (input/from-location :input :json "dev-resources/input/simple.json")) 
+  
+  (->> input-1 :parameters pprint/pprint)
 
-  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
-
+  ;; Build and examine skeleton output
+  
   (def skel
-    (time (build-skeleton i)))
+    (time
+     (build-skeleton input-1)))
+  
+  (->> skel (s/explain ::skeleton))
+  (->> skel first second (take 10) pprint/pprint)
 
-  (s/explain ::skeleton skel)
+  ;; Perform and inspect parallel statement generation
 
-  (-> skel
-      first
-      second
-      (->> (take 10))
-      clojure.pprint/pprint
-      )
-
-
-  (s/explain ::xs/uuid "B73E0E16-386D-3D6D-8AE9-33B09C1C599E")
-
-  (let [agent-chan
-        (-> (sim-chans i)
-            (get "mbox::mailto:alicefaux@example.org"))]
+  (let [agent-mbox "mbox::mailto:alicefaux@example.org"
+        agent-chan (-> input-1 sim-chans (get agent-mbox))]
     (a/go-loop [cnt 0]
       (when-let [s (a/<! agent-chan)]
         (when (= 0
                  (mod cnt 10))
           (printf "\n%d statements\n\n" cnt)
           (println s))
-        (recur (inc cnt)))
-      ))
+        (recur (inc cnt)))))
 
-  (-> i :parameters clojure.pprint/pprint)
-
-  (def ii
-    (->
-     i
-     (assoc-in [:parameters :end] "2021-01-01T00:00:00.000000Z")))
+  (def input-2
+    (assoc-in input-1 [:parameters :end] "2021-01-01T00:00:00.000000Z"))
 
   (time
-   (-> ii sim-chan (->> (a/into [])) a/<!! count))
+   (->> input-2 sim-chan (a/into []) a/<!! count))
 
   (time
-   (count (sim-seq ii)))
-
-  )
+   (->> input-2 sim-seq count)))
 
 (comment
   (get-actor-alignments
-
    [{:id         "mbox::mailto:bob@example.org"
      :type       "Agent"
      :alignments [{:component "https://example.org/activity/a"
