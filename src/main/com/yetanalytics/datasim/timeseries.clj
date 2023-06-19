@@ -107,7 +107,26 @@
           (recur ret new-epsilon (inc n')))))))
 
 (defn arma-seq
-  "Given arma params, return an infinite lazy seq of values"
+  "ARMA - AutoRegressive-Moving-Average - sequence generation.
+   
+   An ARMA model describes a stochastic process in terms of two polynomials:
+   the autogregression term and the moving average term. The model is
+   written as such:
+   ```
+   X_t = epsilon_t + SUM(phi_i X_t-i, i=1, p) + SUM(theta_i epsilon_t-i, i=1, q)
+   ```
+   where `X_t` is the `t`-th value, `epsilon_i` are white noise parameters and
+   `phi_i` and `theta_i` are the central parameters for the AR and MA models,
+   respectively.
+
+   Besides `:phi` and `:theta`, which are colls of `p` and `q` double values
+   respectively, the `arma-model` option map also has these additional params:
+   - `:std`, the standard deviation of the Gaussian distribution from which each
+     `epsilon_t` is sampled from (the mean is fixed at zero)
+   -  `:seed`, the seed to create the `epsilon_t`-generating RNG with.
+   - `:c`, a constant to add to each result `X_t`
+   
+   Returns an infinite lazy seq of ARMA values."
   ([{:keys [seed] :as arma-model}]
    (lazy-seq
     (with-meta
