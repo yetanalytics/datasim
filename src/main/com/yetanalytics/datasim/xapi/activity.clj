@@ -1,10 +1,12 @@
 (ns com.yetanalytics.datasim.xapi.activity
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :as cs]
-            [clojure.walk :as w]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.input :as input]
             [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.random :as random]))
+            [com.yetanalytics.datasim.random :as random]
+            [clojure.walk :as w]
+            [clojure.set :as cset]
+            [clojure.string :as cs]))
 
 (s/def :cosmos/activity-type
   iri/iri-spec)
@@ -86,6 +88,13 @@
          (filter (comp (partial = "Activity")
                        :type)
                  concepts))
+
+        #_uncovered-types #_(cset/difference
+                         all-activity-types
+                         (set (keys cosmos-supplied)))
+        #__ #_(assert (empty? uncovered-types)
+                  (format "Uncovered activity types: %s"
+                          uncovered-types))
         ;; delay an RNG, as we might not need it
         rng-d (delay (random/seed-rng seed))]
     (reduce
@@ -111,3 +120,14 @@
                        "definition" {"type" type-iri}}])))))
      cosmos-supplied
      all-activity-types)))
+
+
+(comment
+  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
+
+
+  (clojure.pprint/pprint (derive-cosmos i 42 :min-per-type 3))
+
+
+
+  )
