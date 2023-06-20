@@ -1,7 +1,6 @@
 (ns com.yetanalytics.datasim.timeseries
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
-            ;; [incanter.interpolation :as interp]
             [com.yetanalytics.datasim.clock :as clock]
             [java-time :as t]
             [com.yetanalytics.datasim.util.maths :as maths])
@@ -206,61 +205,6 @@
                    :gauss-sd 100
                    :gauss-mean 500 :seed 42
                    )) ;; => (614.1905315473055 591.9407948982788 405.0133363109104 389.3009713600662 528.0977638072779 568.4622795632655 418.27785926012734 360.33565973219567 480.9055486929125 648.621339239065)
-
-#_(defn interpolate-seq
-  "Given a series of point tuples where x is time and y is a known value, return
-   an interpolated sequence of y every step"
-  [& {:keys [;; init args
-             points
-             interpolation-type
-             ;; Recur args
-             step
-             x
-             interpolator
-             interpolate-opts]
-      :or {step 1
-           x 0
-           interpolation-type :cubic-hermite
-           interpolate-opts []}}]
-  (lazy-seq
-   (let [interpolator (or interpolator
-                          (apply
-                           interp/interpolate
-                           points interpolation-type
-                           interpolate-opts))]
-     (cons (interpolator x)
-           (interpolate-seq
-            :step step
-            :x (+ x step)
-            :interpolator interpolator)))))
-
-#_(take 10 (interpolate-seq :points [[0 0] [4 6] [8 3]])) ;;=> (0.0 1.7109375 3.5625 5.1328125 6.0 5.8828125 5.0625 3.9609375 3.0 2.6015625)
-
-#_(defn continuize-seq
-  "Return a lazy seq of interpolation functions for the input seq."
-  [xs & {:keys [;; init args
-                points
-                interpolation-type
-                ;; Recur args
-                interpolate-opts]
-         :or {step 1
-              x 0
-              interpolation-type :cubic-hermite
-              interpolate-opts []}}]
-  (map-indexed
-   (fn [x [y z a b c]]
-     (delay
-       (apply interp/interpolate
-              [[(- x 2) y]
-               [(- x 1) z]
-               [x       a]
-               [(+ x 1) b]
-               [(+ x 2) c]]
-              interpolation-type
-              interpolate-opts)))
-   (partition 5 1 (concat (repeat 2 0.0)
-                          xs)))
-  )
 
 
 (defn cycle-seq
