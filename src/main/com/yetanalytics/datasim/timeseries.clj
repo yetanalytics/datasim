@@ -3,6 +3,7 @@
             [clojure.spec.gen.alpha :as sgen]
             [com.yetanalytics.datasim.clock :as clock]
             [java-time :as t]
+            [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.util.maths :as maths])
   (:import [java.util Random]))
 
@@ -70,41 +71,6 @@
                                    :rng ::rng)))
   :ret (s/every ::safe-double))
 
-(defn arma-seq-const
-  "Find the value of a stochastic sequence after n runs with the given model."
-  [{:keys [std phi theta c
-           seed rng
-
-           value
-           epsilon] :as arma-model
-    :or {phi []
-         theta []
-         value 0.0
-         epsilon 0.0}}
-   n]
-  (let [^Random rng (or rng
-                        (and seed
-                             (Random. seed))
-                        (Random.))]
-    (loop [^Double v value
-           ^Double e epsilon
-           n' 0]
-      (let [new-epsilon (* (.nextGaussian rng) std)
-            sum-phi (reduce (fn [old nxt]
-                              (+ old
-                                 (* nxt
-                                    v)))
-                            0.0 phi)
-            sum-theta (reduce (fn [old nxt]
-                                (+ old
-                                   (* nxt e)))
-                              0.0
-                              theta)
-            ret (+ c new-epsilon sum-phi sum-theta)]
-        (if (= n' (inc n))
-          v
-          (recur ret new-epsilon (inc n')))))))
-
 (defn arma-seq
   "ARMA - AutoRegressive-Moving-Average - sequence generation.
    
@@ -126,50 +92,26 @@
    - `:c`, a constant to add to each result `X_t`
    
    Returns an infinite lazy seq of ARMA values."
-  ([{:keys [seed] :as arma-model}]
-   (lazy-seq
-    (with-meta
-      (arma-seq arma-model
-                0.0
-                0.0
-                (Random. seed))
-      {::seed seed
-       ::arma arma-model})))
-  ([{:keys [std phi theta c] :as arma-model
-     :or {phi []
-          theta []}}
-    ^Double prev-value
-    ^Double prev-epsilon
-    ^Random rng]
-   (lazy-seq
-    (let [new-epsilon (* (.nextGaussian rng) std)
-          sum-phi (reduce (fn [old nxt]
-                            (+ old
-                               (* nxt
-                                  prev-value)))
-                          0.0 phi)
-          sum-theta (reduce (fn [old nxt]
-                              (+ old
-                                 (* nxt prev-epsilon)))
-                            0.0
-                            theta)
-          ret (+ c new-epsilon sum-phi sum-theta)]
-      (cons ret
-            (arma-seq arma-model
-                      ret
-                      new-epsilon
-                      rng))))))
-
-#_(let [model {:phi [0.5 0.2]
-             :theta []
-             :std 0.25
-             :c 0.0
-             :seed 42}]
-  (= (arma-seq-const
-      model
-      1000)
-     (nth (arma-seq model)
-          1000)))
+  ([{:keys [std phi theta c seed] :as arma-model}]
+   (let [rng
+         (random/seed-rng seed)
+         arma-seq*
+         (fn arma-seq* [prev-epsilon prev-x]
+           (lazy-seq
+            (let [epsilon (random/rand-gauss rng 0.0 std)
+                  sum-ar  (reduce (fn [old nxt]
+                                    (+ old (* nxt prev-x)))
+                                  0.0
+                                  phi)
+                  sum-ma  (reduce (fn [old nxt]
+                                    (+ old (* nxt prev-epsilon)))
+                                  0.0
+                                  theta)
+                  x       (+ c epsilon sum-ar sum-ma)]
+              (cons x (arma-seq* epsilon x)))))]
+     (with-meta (arma-seq* 0.0 0.0)
+       {::seed seed
+        ::arma arma-model}))))
 
 (defn constant-seq
   "Return an infinite sequence of the given constant value"
