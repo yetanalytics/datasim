@@ -5,6 +5,7 @@
    [clojure.core.async :as a]
    [clojure.core.async.impl.protocols :as ap]
    [java-time :as t]
+   [xapi-schema.spec :as xs]
    [com.yetanalytics.datasim.timeseries :as ts]
    [com.yetanalytics.datasim.xapi :as xapi]
    [com.yetanalytics.datasim.xapi.profile :as p]
@@ -44,10 +45,7 @@
 ;; Based on the probability of activity at a given minute, and an infinite seq
 ;; of profile walks, emit statements for one actor
 (s/def :skeleton/statement-seq
-  (s/every
-   ;; stubbed - TODO: Reinstate real spec
-   map?
-   #_::xs/statement))
+  (s/every ::xs/statement :kind #(instance? clojure.lang.LazySeq %)))
 
 (s/def ::skeleton
   (s/map-of ::xapi/agent-id

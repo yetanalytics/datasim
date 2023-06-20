@@ -56,7 +56,7 @@
 (def valid-args
   {:input             const/simple-input
    :type-iri-map      profile-type-iri-map
-   :activities        activities
+   :activity-map      activities
    :actor             actor
    :alignment         alignments
    :sim-t             0
