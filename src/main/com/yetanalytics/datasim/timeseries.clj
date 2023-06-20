@@ -93,23 +93,19 @@
    
    Returns an infinite lazy seq of ARMA values."
   ([{:keys [std phi theta c seed] :as arma-model}]
-   (let [rng
-         (random/seed-rng seed)
+   (let [rng (random/seed-rng seed)
          arma-seq*
-         (fn arma-seq* [prev-epsilon prev-x]
+         (fn arma-seq* [prev-xs prev-epsilons]
            (lazy-seq
             (let [epsilon (random/rand-gauss rng 0.0 std)
-                  sum-ar  (reduce (fn [old nxt]
-                                    (+ old (* nxt prev-x)))
-                                  0.0
-                                  phi)
-                  sum-ma  (reduce (fn [old nxt]
-                                    (+ old (* nxt prev-epsilon)))
-                                  0.0
-                                  theta)
+                  sum-ar  (->> (map * phi prev-xs)
+                               (reduce + 0.0))
+                  sum-ma  (->> (map * theta prev-epsilons)
+                               (reduce + 0.0))
                   x       (+ c epsilon sum-ar sum-ma)]
-              (cons x (arma-seq* epsilon x)))))]
-     (with-meta (arma-seq* 0.0 0.0)
+              (cons x (arma-seq* (cons x prev-xs)
+                                 (cons epsilon prev-epsilons))))))]
+     (with-meta (arma-seq* [] [])
        {::seed seed
         ::arma arma-model}))))
 
