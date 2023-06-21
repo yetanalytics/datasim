@@ -294,8 +294,8 @@
                          :r rand-long})
                       min-seq
                       bob-prob
-                      (rand-seq :val-type :long
-                                :rng bob-rng))]
+                      (repeatedly #(random/rand-long bob-rng)))]
+     
      (view (time-series-plot
             (map :t bob-seq)
             (map :prob bob-seq)))
