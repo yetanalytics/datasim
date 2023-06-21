@@ -104,96 +104,111 @@
        {::seed seed
         ::arma arma-model}))))
 
-(defn- local-seq-as
-  [xs zone as]
-  (map (fn [stamp]
-         (t/as (t/local-date-time stamp zone)
-               as))
-       xs))
+(def ms-per-second
+  1000)
 
-;; TODO: Uncomment commented-out time seq code; either return all or add an
-;; arg to select which ones to return
+(def ms-per-minute
+  60000)
+
+(def ms-per-hour
+  3600000)
+
+(def ms-per-day
+  86400000)
+
+(def ms-per-week
+  604800000)
+
+(def minute-per-day
+  "The fraction one minute makes up of a day."
+  (/ ms-per-minute ms-per-day))
+
+(defn- time-seq
+  "Generate a sequence of epoch milliseconds starting at `t-zero` ms, skipping
+   over `step` milliseconds with "
+  [t-zero ?sample-n step]
+  (cond->> (range t-zero Long/MAX_VALUE step)
+    ?sample-n
+    (take (quot ?sample-n step))))
+
+(defn- time-of-time-seq
+  "Given `time-seq` of epoch milliseconds, convert it into a cyclic sequence
+   described by `of-keyword`, with `zone` provided to compensate for the local
+   date time. Valid values of `as-keyword` include `:hour-of-day`,
+   `:day-of-week`, `:day-of-month`, and `:day-of-year`."
+  [time-seq zone of-keyword]
+  (map (fn [t]
+         (t/as (t/local-date-time t zone) of-keyword))
+       time-seq))
+
+(defn- mod-seq->day-night-seq
+  "Convert `min-of-day-seq` into a cosine wave sequence, where 0 (midnight)
+   becomes 1 and 720 (noon) becomes -1."
+  [min-of-day-seq]
+  (map (fn [min-of-day]
+         (-> min-of-day
+             (* minute-per-day) ; fraction of day
+             (* 2.0 Math/PI)    ; cosine wave
+             Math/cos))
+       min-of-day-seq))
+
 (defn time-seqs
-  "Given a t-zero (simulation start), an upper bound of sample-n milliseconds
-  and an optional local timezone, return a map of useful lazy time sequences.
+  "Given a `t-zero` (simulation start), an upper bound of `:sample-n`
+   milliseconds and an optional local time `zone`, return a map of useful
+   lazy time sequences. (Note that since these are lazy seqs, we do not
+   waste performance overhead on unused sequences.)
    
    Time sequences in the map:
-   - `:t-seq`
-   - `:sec-seq`
-   - `:min-seq`
-   - `:hour-seq`
-   - `:day-seq`
-   - `:week-seq`
-   - `:moh-seq` (minute of hour)
-   - `:hod-seq` (hour of day)
-   - `:dow-seq` (day of week)
-   - `:dom-seq` (day of month)
-   - `:doy-seq` (day of year)
-   - `:day-night-seq`"
+
+   | Sequence Key     | Description
+   | ---              | ---
+   | `:t-seq`         | Sequence of epoch milliseconds since `t-zero` (e.g. `(0 1 2 ...)`)
+   | `:sec-seq`       | Sequence of epoch ms with an interval of one second (e.g. `(0 1000 ...)`)
+   | `:min-seq`       | Sequence of epoch ms with an interval of one minute (e.g. `(0 60000 ...)`)
+   | `:hour-seq`      | Sequence of epoch ms with an interval of one hour (e.g. `(0 3600000 ...)`)
+   | `:day-seq`       | Sequence of epoch ms with an interval of one day (e.g. `(0 86400000 ...)`)
+   | `:week-seq`      | Sequence of epoch ms with an interval of one week (e.g. `(0 604800000 ...)`)
+   | `:moh-seq`       | Cyclic sequence of minutes per hour (e.g. `(0 1 ... 59 0 ...)`)
+   | `:hod-seq`       | Cyclic sequence of hours per day (e.g. `(0 1 ... 23 0 ...)`)
+   | `:dow-seq`       | Cyclic sequence of days per week (e.g. `(0 1 ... 6 0 ...)`)
+   | `:dom-seq`       | Cyclic sequence of days per month (e.g. `(0 1 ... 31 0 ...)`)
+   | `:doy-seq`       | Cyclic sequence of days per year (e.g. `(0 1 ... 355 0 ...)`)
+   | `:day-night-seq` | Sinusoidal sequence where negative numbers denote daytime and positive numbers nighttime. Range is from -1 (at noon) to 1 (at midnight)."
   [& {:keys [t-zero
              sample-n
              ^java.time.ZoneRegion zone]
       :or {t-zero 0
            zone ^java.time.ZoneRegion (t/zone-id "UTC")}}]
-  (let [t-seq (if sample-n
-                (range t-zero sample-n)
-                (range))
-        r-partial (if sample-n
-                    (fn [step]
-                      (take (quot sample-n
-                                  step)
-                            (range t-zero Long/MAX_VALUE step)))
-                    (partial range t-zero Long/MAX_VALUE))
-        ;; Primary
-        ;; sec-seq (r-partial 1000)
-        min-seq (r-partial 60000)
-        ;; hour-seq (r-partial 3600000)
-        ;; week-seq (r-partial 604800000)
-        ;; day-seq (r-partial 86400000)
-
-        ;; secondary/local
-        ;; moh-seq (local-seq-as min-seq
-        ;;                       zone
-        ;;                       :minute-of-hour)
-        mod-seq (local-seq-as min-seq
-                              zone
-                              :minute-of-day)
-        day-night-seq (map (comp
-                            #(Math/cos ^Double %)
-                            #(double (* 2 Math/PI (/ % 86400000)))
-                            (partial * 60000))
-                           mod-seq)
-
-        ;; hod-seq (local-seq-as hour-seq
-        ;;                       zone
-        ;;                       :hour-of-day)
-
-
-        ;; dow-seq (local-seq-as day-seq
-        ;;                       zone
-        ;;                       :day-of-week)
-
-        ;; dom-seq (local-seq-as day-seq
-        ;;                       zone
-        ;;                       :day-of-month)
-        ;; doy-seq (local-seq-as day-seq
-        ;;                       zone
-        ;;                       :day-of-year)
-        ]
-    {; :t-seq t-seq
-     ; :sec-seq sec-seq
-     :min-seq min-seq
-     ;:hour-seq hour-seq
-     ;:day-seq day-seq
-     ;:week-seq week-seq
-     ;:moh-seq moh-seq
+  (let [;; Primary
+        t-seq    (time-seq t-zero sample-n 1)
+        sec-seq  (time-seq t-zero sample-n ms-per-second)
+        min-seq  (time-seq t-zero sample-n ms-per-minute)
+        hour-seq (time-seq t-zero sample-n ms-per-hour)
+        day-seq  (time-seq t-zero sample-n ms-per-day)
+        week-seq (time-seq t-zero sample-n ms-per-week)
+        ;; Secondary/Local
+        moh-seq (time-of-time-seq min-seq zone :minute-of-hour)
+        mod-seq (time-of-time-seq min-seq zone :minute-of-day)
+        hod-seq (time-of-time-seq hour-seq zone :hour-of-day)
+        dow-seq (time-of-time-seq day-seq zone :day-of-week)
+        dom-seq (time-of-time-seq day-seq zone :day-of-month)
+        doy-seq (time-of-time-seq day-seq zone :day-of-year) 
+        day-night-seq (mod-seq->day-night-seq mod-seq)]
+    {;; Primary
+     :t-seq    t-seq
+     :sec-seq  sec-seq
+     :min-seq  min-seq
+     :hour-seq hour-seq
+     :day-seq  day-seq
+     :week-seq week-seq
+     ;; Secondary/local
+     :moh-seq moh-seq
      :mod-seq mod-seq
-     :day-night-seq day-night-seq
-     ;:hod-seq hod-seq
-     ;:dow-seq dow-seq
-     ;:dom-seq dom-seq
-     ;:doy-seq doy-seq
-     }))
+     :hod-seq hod-seq
+     :dow-seq dow-seq
+     :dom-seq dom-seq
+     :doy-seq doy-seq
+     :day-night-seq day-night-seq}))
 
 (comment
   ;; Incanter namespaces are dev-only
@@ -215,17 +230,7 @@
          timezone (t/zone-id "America/New_York")
 
          ;; Build useful time seqs, only get eval'd if used!
-         {:keys [week-seq
-                 min-seq
-                 t-seq
-                 doy-seq
-                 moh-seq
-                 day-seq
-                 sec-seq
-                 dom-seq
-                 hod-seq
-                 hour-seq
-                 dow-seq
+         {:keys [min-seq
                  mod-seq
                  day-night-seq]} (time-seqs :t-zero t-zero
                                             :sample-n sample-n
@@ -302,7 +307,4 @@
             (map :prob bob-seq)))
      (view (time-series-plot
             (map :t bob-seq)
-            (map :r bob-seq)))))
-
-
-  )
+            (map :r bob-seq))))))
