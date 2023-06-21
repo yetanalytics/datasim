@@ -1,19 +1,26 @@
 (ns com.yetanalytics.datasim.timeseries
+  "Timeseries namespaces; all timeseries are lazy, potentially infinite
+   sequences of numeric values."
   (:require [clojure.spec.alpha :as s]
             [java-time          :as t]
             [com.yetanalytics.datasim.random     :as random]
             [com.yetanalytics.datasim.util.maths :as maths]))
 
-;; Primitive seqs, just lazy seqs of numerics
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ARMA (AutoRegressive Moving Average) Sequences
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; ARMA, stochasic pseudorandom
+;; Specs
 
 (s/def ::safe-double
-  (s/double-in
-   :infinite? false
-   :NaN? false))
+  (s/double-in :infinite? false
+               :NaN? false))
 
 (s/def ::phi
+  (s/coll-of ::safe-double
+             :into []))
+
+(s/def ::theta
   (s/coll-of ::safe-double
              :into []))
 
@@ -27,44 +34,25 @@
   int?)
 
 (s/def ::ar
-  (s/keys
-   :req-un
-   [::phi
-    ::std
-    ::c
-    ::seed]))
-
-(s/def ::theta
-  (s/coll-of ::safe-double
-             :into []))
+  (s/keys :req-un [::phi
+                   ::std
+                   ::c
+                   ::seed]))
 
 (s/def ::ma
-  (s/keys
-   :req-un
-   [::theta
-    ::std
-    ::c
-    ::seed]))
+  (s/keys :req-un [::theta
+                   ::std
+                   ::c
+                   ::seed]))
 
 (s/def ::arma
   (s/merge ::ar ::ma))
 
-(s/def ::rng
-  ::random/rng)
-
-(s/def ::value
-  ::safe-double)
-
-(s/def ::epsilon
-  ::safe-double)
-
 (s/fdef arma-seq
-  :args (s/cat :arma-model ::arma
-               :recur-args (s/?
-                            (s/cat :prev-value ::value
-                                   :prev-epsilon ::epsilon
-                                   :rng ::rng)))
+  :args (s/cat :arma-model ::arma)
   :ret (s/every ::safe-double))
+
+;; ARMA Function
 
 (defn arma-seq
   "ARMA - AutoRegressive-Moving-Average - sequence generation.
@@ -104,6 +92,12 @@
        {::seed seed
         ::arma arma-model}))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Temporal Sequences
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Constants
+
 (def ms-per-second
   1000)
 
@@ -122,6 +116,8 @@
 (def minute-per-day
   "The fraction one minute makes up of a day."
   (/ ms-per-minute ms-per-day))
+
+;; Helper Functions
 
 (defn- time-seq
   "Generate a sequence of epoch milliseconds starting at `t-zero` ms, skipping
@@ -152,6 +148,75 @@
              Math/cos))
        min-of-day-seq))
 
+;; Specs
+
+(defn- lazy-seq? [coll] (instance? clojure.lang.LazySeq coll))
+
+(defmacro int-mod [divisor]
+  `(s/and int? (fn [n#] (zero? (mod n# ~divisor)))))
+
+(s/def ::t-zero int?)
+
+(s/def ::sample-n int?)
+
+(s/def ::zone
+  (s/with-gen (s/and string? #(try (t/zone-id %) true
+                                   (catch Exception _ false)))
+    (fn [] "UTC")))
+
+(s/def ::t-seq
+  (s/every int? :kind lazy-seq?))
+
+(s/def ::sec-seq
+  (s/every (int-mod ms-per-second) :kind lazy-seq?))
+
+(s/def ::min-seq
+  (s/every (int-mod ms-per-minute) :kind lazy-seq?))
+
+(s/def ::hour-seq
+  (s/every (int-mod ms-per-hour) :kind lazy-seq?))
+
+(s/def ::day-seq
+  (s/every (int-mod ms-per-day) :kind lazy-seq?))
+
+(s/def ::week-seq
+  (s/every (int-mod ms-per-week) :kind lazy-seq?))
+
+(s/def ::moh-seq
+  (s/every (s/int-in 0 60) :kind lazy-seq?))
+
+(s/def ::hod-seq
+  (s/every (s/int-in 0 24) :kind lazy-seq?))
+
+(s/def ::dow-seq
+  (s/every (s/int-in 0 7) :kind lazy-seq?))
+
+(s/def ::dom-seq
+  (s/every (s/int-in 0 31) :kind lazy-seq?))
+
+(s/def ::doy-seq
+  (s/every (s/int-in 0 366) :kind lazy-seq?))
+
+(s/def ::day-night-seq
+  (s/every (s/double-in -1.0 1.0) :kind lazy-seq?))
+
+(s/fdef time-seqs
+  :args (s/keys :opt-un [::t-zero ::sample-n ::zone])
+  :ret (s/keys :req-un [::t-seq
+                        ::sec-seq
+                        ::min-seq
+                        ::hour-seq
+                        ::day-seq
+                        ::week-seq
+                        ::moh-seq
+                        ::hod-seq
+                        ::dow-seq
+                        ::dom-seq
+                        ::doy-seq
+                        ::day-night-seq]))
+
+;; Time seq function
+
 (defn time-seqs
   "Given a `t-zero` (simulation start), an upper bound of `:sample-n`
    milliseconds and an optional local time `zone`, return a map of useful
@@ -171,7 +236,7 @@
    | `:moh-seq`       | Cyclic sequence of minutes per hour (e.g. `(0 1 ... 59 0 ...)`)
    | `:hod-seq`       | Cyclic sequence of hours per day (e.g. `(0 1 ... 23 0 ...)`)
    | `:dow-seq`       | Cyclic sequence of days per week (e.g. `(0 1 ... 6 0 ...)`)
-   | `:dom-seq`       | Cyclic sequence of days per month (e.g. `(0 1 ... 31 0 ...)`)
+   | `:dom-seq`       | Cyclic sequence of days per month (e.g. `(0 1 ... 30 0 ...)`)
    | `:doy-seq`       | Cyclic sequence of days per year (e.g. `(0 1 ... 355 0 ...)`)
    | `:day-night-seq` | Sinusoidal sequence where negative numbers denote daytime and positive numbers nighttime. Range is from -1 (at noon) to 1 (at midnight)."
   [& {:keys [t-zero
