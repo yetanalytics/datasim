@@ -196,8 +196,9 @@
      }))
 
 (comment
-
-  (use '(incanter core stats charts io))
+  ;; Incanter namespaces are dev-only
+  (require '[incanter.core :refer [view]]
+           '[incanter.charts :refer [time-series-plot]])
 
   (time
    (let [sim-seed 42
