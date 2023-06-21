@@ -109,160 +109,6 @@
        {::seed seed
         ::arma arma-model}))))
 
-(defn constant-seq
-  "Return an infinite sequence of the given constant value"
-  [constant]
-  (repeat constant))
-
-(defn rand-seq
-  [& {:keys [seed
-             rng
-             val-type
-             gauss-mean
-             gauss-sd]
-      :or {val-type :long
-           gauss-mean 0.0
-           gauss-sd 1.0}}]
-  (lazy-seq
-   (let [^Random rng (or rng
-                         (and seed
-                              (Random. seed))
-                         (Random.))]
-     (cons (case val-type
-             :long (.nextLong rng)
-             :gauss (+ (* gauss-sd (.nextGaussian rng)) gauss-mean)
-             :double (.nextDouble rng))
-           (rand-seq :rng rng
-                     :val-type val-type
-                     :gauss-mean gauss-mean
-                     :gauss-sd gauss-sd)))))
-
-#_(take 10 (rand-seq :val-type :gauss :seed 42)) ;; => (1.1419053154730547 0.9194079489827879 -0.9498666368908959 -1.1069902863993377 0.2809776380727795 0.6846227956326554 -0.8172214073987268 -1.3966434026780434 -0.19094451307087512 1.4862133923906502)
-
-#_(take 10 (rand-seq :val-type :gauss
-                   :gauss-sd 100
-                   :gauss-mean 500 :seed 42
-                   )) ;; => (614.1905315473055 591.9407948982788 405.0133363109104 389.3009713600662 528.0977638072779 568.4622795632655 418.27785926012734 360.33565973219567 480.9055486929125 648.621339239065)
-
-
-(defn cycle-seq
-  "Given a sequence, length and offset, return a seq that cycles forever over
-  a portion of the seq."
-  [xs & {:keys [length offset]
-         :or {offset 0
-              length 0}}]
-  (->> xs
-       (drop offset)
-       (take length)
-       cycle))
-
-#_(take 10 (cycle-seq (range 10) :length 3)) ;; => (0 1 2 0 1 2 0 1 2 0)
-
-(defn smooth-seq
-  [xs & {:keys [n]
-         :or {n 2}}]
-  (map
-   (fn [xs']
-     (double
-      (/ (reduce + xs')
-         (count xs'))))
-   (partition n 1 xs)))
-
-(defn interval-seq
-  "Return a seq representing the intervals of the input seq"
-  [xs]
-  (map (fn [[a b]]
-         (- b a))
-       (partition 2 1 xs)))
-
-
-#_(interval-seq (range 10)) ;; => (1 1 1 1 1 1 1 1 1)
-#_(interval-seq [1 5 7 9]) ;; => (4 2 2)
-
-;; Primitive seq ops that yield other seqs
-(defn op-seq
-  "Perform actions on one or more seqs"
-  [op seqs]
-  (assert (<= 1 (count seqs)) "At least one seq is required")
-  (apply map op seqs))
-
-(defn sum-seq
-  "Add together the values of any number of seqs"
-  [& seqs]
-  (op-seq + seqs))
-
-(defn invert-seq
-  "flip vals in a seq from positive to negative or visa versa"
-  [xs]
-  (map - xs))
-
-(defn scale-seq
-  "Given a seq and a scale, change the number of events to fit the scale"
-  [xs scale]
-  (assert (and (int? scale)
-               (<= 1 scale)))
-  (mapcat
-   (partial repeat scale)
-   xs))
-
-
-
-
-
-;; Complex (composite) seqs
-
-(defn overlap-seq
-  "NOT USED, but instructive...
-  Given two seqs a and b, for each period where a > b return
-  the T (index) and length of the overlap."
-  [a b & {:keys [comp-fn
-                 extra-stats]
-          :or {comp-fn >
-               extra-stats false}}]
-  (keep
-   (fn [[[t a' b'] & _ :as chunk]]
-     (when (comp-fn a' b')
-       (merge
-        {:t t
-         :length (count chunk)}
-        (when extra-stats
-          (let [a-seq (map #(get % 1) chunk)
-                [a-min a-max] (apply (juxt min max) a-seq)
-                b-seq (map #(get % 2) chunk)
-                [b-min b-max] (apply (juxt min max) b-seq)]
-            {:a-seq a-seq
-             :a-edges ((juxt first last) a-seq)
-             :a-min a-min
-             :a-max a-max
-             :b-seq b-seq
-             :b-edges ((juxt first last) b-seq)
-             :b-min b-min
-             :b-max b-max
-             :min (min a-min b-min)
-             :max (max a-max b-max)})))))
-   (partition-by
-    (fn [[_ a' b']]
-      (comp-fn a' b'))
-    (map vector
-         (range) a b))))
-#_(overlap-seq
-   [1 2 3 4 5 6 5 4 3 2 1]
-   [6 5 4 3 2 1 2 3 4 5 6]) ;; => ({:t 3, :length 5})
-
-(defn take-sample
-  "Take a sample of sample-millis from a time series.
-  :from denotes the period of xs"
-  [xs sample-millis & {:keys [from]
-                  :or {from :millis}}]
-  (take (quot sample-millis
-              (case from
-                :millis 1
-                :seconds 1000
-                :minutes 60000
-                :hours 3600000
-                :days 86400000))
-        xs))
-
 (defn- local-seq-as
   [xs zone as]
   (map (fn [stamp]
@@ -421,10 +267,10 @@
                              -1.0))
                          mod-seq)
          ;; form a mask for the group + day-night + lunch
-         mask (op-seq max
-                      [group-arma
-                       day-night-seq
-                       lunch-hour-seq])
+         mask (map max
+                   group-arma
+                   day-night-seq
+                   lunch-hour-seq)
 
          ;; create a seed for Bob's seq
          bob-arma-seed (.nextLong sim-rng)
@@ -435,10 +281,11 @@
                           {:seed bob-arma-seed}))
 
          ;; Bob's activity probability
-         bob-prob (op-seq (fn [a b]
-                            (double
-                             (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
-                          [bob-arma mask])
+         bob-prob (map (fn [a b]
+                         (double
+                          (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
+                       bob-arma
+                       mask)
          ;; to keep it deterministic, give bob another seeded RNG to take with him.
          ^Random bob-rng (Random. (.nextLong sim-rng))
 
