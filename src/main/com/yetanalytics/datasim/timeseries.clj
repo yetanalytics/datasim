@@ -1,11 +1,8 @@
 (ns com.yetanalytics.datasim.timeseries
   (:require [clojure.spec.alpha :as s]
-            [clojure.spec.gen.alpha :as sgen]
-            [com.yetanalytics.datasim.clock :as clock]
-            [java-time :as t]
-            [com.yetanalytics.datasim.random :as random]
-            [com.yetanalytics.datasim.util.maths :as maths])
-  (:import [java.util Random]))
+            [java-time          :as t]
+            [com.yetanalytics.datasim.random     :as random]
+            [com.yetanalytics.datasim.util.maths :as maths]))
 
 ;; Primitive seqs, just lazy seqs of numerics
 
@@ -53,9 +50,7 @@
   (s/merge ::ar ::ma))
 
 (s/def ::rng
-  (s/with-gen #(instance? Random %)
-    (fn []
-      (sgen/return (Random.)))))
+  ::random/rng)
 
 (s/def ::value
   ::safe-double)
@@ -206,8 +201,8 @@
 
   (time
    (let [sim-seed 42
-         ;; Create a master RNG for the sim. This is used only to generate other seeds
-         ^Random sim-rng (Random. sim-seed)
+         ;; Create a master RNG for the sim. This is used only to generate other seeds 
+         sim-rng (random/seed-rng sim-seed)
 
          ;; the start of the sim, in ms since epoch
          t-zero 0;; (System/currentTimeMillis)
@@ -287,7 +282,7 @@
                        bob-arma
                        mask)
          ;; to keep it deterministic, give bob another seeded RNG to take with him.
-         ^Random bob-rng (Random. (.nextLong sim-rng))
+         bob-rng (random/seed-rng (.nextLong sim-rng))
 
          ;; Compose the time (in minute increments), bob's probability
          ;; and his RNG and you have everything you need to generate events for
