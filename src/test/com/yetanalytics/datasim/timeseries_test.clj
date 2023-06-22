@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.timeseries-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.test.alpha :as stest]
+            [same.core :refer [ish?]]
             [com.yetanalytics.datasim.random     :as r]
             [com.yetanalytics.datasim.timeseries :as ts]))
 
@@ -233,26 +234,45 @@
              (->> (ts/time-seqs) :day-of-year-seq (take 366) (take-last 2))))
       (is (= '(365 366 1) ; 1972 was a leap year
              (->> (ts/time-seqs) :day-of-year-seq (take 1097) (take-last 3)))))
+    ;; Use `same.core/ish?` instead of `=` for floating point comparisons
     (testing "minute-day-night-seq"
-      ;; Some intervals are skipped due to floating point shenanigans
-      ;; but this should be enough to confirm it is a cosine wave.
-      (is (= 1.0
-             (-> (ts/time-seqs) :minute-day-night-seq (nth 0))))
-      (is (= (Math/sqrt 0.5)
-             (-> (ts/time-seqs) :minute-day-night-seq (nth 180))))
-      #_(is (= 0.0
-             (-> (ts/time-seqs) :night-day-seq (nth 360))))
-      (is (= -1.0
-             (-> (ts/time-seqs) :minute-day-night-seq (nth 720))))
-      (is (= 1.0
-             (-> (ts/time-seqs) :minute-day-night-seq (nth 1440)))))
+      (is (ish? 1.0
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 0))))
+      (is (ish? 0.7071067811865476  ; sqrt(0.5)
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 180))))
+      (is (ish? 0.0
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 360))))
+      (is (ish? -0.7071067811865476 ; -sqrt(0.5)
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 540))))
+      (is (ish? -1.0
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 720))))
+      (is (ish? -0.7071067811865476
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 900))))
+      (is (ish? 0.0
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 1080))))
+      (is (ish? 0.7071067811865476
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 1260))))
+      (is (ish? 1.0
+                (-> (ts/time-seqs) :minute-day-night-seq (nth 1440)))))
     (testing "hour-day-night-seq"
-      (is (= 1.0
-             (-> (ts/time-seqs) :hour-day-night-seq (nth 0))))
-      (is (= -1.0
-             (-> (ts/time-seqs) :hour-day-night-seq (nth 12))))
-      (is (= 1.0
-             (-> (ts/time-seqs) :hour-day-night-seq (nth 24)))))))
+      (is (ish? 1.0
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 0))))
+      (is (ish? 0.7071067811865476
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 3))))
+      (is (ish? 0.0
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 6))))
+      (is (ish? -0.7071067811865476
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 9))))
+      (is (ish? -1.0
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 12))))
+      (is (ish? -0.7071067811865476
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 15))))
+      (is (ish? 0.0
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 18))))
+      (is (ish? 0.7071067811865476
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 21))))
+      (is (ish? 1.0
+                (-> (ts/time-seqs) :hour-day-night-seq (nth 24)))))))
 
 (comment
   (require '[incanter.core :refer [view]]
