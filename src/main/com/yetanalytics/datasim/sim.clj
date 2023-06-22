@@ -164,17 +164,18 @@
    included in the returned map."
   [alignments actor-id group-id role]
   (let [actor-alignment-ids (set [actor-id group-id role])]
-    (reduce (fn [alignment-map {component-iri :component :as alignment}]
-              (update alignment-map
-                      component-iri
-                      (fnil update-alignment {:weight 0.0 :count 0})
-                      alignment))
-            {}
-            (for [{alignment-maps :alignments
-                   alignment-id   :id} alignments
-                  :when (actor-alignment-ids alignment-id)
-                  alignment alignment-maps]
-              alignment))))
+    (reduce
+     (fn [alignment-map {component-iri :component :as alignment}]
+       (update alignment-map
+               component-iri
+               (fnil update-alignment {:weight 0.0 :count 0})
+               alignment))
+     {}
+     (for [{alignment-maps :alignments
+            alignment-id   :id} alignments
+           :when (actor-alignment-ids alignment-id)
+           alignment alignment-maps]
+       alignment))))
 
 ;; Timestamp helpers
 
@@ -233,19 +234,21 @@
        day-night-seq
        (lunch-hour-seq min-of-day-seq)))
 
+(defn- clamp-probability [x]
+  (maths/min-max 0.0 x 1.0))
+
 (defn- arma-mask-seqs->prob-seq
   "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
    value, then use that value to derive a probability value in `[0,1]`.
    Note that a higher `prob-mask-seq` value will result in a lower probability."
   [arma-seq prob-mask-seq]
-  (let [clamp-probability #(maths/min-max 0.0 % 1.0)]
-    (map (fn [arma-val prob-mask-val]
-           (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
-               (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
-               clamp-probability
-               double))
-         arma-seq
-         prob-mask-seq)))
+  (map (fn [arma-val prob-mask-val]
+         (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
+             (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
+             clamp-probability
+             double))
+       arma-seq
+       prob-mask-seq))
 
 (s/fdef build-skeleton
   :args (s/cat :input :com.yetanalytics.datasim/input)
