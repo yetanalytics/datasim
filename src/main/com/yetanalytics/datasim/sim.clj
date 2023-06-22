@@ -269,19 +269,17 @@
         t-start     (timestamp->millis start)
         ?t-from     (some-> ?from-stamp timestamp->millis)
         ?t-end      (some-> end timestamp->millis)
-        ?sample-n   (some-> ?t-end (- t-start))
+        ?sample-ms  (some-> ?t-end (- t-start))
         ;; Derive the actor event probability mask sequence.
-        {:keys
-         [day-night-seq
-          min-seq
-          mod-seq]}     (ts/time-seqs :t-zero t-start
-                                      :sample-n ?sample-n
-                                      :zone zone-region)
+        {:keys [minute-ms-seq minute-of-day-seq night-day-seq]}
+        (ts/time-seqs :t-zero t-start
+                      :sample-ms ?sample-ms
+                      :zone zone-region)
         mask-arma-seed  (.nextLong sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
-                                                       day-night-seq
-                                                       mod-seq)
+                                                       night-day-seq
+                                                       minute-of-day-seq)
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
@@ -319,7 +317,7 @@
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
-                  actor-prob-seq  (map vector min-seq actor-prob-seq*)
+                  actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
                   actor-reg-seed  (.nextLong sim-rng)
                   actor-reg-seq   (p/registration-seq type-iri-map
@@ -545,7 +543,7 @@
   (def prob-mask-seq
     (arma-time-seqs->prob-mask-seq prob-mask-arma-seq
                                    (:day-night-seq time-seqs)
-                                   (:mod-seq time-seqs))) 
+                                   (:minute-of-day-seq time-seqs))) 
   
   (def prob-seq
     (arma-mask-seqs->prob-seq (arma-seq 120) prob-mask-seq))

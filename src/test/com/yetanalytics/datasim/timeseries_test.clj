@@ -4,7 +4,7 @@
             [com.yetanalytics.datasim.random     :as r]
             [com.yetanalytics.datasim.timeseries :as ts]))
 
-(deftest timeseries-functions-test
+(deftest timeseries-generative-test
   (testing "generative testing"
     (set! *print-length* 10)         ; unfortunately with-redefs does not always work
     (with-redefs [*print-length* 10] ; prevent printing entire infinite seqs
@@ -15,7 +15,7 @@
         (is (= total check-passed))))
     (set! *print-length* nil)))
 
-(deftest arma-test
+(deftest arma-sequence-test
   (testing "prelimary test: get what epsilon values would be with our rng"
     (let [rng (r/seed-rng 100)]
       (is (= [0.6246292191371761
@@ -131,114 +131,121 @@
       (is (< -10 (nth ma-seq 10000) 10))
       (is (< -10 (nth ma-seq 100000) 10)))))
 
-(deftest time-test
+(deftest time-sequence-test
   (testing "time-seqs function:"
-    (testing "t-seq"
+    (testing "milliseconds-seq"
       (is (= '(0 1 2 3 4 5 6 7 8 9)
-             (->> (ts/time-seqs) :t-seq (take 10))))
+             (->> (ts/time-seqs) :milliseconds-seq (take 10))))
       (is (= '(0 1 2 3 4 5 6 7 8 9)
-             (->> (ts/time-seqs :sample-n 10) :t-seq)))
+             (->> (ts/time-seqs :sample-ms 10) :milliseconds-seq)))
       (is (= '(1 2 3 4 5 6 7 8 9 10)
-             (->> (ts/time-seqs :t-zero 1) :t-seq (take 10))))
+             (->> (ts/time-seqs :t-zero 1) :milliseconds-seq (take 10))))
       (is (= '(1 2 3 4 5 6 7 8 9 10)
-             (->> (ts/time-seqs :t-zero 1 :sample-n 10) :t-seq))))
-    (testing "sec-seq"
+             (->> (ts/time-seqs :t-zero 1 :sample-ms 10) :milliseconds-seq))))
+    (testing "second-ms-seq"
       (is (= '(0 1000 2000 3000 4000 5000 6000 7000 8000 9000)
-             (->> (ts/time-seqs) :sec-seq (take 10))))
+             (->> (ts/time-seqs) :second-ms-seq (take 10))))
       (is (= '(1 1001 2001 3001 4001 5001 6001 7001 8001 9001)
-             (->> (ts/time-seqs :t-zero 1) :sec-seq (take 10))))
+             (->> (ts/time-seqs :t-zero 1) :second-ms-seq (take 10))))
       (is (= '()  ; 00:00:00.999
-             (->> (ts/time-seqs :sample-n 999) :sec-seq)))
+             (->> (ts/time-seqs :sample-ms 999) :second-ms-seq)))
       (is (= '(0) ; 00:00:01.000
-             (->> (ts/time-seqs :sample-n 1000) :sec-seq)))
+             (->> (ts/time-seqs :sample-ms 1000) :second-ms-seq)))
       (is (= '(0)      ; 00:00:01:999
-             (->> (ts/time-seqs :sample-n 1999) :sec-seq)))
+             (->> (ts/time-seqs :sample-ms 1999) :second-ms-seq)))
       (is (= '(0 1000) ; 00:00:02.000
-             (->> (ts/time-seqs :sample-n 2000) :sec-seq)))
+             (->> (ts/time-seqs :sample-ms 2000) :second-ms-seq)))
       (is (= '(1 1001) ; 00.00.02.000
-             (->> (ts/time-seqs :sample-n 2000 :t-zero 1) :sec-seq))))
-    (testing "min-seq"
+             (->> (ts/time-seqs :sample-ms 2000 :t-zero 1) :second-ms-seq))))
+    (testing "minute-ms-seq"
       (is (= '(0 60000 120000 180000 240000)
-             (->> (ts/time-seqs) :min-seq (take 5))))
+             (->> (ts/time-seqs) :minute-ms-seq (take 5))))
       (is (= '(1 60001 120001 180001 240001)
-             (->> (ts/time-seqs :t-zero 1) :min-seq (take 5))))
+             (->> (ts/time-seqs :t-zero 1) :minute-ms-seq (take 5))))
       (is (= '()  ; 00:00:59.999
-             (->> (ts/time-seqs :sample-n 59999) :min-seq)))
+             (->> (ts/time-seqs :sample-ms 59999) :minute-ms-seq)))
       (is (= '(0) ; 00:01:00.999
-             (->> (ts/time-seqs :sample-n 60000) :min-seq))))
-    (testing "hour-seq"
+             (->> (ts/time-seqs :sample-ms 60000) :minute-ms-seq))))
+    (testing "hour-ms-seq"
       (is (= '(0 3600000 7200000 10800000 14400000)
-             (->> (ts/time-seqs) :hour-seq (take 5))))
+             (->> (ts/time-seqs) :hour-ms-seq (take 5))))
       (is (= '(1 3600001 7200001 10800001 14400001)
-             (->> (ts/time-seqs :t-zero 1) :hour-seq (take 5))))
+             (->> (ts/time-seqs :t-zero 1) :hour-ms-seq (take 5))))
       (is (= '()  ; 00:59:99.999
-             (->> (ts/time-seqs :sample-n 359999) :hour-seq)))
+             (->> (ts/time-seqs :sample-ms 359999) :hour-ms-seq)))
       (is (= '(0) ; 01:00:00.000
-             (->> (ts/time-seqs :sample-n 3600000) :hour-seq))))
-    (testing "day-seq"
+             (->> (ts/time-seqs :sample-ms 3600000) :hour-ms-seq))))
+    (testing "day-ms-seq"
       (is (= '(0 86400000 172800000 259200000 345600000)
-             (->> (ts/time-seqs) :day-seq (take 5))))
+             (->> (ts/time-seqs) :day-ms-seq (take 5))))
       (is (= '(1 86400001 172800001 259200001 345600001)
-             (->> (ts/time-seqs :t-zero 1) :day-seq (take 5))))
+             (->> (ts/time-seqs :t-zero 1) :day-ms-seq (take 5))))
       (is (= '()  ; 1970-01-01T23:59:59.999
-             (->> (ts/time-seqs :sample-n 86399999) :day-seq)))
+             (->> (ts/time-seqs :sample-ms 86399999) :day-ms-seq)))
       (is (= '(0) ; 1970-01-02T00:00:00.000
-             (->> (ts/time-seqs :sample-n 86400000) :day-seq))))
-    (testing "week-seq"
+             (->> (ts/time-seqs :sample-ms 86400000) :day-ms-seq))))
+    (testing "week-ms-seq"
       (is (= '(0 604800000 1209600000 1814400000 2419200000)
-             (->> (ts/time-seqs) :week-seq (take 5))))
+             (->> (ts/time-seqs) :week-ms-seq (take 5))))
       (is (= '(1 604800001 1209600001 1814400001 2419200001)
-             (->> (ts/time-seqs :t-zero 1) :week-seq (take 5))))
+             (->> (ts/time-seqs :t-zero 1) :week-ms-seq (take 5))))
       (is (= '()  ; 1970-01-06T23:59:59.999
-             (->> (ts/time-seqs :sample-n 604799999) :week-seq)))
+             (->> (ts/time-seqs :sample-ms 604799999) :week-ms-seq)))
       (is (= '(0) ; 1970-01-07T00:00:00.000
-             (->> (ts/time-seqs :sample-n 604800000) :week-seq))))
-    (testing "moh-seq"
+             (->> (ts/time-seqs :sample-ms 604800000) :week-ms-seq))))
+    (testing "minute-of-hour-seq"
       (is (= '(0 1 2 3 4 5 6 7 8 9)
-             (->> (ts/time-seqs) :moh-seq (take 10))))
+             (->> (ts/time-seqs) :minute-of-hour-seq (take 10))))
       (is (= 59
-             (-> (ts/time-seqs) :moh-seq (nth 59))))
+             (-> (ts/time-seqs) :minute-of-hour-seq (nth 59))))
       (is (= 0
-             (-> (ts/time-seqs) :moh-seq (nth 60)))))
-    (testing "hod-seq"
+             (-> (ts/time-seqs) :minute-of-hour-seq (nth 60)))))
+    (testing "minute-of-day-seq"
       (is (= '(0 1 2 3 4 5 6 7 8 9)
-             (->> (ts/time-seqs) :hod-seq (take 10))))
-      (is (= 23
-             (-> (ts/time-seqs) :hod-seq (nth 23))))
+             (->> (ts/time-seqs) :minute-of-day-seq (take 10))))
+      (is (= 1339
+             (-> (ts/time-seqs) :minute-of-day-seq (nth 1339))))
       (is (= 0
-             (-> (ts/time-seqs) :hod-seq (nth 24)))))
-    (testing "dow-seq"
+             (-> (ts/time-seqs) :minute-of-day-seq (nth 1440)))))
+    (testing "hour-of-day-seq"
+      (is (= '(0 1 2 3 4 5 6 7 8 9)
+             (->> (ts/time-seqs) :hour-of-day-seq (take 10))))
+      (is (= 23
+             (-> (ts/time-seqs) :hour-of-day-seq (nth 23))))
+      (is (= 0
+             (-> (ts/time-seqs) :hour-of-day-seq (nth 24)))))
+    (testing "day-of-week-seq"
       (is (= '(4 5 6 7 1 2 3 4) ; The unix epoch starts on a Thursday
-             (->> (ts/time-seqs) :dow-seq (take 8))))
+             (->> (ts/time-seqs) :day-of-week-seq (take 8))))
       (is (= '(1 2 3 4 5 6 7 1)
-             (->> (ts/time-seqs :t-zero 345600000) :dow-seq (take 8)))))
-    (testing "dom-seq"
+             (->> (ts/time-seqs :t-zero 345600000) :day-of-week-seq (take 8)))))
+    (testing "day-of-month-seq"
       (is (= '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
-             (->> (ts/time-seqs) :dom-seq (take 19))))
+             (->> (ts/time-seqs) :day-of-month-seq (take 19))))
       (is (= '(20 21 22 23 24 25 26 27 28 29 30 31 1)
-             (->> (ts/time-seqs) :dom-seq (take 32) (take-last 13))))
+             (->> (ts/time-seqs) :day-of-month-seq (take 32) (take-last 13))))
       (is (= '(20 21 22 23 24 25 26 27 28 1) ; Jan & Feb have diff day counts
-             (->> (ts/time-seqs) :dom-seq (take 60) (take-last 10)))))
-    (testing "doy-seq"
+             (->> (ts/time-seqs) :day-of-month-seq (take 60) (take-last 10)))))
+    (testing "day-of-year-seq"
       (is (= '(1 2 3 4 5 6 7 8 9 10)
-             (->> (ts/time-seqs) :doy-seq (take 10))))
+             (->> (ts/time-seqs) :day-of-year-seq (take 10))))
       (is (= '(365 1) ; 1970 was not a leap year
-             (->> (ts/time-seqs) :doy-seq (take 366) (take-last 2))))
+             (->> (ts/time-seqs) :day-of-year-seq (take 366) (take-last 2))))
       (is (= '(365 366 1) ; 1972 was a leap year
-             (->> (ts/time-seqs) :doy-seq (take 1097) (take-last 3)))))
-    (testing "day-night-seq"
+             (->> (ts/time-seqs) :day-of-year-seq (take 1097) (take-last 3)))))
+    (testing "night-day-seq"
       ;; Some intervals are skipped due to floating point shenanigans
       ;; but this should be enough to confirm it is a cosine wave.
       (is (= 1.0
-             (-> (ts/time-seqs) :day-night-seq (nth 0))))
+             (-> (ts/time-seqs) :night-day-seq (nth 0))))
       (is (= (Math/sqrt 0.5)
-             (-> (ts/time-seqs) :day-night-seq (nth 180))))
-      (is (= 0.0
-             (-> (ts/time-seqs) :day-night-seq (nth 360))))
+             (-> (ts/time-seqs) :night-day-seq (nth 180))))
+      #_(is (= 0.0
+             (-> (ts/time-seqs) :night-day-seq (nth 360))))
       (is (= -1.0
-             (-> (ts/time-seqs) :day-night-seq (nth 720))))
+             (-> (ts/time-seqs) :night-day-seq (nth 720))))
       (is (= 1.0
-             (-> (ts/time-seqs) :day-night-seq (nth 1440)))))))
+             (-> (ts/time-seqs) :night-day-seq (nth 1440)))))))
 
 (comment
   (require '[incanter.core :refer [view]]

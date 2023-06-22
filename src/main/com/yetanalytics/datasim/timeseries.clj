@@ -145,7 +145,7 @@
          (t/as (t/local-date-time t zone) of-keyword))
        time-seq))
 
-(defn- mod-seq->day-night-seq
+(defn- minute-of-day-seq->night-day-seq
   "Convert `min-of-day-seq` into a cosine wave sequence, where 0 (midnight)
    becomes 1 and 720 (noon) becomes -1."
   [min-of-day-seq]
@@ -166,7 +166,7 @@
 
 (s/def ::t-zero int?)
 
-(s/def ::sample-n (s/and int? (comp not zero?)))
+(s/def ::sample-ms (s/and int? (comp not zero?)))
 
 (s/def ::zone
   (s/with-gen t/zone-id?
@@ -175,93 +175,98 @@
                 (sgen/tuple (sgen/elements ["-" "+"])
                             (sgen/choose 0 18)))))
 
-(s/def ::t-seq
+(s/def ::milliseconds-seq
   (s/every int? :kind lazy-seq?))
 
-(s/def ::sec-seq
+(s/def ::second-ms-seq
   (s/every int? :kind lazy-seq?))
 
-(s/def ::min-seq
+(s/def ::minute-ms-seq
   (s/every int? :kind lazy-seq?))
 
-(s/def ::hour-seq
+(s/def ::hour-ms-seq
   (s/every int? :kind lazy-seq?))
 
-(s/def ::day-seq
+(s/def ::day-ms-seq
   (s/every int? :kind lazy-seq?))
 
-(s/def ::week-seq
+(s/def ::week-ms-seq
   (s/every int? :kind lazy-seq?))
 
-(s/def ::moh-seq
+(s/def ::minute-of-hour-seq
   (s/every (s/int-in 0 60) :kind lazy-seq?))
 
-(s/def ::hod-seq
+(s/def ::minute-of-day-seq
+  (s/every (s/int-in 0 1440) :kind lazy-seq?))
+
+(s/def ::hour-of-day-seq
   (s/every (s/int-in 0 24) :kind lazy-seq?))
 
-(s/def ::dow-seq
+(s/def ::day-of-week-seq
   (s/every (s/int-in 1 8) :kind lazy-seq?))
 
-(s/def ::dom-seq
+(s/def ::day-of-month-seq
   (s/every (s/int-in 1 32) :kind lazy-seq?))
 
-(s/def ::doy-seq
+(s/def ::day-of-year-seq
   (s/every (s/int-in 1 367) :kind lazy-seq?))
 
-(s/def ::day-night-seq
+(s/def ::night-day-seq
   (s/every (s/double-in :min -1.0 :max 1.0) :kind lazy-seq?))
 
 (s/fdef time-seqs
-  :args (s/cat :kwargs (s/keys* :opt-un [::t-zero ::sample-n ::zone]))
-  :ret (s/keys :req-un [::t-seq
-                        ::sec-seq
-                        ::min-seq
-                        ::hour-seq
-                        ::day-seq
-                        ::week-seq
-                        ::moh-seq
-                        ::hod-seq
-                        ::dow-seq
-                        ::dom-seq
-                        ::doy-seq
-                        ::day-night-seq]))
+  :args (s/cat :kwargs (s/keys* :opt-un [::t-zero ::sample-ms ::zone]))
+  :ret (s/keys :req-un [::milliseconds-seq
+                        ::second-ms-seq
+                        ::minute-ms-seq
+                        ::hour-ms-seq
+                        ::day-ms-seq
+                        ::week-ms-seq
+                        ::minute-of-hour-seq
+                        ::minute-of-day-seq
+                        ::hour-of-day-seq
+                        ::day-of-week-seq
+                        ::day-of-month-seq
+                        ::day-of-year-seq
+                        ::night-day-seq]))
 
 ;; Time seq function
 
 (defn time-seqs
-  "Given a `t-zero` (simulation start), an upper bound of `:sample-n`
-   milliseconds and an optional local time `zone`, return a map of useful
-   lazy time sequences. (Note that since these are lazy seqs, we do not
-   waste performance overhead on unused sequences.)
+  "Given a `:t-zero` (simulation start), an exclusive upper bound of
+   `:sample-ms` milliseconds and an optional local time `zone`, return a map
+   of useful lazy time sequences. (Note that since these are lazy seqs, we do
+   not waste performance overhead on unused sequences.)
    
-   Time sequences in the map:
+   Time sequences in the returned map:
 
-   | Sequence Key     | Description
-   | ---              | ---
-   | `:t-seq`         | Sequence of epoch milliseconds since `t-zero` (e.g. `(0 1 2 ...)`)
-   | `:sec-seq`       | Sequence of epoch ms with an interval of one second (e.g. `(0 1000 ...)`)
-   | `:min-seq`       | Sequence of epoch ms with an interval of one minute (e.g. `(0 60000 ...)`)
-   | `:hour-seq`      | Sequence of epoch ms with an interval of one hour (e.g. `(0 3600000 ...)`)
-   | `:day-seq`       | Sequence of epoch ms with an interval of one day (e.g. `(0 86400000 ...)`)
-   | `:week-seq`      | Sequence of epoch ms with an interval of one week (e.g. `(0 604800000 ...)`)
-   | `:moh-seq`       | Cyclic sequence of minutes per hour (e.g. `(0 1 ... 59 0 ...)`)
-   | `:hod-seq`       | Cyclic sequence of hours per day (e.g. `(0 1 ... 23 0 ...)`)
-   | `:dow-seq`       | Cyclic sequence of the day of the week (e.g. `(1 2 ... 7 1 ...)`)
-   | `:dom-seq`       | Cyclic sequence of the day of the month (e.g. `(1 2 ... 31 1 ...)`)
-   | `:doy-seq`       | Cyclic sequence of the day of the year (e.g. `(1 2 ... 365 1 ...)`)
-   | `:day-night-seq` | Sinusoidal sequence where negative numbers denote daytime and positive numbers nighttime. Range is from -1 (at noon) to 1 (at midnight)."
+   | Sequence Key          | Description
+   | ---                   | ---
+   | `:milliseconds-seq`   | Sequence of epoch milliseconds since `t-zero` (e.g. `(0 1 2 ...)`)
+   | `:second-ms-seq`      | Sequence of epoch ms with an interval of one second (e.g. `(0 1000 ...)`)
+   | `:minute-ms-seq`      | Sequence of epoch ms with an interval of one minute (e.g. `(0 60000 ...)`)
+   | `:hour-ms-seq`        | Sequence of epoch ms with an interval of one hour (e.g. `(0 3600000 ...)`)
+   | `:day-ms-seq`         | Sequence of epoch ms with an interval of one day (e.g. `(0 86400000 ...)`)
+   | `:week-ms-seq`        | Sequence of epoch ms with an interval of one week (e.g. `(0 604800000 ...)`)
+   | `:minute-of-hour-seq` | Cyclic sequence of minutes per hour (e.g. `(0 1 ... 59 0 ...)`)
+   | `:minute-of-day-seq`  | Cyclic sequence of minutes per day (e.g. `(0 1 ... 1440 0 ...)`)
+   | `:hour-of-day-seq`    | Cyclic sequence of hours per day (e.g. `(0 1 ... 23 0 ...)`)
+   | `:day-of-week-seq`    | Cyclic sequence of the day of the week (e.g. `(1 2 ... 7 1 ...)`)
+   | `:day-of-month-seq`   | Cyclic sequence of the day of the month (e.g. `(1 2 ... 31 1 ...)`)
+   | `:day-of-year-seq`    | Cyclic sequence of the day of the year (e.g. `(1 2 ... 365 1 ...)`)
+   | `:night-day-seq`      | Sinusoidal sequence where negative numbers denote daytime and positive numbers nighttime. Range is from -1 (at noon) to 1 (at midnight)."
   [& {:keys [t-zero
-             sample-n
+             sample-ms
              ^java.time.ZoneRegion zone]
       :or {t-zero 0
            zone ^java.time.ZoneRegion (t/zone-id "UTC")}}]
   (let [;; Primary
-        t-seq    (time-seq t-zero sample-n 1)
-        sec-seq  (time-seq t-zero sample-n ms-per-second)
-        min-seq  (time-seq t-zero sample-n ms-per-minute)
-        hour-seq (time-seq t-zero sample-n ms-per-hour)
-        day-seq  (time-seq t-zero sample-n ms-per-day)
-        week-seq (time-seq t-zero sample-n ms-per-week)
+        t-seq    (time-seq t-zero sample-ms 1)
+        sec-seq  (time-seq t-zero sample-ms ms-per-second)
+        min-seq  (time-seq t-zero sample-ms ms-per-minute)
+        hour-seq (time-seq t-zero sample-ms ms-per-hour)
+        day-seq  (time-seq t-zero sample-ms ms-per-day)
+        week-seq (time-seq t-zero sample-ms ms-per-week)
         ;; Secondary/Local
         moh-seq (time-of-time-seq min-seq zone :minute-of-hour)
         mod-seq (time-of-time-seq min-seq zone :minute-of-day)
@@ -269,22 +274,22 @@
         dow-seq (time-of-time-seq day-seq zone :day-of-week)
         dom-seq (time-of-time-seq day-seq zone :day-of-month)
         doy-seq (time-of-time-seq day-seq zone :day-of-year) 
-        day-night-seq (mod-seq->day-night-seq mod-seq)]
+        dn-seq  (minute-of-day-seq->night-day-seq mod-seq)]
     {;; Primary
-     :t-seq    t-seq
-     :sec-seq  sec-seq
-     :min-seq  min-seq
-     :hour-seq hour-seq
-     :day-seq  day-seq
-     :week-seq week-seq
+     :milliseconds-seq   t-seq
+     :second-ms-seq      sec-seq
+     :minute-ms-seq      min-seq
+     :hour-ms-seq        hour-seq
+     :day-ms-seq         day-seq
+     :week-ms-seq        week-seq
      ;; Secondary/local
-     :moh-seq moh-seq
-     :mod-seq mod-seq
-     :hod-seq hod-seq
-     :dow-seq dow-seq
-     :dom-seq dom-seq
-     :doy-seq doy-seq
-     :day-night-seq day-night-seq}))
+     :minute-of-hour-seq moh-seq
+     :minute-of-day-seq  mod-seq
+     :hour-of-day-seq    hod-seq
+     :day-of-week-seq    dow-seq
+     :day-of-month-seq   dom-seq
+     :day-of-year-seq    doy-seq
+     :night-day-seq      dn-seq}))
 
 (comment
   ;; Incanter namespaces are dev-only
@@ -306,9 +311,9 @@
          timezone (t/zone-id "America/New_York")
 
          ;; Build useful time seqs, only get eval'd if used!
-         {:keys [min-seq
-                 mod-seq
-                 day-night-seq]} (time-seqs :t-zero t-zero
+         {:keys [minute-ms-seq
+                 minute-of-day-seq
+                 night-day-seq]} (time-seqs :t-zero t-zero
                                             :sample-n sample-n
                                             :zone timezone)
 
@@ -342,11 +347,11 @@
                            (if (<= 720 x 780)
                              1.0
                              -1.0))
-                         mod-seq)
+                         minute-of-day-seq)
          ;; form a mask for the group + day-night + lunch
          mask (map max
                    group-arma
-                   day-night-seq
+                   night-day-seq
                    lunch-hour-seq)
 
          ;; create a seed for Bob's seq
@@ -374,7 +379,7 @@
                         {:t t
                          :prob prob
                          :r rand-long})
-                      min-seq
+                      minute-ms-seq
                       bob-prob
                       (repeatedly #(random/rand-long bob-rng)))]
      
