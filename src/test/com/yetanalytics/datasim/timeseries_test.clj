@@ -1,0 +1,290 @@
+(ns com.yetanalytics.datasim.timeseries-test
+  (:require [clojure.test :refer [deftest testing is]]
+            [clojure.spec.test.alpha :as stest]
+            [com.yetanalytics.datasim.random     :as r]
+            [com.yetanalytics.datasim.timeseries :as ts]))
+
+(deftest timeseries-functions-test
+  (testing "generative testing"
+    (set! *print-length* 10)         ; unfortunately with-redefs does not always work
+    (with-redefs [*print-length* 10] ; prevent printing entire infinite seqs
+      (let [results
+            (stest/check `#{ts/arma-seq ts/time-seqs})
+            {:keys [total check-passed]}
+            (stest/summarize-results results)]
+        (is (= total check-passed))))
+    (set! *print-length* nil)))
+
+(deftest arma-test
+  (testing "prelimary test: get what epsilon values would be with our rng"
+    (let [rng (r/seed-rng 100)]
+      (is (= [0.6246292191371761
+              -0.8581918080882499
+              0.6762208162903859
+              1.126393826325953
+              1.4376621993807677
+              1.4920787730184157
+              -1.5985374620272976
+              -0.07756122563035872]
+             ;; epsilon is standard normal for simplicity
+             (repeatedly 8 #(r/rand-gauss rng 0 1))))))
+  (testing "arma-seq function with phi = 0.5, theta = 0.2, std. normal epsilon"
+    (is (= [;; 0.6246292191371761
+            (+ 0.6246292191371761
+               (* 0.5 0)
+               (* 0.2 0))
+            ;; -0.42095135469222666
+            (+ -0.8581918080882499
+               (* 0.5 0.6246292191371761)
+               (* 0.2 0.6246292191371761))
+            ;; 0.29410677732662255
+            (+ 0.6762208162903859
+               (* 0.5 -0.42095135469222666)
+               (* 0.2 -0.8581918080882499))
+            ;; 1.4086913782473414
+            (+ 1.126393826325953
+               (* 0.5 0.29410677732662255)
+               (* 0.2 0.6762208162903859))
+            ;; 2.367286653769629
+            (+ 1.4376621993807677
+               (* 0.5 1.4086913782473414)
+               (* 0.2 1.126393826325953))
+            ;; 2.9632545397793835
+            (+ 1.4920787730184157
+               (* 0.5 2.367286653769629)
+               (* 0.2 1.4376621993807677))
+            ;; 0.18150556246607724
+            (+ -1.5985374620272976
+               (* 0.5 2.9632545397793835)
+               (* 0.2 1.4920787730184157))
+            ;; -0.0023206895233918445
+            (+ -0.07756122563035872
+               (* 0.5 0.18150556246607724)
+               (* 0.2 -1.5985374620272976))]
+           (take 8 (ts/arma-seq {:phi   [0.5]
+                                 :theta [0.2]
+                                 :std   1
+                                 :c     0
+                                 :seed  100})))))
+  (testing "arma-seq with no phi or theta values is just white noise"
+    (let [seed 123
+          rng  (r/seed-rng seed)]
+      (is (= (take 1000 (repeatedly #(r/rand-gauss rng 0 1)))
+             (take 1000 (ts/arma-seq {:phi   []
+                                      :theta []
+                                      :std   1
+                                      :c     0
+                                      :seed  seed}))))))
+  (testing "AR(1) is stationary iff `|phi_1| < 1`"
+    (let [ar-seq (ts/arma-seq {:phi   [0.99]
+                               :theta []
+                               :std   0.1
+                               :c     0
+                               :seed  100})]
+      (is (< -10 (nth ar-seq 1000) 10))
+      (is (< -10 (nth ar-seq 10000) 10))
+      (is (< -10 (nth ar-seq 100000) 10)))
+    (let [ar-seq (ts/arma-seq {:phi   [1.01]
+                               :theta []
+                               :std   0.1
+                               :c     0
+                               :seed  100})]
+      (is (< 1000 (nth ar-seq 1000)))))
+  (testing "AR(2) stationary iff `|roots(1 - phi_1 x + phi_2 x^2)| > 1`"
+    (let [ar-seq (ts/arma-seq {:phi   [0.5 0.49]
+                               :theta []
+                               :std   0.1
+                               :c     0
+                               :seed  100})]
+      (is (< -10 (nth ar-seq 1000) 10))
+      (is (< -10 (nth ar-seq 10000) 10))
+      (is (< -10 (nth ar-seq 100000) 10)))
+    (let [ar-seq (ts/arma-seq {:phi   [0.5 0.51]
+                               :theta []
+                               :std   0.1
+                               :c     0
+                               :seed  100})]
+      (is (< 1000 (nth ar-seq 10000)))))
+  (testing "MA is always stationary"
+    (let [ma-seq (ts/arma-seq {:phi   []
+                               :theta [1.0]
+                               :std   1
+                               :c     0
+                               :seed  100})]
+      (is (< -10 (nth ma-seq 1000) 10))
+      (is (< -10 (nth ma-seq 10000) 10))
+      (is (< -10 (nth ma-seq 100000) 10)))
+    (let [ma-seq (ts/arma-seq {:phi   []
+                               :theta [100.0]
+                               :std   1
+                               :c     0
+                               :seed  100})]
+      (is (< -100 (nth ma-seq 1000) 100))
+      (is (< -100 (nth ma-seq 10000) 100))
+      (is (< -100 (nth ma-seq 100000) 100)))
+    (let [ma-seq (ts/arma-seq {:phi   []
+                               :theta [1.0 1.5 2.0 2.5]
+                               :std   1
+                               :c     0
+                               :seed  100})]
+      (is (< -10 (nth ma-seq 1000) 10))
+      (is (< -10 (nth ma-seq 10000) 10))
+      (is (< -10 (nth ma-seq 100000) 10)))))
+
+(deftest time-test
+  (testing "time-seqs function:"
+    (testing "t-seq"
+      (is (= '(0 1 2 3 4 5 6 7 8 9)
+             (->> (ts/time-seqs) :t-seq (take 10))))
+      (is (= '(0 1 2 3 4 5 6 7 8 9)
+             (->> (ts/time-seqs :sample-n 10) :t-seq)))
+      (is (= '(1 2 3 4 5 6 7 8 9 10)
+             (->> (ts/time-seqs :t-zero 1) :t-seq (take 10))))
+      (is (= '(1 2 3 4 5 6 7 8 9 10)
+             (->> (ts/time-seqs :t-zero 1 :sample-n 10) :t-seq))))
+    (testing "sec-seq"
+      (is (= '(0 1000 2000 3000 4000 5000 6000 7000 8000 9000)
+             (->> (ts/time-seqs) :sec-seq (take 10))))
+      (is (= '(1 1001 2001 3001 4001 5001 6001 7001 8001 9001)
+             (->> (ts/time-seqs :t-zero 1) :sec-seq (take 10))))
+      (is (= '()  ; 00:00:00.999
+             (->> (ts/time-seqs :sample-n 999) :sec-seq)))
+      (is (= '(0) ; 00:00:01.000
+             (->> (ts/time-seqs :sample-n 1000) :sec-seq)))
+      (is (= '(0)      ; 00:00:01:999
+             (->> (ts/time-seqs :sample-n 1999) :sec-seq)))
+      (is (= '(0 1000) ; 00:00:02.000
+             (->> (ts/time-seqs :sample-n 2000) :sec-seq)))
+      (is (= '(1 1001) ; 00.00.02.000
+             (->> (ts/time-seqs :sample-n 2000 :t-zero 1) :sec-seq))))
+    (testing "min-seq"
+      (is (= '(0 60000 120000 180000 240000)
+             (->> (ts/time-seqs) :min-seq (take 5))))
+      (is (= '(1 60001 120001 180001 240001)
+             (->> (ts/time-seqs :t-zero 1) :min-seq (take 5))))
+      (is (= '()  ; 00:00:59.999
+             (->> (ts/time-seqs :sample-n 59999) :min-seq)))
+      (is (= '(0) ; 00:01:00.999
+             (->> (ts/time-seqs :sample-n 60000) :min-seq))))
+    (testing "hour-seq"
+      (is (= '(0 3600000 7200000 10800000 14400000)
+             (->> (ts/time-seqs) :hour-seq (take 5))))
+      (is (= '(1 3600001 7200001 10800001 14400001)
+             (->> (ts/time-seqs :t-zero 1) :hour-seq (take 5))))
+      (is (= '()  ; 00:59:99.999
+             (->> (ts/time-seqs :sample-n 359999) :hour-seq)))
+      (is (= '(0) ; 01:00:00.000
+             (->> (ts/time-seqs :sample-n 3600000) :hour-seq))))
+    (testing "day-seq"
+      (is (= '(0 86400000 172800000 259200000 345600000)
+             (->> (ts/time-seqs) :day-seq (take 5))))
+      (is (= '(1 86400001 172800001 259200001 345600001)
+             (->> (ts/time-seqs :t-zero 1) :day-seq (take 5))))
+      (is (= '()  ; 1970-01-01T23:59:59.999
+             (->> (ts/time-seqs :sample-n 86399999) :day-seq)))
+      (is (= '(0) ; 1970-01-02T00:00:00.000
+             (->> (ts/time-seqs :sample-n 86400000) :day-seq))))
+    (testing "week-seq"
+      (is (= '(0 604800000 1209600000 1814400000 2419200000)
+             (->> (ts/time-seqs) :week-seq (take 5))))
+      (is (= '(1 604800001 1209600001 1814400001 2419200001)
+             (->> (ts/time-seqs :t-zero 1) :week-seq (take 5))))
+      (is (= '()  ; 1970-01-06T23:59:59.999
+             (->> (ts/time-seqs :sample-n 604799999) :week-seq)))
+      (is (= '(0) ; 1970-01-07T00:00:00.000
+             (->> (ts/time-seqs :sample-n 604800000) :week-seq))))
+    (testing "moh-seq"
+      (is (= '(0 1 2 3 4 5 6 7 8 9)
+             (->> (ts/time-seqs) :moh-seq (take 10))))
+      (is (= 59
+             (-> (ts/time-seqs) :moh-seq (nth 59))))
+      (is (= 0
+             (-> (ts/time-seqs) :moh-seq (nth 60)))))
+    (testing "hod-seq"
+      (is (= '(0 1 2 3 4 5 6 7 8 9)
+             (->> (ts/time-seqs) :hod-seq (take 10))))
+      (is (= 23
+             (-> (ts/time-seqs) :hod-seq (nth 23))))
+      (is (= 0
+             (-> (ts/time-seqs) :hod-seq (nth 24)))))
+    (testing "dow-seq"
+      (is (= '(4 5 6 7 1 2 3 4) ; The unix epoch starts on a Thursday
+             (->> (ts/time-seqs) :dow-seq (take 8))))
+      (is (= '(1 2 3 4 5 6 7 1)
+             (->> (ts/time-seqs :t-zero 345600000) :dow-seq (take 8)))))
+    (testing "dom-seq"
+      (is (= '(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
+             (->> (ts/time-seqs) :dom-seq (take 19))))
+      (is (= '(20 21 22 23 24 25 26 27 28 29 30 31 1)
+             (->> (ts/time-seqs) :dom-seq (take 32) (take-last 13))))
+      (is (= '(20 21 22 23 24 25 26 27 28 1) ; Jan & Feb have diff day counts
+             (->> (ts/time-seqs) :dom-seq (take 60) (take-last 10)))))
+    (testing "doy-seq"
+      (is (= '(1 2 3 4 5 6 7 8 9 10)
+             (->> (ts/time-seqs) :doy-seq (take 10))))
+      (is (= '(365 1) ; 1970 was not a leap year
+             (->> (ts/time-seqs) :doy-seq (take 366) (take-last 2))))
+      (is (= '(365 366 1) ; 1972 was a leap year
+             (->> (ts/time-seqs) :doy-seq (take 1097) (take-last 3)))))
+    (testing "day-night-seq"
+      ;; Some intervals are skipped due to floating point shenanigans
+      ;; but this should be enough to confirm it is a cosine wave.
+      (is (= 1.0
+             (-> (ts/time-seqs) :day-night-seq (nth 0))))
+      (is (= (Math/sqrt 0.5)
+             (-> (ts/time-seqs) :day-night-seq (nth 180))))
+      (is (= 0.0
+             (-> (ts/time-seqs) :day-night-seq (nth 360))))
+      (is (= -1.0
+             (-> (ts/time-seqs) :day-night-seq (nth 720))))
+      (is (= 1.0
+             (-> (ts/time-seqs) :day-night-seq (nth 1440)))))))
+
+(comment
+  (require '[incanter.core :refer [view]]
+           '[incanter.charts :refer [time-series-plot]]
+           '[incanter.stats :as stats])
+
+  ;; ARMA seq plot + sample mean plot
+  ;; Try it with different values of phi and theta
+  ;; In particular, setting both to empty vecs will result in simple white noise
+  ;; See: https://en.wikipedia.org/wiki/Autoregressive_model#Graphs_of_AR(p)_processes
+  ;; for examples of different parameters of phi and their effects
+  (let [n        10000
+        range-n  (range n)
+        arma-seq (take n (ts/arma-seq {:phi   [0.3 0.3]
+                                       :theta []
+                                       :std   1
+                                       :c     0
+                                       :seed  35}))]
+    (view (time-series-plot
+           range-n
+           arma-seq
+           :x-label "N"
+           :y-label "ARMA Value"))
+    (view (time-series-plot
+           range-n
+           (stats/cumulative-mean arma-seq)
+           :x-label "N"
+           :y-label "ARMA Cumulative Sample Mean")))
+  
+  ;; Plot of auto-correlation with respect to lag, i.e. the difference
+  ;; between any two given times.
+  ;; In this case, auto-correlation is also auto-covariance since the
+  ;; mean of the arma seq is 0 (auto-cov = auto-cor - mean_t1 * mean_t2).
+  ;; Note the sinusoidal pattern of the plot.
+  (let [n         10000
+        max-lag   100
+        range-lag (range max-lag)
+        arma-seq  (take n (ts/arma-seq {:phi   [0.3]
+                                       :theta []
+                                       :std   1
+                                       :c     0
+                                       :seed  4000}))]
+    ;; Note that for lag = 0, the auto-cor = auto-cov = std^2 = 1
+    #_(println (stats/auto-correlation arma-seq 0))
+    (view (time-series-plot
+           range-lag
+           (map (partial stats/auto-correlation arma-seq) (range max-lag))
+           :x-label "Time difference"
+           :y-label "ARMA autocovariance"))))

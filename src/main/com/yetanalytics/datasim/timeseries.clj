@@ -1,8 +1,9 @@
 (ns com.yetanalytics.datasim.timeseries
   "Timeseries namespaces; all timeseries are lazy, potentially infinite
    sequences of numeric values."
-  (:require [clojure.spec.alpha :as s]
-            [java-time          :as t]
+  (:require [clojure.spec.alpha     :as s]
+            [clojure.spec.gen.alpha :as sgen]
+            [java-time              :as t]
             [com.yetanalytics.datasim.random     :as random]
             [com.yetanalytics.datasim.util.maths :as maths]))
 
@@ -12,17 +13,19 @@
 
 ;; Specs
 
+;; These values can be any non-inf double, but we limit possible gen values so
+;; that we don't get infinite result values (e.g. with phi values that result
+;; in a non-stationary ARMA seq)
 (s/def ::safe-double
-  (s/double-in :infinite? false
-               :NaN? false))
+  (s/with-gen (s/double-in :infinite? false
+                           :NaN? false)
+    #(sgen/double* {:min -1.0 :max 1.0})))
 
 (s/def ::phi
-  (s/coll-of ::safe-double
-             :into []))
+  (s/coll-of ::safe-double :into []))
 
 (s/def ::theta
-  (s/coll-of ::safe-double
-             :into []))
+  (s/coll-of ::safe-double :into []))
 
 (s/def ::std
   ::safe-double)
@@ -48,9 +51,11 @@
 (s/def ::arma
   (s/merge ::ar ::ma))
 
+;; The return value can't be `::safe-double` in case arma-seq is not stationary,
+;; in which case the sequence will blow up to infinity.
 (s/fdef arma-seq
   :args (s/cat :arma-model ::arma)
-  :ret (s/every ::safe-double))
+  :ret (s/every double?))
 
 ;; ARMA Function
 
@@ -121,11 +126,14 @@
 
 (defn- time-seq
   "Generate a sequence of epoch milliseconds starting at `t-zero` ms, skipping
-   over `step` milliseconds with "
+   over `step` milliseconds with and optionally limiting samples up to
+   `?sample-n` ms."
   [t-zero ?sample-n step]
   (cond->> (range t-zero Long/MAX_VALUE step)
     ?sample-n
     (take (quot ?sample-n step))))
+
+(type (range 0 Long/MAX_VALUE 1))
 
 (defn- time-of-time-seq
   "Given `time-seq` of epoch milliseconds, convert it into a cyclic sequence
@@ -150,37 +158,40 @@
 
 ;; Specs
 
-(defn- lazy-seq? [coll] (instance? clojure.lang.LazySeq coll))
-
-(defmacro int-mod [divisor]
-  `(s/and int? (fn [n#] (zero? (mod n# ~divisor)))))
+(defn- lazy-seq? [coll]
+  (or (instance? clojure.lang.LazySeq coll)
+      ;; `range` returns these types instead of LazySeq
+      (instance? clojure.lang.LongRange coll)
+      (instance? clojure.lang.Range coll)))
 
 (s/def ::t-zero int?)
 
-(s/def ::sample-n int?)
+(s/def ::sample-n (s/and int? (comp not zero?)))
 
 (s/def ::zone
-  (s/with-gen (s/and string? #(try (t/zone-id %) true
-                                   (catch Exception _ false)))
-    (fn [] "UTC")))
+  (s/with-gen t/zone-id?
+    #(sgen/fmap (fn [[sign hr]]
+                  (t/zone-id (format "UTC%s%d" sign hr)))
+                (sgen/tuple (sgen/elements ["-" "+"])
+                            (sgen/choose 0 18)))))
 
 (s/def ::t-seq
   (s/every int? :kind lazy-seq?))
 
 (s/def ::sec-seq
-  (s/every (int-mod ms-per-second) :kind lazy-seq?))
+  (s/every int? :kind lazy-seq?))
 
 (s/def ::min-seq
-  (s/every (int-mod ms-per-minute) :kind lazy-seq?))
+  (s/every int? :kind lazy-seq?))
 
 (s/def ::hour-seq
-  (s/every (int-mod ms-per-hour) :kind lazy-seq?))
+  (s/every int? :kind lazy-seq?))
 
 (s/def ::day-seq
-  (s/every (int-mod ms-per-day) :kind lazy-seq?))
+  (s/every int? :kind lazy-seq?))
 
 (s/def ::week-seq
-  (s/every (int-mod ms-per-week) :kind lazy-seq?))
+  (s/every int? :kind lazy-seq?))
 
 (s/def ::moh-seq
   (s/every (s/int-in 0 60) :kind lazy-seq?))
@@ -189,19 +200,19 @@
   (s/every (s/int-in 0 24) :kind lazy-seq?))
 
 (s/def ::dow-seq
-  (s/every (s/int-in 0 7) :kind lazy-seq?))
+  (s/every (s/int-in 1 8) :kind lazy-seq?))
 
 (s/def ::dom-seq
-  (s/every (s/int-in 0 31) :kind lazy-seq?))
+  (s/every (s/int-in 1 32) :kind lazy-seq?))
 
 (s/def ::doy-seq
-  (s/every (s/int-in 0 366) :kind lazy-seq?))
+  (s/every (s/int-in 1 367) :kind lazy-seq?))
 
 (s/def ::day-night-seq
-  (s/every (s/double-in -1.0 1.0) :kind lazy-seq?))
+  (s/every (s/double-in :min -1.0 :max 1.0) :kind lazy-seq?))
 
 (s/fdef time-seqs
-  :args (s/keys :opt-un [::t-zero ::sample-n ::zone])
+  :args (s/cat :kwargs (s/keys* :opt-un [::t-zero ::sample-n ::zone]))
   :ret (s/keys :req-un [::t-seq
                         ::sec-seq
                         ::min-seq
@@ -235,9 +246,9 @@
    | `:week-seq`      | Sequence of epoch ms with an interval of one week (e.g. `(0 604800000 ...)`)
    | `:moh-seq`       | Cyclic sequence of minutes per hour (e.g. `(0 1 ... 59 0 ...)`)
    | `:hod-seq`       | Cyclic sequence of hours per day (e.g. `(0 1 ... 23 0 ...)`)
-   | `:dow-seq`       | Cyclic sequence of days per week (e.g. `(0 1 ... 6 0 ...)`)
-   | `:dom-seq`       | Cyclic sequence of days per month (e.g. `(0 1 ... 30 0 ...)`)
-   | `:doy-seq`       | Cyclic sequence of days per year (e.g. `(0 1 ... 355 0 ...)`)
+   | `:dow-seq`       | Cyclic sequence of the day of the week (e.g. `(1 2 ... 7 1 ...)`)
+   | `:dom-seq`       | Cyclic sequence of the day of the month (e.g. `(1 2 ... 31 1 ...)`)
+   | `:doy-seq`       | Cyclic sequence of the day of the year (e.g. `(1 2 ... 365 1 ...)`)
    | `:day-night-seq` | Sinusoidal sequence where negative numbers denote daytime and positive numbers nighttime. Range is from -1 (at noon) to 1 (at midnight)."
   [& {:keys [t-zero
              sample-n
