@@ -121,13 +121,91 @@
      cosmos-supplied
      all-activity-types)))
 
+;; NEW ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- rules->activity-type-ids
+  [parsed-rules]
+  (->> parsed-rules
+       (map (fn [{:keys [spec valueset]}]
+              (case spec
+                :activity/definition
+                (keep (fn [x] (when (map? x) (get x "type"))) valueset)
+                :definition/type
+                (seq valueset)
+                ;; Else - even Activities and other values that can contain
+                ;; Activity Types IRIs should not be included, since there
+                ;; the Activity ID will also be included
+                nil)))
+       (mapcat identity)))
+
+(defn- profile->statement-activity
+  [activity]
+  (-> activity
+      (select-keys [:id :definition])
+      (update-in [:definition] dissoc :_context)
+      w/stringify-keys))
+
+(defn- assoc-activity [activity-map activity]
+  (let [{activity-id :id {activity-type-id :type} :definition} activity]
+    (assoc-in activity-map
+              [activity-id activity-type-id]
+              (profile->statement-activity activity))))
+
+(defn- activity-type->id
+  [rng activity-type]
+  (let [;; make a possibly familiar little tag if we can
+        tag    (or (->> (cs/split activity-type #"/")
+                        peek
+                        (re-matches #"[a-zA-Z0-9]*"))
+                   "activity")
+        serial (random/rand-int* rng Integer/MAX_VALUE)]
+    (format "https://example.org/%s/%d" tag serial)))
+
+(defn- assoc-activity-type-id [rng min-per-type activity-map activity-type-id]
+  (let [id->activity (fn [activity-id]
+                       {"id"         activity-id
+                        "definition" {"type" activity-type-id}})
+        gen-activity (fn []
+                       (->> activity-type-id
+                            (activity-type->id rng)
+                            id->activity))
+        type-count   (count (get activity-map activity-type-id))
+        activity-num (- min-per-type type-count)
+        activities   (repeatedly activity-num gen-activity)]
+    (reduce (fn [m* {activity-id "id" :as activity}]
+              (assoc-in m*
+                        [activity-type-id activity-id]
+                        activity))
+            activity-map
+            activities)))
+
+(defn create-activity-map
+  [type-iri-map template-rule-map seed & {:keys [min-per-type]
+                                          :or {min-per-type 1}}]
+  (let [concept-activities (->> "Activity" (get type-iri-map) vals)
+        concept-type-ids   (->> "ActivityType" (get type-iri-map) keys)
+        template-type-ids  (->> template-rule-map
+                                vals
+                                (mapcat identity)
+                                rules->activity-type-ids)
+        ;; Reducing functions
+        rng                 (random/seed-rng seed)
+        assoc-act-type-id   (partial assoc-activity-type-id rng min-per-type)
+        reduce-act-type-ids (partial reduce assoc-act-type-id)
+        reduce-activities   (partial reduce assoc-activity)]
+    (-> {}
+        (reduce-activities concept-activities)
+        (reduce-act-type-ids (concat concept-type-ids template-type-ids)))))
 
 (comment
-  (def i (input/from-location :input :json "dev-resources/input/simple.json"))
+  (require '[com.yetanalytics.datasim.xapi.profile.template.rule :as r])
 
-
-  (clojure.pprint/pprint (derive-cosmos i 42 :min-per-type 3))
-
-
-
-  )
+  (create-activity-map
+   {}
+   {"http://example.org/template-1"
+    (r/parse-rules [{:location "$.object.definition.type"
+                     :all ["http://foo.org/example-1a"
+                           "http://foo.org/example-1b"]}
+                    {:location "$.object.definition"
+                     :all [{"type" "http://foo.org/example-2"}]}])}
+   100))
