@@ -271,14 +271,16 @@
         ?t-end      (some-> end timestamp->millis)
         ?sample-ms  (some-> ?t-end (- t-start))
         ;; Derive the actor event probability mask sequence.
-        {:keys [minute-ms-seq minute-of-day-seq night-day-seq]}
-        (ts/time-seqs :t-zero t-start
-                      :sample-ms ?sample-ms
-                      :zone zone-region)
+        {:keys
+         [minute-ms-seq
+          minute-of-day-seq
+          minute-day-night-seq]} (ts/time-seqs :t-zero t-start
+                                               :sample-ms ?sample-ms
+                                               :zone zone-region)
         mask-arma-seed  (.nextLong sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
-                                                       night-day-seq
+                                                       minute-day-night-seq
                                                        minute-of-day-seq)
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))

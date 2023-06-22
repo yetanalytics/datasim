@@ -233,19 +233,26 @@
              (->> (ts/time-seqs) :day-of-year-seq (take 366) (take-last 2))))
       (is (= '(365 366 1) ; 1972 was a leap year
              (->> (ts/time-seqs) :day-of-year-seq (take 1097) (take-last 3)))))
-    (testing "night-day-seq"
+    (testing "minute-day-night-seq"
       ;; Some intervals are skipped due to floating point shenanigans
       ;; but this should be enough to confirm it is a cosine wave.
       (is (= 1.0
-             (-> (ts/time-seqs) :night-day-seq (nth 0))))
+             (-> (ts/time-seqs) :minute-day-night-seq (nth 0))))
       (is (= (Math/sqrt 0.5)
-             (-> (ts/time-seqs) :night-day-seq (nth 180))))
+             (-> (ts/time-seqs) :minute-day-night-seq (nth 180))))
       #_(is (= 0.0
              (-> (ts/time-seqs) :night-day-seq (nth 360))))
       (is (= -1.0
-             (-> (ts/time-seqs) :night-day-seq (nth 720))))
+             (-> (ts/time-seqs) :minute-day-night-seq (nth 720))))
       (is (= 1.0
-             (-> (ts/time-seqs) :night-day-seq (nth 1440)))))))
+             (-> (ts/time-seqs) :minute-day-night-seq (nth 1440)))))
+    (testing "hour-day-night-seq"
+      (is (= 1.0
+             (-> (ts/time-seqs) :hour-day-night-seq (nth 0))))
+      (is (= -1.0
+             (-> (ts/time-seqs) :hour-day-night-seq (nth 12))))
+      (is (= 1.0
+             (-> (ts/time-seqs) :hour-day-night-seq (nth 24)))))))
 
 (comment
   (require '[incanter.core :refer [view]]
