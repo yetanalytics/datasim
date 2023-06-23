@@ -178,6 +178,28 @@
                            "es" "satisfecho"}}
                (get statement "verb")))))
 
+    (testing "inclusion only"
+      (let [statement
+            (gen-statement
+             {:rules [{:location "$.verb"
+                       :presence "included"}]})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= {"id"      "https://w3id.org/xapi/adl/verbs/waived"
+                "display" {"en" "waived"}}
+               (get statement "verb")))))
+    
+    (testing "ID inclusion only"
+      (let [statement
+            (gen-statement
+             {:rules [{:location "$.verb.id"
+                       :presence "included"}]})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= {"id"      "https://w3id.org/xapi/adl/verbs/abandoned"
+                "display" {"en" "abandoned"}}
+               (get statement "verb")))))
+    
     (testing "display rule only - spec generation"
       (let [statement
             (gen-statement
@@ -304,6 +326,39 @@
         (is (statement-inputs? statement))
         (is (= {"id"         "https://example.org/course/1550503926"
                 "objectType" "Activity"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+               (get statement "object")))))
+
+    (testing "inclusion only"
+      (let [statement
+            (gen-statement
+             {:rules [{:location "$.object"
+                       :presence "included"}]})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= {"id"         "https://example.org/block/1432714272"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}
+               (get statement "object")))))
+
+    (testing "ID inclusion only"
+      (let [statement
+            (gen-statement
+             {:rules [{:location "$.object.id"
+                       :presence "included"}]})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= {"id"         "https://example.org/course/418707894"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}
+               (get statement "object")))))
+
+    (testing "activity type inclusion only"
+      (let [statement
+            (gen-statement
+             {:rules [{:location "$.object.definition.type"
+                       :presence "included"}]})]
+        (is (s/valid? ::xs/statement statement))
+        (is (statement-inputs? statement))
+        (is (= {"id"         "https://example.org/course/1550503926"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object"))))))
 

@@ -495,12 +495,11 @@
     :inlineSchema "{\"type\":\"boolean\"}"}})
 
 (def valuegen-valuesets
-  {:verbs          #{{:id   "http://foo.org/verb"
-                      :type "Verb"}}
+  {:verbs          #{{"id""http://foo.org/verb"}}
    :verb-ids       #{"http://foo.org/verb"}
-   :activities     #{{:id         "http://foo.org/activity"
-                      :type       "Activity"
-                      :definition {:type "http://foo.org/activity-type"}}}
+   :activities     #{{"id"         "http://foo.org/activity"
+                      "objectType" "Activity"
+                      "definition" {"type" "http://foo.org/activity-type"}}}
    :activity-ids   #{"http://foo.org/activity"}
    :activity-types #{"http://foo.org/activity-type"}})
 
@@ -547,8 +546,7 @@
             :presence :included
             :path     ["verb"]
             :spec     ::xs/verb
-            :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
-            :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
+            :valueset #{{"id" "http://foo.org/verb"}}}
            (parse-rule-valuegen
             {:location "$.verb"
              :presence "included"})))
@@ -556,8 +554,7 @@
             :presence :included
             :path     ["verb" "id"]
             :spec     :verb/id
-            :valueset #{"http://foo.org/verb"}
-            :all      #{"http://foo.org/verb"}}
+            :valueset #{"http://foo.org/verb"}}
            (parse-rule-valuegen
             {:location "$.verb.id"
              :presence "included"})))
@@ -565,12 +562,9 @@
             :presence :included
             :path     ["object"]
             :spec     ::xs/activity 
-            :valueset #{{:id         "http://foo.org/activity"
-                         :type       "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}
-            :all      #{{:id         "http://foo.org/activity"
-                         :type       "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}}
+            :valueset #{{"id"         "http://foo.org/activity"
+                         "objectType" "Activity"
+                         "definition" {"type" "http://foo.org/activity-type"}}}}
            (parse-rule-valuegen
             {:location "$.object"
              :presence "included"})))
@@ -578,8 +572,7 @@
             :presence :included
             :path     ["object" "id"]
             :spec     :activity/id
-            :valueset #{"http://foo.org/activity"}
-            :all      #{"http://foo.org/activity"}}
+            :valueset #{"http://foo.org/activity"}}
            (parse-rule-valuegen
             {:location "$.object.id"
              :presence "included"})))
@@ -587,18 +580,26 @@
             :presence :included
             :path     ["object" "definition" "type"]
             :spec     :definition/type
-            :valueset #{"http://foo.org/activity-type"}
-            :all      #{"http://foo.org/activity-type"}}
+            :valueset #{"http://foo.org/activity-type"}}
            (parse-rule-valuegen
             {:location "$.object.definition.type"
+             :presence "included"})))
+    (is (= {:location [[["context"] ["contextActivities"] ["category"] [0]]]
+            :presence :included
+            :path     ["context" "contextActivities" "category" '*]
+            :spec     ::xs/activity
+            :valueset #{{"id"         "http://foo.org/activity"
+                         "objectType" "Activity"
+                         "definition" {"type" "http://foo.org/activity-type"}}}}
+           (parse-rule-valuegen
+            {:location "$.context.contextActivities.category[0]"
              :presence "included"}))))
   (testing "Add valuesets (substatements)"
     (is (= {:location [[["object"] ["verb"]]]
             :presence :included
             :path     ["object" "verb"]
             :spec     ::xs/verb
-            :valueset #{{:id "http://foo.org/verb" :type "Verb"}}
-            :all      #{{:id "http://foo.org/verb" :type "Verb"}}}
+            :valueset #{{"id" "http://foo.org/verb"}}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb"
              :presence "included"})))
@@ -606,8 +607,7 @@
             :presence :included
             :path     ["object" "verb" "id"]
             :spec     :verb/id
-            :valueset #{"http://foo.org/verb"}
-            :all      #{"http://foo.org/verb"}}
+            :valueset #{"http://foo.org/verb"}}
            (parse-rule-sub-valuegen
             {:location "$.object.verb.id"
              :presence "included"})))
@@ -615,12 +615,9 @@
             :presence :included
             :path     ["object" "object"]
             :spec     ::xs/activity
-            :valueset #{{:id         "http://foo.org/activity"
-                         :type       "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}
-            :all      #{{:id         "http://foo.org/activity"
-                         :type       "Activity"
-                         :definition {:type "http://foo.org/activity-type"}}}}
+            :valueset #{{"id"         "http://foo.org/activity"
+                         "objectType" "Activity"
+                         "definition" {"type" "http://foo.org/activity-type"}}}}
            (parse-rule-sub-valuegen
             {:location "$.object.object"
              :presence "included"})))
@@ -628,8 +625,7 @@
             :presence :included
             :path     ["object" "object" "id"]
             :spec     :activity/id
-            :valueset #{"http://foo.org/activity"}
-            :all      #{"http://foo.org/activity"}}
+            :valueset #{"http://foo.org/activity"}}
            (parse-rule-sub-valuegen
             {:location "$.object.object.id"
              :presence "included"})))
@@ -637,8 +633,7 @@
             :presence :included
             :path     ["object" "object" "definition" "type"]
             :spec     :definition/type
-            :valueset #{"http://foo.org/activity-type"}
-            :all      #{"http://foo.org/activity-type"}}
+            :valueset #{"http://foo.org/activity-type"}}
            (parse-rule-sub-valuegen
             {:location "$.object.object.definition.type"
              :presence "included"}))))
@@ -1018,7 +1013,13 @@
                {:location "$.verb.display.zh-CN"
                 :all      ["展开"]}
                {:location "$.verb.display.zh-CN" ; overwrites previous rule
-                :none     ["展开"]}))))
+                :none     ["展开"]}))
+    (testing "don't replace verb not in profile cosmos with one that is"
+      (is-verb {"id" "http://example.org/nonexistent"}
+               {:location "$.verb.id"
+                :all      ["http://example.org/nonexistent"]}
+               {:location "$.verb.id"
+                :presence "included"}))))
 
 (deftest apply-context-rules
   (testing "Context rules:"
@@ -1268,7 +1269,21 @@
         :all      ["https://xapinet.com/xapi/blooms/activitytypes/cognitive-process-dimension"]}
        {:location "$.context.contextActivities.grouping[0].definition.type"
         :presence "included"
-        :all      ["https://xapinet.com/xapi/blooms/activities/objectives/procedural"]}))))
+        :all      ["https://xapinet.com/xapi/blooms/activities/objectives/procedural"]}))
+    (testing "don't replace activity not in profile cosmos with one that is"
+      ;; This case particularly applies to adding the profile ID
+      ;; as a category context activity
+      (is-ctx-activities
+       "category"
+       [{"id"         "http://foo.org/my-profile-id"
+         "objectType" "Activity"
+         "definition" {"name"        {"en" "team meeting"}
+                       "description" {"en" "A category of meeting used for regular team meetings."}
+                       "type"        "http://example.com/expapi/activities/meetingcategory"}}]
+       {:location "$.context.contextActivities.category[*].id"
+        :all      ["http://foo.org/my-profile-id"]}
+       {:location "$.context.contextActivities.category[*].id"
+        :presence "included"}))))
 
 (deftest apply-rules-distinct-test
   (testing "uses all 3 distinct `all` values for 3 locations"
