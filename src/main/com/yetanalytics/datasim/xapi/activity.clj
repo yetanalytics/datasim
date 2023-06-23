@@ -6,7 +6,8 @@
             [com.yetanalytics.datasim.random :as random]
             [clojure.walk :as w]
             [clojure.set :as cset]
-            [clojure.string :as cs]))
+            [clojure.string :as cs]
+            [com.yetanalytics.datasim.xapi.statement :as stmt]))
 
 (s/def :cosmos/activity-type
   iri/iri-spec)
@@ -179,15 +180,36 @@
             activity-map
             activities)))
 
+(defn- template-property-activity-types
+  "Derive Activity Type IDs from the Template's Determining Properties"
+  [{:keys [objectActivityType
+           contextCategoryActivityType
+           contextGroupingActivityType
+           contextParentActivityType
+           contextOtherActivityType]}]
+  (concat [objectActivityType]
+          contextCategoryActivityType
+          contextGroupingActivityType
+          contextParentActivityType
+          contextOtherActivityType))
+
+(defn- template-rule-activity-types
+  "Derive Activity Type IDs from the Template's Rules"
+  [template]
+  (->> template
+       stmt/template->parsed-rules*
+       rules->activity-type-ids))
+
 (defn create-activity-map
-  [type-iri-map template-rule-map seed & {:keys [min-per-type]
-                                          :or {min-per-type 1}}]
-  (let [concept-activities (->> "Activity" (get type-iri-map) vals)
-        concept-type-ids   (->> "ActivityType" (get type-iri-map) keys)
-        template-type-ids  (->> template-rule-map
-                                vals
-                                (mapcat identity)
-                                rules->activity-type-ids)
+  [type-iri-map seed & {:keys [min-per-type]
+                        :or {min-per-type 1}}]
+  (let [concept-activities   (->> "Activity" (get type-iri-map) vals)
+        concept-type-ids     (->> "ActivityType" (get type-iri-map) keys)
+        statement-templates  (->> "StatementTemplate" (get type-iri-map) vals)
+        template-prop-atypes (mapcat template-property-activity-types
+                                     statement-templates)
+        template-rule-atypes (mapcat template-rule-activity-types
+                                     statement-templates)
         ;; Reducing functions
         rng                 (random/seed-rng seed)
         assoc-act-type-id   (partial assoc-activity-type-id rng min-per-type)
@@ -195,7 +217,9 @@
         reduce-activities   (partial reduce assoc-activity)]
     (-> {}
         (reduce-activities concept-activities)
-        (reduce-act-type-ids (concat concept-type-ids template-type-ids)))))
+        (reduce-act-type-ids (concat concept-type-ids
+                                     template-prop-atypes
+                                     template-rule-atypes)))))
 
 (comment
   (require '[com.yetanalytics.datasim.xapi.profile.template.rule :as r])

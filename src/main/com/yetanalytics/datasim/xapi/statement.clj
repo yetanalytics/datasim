@@ -189,6 +189,18 @@
                :template     ::template/template)
   :ret ::rule/parsed-rule)
 
+(defn template->parsed-rules*
+  [{object-activity-type :objectActivityType
+    object-statement-ref :objectStatementRefTemplate
+    rules                :rules}]
+  (cond
+    object-activity-type
+    (rule/parse-rules :activity-type rules)
+    object-statement-ref
+    (rule/parse-rules :statement-ref rules)
+    :else
+    (rule/parse-rules rules)))
+
 (defn template->parsed-rules
   "Return a collection of parsed rules derived from the template `rules`.
    Uses information from `iri-map` and `activities` maps, as well as from
