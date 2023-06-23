@@ -41,10 +41,13 @@
     org.slf4j/slf4j-simple       {:mvn/version "1.7.28"}
     clj-http/clj-http            {:mvn/version "3.12.3"}
     environ/environ              {:mvn/version "1.1.0"}
-    buddy/buddy-auth             {:mvn/version "3.0.323"
-                                  :exclusions  [cheshire/cheshire
-                                                org.bouncycastle/bcprov-jdk15on]}
-    org.bouncycastle/bcprov-jdk15to18 {:mvn/version "1.75"}}
+    ;; Buddy/BouncyCastle deps
+    buddy/buddy-auth {:mvn/version "3.0.323"
+                      :exclusions  [cheshire/cheshire
+                                    buddy/buddy-sign]}
+    buddy/buddy-sign {:mvn/version "3.5.346"
+                      :exclusions  [org.bouncycastle/bcprov-jdk18on]}
+    org.bouncycastle/bcprov-jdk18on {:mvn/version "1.75"}}
    :main-opts   ["-m" "com.yetanalytics.datasim.server"]}
   :onyx
   {:extra-paths ["onyx-resources" "src/onyx"]
