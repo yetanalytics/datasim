@@ -115,6 +115,11 @@
        long
        (+ start-time-ms)))
 
+(defn- profile->statement-verb
+  [{:keys [id prefLabel]}]
+  {"id"      id
+   "display" (w/stringify-keys prefLabel)})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -226,7 +231,6 @@
    activity-map
    {object-activity-type :objectActivityType
     object-statement-ref :objectStatementRefTemplate
-    profile-id           :inScheme
     rules                :rules}]
   (let [parsed-rules   (cond
                          object-activity-type
@@ -234,13 +238,11 @@
                          object-statement-ref
                          (rule/parse-rules :statement-ref rules)
                          :else
-                         (rule/parse-rules rules))
-        prof-act-set   #{{"id" profile-id}}
-        prof-id-set    #{profile-id}
+                         (rule/parse-rules rules)) 
         verbs          (->> (get type-iri-map "Verb") vals set)
         verb-ids       (->> (get type-iri-map "Verb") keys set)
-        activities     (->> activity-map vals (mapcat vals) (into prof-act-set))
-        activity-ids   (->> activity-map vals (mapcat keys) (into prof-id-set))
+        activities     (->> activity-map vals (mapcat vals) set)
+        activity-ids   (->> activity-map vals (mapcat keys) set)
         activity-types (->> activity-map keys set)
         value-sets     {:verbs          verbs
                         :verb-ids       verb-ids
@@ -273,11 +275,6 @@
 
 (defn- generate-verb [rng _]
   {"id" (stest/generate verb-id-gen 1 (random/rand-long rng))})
-
-(defn profile->statement-verb
-  [{:keys [id prefLabel]}]
-  {"id"      id
-   "display" (w/stringify-keys prefLabel)})
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
