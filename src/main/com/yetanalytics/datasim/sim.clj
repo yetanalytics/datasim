@@ -259,8 +259,7 @@
    actor from `start` of sim. Should be run once (in a single thread).
   
    Spooky."
-  [{:keys [profiles personae-array parameters alignments]
-    :as   input}]
+  [{:keys [profiles personae-array parameters alignments]}]
   (let [;; Input parameters and alignments
         {:keys [start end timezone seed] ?from-stamp :from} parameters
         {alignments :alignment-vector} alignments
@@ -285,22 +284,12 @@
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
                                                        day-night-seq
                                                        mod-seq)
-        ;; Derive actor, activity, and profile object colls and maps
+        ;; Derive actor seqs and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
+        ;; Derive profiles map
         activity-seed   (.nextLong sim-rng)
-        activity-map    (activity/derive-cosmos input activity-seed)
-        type-iri-map    (-> (p/profiles->type-iri-map profiles)
-                            (p/select-primary-patterns parameters))
-        ;; Pre-parse templates into statement bases and rules, as a
-        ;; form of optimization
-        template-base-m (p/profiles->base-statement-map profiles)
-        template-rule-m (p/profiles->parsed-rule-map profiles)
-        ;; Generate statement base inputs
-        base-input-map  {:type-iri-map       type-iri-map
-                         :activity-map       activity-map
-                         :statement-base-map template-base-m
-                         :parsed-rules-map   template-rule-m}]
+        profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
          (sort-by xapiu/agent-id)
@@ -322,7 +311,7 @@
                   actor-prob-seq  (map vector min-seq actor-prob-seq*)
                   ;; Actor registration seq
                   actor-reg-seed  (.nextLong sim-rng)
-                  actor-reg-seq   (p/registration-seq type-iri-map
+                  actor-reg-seq   (p/registration-seq (:type-iri-map profiles-map)
                                                       actor-alignment
                                                       actor-reg-seed)
                   ;; Additional seed for further gen
@@ -330,7 +319,7 @@
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq
-                  actor-input     (merge base-input-map
+                  actor-input     (merge profiles-map
                                          {:actor     actor-xapi
                                           :alignment actor-alignment})
                   actor-stmt-seq  (cond->> (statement-seq

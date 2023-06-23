@@ -31,6 +31,9 @@
 (s/def :derive-cosmos.options/min-per-type
   pos-int?)
 
+(s/def ::activity-map
+  (s/map-of iri/iri-spec (s/map-of iri/iri-spec ::xs/activity)))
+
 (s/fdef derive-cosmos
   :args (s/cat :input :com.yetanalytics.datasim/input
                :seed :derive-cosmos/seed
@@ -187,49 +190,54 @@
            contextGroupingActivityType
            contextParentActivityType
            contextOtherActivityType]}]
-  (concat [objectActivityType]
-          contextCategoryActivityType
-          contextGroupingActivityType
-          contextParentActivityType
-          contextOtherActivityType))
+  (->> (concat [objectActivityType]
+               contextCategoryActivityType
+               contextGroupingActivityType
+               contextParentActivityType
+               contextOtherActivityType)
+       (filter some?)))
 
 (defn- template-rule-activity-types
   "Derive Activity Type IDs from the Template's Rules"
   [template]
   (->> template
-       stmt/template->parsed-rules*
+       stmt/template->parsed-rules
        rules->activity-type-ids))
 
+(s/def ::min-per-type pos-int?)
+
+(s/fdef create-activity-map
+  :args (s/cat :type-iri-map map? ; TODO: Better spec
+               :seed int?
+               :kwargs (s/keys* :opt-un [::min-per-type]))
+  :ret ::activity-map)
+
 (defn create-activity-map
-  [type-iri-map seed & {:keys [min-per-type]
-                        :or {min-per-type 1}}]
-  (let [concept-activities   (->> "Activity" (get type-iri-map) vals)
-        concept-type-ids     (->> "ActivityType" (get type-iri-map) keys)
-        statement-templates  (->> "StatementTemplate" (get type-iri-map) vals)
-        template-prop-atypes (mapcat template-property-activity-types
-                                     statement-templates)
-        template-rule-atypes (mapcat template-rule-activity-types
-                                     statement-templates)
-        ;; Reducing functions
-        rng                 (random/seed-rng seed)
+  "Given a `type-iri-map` and `seed`, derive map from Activity Types to
+   Activity IDs to the Activity objects. Finds Activities and Activity Type
+   Concepts from `type-iri-map`, as well as additional Activity Types from
+   Statement Templates; the latter is because unlike other values, Activity
+   Types are commonly defined in Templates as Determining Properties or via
+   rules.
+   
+   The `seed` is used generate additional Activities from Activity Types
+   that are not specified as Concepts, while `min-per-type` specifies the
+   minimum number of Activities that should be generated per Activity Type."
+  [type-iri-map seed & {:keys [min-per-type] :or {min-per-type 1}}]
+  (let [rng                 (random/seed-rng seed)
+        concept-activities  (->> "Activity" (get type-iri-map) vals)
+        concept-type-ids    (->> "ActivityType" (get type-iri-map) keys)
+        statement-templates (->> "StatementTemplate" (get type-iri-map) vals)
+        temp-prop-type-ids  (mapcat template-property-activity-types
+                                    statement-templates)
+        temp-rule-type-ids  (mapcat template-rule-activity-types
+                                    statement-templates)
+        activity-type-ids   (concat concept-type-ids
+                                    temp-prop-type-ids
+                                    temp-rule-type-ids)
         assoc-act-type-id   (partial assoc-activity-type-id rng min-per-type)
         reduce-act-type-ids (partial reduce assoc-act-type-id)
         reduce-activities   (partial reduce assoc-activity)]
     (-> {}
         (reduce-activities concept-activities)
-        (reduce-act-type-ids (concat concept-type-ids
-                                     template-prop-atypes
-                                     template-rule-atypes)))))
-
-(comment
-  (require '[com.yetanalytics.datasim.xapi.profile.template.rule :as r])
-
-  (create-activity-map
-   {}
-   {"http://example.org/template-1"
-    (r/parse-rules [{:location "$.object.definition.type"
-                     :all ["http://foo.org/example-1a"
-                           "http://foo.org/example-1b"]}
-                    {:location "$.object.definition"
-                     :all [{"type" "http://foo.org/example-2"}]}])}
-   100))
+        (reduce-act-type-ids activity-type-ids))))
