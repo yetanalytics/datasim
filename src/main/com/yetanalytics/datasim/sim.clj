@@ -295,10 +295,7 @@
         ;; Pre-parse templates into statement bases and rules, as a
         ;; form of optimization
         template-base-m (p/profiles->base-statement-map profiles)
-        template-rule-m (p/profiles->parsed-rule-map profiles
-                                                     type-iri-map
-                                                     activity-map)
-
+        template-rule-m (p/profiles->parsed-rule-map profiles)
         ;; Generate statement base inputs
         base-input-map  {:type-iri-map       type-iri-map
                          :activity-map       activity-map
