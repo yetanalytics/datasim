@@ -6,7 +6,6 @@
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
             [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;; FIXME: generate-statement will still generate statements with blatantly contradictory rules,
@@ -20,17 +19,8 @@
 
 (def top-seed 42)
 
-(def profile-type-iri-map
-  (-> const/simple-input :profiles profile/profiles->type-iri-map))
-
-(def activities
-  (-> const/simple-input (activity/derive-cosmos 100)))
-
 (def actor
   (-> const/simple-input :personae-array first :member first (dissoc :role)))
-
-(def alignments*
-  (-> const/simple-input (get-in [:alignments :alignment-vector 0 :alignments])))
 
 (def alignments
   (reduce
@@ -38,16 +28,18 @@
      (assoc acc component {:weight          weight
                            :object-override objectOverride}))
    {}
-   alignments*))
+   (get-in const/simple-input
+           [:alignments :alignment-vector 0 :alignments])))
 
 (def profiles-map
   (profile/profiles->profile-map (:profiles const/simple-input)
                                  (:parameters const/simple-input)
                                  100))
 
-(def template
-  (get-in profile-type-iri-map
-          ["StatementTemplate" "https://w3id.org/xapi/cmi5#satisfied"]))
+(def default-template
+  (get-in profiles-map [:type-iri-map
+                        "StatementTemplate"
+                        "https://w3id.org/xapi/cmi5#satisfied"]))
 
 (def pattern-ancestors
   [{:id      "https://w3id.org/xapi/cmi5#toplevel"
@@ -64,7 +56,7 @@
           :alignment         alignments
           :sim-t             0
           :seed              top-seed
-          :template          template
+          :template          default-template
           :pattern-ancestors pattern-ancestors
           :registration      registration}))
 
