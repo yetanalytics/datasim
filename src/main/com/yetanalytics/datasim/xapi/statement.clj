@@ -201,6 +201,23 @@
     :else
     (rule/parse-rules rules)))
 
+(defn update-parsed-rules
+  [type-iri-map activity-map parsed-rules]
+  (let [; prof-act-set   #{{"id" profile-id}}
+        ; prof-id-set    #{profile-id}
+        verbs          (->> (get type-iri-map "Verb") vals set)
+        verb-ids       (->> (get type-iri-map "Verb") keys set)
+        activities     (->> activity-map vals (mapcat vals) #_(into prof-act-set))
+        activity-ids   (->> activity-map vals (mapcat keys) #_(into prof-id-set))
+        activity-types (->> activity-map keys set)
+        value-sets     {:verbs          verbs
+                        :verb-ids       verb-ids
+                        :activities     activities
+                        :activity-ids   activity-ids
+                        :activity-types activity-types}]
+    (mapv (partial rule/add-rule-valuegen type-iri-map value-sets)
+          parsed-rules)))
+
 (defn template->parsed-rules
   "Return a collection of parsed rules derived from the template `rules`.
    Uses information from `iri-map` and `activities` maps, as well as from
