@@ -239,7 +239,7 @@
                          (rule/parse-rules :statement-ref rules)
                          :else
                          (rule/parse-rules rules)) 
-        verbs          (->> (get type-iri-map "Verb") vals set)
+        verbs          (->> (get type-iri-map "Verb") vals (map profile->statement-verb) set)
         verb-ids       (->> (get type-iri-map "Verb") keys set)
         activities     (->> activity-map vals (mapcat vals) set)
         activity-ids   (->> activity-map vals (mapcat keys) set)
