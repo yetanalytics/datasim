@@ -36,37 +36,15 @@
   :server
   {:extra-paths ["src/server"]
    :extra-deps
-   {io.pedestal/pedestal.service
-    {:mvn/version "0.5.10"
-     ;; exclude msgpack (via tools.analyzer)
-     ;; clears CVE-2022-41719
-     :exclusions [org.msgpack/msgpack]}
-    io.pedestal/pedestal.jetty
-    {:mvn/version "0.5.10"
-     :exclusions
-     [commons-fileupload/commons-fileupload
-      org.eclipse.jetty/jetty-server
-      org.eclipse.jetty/jetty-servlet
-      org.eclipse.jetty.alpn/alpn-api
-      org.eclipse.jetty/jetty-alpn-server
-      org.eclipse.jetty.http2/http2-server
-      org.eclipse.jetty.websocket/websocket-api
-      org.eclipse.jetty.websocket/websocket-servlet
-      org.eclipse.jetty.websocket/websocket-server]}
-    commons-fileupload/commons-fileupload    {:mvn/version "1.5"}
-    org.eclipse.jetty/jetty-server           {:mvn/version "9.4.51.v20230217"}
-    org.eclipse.jetty/jetty-servlet          {:mvn/version "9.4.51.v20230217"}
-    org.eclipse.jetty.alpn/alpn-api          {:mvn/version "1.1.3.v20160715"}
-    org.eclipse.jetty/jetty-alpn-server      {:mvn/version "9.4.51.v20230217"}
-    org.eclipse.jetty/jetty-alpn-java-server {:mvn/version "9.4.51.v20230217"}
-    org.eclipse.jetty.http2/http2-server     {:mvn/version "9.4.51.v20230217"}
-    org.slf4j/slf4j-simple                   {:mvn/version "1.7.28"}
-    clj-http/clj-http                        {:mvn/version "3.12.3"}
-    buddy/buddy-auth                         {:mvn/version "3.0.323"
-                                              :exclusions  [cheshire/cheshire
-                                                            org.bouncycastle/bcprov-jdk15on]}
-    org.bouncycastle/bcprov-jdk15to18        {:mvn/version "1.75"}
-    environ/environ                          {:mvn/version "1.1.0"}}
+   {io.pedestal/pedestal.service {:mvn/version "0.6.0"}
+    io.pedestal/pedestal.jetty   {:mvn/version "0.6.0"}
+    org.slf4j/slf4j-simple       {:mvn/version "1.7.28"}
+    clj-http/clj-http            {:mvn/version "3.12.3"}
+    environ/environ              {:mvn/version "1.1.0"}
+    buddy/buddy-auth             {:mvn/version "3.0.323"
+                                  :exclusions  [cheshire/cheshire
+                                                org.bouncycastle/bcprov-jdk15on]}
+    org.bouncycastle/bcprov-jdk15to18 {:mvn/version "1.75"}}
    :main-opts   ["-m" "com.yetanalytics.datasim.server"]}
   :onyx
   {:extra-paths ["onyx-resources" "src/onyx"]
