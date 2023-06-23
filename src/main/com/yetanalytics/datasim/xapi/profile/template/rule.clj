@@ -306,25 +306,25 @@
 
 (defn add-rule-valuegen
   "If `parsed-rule` does not already have a `valueset`, then either
-   derive one from the profile cosmos (i.e. the `valuesets` arg), where
-   an `:all` set containing all appropriate values is introduced, or
-   add a `:spec` and `:generator`. This will ensure that during rule
-   application, the rule will always be able to come up with a value.
-   Also revises any extension specs."
-  [iri-map
+   derive one from the profile cosmos (i.e. the `valuesets` arg), or
+   add a `:spec` and `:generator` to generate random values. This will
+   ensure that during rule application, the rule will always be able to
+   come up with a value.
+   
+   Also revises any extension specs to those specified in `extension-map`."
+  [extension-map
    valuesets
    {:keys [presence path valueset none spec] :as parsed-rule}]
   (if (= :excluded presence)
     parsed-rule
     (let [spec*    (if (= ::j/any spec) ; only extensions have this spec
-                     (extension-spec iri-map (peek path) spec)
+                     (extension-spec extension-map (peek path) spec)
                      spec)
           ?all-set (not-empty (spec->valueset valuesets spec))]
       (cond-> (assoc parsed-rule :spec spec*)
         (and (not valueset)
              ?all-set)
-        (assoc :all      ?all-set
-               :valueset (rule-value-set ?all-set none))
+        (assoc :valueset (rule-value-set ?all-set none))
         (and (not valueset)
              (not ?all-set))
         (assoc :generator (spec-generator spec*))))))

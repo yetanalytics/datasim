@@ -108,6 +108,11 @@
        long
        (+ start-time-ms)))
 
+(defn- profile->statement-verb
+  [{:keys [id prefLabel]}]
+  {"id"      id
+   "display" (w/stringify-keys prefLabel)})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -190,10 +195,10 @@
                          :else
                          (rule/parse-rules rules))
         ;; TODO: More efficient data structures
-        verbs          (->> iri-map vals (filter #(= "Verb" (:type %))) set)
-        verb-ids       (->> verbs (map :id) set)
-        activityies    (->> activities vals (mapcat vals) (into #{{"id" profile-id}}))
-        activity-ids   (->> activities vals (mapcat keys) (into #{profile-id}))
+        verbs          (->> iri-map vals (filter #(= "Verb" (:type %))) (map profile->statement-verb) set)
+        verb-ids       (->> verbs (map #(get % "id")) set)
+        activityies    (->> activities vals (mapcat vals) set #_(into #{{"id" profile-id}}))
+        activity-ids   (->> activities vals (mapcat keys) set #_(into #{profile-id}))
         activity-types (->> activities keys set)
         value-sets     {:verbs          verbs
                         :verb-ids       verb-ids
@@ -226,11 +231,6 @@
 
 (defn- generate-verb [rng _]
   {"id" (stest/generate verb-id-gen 1 (random/rand-long rng))})
-
-(defn profile->statement-verb
-  [{:keys [id prefLabel]}]
-  {"id"      id
-   "display" (w/stringify-keys prefLabel)})
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
