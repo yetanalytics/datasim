@@ -530,36 +530,3 @@
   (xapiu/agent-id {:name "Bob Fakename"
                    :mbox "mailto:bob@example.org"
                    :role "Lead Developer"}))
-
-(comment
-  ;; incanter is available if the :dev alias is present
-  (require '[incanter.core :as core])
-  (require '[incanter.charts :as chart])
-  
-  (def time-seqs
-    (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now))))
-  
-  (def prob-mask-arma-seq
-    (arma-seq 100))
-  
-  (def prob-mask-seq
-    (arma-time-seqs->prob-mask-seq prob-mask-arma-seq
-                                   (:day-night-seq time-seqs)
-                                   (:minute-of-day-seq time-seqs))) 
-  
-  (def prob-seq
-    (arma-mask-seqs->prob-seq (arma-seq 120) prob-mask-seq))
-
-  ;; Graphs should show a approximately sinusoidal pattern; graphing
-  ;; `prob-seq` should show how probabilities are zero during the night
-  ;; and the lunch hour, while varying sinusoidally during the rest of
-  ;; the day.
-
-  (core/view
-   (chart/line-chart (range 2000)
-                     (take 2000 prob-mask-seq)))
-  
-  (core/view
-   (chart/line-chart (range 2000)
-                     (take 2000 prob-seq)))
-  )
