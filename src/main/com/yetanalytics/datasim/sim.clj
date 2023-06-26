@@ -262,7 +262,6 @@
         {:keys [start end timezone seed] ?from-stamp :from} parameters
         {alignments :alignment-vector} alignments
         ;; RNG for generating the rest of the seeds
-        ;; TODO: Switch `.nextLong` calls to `random/rand-int` or other fn
         sim-rng     (random/seed-rng seed)
         ;; Set timezone region and timestamps
         zone-region (timezone->region timezone)
@@ -277,7 +276,7 @@
           mod-seq]}     (ts/time-seqs :t-zero t-start
                                       :sample-n ?sample-n
                                       :zone zone-region)
-        mask-arma-seed  (.nextLong sim-rng)
+        mask-arma-seed  (random/rand-long sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
                                                        day-night-seq
@@ -286,7 +285,7 @@
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
         ;; Derive profiles map
-        activity-seed   (.nextLong sim-rng)
+        activity-seed   (random/rand-long sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
@@ -302,18 +301,18 @@
                                                         actor-group-id
                                                         actor-role)
                   ;; Actor probability seq
-                  actor-arma-seed (.nextLong sim-rng)
+                  actor-arma-seed (random/rand-long sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
                   actor-prob-seq  (map vector min-seq actor-prob-seq*)
                   ;; Actor registration seq
-                  actor-reg-seed  (.nextLong sim-rng)
+                  actor-reg-seed  (random/rand-long sim-rng)
                   actor-reg-seq   (p/registration-seq (:type-iri-map profiles-map)
                                                       actor-alignment
                                                       actor-reg-seed)
                   ;; Additional seed for further gen
-                  actor-seed      (.nextLong sim-rng)
+                  actor-seed      (random/rand-long sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq
