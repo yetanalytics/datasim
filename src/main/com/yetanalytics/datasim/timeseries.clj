@@ -4,8 +4,7 @@
   (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
             [java-time              :as t]
-            [com.yetanalytics.datasim.random     :as random]
-            [com.yetanalytics.datasim.util.maths :as maths]))
+            [com.yetanalytics.datasim.random :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ARMA (AutoRegressive Moving Average) Sequences
@@ -304,102 +303,3 @@
      ;; Day-night cycle
      :minute-day-night-seq mdn-seq
      :hour-day-night-seq   hdn-seq}))
-
-(comment
-  ;; Incanter namespaces are dev-only
-  (require '[incanter.core :refer [view]]
-           '[incanter.charts :refer [time-series-plot]])
-
-  (time
-   (let [sim-seed 42
-         ;; Create a master RNG for the sim. This is used only to generate other seeds 
-         sim-rng (random/seed-rng sim-seed)
-
-         ;; the start of the sim, in ms since epoch
-         t-zero 0;; (System/currentTimeMillis)
-         ;; the amount of time, in MS, this sim covers
-         sample-n (:whole (t/convert-amount 7 :days
-                                            :millis))
-
-         ;; a local timezone
-         timezone (t/zone-id "America/New_York")
-
-         ;; Build useful time seqs, only get eval'd if used!
-         {:keys [minute-ms-seq
-                 minute-of-day-seq
-                 minute-day-night-seq]} (time-seqs :t-zero t-zero
-                                                   :sample-n sample-n
-                                                   :zone timezone)
-
-         ;; in our model, a timeseries for a given actor is measured against
-         ;; a composite timeseries representing abstract challenge/diversity.
-         ;; This is a combination of a stochastic series representing
-         ;; unpredictable factors that apply to the group, higher is harder.
-         ;; this series is max'd with a day night cycle (day is easier, night is
-         ;; harder). Think of this combined series as a mask.
-
-         ;; When an actor's series is greater than the challenge, the difference
-         ;; between the two is the probability (from 0.0 to 1.0) that an event
-         ;; will happen at that time.
-
-         ;; random stochastic settings can (and probably should) be shared.
-         common-arma {:phi [0.5 0.2]
-                      :theta []
-                      :std 0.25
-                      :c 0.0}
-
-         ;; Generate a seed for the group
-         group-seed (.nextLong sim-rng)
-
-         ;; create a stochastic seq for the group
-         group-arma (arma-seq (merge common-arma
-                                     {:seed group-seed}))
-
-         ;; Create a periodic seq for the lunch hour break
-         lunch-hour-seq (map
-                         (fn [x]
-                           (if (<= 720 x 780)
-                             1.0
-                             -1.0))
-                         minute-of-day-seq)
-         ;; form a mask for the group + day-night + lunch
-         mask (map max
-                   group-arma
-                   minute-day-night-seq
-                   lunch-hour-seq)
-
-         ;; create a seed for Bob's seq
-         bob-arma-seed (.nextLong sim-rng)
-
-         ;; create a stochastic seq for bob
-         bob-arma (arma-seq
-                   (merge common-arma
-                          {:seed bob-arma-seed}))
-
-         ;; Bob's activity probability
-         bob-prob (map (fn [a b]
-                         (double
-                          (maths/min-max 0.0 (/ (- a b) 2) 1.0)))
-                       bob-arma
-                       mask)
-         ;; to keep it deterministic, give bob another seeded RNG to take with him.
-         bob-rng (random/seed-rng (.nextLong sim-rng))
-
-         ;; Compose the time (in minute increments), bob's probability
-         ;; and his RNG and you have everything you need to generate events for
-         ;; bob. Here the RNG is used to generate a sequence for demonstration,
-         ;; in practice it would get handed off to a thread or some such.
-         bob-seq (map (fn [t prob rand-long]
-                        {:t t
-                         :prob prob
-                         :r rand-long})
-                      minute-ms-seq
-                      bob-prob
-                      (repeatedly #(random/rand-long bob-rng)))]
-     
-     (view (time-series-plot
-            (map :t bob-seq)
-            (map :prob bob-seq)))
-     (view (time-series-plot
-            (map :t bob-seq)
-            (map :r bob-seq))))))
