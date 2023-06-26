@@ -5,6 +5,7 @@
             [clojure.string                :as cstr]
             [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as gen]
+            [clojure.walk                  :as w]
             [xapi-schema.spec                    :as xs]
             [com.yetanalytics.pathetic           :as path]
             [com.yetanalytics.pathetic.json-path :as jpath]
@@ -309,28 +310,52 @@
 
 (defn add-rule-valuegen
   "If `parsed-rule` does not already have a `valueset`, then either
-   derive one from the profile cosmos (i.e. the `valuesets` arg), where
-   an `:all` set containing all appropriate values is introduced, or
-   add a `:spec` and `:generator`. This will ensure that during rule
-   application, the rule will always be able to come up with a value.
-   Also revises any extension specs."
-  [type-iri-map
+   derive one from the profile cosmos (i.e. the `valuesets` arg), or
+   add a `:spec` and `:generator` to generate random values. This will
+   ensure that during rule application, the rule will always be able to
+   come up with a value.
+   
+   Also revises any extension specs to those specified in `extension-map`."
+  [extension-map
    valuesets
    {:keys [presence path valueset none spec] :as parsed-rule}]
   (if (= :excluded presence)
     parsed-rule
     (let [spec*    (if (= ::j/any spec) ; only extensions have this spec
-                     (extension-spec type-iri-map (peek path) spec)
+                     (extension-spec extension-map (peek path) spec)
                      spec)
           ?all-set (not-empty (spec->valueset valuesets spec))]
       (cond-> (assoc parsed-rule :spec spec*)
         (and (not valueset)
              ?all-set)
-        (assoc :all      ?all-set
-               :valueset (rule-value-set ?all-set none))
+        (assoc :valueset (rule-value-set ?all-set none))
         (and (not valueset)
              (not ?all-set))
         (assoc :generator (spec-generator spec*))))))
+
+;; TODO: Move to common util namespace
+(defn- profile->statement-verb
+  [{:keys [id prefLabel]}]
+  {"id"      id
+   "display" (w/stringify-keys prefLabel)})
+
+(defn add-rules-valuegen
+  "Use information from `iri-map` and `activities` maps, to complete the
+   `parsed-rules` by adding additional valuesets or spec generators."
+  [type-iri-map activity-map parsed-rules]
+  (let [iri-verb-map   (get type-iri-map "Verb")
+        verbs          (->> iri-verb-map vals (map profile->statement-verb) set)
+        verb-ids       (->> iri-verb-map keys set)
+        activities     (->> activity-map vals (mapcat vals) set)
+        activity-ids   (->> activity-map vals (mapcat keys) set)
+        activity-types (->> activity-map keys set)
+        value-sets     {:verbs          verbs
+                        :verb-ids       verb-ids
+                        :activities     activities
+                        :activity-ids   activity-ids
+                        :activity-types activity-types}]
+    (mapv (partial add-rule-valuegen type-iri-map value-sets)
+          parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Follow

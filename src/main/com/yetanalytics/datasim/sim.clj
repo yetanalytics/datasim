@@ -1,21 +1,19 @@
 (ns com.yetanalytics.datasim.sim
   "Given input, compose a simulation model"
-  (:require
-   [clojure.spec.alpha :as s]
-   [clojure.core.async :as a]
-   [clojure.core.async.impl.protocols :as ap]
-   [java-time :as t]
-   [xapi-schema.spec :as xs]
-   [com.yetanalytics.datasim.timeseries :as ts]
-   [com.yetanalytics.datasim.xapi :as xapi]
-   [com.yetanalytics.datasim.xapi.profile :as p]
-   [com.yetanalytics.datasim.xapi.activity :as activity]
-   [com.yetanalytics.datasim.xapi.statement :as statement]
-   [com.yetanalytics.datasim.util.xapi :as xapiu]
-   [com.yetanalytics.datasim.util.maths :as maths]
-   [com.yetanalytics.datasim.util.sequence :as su]
-   [com.yetanalytics.datasim.util.async :as au]
-   [com.yetanalytics.datasim.random :as random])
+  (:require [clojure.spec.alpha :as s]
+            [clojure.core.async :as a]
+            [clojure.core.async.impl.protocols :as ap]
+            [java-time        :as t]
+            [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.random         :as random]
+            [com.yetanalytics.datasim.timeseries     :as ts]
+            [com.yetanalytics.datasim.xapi           :as xapi]
+            [com.yetanalytics.datasim.xapi.profile   :as p]
+            [com.yetanalytics.datasim.xapi.statement :as statement]
+            [com.yetanalytics.datasim.util.xapi      :as xapiu]
+            [com.yetanalytics.datasim.util.maths     :as maths]
+            [com.yetanalytics.datasim.util.sequence  :as su]
+            [com.yetanalytics.datasim.util.async     :as au])
   (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -164,17 +162,18 @@
    included in the returned map."
   [alignments actor-id group-id role]
   (let [actor-alignment-ids (set [actor-id group-id role])]
-    (reduce (fn [alignment-map {component-iri :component :as alignment}]
-              (update alignment-map
-                      component-iri
-                      (fnil update-alignment {:weight 0.0 :count 0})
-                      alignment))
-            {}
-            (for [{alignment-maps :alignments
-                   alignment-id   :id} alignments
-                  :when (actor-alignment-ids alignment-id)
-                  alignment alignment-maps]
-              alignment))))
+    (reduce
+     (fn [alignment-map {component-iri :component :as alignment}]
+       (update alignment-map
+               component-iri
+               (fnil update-alignment {:weight 0.0 :count 0})
+               alignment))
+     {}
+     (for [{alignment-maps :alignments
+            alignment-id   :id} alignments
+           :when (actor-alignment-ids alignment-id)
+           alignment alignment-maps]
+       alignment))))
 
 ;; Timestamp helpers
 
@@ -233,19 +232,21 @@
        day-night-seq
        (lunch-hour-seq min-of-day-seq)))
 
+(defn- clamp-probability [x]
+  (maths/min-max 0.0 x 1.0))
+
 (defn- arma-mask-seqs->prob-seq
   "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
    value, then use that value to derive a probability value in `[0,1]`.
    Note that a higher `prob-mask-seq` value will result in a lower probability."
   [arma-seq prob-mask-seq]
-  (let [clamp-probability #(maths/min-max 0.0 % 1.0)]
-    (map (fn [arma-val prob-mask-val]
-           (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
-               (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
-               clamp-probability
-               double))
-         arma-seq
-         prob-mask-seq)))
+  (map (fn [arma-val prob-mask-val]
+         (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
+             (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
+             clamp-probability
+             double))
+       arma-seq
+       prob-mask-seq))
 
 (s/fdef build-skeleton
   :args (s/cat :input :com.yetanalytics.datasim/input)
@@ -256,13 +257,11 @@
    actor from `start` of sim. Should be run once (in a single thread).
   
    Spooky."
-  [{:keys [profiles personae-array parameters alignments]
-    :as   input}]
+  [{:keys [profiles personae-array parameters alignments]}]
   (let [;; Input parameters and alignments
         {:keys [start end timezone seed] ?from-stamp :from} parameters
         {alignments :alignment-vector} alignments
         ;; RNG for generating the rest of the seeds
-        ;; TODO: Switch `.nextLong` calls to `random/rand-int` or other fn
         sim-rng     (random/seed-rng seed)
         ;; Set timezone region and timestamps
         zone-region (timezone->region timezone)
@@ -277,7 +276,7 @@
           minute-day-night-seq]} (ts/time-seqs :t-zero t-start
                                                :sample-ms ?sample-ms
                                                :zone zone-region)
-        mask-arma-seed  (.nextLong sim-rng)
+        mask-arma-seed  (random/rand-long sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
                                                        minute-day-night-seq
@@ -285,22 +284,9 @@
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
-        activity-seed   (.nextLong sim-rng)
-        activity-map    (activity/derive-cosmos input activity-seed)
-        type-iri-map    (-> (p/profiles->type-iri-map profiles)
-                            (p/select-primary-patterns parameters))
-        ;; Pre-parse templates into statement bases and rules, as a
-        ;; form of optimization
-        template-base-m (p/profiles->base-statement-map profiles)
-        template-rule-m (p/profiles->parsed-rule-map profiles
-                                                     type-iri-map
-                                                     activity-map)
-
-        ;; Generate statement base inputs
-        base-input-map  {:type-iri-map       type-iri-map
-                         :activity-map       activity-map
-                         :statement-base-map template-base-m
-                         :parsed-rules-map   template-rule-m}]
+        ;; Derive profiles map
+        activity-seed   (random/rand-long sim-rng)
+        profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
          (sort-by xapiu/agent-id)
@@ -315,22 +301,22 @@
                                                         actor-group-id
                                                         actor-role)
                   ;; Actor probability seq
-                  actor-arma-seed (.nextLong sim-rng)
+                  actor-arma-seed (random/rand-long sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
                   actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
-                  actor-reg-seed  (.nextLong sim-rng)
-                  actor-reg-seq   (p/registration-seq type-iri-map
+                  actor-reg-seed  (random/rand-long sim-rng)
+                  actor-reg-seq   (p/registration-seq (:type-iri-map profiles-map)
                                                       actor-alignment
                                                       actor-reg-seed)
                   ;; Additional seed for further gen
-                  actor-seed      (.nextLong sim-rng)
+                  actor-seed      (random/rand-long sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq
-                  actor-input     (merge base-input-map
+                  actor-input     (merge profiles-map
                                          {:actor     actor-xapi
                                           :alignment actor-alignment})
                   actor-stmt-seq  (cond->> (statement-seq

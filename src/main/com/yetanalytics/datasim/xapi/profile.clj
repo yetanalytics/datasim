@@ -11,7 +11,8 @@
             [com.yetanalytics.pan.objects.concept :as concept]
             [com.yetanalytics.pan.objects.pattern :as pattern]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.statement :as stmt])
+            [com.yetanalytics.datasim.xapi.statement :as stmt]
+            [com.yetanalytics.datasim.xapi.activity :as activity])
   (:import [java.util Random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -93,9 +94,12 @@
 ;; Profile Templates Prep
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::statement-base-map
+  (s/map-of ::template/id map?))
+
 (s/fdef profiles->base-statement-map
   :args (s/cat :profiles (s/every ::profile/profile))
-  :ret (s/map-of ::template/id map?))
+  :ret ::statement-base-map)
 
 (defn profiles->base-statement-map
   "Given `profiles`, return a map from those profiles' Statement Template
@@ -106,20 +110,23 @@
     (->> template-coll (map ->id-statement-pairs) (into {}))))
 
 ;; TODO: More precise activity-map and parsed-rule specs
+
+(s/def ::parsed-rules-map
+  (s/map-of ::template/id map?))
+
 (s/fdef profiles->parsed-rule-map
   :args (s/cat :profiles (s/every ::profile/profile)
                :type-iri-map ::type-iri-map
                :activity-map map?)
-  :ret (s/map-of ::template/id map?))
+  :ret ::parsed-rules-map)
 
 (defn profiles->parsed-rule-map
   "Given `profiles`, as well as `type-iri-map` and `activity-map` (the latter
    of which are ultimately derived from `profiles`), return a map from template
    IDs to those Statement Template's parsed rules"
-  [profiles type-iri-map activity-map]
+  [profiles]
   (let [template-coll    (mapcat :templates profiles)
-        template->rules  (partial stmt/template->parsed-rules type-iri-map activity-map)
-        ->id-rules-pairs (juxt :id template->rules)]
+        ->id-rules-pairs (juxt :id stmt/template->parsed-rules)]
     (->> template-coll (map ->id-rules-pairs) (into {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -281,3 +288,39 @@
                (fn [m k pattern] (assoc m k (update-pattern pattern)))
                (empty iri-map)
                iri-map)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Putting it all Together
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef profiles->profile-map
+  :args (s/cat :profiles (s/every ::profile)
+               :pattern-params ::params/parameters
+               :activity-seed int?)
+  :ret (s/keys :req-un [::type-iri-map
+                        ::activity/activity-map
+                        ::statement-base-map
+                        ::parsed-rules-map]))
+
+(defn profiles->profile-map
+  "Create a map from `profiles` that contains `type-iri-map`, `activity-map`,
+   `statement-base-map`, and `parsed-rules-map`. Uses `pattern-params` to
+   narrow down primary Patterns and `activity-seed` to generate additional
+   activities in the cosmos."
+  [profiles pattern-params activity-seed]
+  (let [type-iri-map*      (profiles->type-iri-map profiles)
+        type-iri-map       (select-primary-patterns type-iri-map* pattern-params)
+        statement-base-map (profiles->base-statement-map profiles)
+        parsed-rules-map*  (profiles->parsed-rule-map profiles)
+        activity-map       (activity/create-activity-map type-iri-map activity-seed)
+        parsed-rules-map   (reduce-kv
+                            (fn [m id parsed-rules]
+                              (->> parsed-rules
+                                   (stmt/update-parsed-rules type-iri-map activity-map)
+                                   (assoc m id)))
+                            {}
+                            parsed-rules-map*)]
+    {:type-iri-map       type-iri-map
+     :activity-map       activity-map
+     :statement-base-map statement-base-map
+     :parsed-rules-map   parsed-rules-map}))

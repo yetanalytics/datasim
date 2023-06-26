@@ -115,6 +115,11 @@
        long
        (+ start-time-ms)))
 
+(defn- profile->statement-verb
+  [{:keys [id prefLabel]}]
+  {"id"      id
+   "display" (w/stringify-keys prefLabel)})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -187,31 +192,37 @@
   :args (s/cat :type-iri-map ::type-iri-map
                :activity-map ::activity-map
                :template     ::template/template)
-  :ret ::rule/parsed-rule)
+  :ret (s/every ::rule/parsed-rule))
 
 (defn template->parsed-rules
   "Return a collection of parsed rules derived from the template `rules`.
-   Uses information from `iri-map` and `activities` maps, as well as from
-   object-related Determining Properties, to complete the parsed rules."
-  [type-iri-map
-   activity-map
-   {object-activity-type :objectActivityType
+   Uses the object Determining Properties to assist with rule parsing."
+  [{object-activity-type :objectActivityType
     object-statement-ref :objectStatementRefTemplate
-    profile-id           :inScheme
     rules                :rules}]
-  (let [parsed-rules   (cond
-                         object-activity-type
-                         (rule/parse-rules :activity-type rules)
-                         object-statement-ref
-                         (rule/parse-rules :statement-ref rules)
-                         :else
-                         (rule/parse-rules rules))
-        prof-act-set   #{{"id" profile-id}}
-        prof-id-set    #{profile-id}
-        verbs          (->> (get type-iri-map "Verb") vals set)
-        verb-ids       (->> (get type-iri-map "Verb") keys set)
-        activities     (->> activity-map vals (mapcat vals) (into prof-act-set))
-        activity-ids   (->> activity-map vals (mapcat keys) (into prof-id-set))
+  (cond
+    object-activity-type
+    (rule/parse-rules :activity-type rules)
+    object-statement-ref
+    (rule/parse-rules :statement-ref rules)
+    :else
+    (rule/parse-rules rules)))
+
+(s/fdef update-parsed-rules
+  :args (s/cat :type-iri-map ::type-iri-map
+               :activity-map ::activity-map
+               :parsed-rules (s/every ::rule/parsed-rule))
+  :ret (s/every ::rule/parsed-rule))
+
+(defn update-parsed-rules
+  "Use information from `iri-map` and `activities` maps, to complete the
+   `parsed-rules` by adding additional valuesets or spec generators."
+  [type-iri-map activity-map parsed-rules]
+  (let [iri-verb-map   (get type-iri-map "Verb")
+        verbs          (->> iri-verb-map vals (map profile->statement-verb) set)
+        verb-ids       (->> iri-verb-map keys set)
+        activities     (->> activity-map vals (mapcat vals) set)
+        activity-ids   (->> activity-map vals (mapcat keys) set)
         activity-types (->> activity-map keys set)
         value-sets     {:verbs          verbs
                         :verb-ids       verb-ids
@@ -244,11 +255,6 @@
 
 (defn- generate-verb [rng _]
   {"id" (stest/generate verb-id-gen 1 (random/rand-long rng))})
-
-(defn profile->statement-verb
-  [{:keys [id prefLabel]}]
-  {"id"      id
-   "display" (w/stringify-keys prefLabel)})
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
@@ -674,13 +680,17 @@
            sub-registration
            sim-t]
     :as inputs}]
-  (let [;; Prep
+  (let [;; Template Prep
+        template-id
+        (:id template)
         template-base
-        (or (get statement-base-map (:id template))
+        (or (get statement-base-map template-id)
             (template->statement-base template))
         template-rules
-        (or (get parsed-rules-map (:id template))
-            (template->parsed-rules type-iri-map activity-map template))
+        (or (get parsed-rules-map template-id)
+            (->> template
+                 template->parsed-rules
+                 (rule/add-rules-valuegen type-iri-map activity-map)))
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng alignment)
