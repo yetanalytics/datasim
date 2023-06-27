@@ -7,7 +7,8 @@
             [com.yetanalytics.pan.objects.pattern :as pat]
             [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.time.zone ZoneRulesException]
+  (:import [clojure.lang ExceptionInfo]
+           [java.time.zone ZoneRulesException]
            [java.time Instant]
            [java.util Random]))
 
@@ -30,17 +31,18 @@
 (s/def ::end
   (s/nilable ::xs/timestamp))
 
+(defn- timezone-string? [s]
+  (try (t/zone-id s)
+       (catch ExceptionInfo exi
+         (if (= ZoneRulesException (type (ex-cause exi)))
+           false
+           (throw exi)))))
+
 ;; (optional) timezone, defaults to UTC
 (s/def ::timezone
   (s/and string?
          not-empty
-         (fn [s]
-           (try (t/zone-id s)
-                (catch clojure.lang.ExceptionInfo exi
-                  (if (= (type (ex-cause exi))
-                         ZoneRulesException)
-                    false
-                    (throw exi)))))))
+         timezone-string?))
 
 ;; Seed is required, but will be generated if not present
 (s/def ::seed
@@ -93,27 +95,26 @@
   [{:keys [start from timezone seed] :as params}]
   (merge
    params
-   (let [s (or start (.toString (Instant/now)))]
-     {:start s
-      :from (or from s)
+   (let [start (or start (.toString (Instant/now)))]
+     {:start    start
+      :from     (or from start)
       :timezone (or timezone "UTC")
-      :seed (or seed (.nextLong (Random.)))})))
+      :seed     (or seed (.nextLong (Random.)))})))
 
 (defrecord Parameters [start
                        end
                        timezone
                        seed]
   p/FromInput
-  (validate [this]
-    (when-some [ed (s/explain-data ::parameters this)]
-      (errs/explain-to-map-coll ::parameters ed)))
+  (validate [params]
+    (some->> (s/explain-data ::parameters params)
+             (errs/explain-to-map-coll ::parameters)))
 
   p/JSONRepresentable
   (read-key-fn [_ k]
-    (keyword nil (name k)))
+    (keyword (name k)))
   (read-body-fn [_ json-result]
-    (map->Parameters
-     (add-defaults json-result)))
+    (map->Parameters (add-defaults json-result)))
   (write-key-fn [_ k]
     (name k))
   (write-body-fn [this]

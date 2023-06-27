@@ -25,20 +25,20 @@
                     versions
                     author]
   p/FromInput
-  (validate [this]
-    (let [prof-errs (pan/validate-profile this
-                                          :syntax? true
-                                          :result :type-path-string)]
-      (errs/type-path-string-m->map-coll id prof-errs)))
+  (validate [profile]
+    (some->> (pan/validate-profile profile
+                                   :syntax? true
+                                   :result :type-path-string)
+             (errs/type-path-string-m->map-coll id)))
 
   p/JSONRepresentable
   (read-key-fn [_ k]
-    (let [kn (name k)]
-      (keyword nil (if (= "@context" kn) "_context" kn))))
+    (let [key-name (name k)]
+      (keyword (if (= "@context" key-name) "_context" key-name))))
   (read-body-fn [_ json-result]
     (map->Profile json-result))
   (write-key-fn [_ k]
-    (let [nn (name k)]
-      (if (= nn "_context") "@context" nn)))
+    (let [key-name (name k)]
+      (if (= key-name "_context") "@context" key-name)))
   (write-body-fn [this]
     this))

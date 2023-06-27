@@ -18,17 +18,15 @@
 ;; If functionality is added to express further groupings we'll have to revise
 ;; this strategy.
 
-
 ;; FIXME: This spec is unused
 (s/def ::ifi-map
   (s/map-of ::xapi/agent-id
             ::xs/actor
             :min-count 1))
 
-;; We cannot apply xapi-schema specs directly, as xapi-schema restricts which
-;; properties can be in the Group, including the `role` property.
-;;
-;; We still use :agent and :group spec namespaces from xapi-schema.
+;; Note: We cannot apply xapi-schema specs directly, as xapi-schema restrict
+;; which properties can be in the Group, including the `role` property.
+;; We still use `agent` and `group` spec namespaces from xapi-schema.
 
 (s/def ::role string?)
 
@@ -71,17 +69,17 @@
                      openid
                      account]
   p/FromInput
-  (validate [this]
-    (when-some [ed (s/explain-data ::personae this)]
-      (errs/explain-to-map-coll ::personae ed)))
+  (validate [personae]
+    (some->> (s/explain-data ::personae personae)
+             (errs/explain-to-map-coll ::personae)))
 
   p/JSONRepresentable
   (read-key-fn [_ k]
-    (keyword nil (name k)))
+    (keyword (name k)))
   (read-body-fn [_ json-result]
     (map->Personae
      json-result))
   (write-key-fn [_ k]
     (name k))
-  (write-body-fn [this]
-    (u/remove-nil-vals this)))
+  (write-body-fn [personae]
+    (u/remove-nil-vals personae)))

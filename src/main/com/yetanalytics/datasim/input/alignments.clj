@@ -2,6 +2,7 @@
   "Alignment input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
+            [xapi-schema.spec] ; need to bring in :statement/object
             [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.iri         :as iri]
             [com.yetanalytics.datasim.xapi        :as xapi]
@@ -57,9 +58,12 @@
 (defmulti actor-alignment? :type)
 
 (defmethod actor-alignment? "Agent" [_]
-  (fn [align] (->> align :id (s/valid? ::xapi/agent-id))))
+  (fn [{agent-id :id}] (s/valid? ::xapi/agent-id agent-id)))
 
-(defmethod actor-alignment? :default [_] ; "Group" and "Role"
+(defmethod actor-alignment? "Group" [_]
+  (constantly true))
+
+(defmethod actor-alignment? "Role" [_]
   (constantly true))
 
 (s/def ::actor-alignment
@@ -81,13 +85,13 @@
 
 (defrecord Alignments [alignment-vector]
   p/FromInput
-  (validate [this]
-    (when-some [ed (s/explain-data ::alignments-input this)]
-      (errs/explain-to-map-coll ::alignments-input ed)))
+  (validate [alignments]
+    (some->> (s/explain-data ::alignments-input alignments)
+             (errs/explain-to-map-coll ::alignments-input)))
 
   p/JSONRepresentable
   (read-key-fn [_ k]
-    (keyword nil (name k)))
+    (keyword (name k)))
   (read-body-fn [_ json-result]
     (map->Alignments {:alignment-vector (into [] json-result)}))
   (write-key-fn [_ k]

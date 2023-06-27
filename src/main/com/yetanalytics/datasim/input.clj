@@ -69,18 +69,18 @@
 
 (defn validate-personae-array
   [personae-array]
-  (when-some [ed (s/explain-data ::personae-array personae-array)]
-    (errs/explain-to-map-coll ::personae-array ed)))
+  (some->> (s/explain-data ::personae-array personae-array)
+           (errs/explain-to-map-coll ::personae-array)))
 
 (defn validate-alignments
   [alignments]
-  (when-some [ed (s/explain-data ::alignments alignments)]
-    (errs/explain-to-map-coll ::alignments ed)))
+  (some->> (s/explain-data ::alignments alignments)
+           (errs/explain-to-map-coll ::alignments)))
 
 (defn validate-parameters
   [parameters]
-  (when-some [ed (s/explain-data ::parameters parameters)]
-    (errs/explain-to-map-coll ::parameters ed)))
+  (some->> (s/explain-data ::parameters parameters)
+           (errs/explain-to-map-coll ::parameters)))
 
 (defn validate-pattern-filters
   [{{:keys [gen-profiles
@@ -204,25 +204,24 @@
                   alignments
                   parameters]
   p/FromInput
-  (validate [this]
-    (-> (concat (validate-profiles (:profiles this))
-                (validate-personae-array (:personae-array this))
-                (validate-alignments (:alignments this))
-                (validate-parameters (:parameters this))
-                (validate-pattern-filters this))
+  (validate [input]
+    (-> (concat (validate-profiles profiles)
+                (validate-personae-array personae-array)
+                (validate-alignments alignments)
+                (validate-parameters parameters)
+                (validate-pattern-filters input))
         vec
         not-empty))
 
   p/JSONRepresentable
   (read-key-fn [_ k]
-    (keyword nil k))
+    (keyword k))
   (read-body-fn [_ json-result]
-    (map->Input
-     (realize-subobjects json-result)))
+    (map->Input (realize-subobjects json-result)))
   (write-key-fn [_ k]
     (name k))
-  (write-body-fn [this]
-    (unrealize-subobjects this)))
+  (write-body-fn [input]
+    (unrealize-subobjects input)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input I/O
