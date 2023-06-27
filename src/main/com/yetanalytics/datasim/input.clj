@@ -1,17 +1,21 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
-  (:require [clojure.spec.alpha :as s]
-            [clojure.string :as cs]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.protocols :as p]
+  (:require [clojure.spec.alpha   :as s]
+            [clojure.string       :as cs]
+            [clojure.walk         :as w]
             [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.datasim.input.profile :as profile]
-            [com.yetanalytics.datasim.input.personae :as personae]
+            [com.yetanalytics.datasim.protocols        :as p]
+            [com.yetanalytics.datasim.input.profile    :as profile]
+            [com.yetanalytics.datasim.input.personae   :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.io :as dio]
-            [com.yetanalytics.datasim.util.xapi :as xapiu]
-            [com.yetanalytics.datasim.util.errors :as errs]))
+            [com.yetanalytics.datasim.io               :as dio]
+            [com.yetanalytics.datasim.util.xapi        :as xapiu]
+            [com.yetanalytics.datasim.util.errors      :as errs]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; This is our system:
 ;;   persona: a single Agent who is a member of a Group
@@ -37,6 +41,17 @@
 
 (s/def ::parameters
   ::params/parameters)
+
+(s/def :com.yetanalytics.datasim/input
+  ;; "Comprehensive input spec"
+  (s/keys :req-un [::profiles
+                   ::personae-array
+                   ::alignments
+                   ::parameters]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn validate-profiles
   [profile-coll]
@@ -95,12 +110,9 @@
          pattern-id
          (cs/join \, pattern-idset))}))))
 
-(s/def :com.yetanalytics.datasim/input
-  ;; "Comprehensive input spec"
-  (s/keys :req-un [::profiles
-                   ::personae-array
-                   ::alignments
-                   ::parameters]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input Sub-Objects
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def subobject-constructors
   {:profile profile/map->Profile
@@ -183,6 +195,10 @@
    {}
    input))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defrecord Input [profiles
                   personae-array
                   alignments
@@ -207,6 +223,10 @@
     (name k))
   (write-body-fn [this]
     (unrealize-subobjects this)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input I/O
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn from-location
   [type-k fmt-k location]
@@ -239,6 +259,10 @@
   (case fmt-k
     ;; currently only JSON
     :json (dio/write-loc-json record *err*)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn validate
   "Validate input using the FromInput protocol. Does no handling on result.

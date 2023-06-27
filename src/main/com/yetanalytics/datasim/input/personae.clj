@@ -1,13 +1,16 @@
 (ns com.yetanalytics.datasim.input.personae
+  "Personae input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [clojure.walk :as w]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.xapi :as xapi]
-            [com.yetanalytics.datasim.util :as u]
+            [clojure.walk       :as w]
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.protocols   :as p]
+            [com.yetanalytics.datasim.xapi        :as xapi]
+            [com.yetanalytics.datasim.util        :as u]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; We model the input personae as an xAPI group.
 ;; It can be anonymous, but the name may be used in some way.
@@ -57,6 +60,9 @@
          (s/conformer w/keywordize-keys w/stringify-keys)
          ::group))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Personae [member
                      objectType

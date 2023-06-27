@@ -1,10 +1,15 @@
 (ns com.yetanalytics.datasim.input.alignments
+  "Alignment input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.xapi :as xapi]
+            [clojure.walk       :as w]
+            [com.yetanalytics.datasim.protocols   :as p]
+            [com.yetanalytics.datasim.iri         :as iri]
+            [com.yetanalytics.datasim.xapi        :as xapi]
             [com.yetanalytics.datasim.util.errors :as errs]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Alignment: Map of Component, Weight, and Object Override properties
 
@@ -69,6 +74,10 @@
 ;; Alignment input
 (s/def ::alignments-input
   (s/keys :req-un [::alignment-vector]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Alignments [alignment-vector]
   p/FromInput

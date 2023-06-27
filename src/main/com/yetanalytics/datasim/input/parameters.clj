@@ -1,17 +1,21 @@
 (ns com.yetanalytics.datasim.input.parameters
-  "Simulation global parameters"
+  "Parameter input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.protocols :as p]
-            [xapi-schema.spec :as xs]
+            [java-time          :as t]
+            [xapi-schema.spec   :as xs]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [java-time :as t]
+            [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.time.zone ZoneRulesException]
            [java.time Instant]
            [java.util Random]))
 
-;; all options are optional, but everything except `end` will get defaults
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; All options are optional, but everything except `end` will get defaults
 
 ;; (optional) start of the simulation (inclusive), 8601 stamp
 (s/def ::start
@@ -79,6 +83,10 @@
                               (t/instant from)))
                "Sim start must be before or equal to from."))
      true)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Record
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-defaults
   "Generate defualts"
