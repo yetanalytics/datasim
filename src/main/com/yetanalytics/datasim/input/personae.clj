@@ -18,12 +18,6 @@
 ;; If functionality is added to express further groupings we'll have to revise
 ;; this strategy.
 
-;; FIXME: This spec is unused
-(s/def ::ifi-map
-  (s/map-of ::xapi/agent-id
-            ::xs/actor
-            :min-count 1))
-
 ;; Note: We cannot apply xapi-schema specs directly, as xapi-schema restrict
 ;; which properties can be in the Group, including the `role` property.
 ;; We still use `agent` and `group` spec namespaces from xapi-schema.
