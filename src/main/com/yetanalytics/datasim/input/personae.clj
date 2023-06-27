@@ -2,9 +2,7 @@
   "Personae input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.protocols   :as p]
-            [com.yetanalytics.datasim.xapi        :as xapi]
             [com.yetanalytics.datasim.util        :as u]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
