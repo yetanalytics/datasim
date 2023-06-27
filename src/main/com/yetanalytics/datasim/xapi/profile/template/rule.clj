@@ -1,14 +1,14 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule
   "Apply statement template rules for generation"
-  (:require [clojure.core.memoize          :as memo]
-            [clojure.set                   :as cset]
-            [clojure.string                :as cstr]
-            [clojure.spec.alpha            :as s]
-            [clojure.test.check.generators :as gen]
-            [clojure.walk                  :as w]
-            [xapi-schema.spec                    :as xs]
-            [com.yetanalytics.pathetic           :as path]
-            [com.yetanalytics.pathetic.json-path :as jpath]
+  (:require [clojure.core.memoize           :as memo]
+            [clojure.set                    :as cset]
+            [clojure.string                 :as cstr]
+            [clojure.spec.alpha             :as s]
+            [clojure.test.check.generators  :as gen]
+            [clojure.walk                   :as w]
+            [xapi-schema.spec               :as xs]
+            [com.yetanalytics.pathetic      :as path]
+            [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
             [com.yetanalytics.datasim.json      :as j]
             [com.yetanalytics.datasim.xapi.path :as xp]
@@ -501,8 +501,7 @@
                      (count valueset)
                      max-enumerated-paths)
         enum-limit (inc (random/rand-int* rng enum-max))
-        opt-map    {:multi-value?     true
-                    :wildcard-append? (not (some? all)) ; any only = append
+        opt-map    {:wildcard-append? (not (some? all)) ; any only = append
                     :wildcard-limit   enum-limit}
         paths      (path/speculate-paths* statement location opt-map)
         num-paths  (count paths)
@@ -517,7 +516,7 @@
                                       :rule rule})))]
     ;; It's rather unoptimized to call pathetic.json-path/speculative-path-seqs
     ;; twice, but profiling shows that this doesn't actually matter.
-    (path/apply-value* statement location val-coll opt-map)))
+    (path/apply-multi-value* statement location val-coll opt-map)))
 
 (defn apply-inclusion-rules
   "Given a partial `statement` and `parsed-rules`, apply all rules that do
