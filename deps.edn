@@ -10,8 +10,7 @@
          :exclusions [org.clojure/clojurescript
                       com.yetanalytics./xapi-schema]}
         com.yetanalytics/pathetic
-        {:git/url "https://github.com/yetanalytics/pathetic.git"
-         :git/sha "9596a07eccd9291363bff722d437af92221882cf"
+        {:mvn/version "0.5.0-SNAPSHOT"
          :exclusions [org.clojure/clojurescript]}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
         org.apache.jena/jena-iri {:mvn/version "4.8.0"}
