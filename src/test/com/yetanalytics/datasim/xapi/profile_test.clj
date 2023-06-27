@@ -146,9 +146,13 @@
   :ret (s/and cmi5-general-pattern?))
 
 (defn gen-reg-seq-instance [seed]
-  (let [{:keys [profiles]} const/simple-input
+  (let [{:keys [profiles alignments]} const/simple-input
+        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
+                         (reduce (fn [m {:keys [component] :as align}]
+                                   (assoc m component align))
+                                 {}))
         profile-map (profile/profiles->type-iri-map profiles)]
-    (->> (profile/registration-seq-instance profile-map {} seed)
+    (->> (profile/registration-seq-instance profile-map alignment seed)
          (map :template))))
 
 (s/fdef gen-registration-seq
@@ -157,9 +161,13 @@
                 :kind #(instance? clojure.lang.LazySeq %)))
 
 (defn- gen-registration-seq [seed limit]
-  (let [{:keys [profiles]} const/simple-input
+  (let [{:keys [profiles alignments]} const/simple-input
+        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
+                         (reduce (fn [m {:keys [component] :as align}]
+                                   (assoc m component align))
+                                 {}))
         profile-map (profile/profiles->type-iri-map profiles)]
-    (->> (profile/registration-seq profile-map {} seed)
+    (->> (profile/registration-seq profile-map alignment seed)
          (take limit))))
 
 (deftest registration-seq-test
