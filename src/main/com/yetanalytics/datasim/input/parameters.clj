@@ -60,6 +60,21 @@
 (s/def ::gen-patterns
   (s/every ::pat/id))
 
+(defn- ordered-timestamps?
+  "Are the `start`, `from`, and `end` timestamps ordered properly?"
+  [{:keys [start from end]}]
+  (let [start-t (t/instant start)
+        ?from-t (some->> from t/instant)
+        ?end-t  (some->> end t/instant)]
+    (and (or (not ?end-t)
+             (t/before? start-t ?end-t))
+         (or (not ?end-t)
+             (not ?from-t)
+             (t/before? ?from-t ?end-t))
+         (or (not ?from-t)
+             (= ?from-t start-t)
+             (t/before? start-t ?from-t)))))
+
 (s/def ::parameters
   (s/and
    (s/keys :req-un [::start
@@ -70,21 +85,7 @@
                     ::max
                     ::gen-profiles
                     ::gen-patterns])
-   (fn [{:keys [start from end]}]
-     (when end
-       (assert (t/before? (t/instant start)
-                          (t/instant end))
-               "Sim must start before it ends.")
-       (when from
-         (assert (t/before? (t/instant from)
-                            (t/instant end))
-                 "From must be before end.")))
-     (when from
-       (assert (or (= from start)
-                   (t/before? (t/instant start)
-                              (t/instant from)))
-               "Sim start must be before or equal to from."))
-     true)))
+   ordered-timestamps?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Record
