@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.1.16] - 2023-06-27
+- Update dependencies to address CVEs:
+  - Update Pedestal dependencies to `0.6.0`
+  - Update BouncyCastle and Buddy security lib deps:
+    - Update buddy-auth to `3.0.323`
+    - Update buddy-sign to `3.5.346`
+    - Change BC lib from bcprov-jdk15on to bcprov-18on and update to `1.75`
+
 ## [0.1.15] - 2023-05-08
 - Update dependencies to address CVEs:
   - Update Jetty dependencies to `9.4.51.v20230217`
