@@ -6,7 +6,7 @@
             [clojure.test.check.generators :as gen]
             [xapi-schema.spec                    :as xs]
             [com.yetanalytics.pathetic           :as path]
-            [com.yetanalytics.pathetic.json-path :as jpath]
+            [com.yetanalytics.pathetic.path      :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rules]
             [com.yetanalytics.datasim.json      :as j]
             [com.yetanalytics.datasim.xapi.path :as xp]
@@ -296,7 +296,7 @@
                      (generate-xapi spec rng paths statement rule))]
     ;; It's rather unoptimized to call pathetic.json-path/speculative-path-seqs
     ;; twice, but profiling shows that this doesn't actually matter.
-    (path/apply-value* statement paths* val-coll opt-map)))
+    (path/apply-multi-value* statement paths* val-coll opt-map)))
 
 ;; Putting it all together
 
