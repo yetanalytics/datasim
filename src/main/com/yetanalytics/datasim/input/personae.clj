@@ -5,8 +5,7 @@
             [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.xapi :as xapi]
             [com.yetanalytics.datasim.util :as u]
-            [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.io Reader Writer]))
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 
 
@@ -71,12 +70,12 @@
       (errs/explain-to-map-coll ::personae ed)))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_ k]
     (keyword nil (name k)))
-  (read-body-fn [this json-result]
+  (read-body-fn [_ json-result]
     (map->Personae
      json-result))
-  (write-key-fn [this k]
+  (write-key-fn [_ k]
     (name k))
   (write-body-fn [this]
     (u/remove-nil-vals this)))

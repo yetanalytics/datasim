@@ -101,12 +101,12 @@
       (errs/explain-to-map-coll ::parameters ed)))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_ k]
     (keyword nil (name k)))
-  (read-body-fn [this json-result]
+  (read-body-fn [_ json-result]
     (map->Parameters
      (add-defaults json-result)))
-  (write-key-fn [this k]
+  (write-key-fn [_ k]
     (name k))
   (write-body-fn [this]
     (into {} this)))

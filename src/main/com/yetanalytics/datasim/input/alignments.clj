@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.xapi :as xapi]
             [com.yetanalytics.datasim.util.errors :as errs]))
@@ -78,11 +77,11 @@
       (errs/explain-to-map-coll ::alignments-input ed)))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_ k]
     (keyword nil (name k)))
-  (read-body-fn [this json-result]
+  (read-body-fn [_ json-result]
     (map->Alignments {:alignment-vector (into [] json-result)}))
-  (write-key-fn [this k]
+  (write-key-fn [_ k]
     (name k))
-  (write-body-fn [this]
+  (write-body-fn [_]
     alignment-vector))

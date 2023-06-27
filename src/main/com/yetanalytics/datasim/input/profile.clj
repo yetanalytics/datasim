@@ -1,13 +1,7 @@
 (ns com.yetanalytics.datasim.input.profile
-  (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.protocols :as p]
-            [clojure.string :as cs]
+  (:require [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.util :as u]
-            [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.io Reader Writer]))
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;; NOTE: Do not include optional args seeAlso, concepts, templates, and patterns
 ;; The record constructor will populate these properties with nils if they're

@@ -75,8 +75,7 @@
                             (map :id profiles))
         pattern-idset (into #{}
                             (keep (fn [{:keys [id primary]}]
-                                    (when (and primary)
-                                      id))
+                                    (when primary id))
                                   (mapcat :patterns profiles)))]
     (concat
      (for [[idx profile-id] (map-indexed vector gen-profiles)
@@ -138,8 +137,7 @@
                     ;; here we can be sure every prop is a key
                     ;; since we force it with read-key-fn on input
                     (if (keyword? node)
-                      (let [nn (name node)]
-                        (key-fn node))
+                      (key-fn node)
                       node))
                   v))))
        (throw (ex-info (format "Unknown key %s" k)
@@ -200,12 +198,12 @@
         not-empty))
 
   p/JSONRepresentable
-  (read-key-fn [this k]
+  (read-key-fn [_ k]
     (keyword nil k))
-  (read-body-fn [this json-result]
+  (read-body-fn [_ json-result]
     (map->Input
      (realize-subobjects json-result)))
-  (write-key-fn [this k]
+  (write-key-fn [_ k]
     (name k))
   (write-body-fn [this]
     (unrealize-subobjects this)))
