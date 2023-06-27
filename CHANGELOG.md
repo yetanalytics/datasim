@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.1.16] - 2023-06-26
+## [0.1.16] - 2023-06-27
 - Update dependencies to address CVEs:
   - Update Pedestal dependencies to `0.6.0`
   - Update BouncyCastle and Buddy security lib deps:
