@@ -10,10 +10,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def simple-personae
-  (dio/read-loc-json (map->Personae {}) const/simple-personae-filepath))
+  (map->Personae (dio/read-json-location const/simple-personae-filepath)))
 
 (def tc3-personae
-  (dio/read-loc-json (map->Personae {}) const/tc3-personae-filepath))
+  (map->Personae (dio/read-json-location const/tc3-personae-filepath)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests

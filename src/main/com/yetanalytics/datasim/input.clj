@@ -144,37 +144,93 @@
 ;; Input I/O
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn from-location
-  [type-k fmt-k location]
-  (if-let [constructor (if (= type-k :input)
-                         map->Input
-                         (get subobject-constructors type-k))]
-    (case fmt-k
-      ;; currently only JSON
-      :json (if (#{:profiles :personae-array} type-k)
-              (dio/read-loc-array (constructor {}) location)
-              (dio/read-loc-json (constructor {}) location)))
-    (throw (ex-info (format "Unknown key %s" type-k)
-                    {:type ::unknown-key
-                     :key type-k}))))
+(defn- throw-unknown-key [type-k]
+  (throw (ex-info (format "Unknown key %s" type-k)
+                  {:type ::unknown-key
+                   :key  type-k})))
 
-(defn to-file
-  [record fmt-k location]
-  (case fmt-k
-    ;; currently only JSON
-    :json (dio/write-file-json record location)))
+(defn- throw-unknown-format [format-k]
+  (throw (ex-info (format "Unknown format %s" format-k)
+                  {:type   ::unknown-format
+                   :format format-k})))
 
-(defn to-out
-  [record fmt-k]
-  (case fmt-k
-    ;; currently only JSON
-    :json (dio/write-loc-json record *out*)))
+;; Read Input
 
-(defn to-err
-  [record fmt-k]
-  (case fmt-k
-    ;; currently only JSON
-    :json (dio/write-loc-json record *err*)))
+(defmulti from-location
+  (fn [type-k format-k _] [type-k format-k]))
+
+(defmethod from-location :default [type-k format-k _]
+  (if (#{:json} format-k)
+    (throw-unknown-key type-k)
+    (throw-unknown-format format-k)))
+
+(defmethod from-location [:input :json] [_ _ location]
+  (-> (dio/read-json-location location)
+      (update :profiles (partial mapv profile/map->Profile))
+      (update :personae-array (partial mapv personae/map->Personae))
+      (update :alignments vec)
+      (update :alignments (partial assoc {} :alignment-vector))
+      (update :alignments alignments/map->Alignments)
+      (update :parameters params/add-defaults)
+      (update :parameters params/map->Parameters)
+      map->Input))
+
+(defmethod from-location [:profile :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       profile/map->Profile))
+
+(defmethod from-location [:profiles :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       (mapv profile/map->Profile)))
+
+(defmethod from-location [:personae :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       personae/map->Personae))
+
+(defmethod from-location [:personae-array :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       (mapv personae/map->Personae)))
+
+(defmethod from-location [:alignments :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       vec
+       (assoc {} :alignment-vector)
+       alignments/map->Alignments))
+
+(defmethod from-location [:parameters :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       params/add-defaults
+       params/map->Parameters))
+
+;; Write to file
+
+(defmulti to-file (fn [_ format-k _] format-k))
+
+(defmethod to-file :default [_ format-k _]
+  (throw-unknown-format format-k))
+
+(defmethod to-file :json [data _ location]
+  (dio/write-json-file (p/write-body-fn data) location))
+
+;; Write to stdout
+
+(defmulti to-out (fn [_ fmt-k] fmt-k))
+
+(defmethod to-out :default [_ format-k _]
+  (throw-unknown-format format-k))
+
+(defmethod to-out :json [data _]
+  (dio/write-json-location (p/write-body-fn data) *out*))
+
+;; Write to stderr
+
+(defmulti to-err (fn [_ fmt-k] fmt-k))
+
+(defmethod to-err :default [_ format-k _]
+  (throw-unknown-format format-k))
+
+(defmethod to-err :json [data _]
+  (dio/write-json-location (p/write-body-fn data) *err*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input Validation

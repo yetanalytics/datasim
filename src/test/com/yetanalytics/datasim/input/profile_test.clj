@@ -13,7 +13,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def minimal-profile
-  (dio/read-loc-json (map->Profile {}) const/minimal-profile-filepath))
+  (map->Profile (dio/read-json-location const/minimal-profile-filepath)))
 
 (def minimal-profile-map
   {:id         "https://xapinet.org/xapi/yet/minimal"
@@ -49,7 +49,7 @@
   (testing "is valid when written"
     (let [^File tf (File/createTempFile "profiletest" nil)]
       (try
-        (dio/write-loc-json minimal-profile tf)
+        (dio/write-json-location minimal-profile tf)
         (is (nil? (pan/validate-profile
                    (json/read-str (slurp tf)
                                   :key-fn
