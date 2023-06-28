@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.input.profile
   "Profile input parsing."
-  (:require [com.yetanalytics.pan                 :as pan]
+  (:require [clojure.string       :as cstr]
+            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
@@ -28,6 +29,42 @@
     [{:path [::profiles]
       :text "Profiles must be a vector!"
       :id   [::profiles]}]))
+
+;; Helpers to `input/validate-pattern-filters`
+
+(defn- validate-pattern-filters-emsg
+  [pattern-id pattern-id-set]
+  (format
+   "Pattern ID %s is not among primary patterns in provided profiles: %s"
+   pattern-id
+   (cstr/join \, pattern-id-set)))
+
+(defn- validate-profile-fitlers-emsg
+  [profile-id profile-id-set]
+  (format "Profile ID %s is not one of provided profiles: %s"
+          profile-id
+          (cstr/join \, profile-id-set)))
+
+(defn validate-pattern-filters
+  [profiles gen-patterns]
+  (let [pattern-id-set (->> profiles
+                            (mapcat :patterns)
+                            (keep (fn [{:keys [id primary]}] (when primary id)))
+                            (into #{}))]
+    (for [[idx pattern-id] (map-indexed vector gen-patterns)
+          :when            (not (contains? pattern-id-set pattern-id))]
+      {:id   (str "parameters-gen-patterns-" idx)
+       :path [:parameters :gen-patterns idx]
+       :text (validate-pattern-filters-emsg pattern-id pattern-id-set)})))
+
+(defn validate-profile-filters
+  [profiles gen-profiles]
+  (let [profile-id-set (->> profiles (map :id) (into #{}))]
+    (for [[idx profile-id] (map-indexed vector gen-profiles)
+          :when            (not (contains? profile-id-set profile-id))]
+      {:id   (str "parameters-gen-profiles-" idx)
+       :path [:parameters :gen-profiles idx]
+       :text (validate-profile-fitlers-emsg profile-id profile-id-set)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Record

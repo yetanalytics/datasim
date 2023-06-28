@@ -1,8 +1,7 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
-  (:require [clojure.spec.alpha   :as s]
-            [clojure.string       :as cs]
-            [clojure.walk         :as w]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.walk       :as w]
             [com.yetanalytics.datasim.protocols        :as p]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.personae   :as personae]
@@ -41,33 +40,14 @@
 ;; Validation Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; We need this function here since it's the only validation function that
+;; makes use of two different parts of the input spec
+
 (defn validate-pattern-filters
-  [{{:keys [gen-profiles
-            gen-patterns]} :parameters
-    :keys                  [profiles]}]
-  (let [profile-idset (into #{}
-                            (map :id profiles))
-        pattern-idset (into #{}
-                            (keep (fn [{:keys [id primary]}]
-                                    (when primary id))
-                                  (mapcat :patterns profiles)))]
-    (concat
-     (for [[idx profile-id] (map-indexed vector gen-profiles)
-           :when            (not (contains? profile-idset profile-id))]
-       {:id   (str "parameters-gen-profiles-" idx)
-        :path [:parameters :gen-profiles idx]
-        :text (format "Profile ID %s is not one of provided profiles: %s"
-                      profile-id
-                      (cs/join \, profile-idset))})
-     (for [[idx pattern-id] (map-indexed vector gen-patterns)
-           :when            (not (contains? pattern-idset pattern-id))]
-       {:id   (str "parameters-gen-patterns-" idx)
-        :path [:parameters :gen-patterns idx]
-        :text
-        (format
-         "Pattern ID %s is not among primary patterns in provided profiles: %s"
-         pattern-id
-         (cs/join \, pattern-idset))}))))
+  [{{:keys [gen-profiles gen-patterns]} :parameters
+    profiles :profiles}]
+  (concat (profile/validate-profile-filters profiles gen-profiles)
+          (profile/validate-pattern-filters profiles gen-patterns)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input Sub-Objects
