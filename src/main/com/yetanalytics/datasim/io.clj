@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.io
   (:require [clojure.java.io :as io]
-            [com.yetanalytics.datasim.protocols :as p]
-            [cheshire.core :as json])
+            [cheshire.core   :as json]
+            [com.yetanalytics.datasim.protocols :as p])
   (:import [java.io IOException]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -27,60 +27,68 @@
                   cause-exn)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; IO Functions
+;; JSON I/O Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn read-loc-json
-  "Reads in a file from the given location and parses it."
+  "Reads in a file from the given location `loc` and parses it. The `record`
+   argument, which should implement `protocols/JSONRepresentable`, determines
+   the exact functions used to read the file contents."
   [record loc]
-  (try (with-open [r (io/reader loc)]
-         (try
-           (p/read-body-fn
-            record
-            (doall (json/parse-stream r (partial p/read-key-fn record))))
-           (catch Exception e
-             (throw-parse-error loc e))))
-       (catch IOException e
-         (throw-io-error loc e))))
+  (let [key-fn    (partial p/read-key-fn record)
+        read-body (partial p/read-body-fn record)]
+    (try (with-open [r (io/reader loc)]
+           (try (read-body (doall (json/parse-stream r key-fn)))
+                (catch Exception e
+                  (throw-parse-error loc e))))
+         (catch IOException e
+           (throw-io-error loc e)))))
 
 (defn read-loc-array
-  "Reads from a stream but assumes an array with the members of the record type passed to it"
+  "Reads from a stream from the given location `loc` but assumes an array with
+   the members of the `record` type passed to it. The The `record` argument,
+   which should implement `protocols/JSONRepresentable`, determines
+   the exact functions used to read the file contents."
   [record loc]
-  (try (with-open [r (io/reader loc)]
-         (try
-           (let [input-coll (json/parse-stream r (partial p/read-key-fn record))]
-             (mapv (fn [input]
-                     (p/read-body-fn record input))
-                   input-coll))
-           (catch Exception e
-             (throw-parse-error loc e))))
-       (catch IOException e
-         (throw-io-error loc e))))
+  (let [key-fn    (partial p/read-key-fn record)
+        read-body (partial p/read-body-fn record)]
+    (try (with-open [r (io/reader loc)]
+           (try (mapv read-body (json/parse-stream r key-fn))
+                (catch Exception e
+                  (throw-parse-error loc e))))
+         (catch IOException e
+           (throw-io-error loc e)))))
 
 (defn- write-json!
-  [record loc w]
-  (try
-    (json/generate-stream (p/write-body-fn record)
-                          w
-                          {:key-fn (partial p/write-key-fn record)})
-    (catch Exception e
-      (throw-unparse-error loc e))))
+  [record loc writer]
+  (let [key-fn (partial p/write-key-fn record)]
+    (try (json/generate-stream (p/write-body-fn record)
+                               writer
+                               {:key-fn key-fn})
+         (catch Exception e
+           (throw-unparse-error loc e)))))
 
 (defn write-loc-json
-  "Write a record to a location"
+  "Write the contents of `record` to a location `loc`; `record` should
+   implement `protocols/JSONRepresentable` and determines the exact functions
+   used to read the file contents."
   [record loc]
   (try (if (#{*out* *err*} loc)
+         ;; Write to stdout or stderr
          (let [w (io/writer loc)]
            (write-json! record loc w)
            (.write w "\n")
            (.flush w))
+         ;; Write to a file
          (with-open [w (io/writer loc)]
            (write-json! record loc w)))
        (catch IOException e
          (throw-io-error loc e))))
 
 (defn write-file-json
-  "Write a record to a file"
+  "Write `record` to a file at location `loc`; `record` should implement
+   `protocols/JSONRepresentable` and determines the exact functions
+   used to read the file contents."
   [record loc]
   (let [file (io/file loc)]
     (io/make-parents file)
