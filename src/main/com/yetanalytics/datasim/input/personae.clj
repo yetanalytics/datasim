@@ -4,7 +4,8 @@
             [clojure.walk       :as w]
             [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.util        :as u]
-            [com.yetanalytics.datasim.util.errors :as errs]))
+            [com.yetanalytics.datasim.util.errors :as errs]
+            [com.yetanalytics.datasim.util.xapi   :as xapiu]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -50,6 +51,33 @@
          (s/conformer w/keywordize-keys w/stringify-keys)
          ::group))
 
+(defn- distinct-member-ids?
+  [personaes]
+  (let [member-ids (->> personaes
+                        (map :member)
+                        (apply concat)
+                        (map xapiu/agent-id))]
+    (= (-> member-ids count)
+       (-> member-ids distinct count))))
+
+(s/def ::personae-array
+  (s/and (s/every ::personae :min-count 1 :into [])
+         distinct-member-ids?))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn validate-personae
+  [personae]
+  (some->> (s/explain-data ::personae personae)
+           (errs/explain-to-map-coll ::personae)))
+
+(defn validate-personae-array
+  [personae-array]
+  (some->> (s/explain-data ::personae-array personae-array)
+           (errs/explain-to-map-coll ::personae-array)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Record
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,8 +90,7 @@
                      account]
   p/FromInput
   (validate [personae]
-    (some->> (s/explain-data ::personae personae)
-             (errs/explain-to-map-coll ::personae)))
+    (validate-personae personae))
 
   p/JSONRepresentable
   (read-key-fn [_ k]

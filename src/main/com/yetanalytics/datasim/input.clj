@@ -3,15 +3,12 @@
   (:require [clojure.spec.alpha   :as s]
             [clojure.string       :as cs]
             [clojure.walk         :as w]
-            [com.yetanalytics.pan :as pan]
             [com.yetanalytics.datasim.protocols        :as p]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.personae   :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.io               :as dio]
-            [com.yetanalytics.datasim.util.xapi        :as xapiu]
-            [com.yetanalytics.datasim.util.errors      :as errs]))
+            [com.yetanalytics.datasim.io               :as dio]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -22,20 +19,12 @@
 ;;   personae: a Group that contains one or more Agent, i.e. persona
 ;;   personae-array: an array of one or more Groups
 
-(defn- distinct-member-ids?
-  [personaes]
-  (let [member-ids (->> personaes
-                        (map :member)
-                        (apply concat)
-                        (map xapiu/agent-id))]
-    (= (-> member-ids count)
-       (-> member-ids distinct count))))
-
 (s/def ::personae-array
-  (s/and
-   (s/every ::personae/personae :min-count 1 :into [])
-   distinct-member-ids?))
+  ::personae/personae-array)
 
+;; TODO: `::alignments` is the name of two separate things: the top-level
+;; alignments input vector, and the inner vector associated with each actor.
+;; Find separate names for each.
 (s/def ::alignments
   ::alignments/alignments-input)
 
@@ -43,8 +32,7 @@
   ::params/parameters)
 
 (s/def :com.yetanalytics.datasim/input
-  ;; "Comprehensive input spec"
-  (s/keys :req-un [::profiles
+  (s/keys :req-un [::profiles ; TODO: This spec isn't defined???
                    ::personae-array
                    ::alignments
                    ::parameters]))
@@ -52,35 +40,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Validation Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn validate-profiles
-  [profile-coll]
-  (if (vector? profile-coll)
-    (let [prof-errs (pan/validate-profile-coll profile-coll
-                                               :syntax? true
-                                               :pattern-rels? true
-                                               :result :type-path-string)]
-      (errs/type-path-string-ms->map-coll (map :id profile-coll)
-                                          prof-errs))
-    ;; TODO: Something more solid/less hacky, particularly in the Pan lib itself
-    [{:path [::profiles]
-      :text "Profiles must be a vector!"
-      :id   [::profiles]}]))
-
-(defn validate-personae-array
-  [personae-array]
-  (some->> (s/explain-data ::personae-array personae-array)
-           (errs/explain-to-map-coll ::personae-array)))
-
-(defn validate-alignments
-  [alignments]
-  (some->> (s/explain-data ::alignments alignments)
-           (errs/explain-to-map-coll ::alignments)))
-
-(defn validate-parameters
-  [parameters]
-  (some->> (s/explain-data ::parameters parameters)
-           (errs/explain-to-map-coll ::parameters)))
 
 (defn validate-pattern-filters
   [{{:keys [gen-profiles
@@ -205,10 +164,10 @@
                   parameters]
   p/FromInput
   (validate [input]
-    (-> (concat (validate-profiles profiles)
-                (validate-personae-array personae-array)
-                (validate-alignments alignments)
-                (validate-parameters parameters)
+    (-> (concat (profile/validate-profiles profiles)
+                (personae/validate-personae-array personae-array)
+                (alignments/validate-alignments alignments)
+                (params/validate-parameters parameters)
                 (validate-pattern-filters input))
         vec
         not-empty))

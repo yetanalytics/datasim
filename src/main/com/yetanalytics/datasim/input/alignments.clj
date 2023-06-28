@@ -80,14 +80,22 @@
   (s/keys :req-un [::alignment-vector]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn validate-alignments
+  [alignments]
+  (some->> (s/explain-data ::alignments-input alignments)
+           (errs/explain-to-map-coll ::alignments-input)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Record
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrecord Alignments [alignment-vector]
   p/FromInput
   (validate [alignments]
-    (some->> (s/explain-data ::alignments-input alignments)
-             (errs/explain-to-map-coll ::alignments-input)))
+    (validate-alignments alignments))
 
   p/JSONRepresentable
   (read-key-fn [_ k]

@@ -5,6 +5,31 @@
             [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn validate-profile
+  [{:keys [id] :as profile}]
+  (some->> (pan/validate-profile profile
+                                 :syntax? true
+                                 :result :type-path-string)
+           (errs/type-path-string-m->map-coll id)))
+
+(defn validate-profiles
+  [profiles]
+  (if (vector? profiles)
+    (let [prof-errs (pan/validate-profile-coll profiles
+                                               :syntax? true
+                                               :pattern-rels? true
+                                               :result :type-path-string)]
+      (errs/type-path-string-ms->map-coll (map :id profiles)
+                                          prof-errs))
+    ;; TODO: Something more solid/less hacky, particularly in the Pan lib itself
+    [{:path [::profiles]
+      :text "Profiles must be a vector!"
+      :id   [::profiles]}]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Record
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -26,10 +51,7 @@
                     author]
   p/FromInput
   (validate [profile]
-    (some->> (pan/validate-profile profile
-                                   :syntax? true
-                                   :result :type-path-string)
-             (errs/type-path-string-m->map-coll id)))
+    (validate-profile profile))
 
   p/JSONRepresentable
   (read-key-fn [_ k]

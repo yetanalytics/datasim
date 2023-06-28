@@ -88,6 +88,15 @@
    ordered-timestamps?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn validate-parameters
+  [parameters]
+  (some->> (s/explain-data ::parameters parameters)
+           (errs/explain-to-map-coll ::parameters)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Record
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -107,9 +116,8 @@
                        timezone
                        seed]
   p/FromInput
-  (validate [params]
-    (some->> (s/explain-data ::parameters params)
-             (errs/explain-to-map-coll ::parameters)))
+  (validate [parameters]
+    (validate-parameters parameters))
 
   p/JSONRepresentable
   (read-key-fn [_ k]
