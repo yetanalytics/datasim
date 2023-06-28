@@ -54,12 +54,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def subobject-constructors
-  {:profile profile/map->Profile
-   :personae personae/map->Personae
-   :alignments alignments/map->Alignments
-   :parameters params/map->Parameters
+  {:profile        profile/map->Profile
+   :personae       personae/map->Personae
+   :alignments     alignments/map->Alignments
+   :parameters     params/map->Parameters
    ;; Hack for array-valued inputs
-   :profiles profile/map->Profile
+   :profiles       profile/map->Profile
    :personae-array personae/map->Personae})
 
 (defn realize-subobjects
@@ -68,29 +68,17 @@
   (reduce-kv
    (fn [m k v]
      (if-let [constructor (get subobject-constructors k)]
-       (let [rec (constructor {})
-             key-fn
-             (partial
-              p/read-key-fn
-              rec)
-             body-fn
-             (cond->> (partial
-                       p/read-body-fn
-                       rec)
-               ;; for profiles and personae-array, it's a vector
-               (#{:profiles :personae-array} k)
-               (partial mapv))]
-         (assoc m
-                k
-                (body-fn
-                 (w/postwalk
-                  (fn [node]
-                    ;; here we can be sure every prop is a key
-                    ;; since we force it with read-key-fn on input
-                    (if (keyword? node)
-                      (key-fn node)
-                      node))
-                  v))))
+       (let [rec     (constructor {})
+             key-fn  (partial p/read-key-fn rec)
+             body-fn (cond->> (partial p/read-body-fn rec)
+                       (#{:profiles :personae-array} k)
+                       (partial mapv))]
+         (assoc m k (body-fn
+                     (w/postwalk
+                      ;; here we can be sure every prop is a key
+                      ;; since we force it with read-key-fn on input
+                      (fn [node] (cond-> node (keyword? node) key-fn))
+                      v))))
        (throw (ex-info (format "Unknown key %s" k)
                        {:type ::unknown-key
                         :key k
@@ -104,29 +92,19 @@
   (reduce-kv
    (fn [m k v]
      (if-let [constructor (get subobject-constructors k)]
-       (let [rec (constructor {})
-             key-fn
-             (partial
-              p/write-key-fn
-              rec)
-             body-fn
-             (cond->> p/write-body-fn
-               ;; for profiles and persoane-array, it's a vector
-               (#{:profiles :personae-array} k)
-               (partial mapv))]
-         (assoc m
-                k
-                (w/postwalk
-                 (fn [node]
-                   ;; Here we can't know it's a key unless we find it in a map
-                   (if (map? node)
-                     (reduce-kv
-                      (fn [m' k' v']
-                        (assoc m' (key-fn k') v'))
-                      {}
-                      node)
-                     node))
-                 (body-fn v))))
+       (let [rec     (constructor {})
+             key-fn  (partial p/write-key-fn rec)
+             body-fn (cond->> p/write-body-fn
+                       (#{:profiles :personae-array} k)
+                       (partial mapv))]
+         (assoc m k (w/postwalk
+                     ;; Here we can't know it's a key unless we find it in a map
+                     (fn [node]
+                       (cond->> node
+                         (map? node)
+                         (reduce-kv
+                          (fn [m' k' v'] (assoc m' (key-fn k') v')) {})))
+                     (body-fn v))))
        (throw (ex-info (format "Unknown key %s" k)
                        {:type ::unknown-key
                         :key k
