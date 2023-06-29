@@ -161,7 +161,7 @@
                                           :alignments])
                 {:keys [override-seed
                         select-agents]} options
-                input (cond-> (or (:input sim-options) (input/map->Input sim-options))
+                input (cond-> (or (:input sim-options) sim-options)
                         override-seed
                         (assoc-in [:parameters :seed]
                                   (if (= -1 override-seed)

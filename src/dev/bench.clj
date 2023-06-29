@@ -17,11 +17,10 @@
 
 (comment
   (def input
-    (input/map->Input
-     {:profiles [(input/from-location :profile :json "dev-resources/bench/calibration.jsonld")]
-      :personae (input/from-location :personae :json "dev-resources/bench/actors.json")
-      :alignments (input/from-location :alignments :json "dev-resources/bench/alignments.json")
-      :parameters (input/from-location :parameters :json "dev-resources/bench/params.json")}))
+    {:profiles [(input/from-location :profile :json "dev-resources/bench/calibration.jsonld")]
+     :personae-array [(input/from-location :personae :json "dev-resources/bench/actors.json")]
+     :alignments (input/from-location :alignments :json "dev-resources/bench/alignments.json")
+     :parameters (input/from-location :parameters :json "dev-resources/bench/params.json")})
 
   (c/with-progress-reporting
     (c/quick-bench (do (doall (take 1000 (sim/sim-seq input)))
