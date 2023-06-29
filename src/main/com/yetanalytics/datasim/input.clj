@@ -236,19 +236,44 @@
 ;; Input Validation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn validate
+(defmulti validate
   "Validate input using the FromInput protocol. Does no handling on result.
    Returns a coll of maps on failure, `nil` on success."
-  [input]
-  (p/validate input))
+  (fn [type-k _] type-k))
+
+(defmethod validate :default [type-k _]
+  (throw-unknown-key type-k))
+
+(defmethod validate :input
+  [_ {:keys [profiles personae-array alignments parameters] :as input}]
+  (-> (concat (profile/validate-profiles profiles)
+              (personae/validate-personae-array personae-array)
+              (alignments/validate-alignments alignments)
+              (params/validate-parameters parameters)
+              (validate-pattern-filters input))
+      vec
+      not-empty))
+
+(defmethod validate :profile [_ profile]
+  (profile/validate-profile profile))
+
+(defmethod validate :personae [_ personae]
+  (personae/validate-personae personae))
+
+(defmethod validate :alignments [_ alignments]
+  (alignments/validate-alignments alignments))
+
+(defmethod validate :parameters [_ parameters]
+  (params/validate-parameters parameters))
 
 (defn validate-throw
   "Validate input using the FromInput protocol. Throw an exception if the input
    isn't valid."
-  [input]
-  (if-let [errors (not-empty (p/validate input))]
-    (throw (ex-info "Validation Errors"
-                    {:type ::invalid-input
-                     :input input
+  [type-k input]
+  (if-let [errors (not-empty (validate type-k input))]
+    (throw (ex-info (format "Validation Errors on %s" (name type-k))
+                    {:type   ::invalid-input
+                     :key    type-k
+                     :input  input
                      :errors errors}))
     input))

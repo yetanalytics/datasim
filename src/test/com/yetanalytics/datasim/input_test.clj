@@ -26,11 +26,11 @@
              (is (satisfies? p/FromInput x))
              (is (satisfies? p/JSONRepresentable x)))
            (testing "is valid"
-             (is (nil? (validate x))))
+             (is (nil? (validate input-key x))))
            (testing (format "is invalid due to %s" invalid-reason)
-             (is (some? (validate (invalidator-fn x))))
+             (is (some? (validate input-key (invalidator-fn x))))
              (is (thrown? ExceptionInfo
-                          (validate-throw (invalidator-fn x)))))))
+                          (validate-throw input-key (invalidator-fn x)))))))
     "xAPI Profile" "non-IRI ID" 
     :profile const/cmi5-profile-filepath
     #(assoc % :id "foo")
@@ -72,15 +72,16 @@
 
 (deftest combined-input-validation-test
   (testing "combined input is valid"
-    (is (nil? (p/validate const/simple-input)))
+    (is (nil? (validate :input const/simple-input)))
     (is (satisfies? p/FromInput const/simple-input))
-    (is (try (validate-throw const/simple-input)
+    (is (try (validate-throw :input const/simple-input)
              true
              (catch Exception _ false))))
   (testing "combined input is invalid"
     (testing "with invalid gen-profiles"
       (is (try
             (validate-throw
+             :input
              (assoc-in const/simple-input
                        [:parameters :gen-profiles]
                        ["http://example.com/nonexistent.jsonld"]))
@@ -89,6 +90,7 @@
     (testing "with invalid gen-patterns"
       (is (try
             (validate-throw
+             :input
              (assoc-in const/simple-input
                        [:parameters :gen-patterns]
                        ["http://example.com/nonexistent#pattern"]))
