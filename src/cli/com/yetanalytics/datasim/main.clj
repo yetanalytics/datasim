@@ -61,10 +61,7 @@
                 [(partial input/validate-throw :parameters)
                  "Failed to validate Parameters."]
                 [])
-    ;; TODO: it looks like, when the validation is skipped, a simple empty
-    ;; default doesn't work here, as the full input spec fails.
-    ;; For now we just hack it by calling the defaults fn directly.
-    :default (params/add-defaults {})]
+    :default (params/apply-defaults)]
 
    ["-i" "--input URI" "Combined Simulation input"
     :id :input

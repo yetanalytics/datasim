@@ -76,7 +76,7 @@
 
 (defmethod from-location [:input :json] [_ _ location]
   (-> (dio/read-json-location location)
-      (update :parameters params/add-defaults)))
+      (update :parameters params/apply-defaults)))
 
 (defmethod from-location [:profile :json] [_ _ location]
   (dio/read-json-location location))
@@ -98,7 +98,7 @@
 
 (defmethod from-location [:parameters :json] [_ _ location]
   (->> (dio/read-json-location location)
-       params/add-defaults))
+       params/apply-defaults))
 
 ;; Write to file
 
