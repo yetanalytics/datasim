@@ -3,7 +3,6 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
             [xapi-schema.spec] ; need to bring in :statement/object
-            [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.iri         :as iri]
             [com.yetanalytics.datasim.xapi        :as xapi]
             [com.yetanalytics.datasim.util.errors :as errs]))
@@ -85,24 +84,5 @@
 
 (defn validate-alignments
   [alignments]
-  (some->> (s/explain-data ::alignments-input alignments)
-           (errs/explain-to-map-coll ::alignments-input)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Record
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrecord Alignments [alignment-vector]
-  p/FromInput
-  (validate [alignments]
-    (validate-alignments alignments))
-
-  p/JSONRepresentable
-  (read-key-fn [_ k]
-    (keyword (name k)))
-  (read-body-fn [_ json-result]
-    (map->Alignments {:alignment-vector (into [] json-result)}))
-  (write-key-fn [_ k]
-    (name k))
-  (write-body-fn [_]
-    alignment-vector))
+  (some->> (s/explain-data ::alignment-vector alignments)
+           (errs/explain-to-map-coll ::alignment-vector)))

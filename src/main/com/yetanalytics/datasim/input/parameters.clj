@@ -5,7 +5,6 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [clojure.lang ExceptionInfo]
            [java.time.zone ZoneRulesException]
@@ -97,7 +96,7 @@
            (errs/explain-to-map-coll ::parameters)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Record
+;; Defaults
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-defaults
@@ -110,21 +109,3 @@
       :from     (or from start)
       :timezone (or timezone "UTC")
       :seed     (or seed (.nextLong (Random.)))})))
-
-(defrecord Parameters [start
-                       end
-                       timezone
-                       seed]
-  p/FromInput
-  (validate [parameters]
-    (validate-parameters parameters))
-
-  p/JSONRepresentable
-  (read-key-fn [_ k]
-    (keyword (name k)))
-  (read-body-fn [_ json-result]
-    (map->Parameters (add-defaults json-result)))
-  (write-key-fn [_ k]
-    (name k))
-  (write-body-fn [this]
-    (into {} this)))

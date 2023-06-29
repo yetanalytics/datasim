@@ -1,6 +1,5 @@
 (ns com.yetanalytics.datasim.input-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input
              :refer [from-location validate validate-throw]
              :as input]
@@ -22,9 +21,6 @@
         invalidator-fn]
        (testing (format "Reading %s" test-name)
          (let [x (from-location input-key :json file-loc)]
-           (testing "satisfies protocols"
-             (is (satisfies? p/FromInput x))
-             (is (satisfies? p/JSONRepresentable x)))
            (testing "is valid"
              (is (nil? (validate input-key x))))
            (testing (format "is invalid due to %s" invalid-reason)
@@ -39,19 +35,19 @@
     #(assoc % :member [])
     "Actor Alignments" "invalid due to invalid alignments"
     :alignments const/simple-alignments-filepath
-    #(assoc % :alignment-vector [{:id         "notanid"
-                                  :alignments [{:component "notaniri"
-                                                :weight    "bar"}]}])
+    #(conj % {:id         "notanid"
+              :alignments [{:component "notaniri"
+                            :weight    "bar"}]})
     "Actor Alignments, Long" "invalid alignments"
     :alignments const/tc3-alignments-filepath
-    #(assoc % :alignment-vector [{:id         "notanid"
-                                  :alignments [{:component "notaniri"
-                                                :weight    "bar"}]}])
+    #(conj % {:id         "notanid"
+              :alignments [{:component "notaniri"
+                            :weight    "bar"}]})
     "Actor Alignments w/ Overrides" "invalid alignments"
     :alignments const/overrides-alignments-filepath
-    #(assoc % :alignment-vector [{:id         "notanid"
-                                  :alignments [{:component "notaniri"
-                                                :weight    "bar"}]}])
+    #(conj % {:id         "notanid"
+              :alignments [{:component "notaniri"
+                            :weight    "bar"}]})
     "Simulation Parameters" "non-numeric seed"
     :parameters const/simple-parameters-filepath
     #(assoc % :seed "hey")
@@ -65,7 +61,8 @@
 
 (deftest subobject-validation-test
   (testing "input is valid with a minimal profile"
-    (is (nil? (p/validate
+    (is (nil? (input/validate
+               :input
                (assoc-in const/simple-input
                          [:profiles 0]
                          const/minimal-profile))))))
@@ -73,7 +70,6 @@
 (deftest combined-input-validation-test
   (testing "combined input is valid"
     (is (nil? (validate :input const/simple-input)))
-    (is (satisfies? p/FromInput const/simple-input))
     (is (try (validate-throw :input const/simple-input)
              true
              (catch Exception _ false))))

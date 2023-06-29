@@ -2,8 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.data.json :as json]
             [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input.profile :as profile :refer [map->Profile]]
+            [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [java.io File]))
@@ -13,7 +12,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def minimal-profile
-  (map->Profile (dio/read-json-location const/minimal-profile-filepath)))
+  (dio/read-json-location const/minimal-profile-filepath))
 
 (def minimal-profile-map
   {:id         "https://xapinet.org/xapi/yet/minimal"
@@ -39,21 +38,25 @@
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- profile-key [k]
+  (let [kname (name k)]
+    (if (= "@context" kname)
+      :_context
+      (keyword kname))))
+
 (deftest minimal-profile-test 
   (testing "produces the correct profile"
     ;; Coerce `minimal-profile` back into non-record map
     (is (= minimal-profile-map
            (into {} minimal-profile))))
   (testing "is valid"
-    (is (nil? (p/validate minimal-profile))))
+    (is (nil? (profile/validate-profile minimal-profile))))
   (testing "is valid when written"
     (let [^File tf (File/createTempFile "profiletest" nil)]
       (try
         (dio/write-json-location minimal-profile tf)
         (is (nil? (pan/validate-profile
-                   (json/read-str (slurp tf)
-                                  :key-fn
-                                  (partial p/read-key-fn minimal-profile)))))
+                   (json/read-str (slurp tf) :key-fn profile-key))))
         (finally
           (.delete tf))))))
 

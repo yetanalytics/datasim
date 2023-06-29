@@ -188,9 +188,8 @@
   Spooky."
   [{:keys [profiles personae-array parameters alignments]
     :as   input}]
-  (let [;; Input parameters and alignments
+  (let [;; Input parameters
         {:keys [start end timezone seed] ?from-stamp :from} parameters
-        {alignments :alignment-vector} alignments
         ;; Set timezone and time
         ^ZoneRegion zone (t/zone-id timezone)
         t-zero (.toEpochMilli (t/instant start))

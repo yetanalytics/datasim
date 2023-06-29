@@ -1,8 +1,6 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
-            [clojure.walk       :as w]
-            [com.yetanalytics.datasim.protocols        :as p]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.personae   :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
@@ -50,97 +48,6 @@
           (profile/validate-pattern-filters profiles gen-patterns)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Input Sub-Objects
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def subobject-constructors
-  {:profile        profile/map->Profile
-   :personae       personae/map->Personae
-   :alignments     alignments/map->Alignments
-   :parameters     params/map->Parameters
-   ;; Hack for array-valued inputs
-   :profiles       profile/map->Profile
-   :personae-array personae/map->Personae})
-
-(defn realize-subobjects
-  "Make subobjects from JSON into records"
-  [json-result]
-  (reduce-kv
-   (fn [m k v]
-     (if-let [constructor (get subobject-constructors k)]
-       (let [rec     (constructor {})
-             key-fn  (partial p/read-key-fn rec)
-             body-fn (cond->> (partial p/read-body-fn rec)
-                       (#{:profiles :personae-array} k)
-                       (partial mapv))]
-         (assoc m k (body-fn
-                     (w/postwalk
-                      ;; here we can be sure every prop is a key
-                      ;; since we force it with read-key-fn on input
-                      (fn [node] (cond-> node (keyword? node) key-fn))
-                      v))))
-       (throw (ex-info (format "Unknown key %s" k)
-                       {:type ::unknown-key
-                        :key k
-                        :json json-result}))))
-   {}
-   json-result))
-
-(defn unrealize-subobjects
-  "Make subobjects ready for writing to JSON"
-  [input]
-  (reduce-kv
-   (fn [m k v]
-     (if-let [constructor (get subobject-constructors k)]
-       (let [rec     (constructor {})
-             key-fn  (partial p/write-key-fn rec)
-             body-fn (cond->> p/write-body-fn
-                       (#{:profiles :personae-array} k)
-                       (partial mapv))]
-         (assoc m k (w/postwalk
-                     ;; Here we can't know it's a key unless we find it in a map
-                     (fn [node]
-                       (cond->> node
-                         (map? node)
-                         (reduce-kv
-                          (fn [m' k' v'] (assoc m' (key-fn k') v')) {})))
-                     (body-fn v))))
-       (throw (ex-info (format "Unknown key %s" k)
-                       {:type ::unknown-key
-                        :key k
-                        :input input}))))
-   {}
-   input))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Input Record
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrecord Input [profiles
-                  personae-array
-                  alignments
-                  parameters]
-  p/FromInput
-  (validate [input]
-    (-> (concat (profile/validate-profiles profiles)
-                (personae/validate-personae-array personae-array)
-                (alignments/validate-alignments alignments)
-                (params/validate-parameters parameters)
-                (validate-pattern-filters input))
-        vec
-        not-empty))
-
-  p/JSONRepresentable
-  (read-key-fn [_ k]
-    (keyword k))
-  (read-body-fn [_ json-result]
-    (map->Input (realize-subobjects json-result)))
-  (write-key-fn [_ k]
-    (name k))
-  (write-body-fn [input]
-    (unrealize-subobjects input)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input I/O
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -166,41 +73,29 @@
 
 (defmethod from-location [:input :json] [_ _ location]
   (-> (dio/read-json-location location)
-      (update :profiles (partial mapv profile/map->Profile))
-      (update :personae-array (partial mapv personae/map->Personae))
-      (update :alignments vec)
-      (update :alignments (partial assoc {} :alignment-vector))
-      (update :alignments alignments/map->Alignments)
-      (update :parameters params/add-defaults)
-      (update :parameters params/map->Parameters)
-      map->Input))
+      (update :parameters params/add-defaults)))
 
 (defmethod from-location [:profile :json] [_ _ location]
-  (->> (dio/read-json-location location)
-       profile/map->Profile))
+  (dio/read-json-location location))
 
 (defmethod from-location [:profiles :json] [_ _ location]
   (->> (dio/read-json-location location)
-       (mapv profile/map->Profile)))
+       vec))
 
 (defmethod from-location [:personae :json] [_ _ location]
-  (->> (dio/read-json-location location)
-       personae/map->Personae))
+  (dio/read-json-location location))
 
 (defmethod from-location [:personae-array :json] [_ _ location]
   (->> (dio/read-json-location location)
-       (mapv personae/map->Personae)))
+       vec))
 
 (defmethod from-location [:alignments :json] [_ _ location]
   (->> (dio/read-json-location location)
-       vec
-       (assoc {} :alignment-vector)
-       alignments/map->Alignments))
+       vec))
 
 (defmethod from-location [:parameters :json] [_ _ location]
   (->> (dio/read-json-location location)
-       params/add-defaults
-       params/map->Parameters))
+       params/add-defaults))
 
 ;; Write to file
 
@@ -210,7 +105,7 @@
   (throw-unknown-format format-k))
 
 (defmethod to-file :json [data _ location]
-  (dio/write-json-file (p/write-body-fn data) location))
+  (dio/write-json-file data location))
 
 ;; Write to stdout
 
@@ -220,7 +115,7 @@
   (throw-unknown-format format-k))
 
 (defmethod to-out :json [data _]
-  (dio/write-json-location (p/write-body-fn data) *out*))
+  (dio/write-json-location data *out*))
 
 ;; Write to stderr
 
@@ -230,7 +125,7 @@
   (throw-unknown-format format-k))
 
 (defmethod to-err :json [data _]
-  (dio/write-json-location (p/write-body-fn data) *err*))
+  (dio/write-json-location data *err*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input Validation

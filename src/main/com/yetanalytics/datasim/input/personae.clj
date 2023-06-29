@@ -2,7 +2,6 @@
   "Personae input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [com.yetanalytics.datasim.protocols   :as p]
             [com.yetanalytics.datasim.util        :as u]
             [com.yetanalytics.datasim.util.errors :as errs]
             [com.yetanalytics.datasim.util.xapi   :as xapiu]))
@@ -77,28 +76,3 @@
   [personae-array]
   (some->> (s/explain-data ::personae-array personae-array)
            (errs/explain-to-map-coll ::personae-array)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Record
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defrecord Personae [member
-                     objectType
-                     mbox
-                     mbox_sha1sum
-                     openid
-                     account]
-  p/FromInput
-  (validate [personae]
-    (validate-personae personae))
-
-  p/JSONRepresentable
-  (read-key-fn [_ k]
-    (keyword (name k)))
-  (read-body-fn [_ json-result]
-    (map->Personae
-     json-result))
-  (write-key-fn [_ k]
-    (name k))
-  (write-body-fn [personae]
-    (u/remove-nil-vals personae)))
