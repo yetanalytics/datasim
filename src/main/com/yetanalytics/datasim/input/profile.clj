@@ -1,8 +1,17 @@
 (ns com.yetanalytics.datasim.input.profile
   "Profile input parsing."
-  (:require [clojure.string       :as cstr]
+  (:require [clojure.spec.alpha   :as s]
+            [clojure.string       :as cstr]
             [com.yetanalytics.pan :as pan]
+            [com.yetanalytics.pan.objects.profile :as pan-profile]
             [com.yetanalytics.datasim.util.errors :as errs]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::profiles
+  (s/every ::pan-profile/profile :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Validation

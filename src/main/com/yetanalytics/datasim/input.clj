@@ -11,6 +11,9 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::profiles
+  ::profile/profiles)
+
 ;; This is our system:
 ;;   persona: a single Agent who is a member of a Group
 ;;   personae: a Group that contains one or more Agent, i.e. persona
@@ -29,7 +32,7 @@
   ::params/parameters)
 
 (s/def :com.yetanalytics.datasim/input
-  (s/keys :req-un [::profiles ; TODO: This spec isn't defined???
+  (s/keys :req-un [::profiles
                    ::personae-array
                    ::alignments
                    ::parameters]))
