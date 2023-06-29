@@ -26,7 +26,7 @@
 ;; alignments input vector, and the inner vector associated with each actor.
 ;; Find separate names for each.
 (s/def ::alignments
-  ::alignments/alignments-input)
+  ::alignments/alignment-vector)
 
 (s/def ::parameters
   ::params/parameters)

@@ -74,10 +74,6 @@
 (s/def ::alignment-vector
   (s/every ::actor-alignment))
 
-;; Alignment input
-(s/def ::alignments-input
-  (s/keys :req-un [::alignment-vector]))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Validation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
