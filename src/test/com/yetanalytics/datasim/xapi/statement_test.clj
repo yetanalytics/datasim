@@ -28,8 +28,7 @@
      (assoc acc component {:weight          weight
                            :object-override objectOverride}))
    {}
-   (get-in const/simple-input
-           [:alignments :alignment-vector 0 :alignments])))
+   (get-in const/simple-input [:alignments 0 :alignments])))
 
 (def profiles-map
   (profile/profiles->profile-map (:profiles const/simple-input)
