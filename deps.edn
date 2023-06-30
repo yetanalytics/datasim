@@ -10,6 +10,7 @@
          :exclusions [org.clojure/clojurescript
                       com.yetanalytics./xapi-schema]}
         com.yetanalytics/pathetic {:mvn/version "0.5.0"}
+        com.yetanalytics/schemer {:mvn/version "0.1.0"}
         clojure.java-time/clojure.java-time {:mvn/version "0.3.2"}
         org.apache.jena/jena-iri {:mvn/version "4.8.0"}
         org.clojure/test.check {:mvn/version "1.0.0"}

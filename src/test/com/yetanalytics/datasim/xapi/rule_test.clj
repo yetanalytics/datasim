@@ -5,8 +5,8 @@
             [cheshire.core      :as json]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.schemer             :as schemer]
             [com.yetanalytics.datasim.random      :as random]
-            [com.yetanalytics.datasim.json.schema :as jschema]
             [com.yetanalytics.datasim.xapi.path   :as xp]
             [com.yetanalytics.datasim.xapi.rule   :as r]
             [com.yetanalytics.datasim.test-constants :as const])
@@ -653,15 +653,15 @@
           (:generator (parse-rule-sub-valuegen {:location "$.object.actor.name"
                                               :presence "included"}))))))
   (testing "Add spec and generator (extensions)"
-    (is (= ::jschema/string
+    (is (= ::schemer/string
            (:spec (parse-rule-valuegen
                    {:location "$.object.definition.extensions['http://foo.org/activity-extension']"
                     :presence "included"}))))
-    (is (= ::jschema/integer
+    (is (= ::schemer/integer
            (:spec (parse-rule-valuegen
                    {:location "$.context.extensions['http://foo.org/context-extension']"
                     :presence "included"}))))
-    (is (= ::jschema/boolean
+    (is (= ::schemer/boolean
            (:spec (parse-rule-valuegen
                    {:location "$.result.extensions['http://foo.org/result-extension']"
                     :presence "included"}))))

@@ -7,13 +7,13 @@
             [clojure.test.check.generators  :as gen]
             [clojure.walk                   :as w]
             [xapi-schema.spec               :as xs]
+            [com.yetanalytics.schemer       :as schemer]
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
             [com.yetanalytics.datasim.json      :as j]
             [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.random    :as random]
-            [com.yetanalytics.datasim.json.schema :as jschema]))
+            [com.yetanalytics.datasim.random    :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -293,7 +293,7 @@
   (let [act-iri-map (get type-iri-map "ActivityExtension")
         ctx-iri-map (get type-iri-map "ContextExtension")
         res-iri-map (get type-iri-map "ResultExtension")
-        ext->spec   #(some->> % :inlineSchema (jschema/schema->spec nil))]
+        ext->spec   #(some->> % :inlineSchema (schemer/schema->spec nil))]
     (or (some->> extension-id (get act-iri-map) ext->spec)
         (some->> extension-id (get ctx-iri-map) ext->spec)
         (some->> extension-id (get res-iri-map) ext->spec)
