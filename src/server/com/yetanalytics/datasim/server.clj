@@ -15,7 +15,7 @@
             [environ.core                           :refer [env]]
             [com.yetanalytics.datasim.sim           :as sim]
             [com.yetanalytics.datasim.input         :as sinput]
-            [com.yetanalytics.datasim.xapi.client   :as xapi-client]
+            [com.yetanalytics.datasim.client   :as xapi-client]
             [com.yetanalytics.pan.objects.profile   :as pan-prof]
             [com.yetanalytics.pan.objects.pattern   :as pan-pat]
             [com.yetanalytics.pan.errors            :as errors]

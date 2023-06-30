@@ -7,7 +7,7 @@
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.runtime :as runtime]
             [com.yetanalytics.datasim.sim :as sim]
-            [com.yetanalytics.datasim.xapi.client :as http]
+            [com.yetanalytics.datasim.client :as http]
             [clojure.pprint :refer [pprint]])
   (:import [java.util Random])
   (:gen-class))

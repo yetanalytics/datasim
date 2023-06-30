@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.xapi.client
+(ns com.yetanalytics.datasim.client
   "Simple xAPI LRS client fns"
   (:require
    [clojure.java.io :as io]
