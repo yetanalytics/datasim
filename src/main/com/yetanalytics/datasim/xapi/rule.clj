@@ -11,9 +11,9 @@
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
-            [com.yetanalytics.datasim.json      :as j]
-            [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.random    :as random]))
+            [com.yetanalytics.datasim.json        :as j]
+            [com.yetanalytics.datasim.xapi.path   :as xp]
+            [com.yetanalytics.datasim.math.random :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs

@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.random-test
   (:require [clojure.test :refer [deftest is]]
             [clojure.spec.test.alpha :as stest]
-            [com.yetanalytics.datasim.random :as r]))
+            [com.yetanalytics.datasim.math.random :as r]))
 
 (deftest random-functions-test
   (let [results (stest/check

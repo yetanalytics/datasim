@@ -4,7 +4,7 @@
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.iri            :as iri]
-            [com.yetanalytics.datasim.random         :as random]
+            [com.yetanalytics.datasim.math.random    :as random]
             [com.yetanalytics.datasim.xapi.statement :as stmt]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

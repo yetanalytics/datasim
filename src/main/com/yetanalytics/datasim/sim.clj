@@ -5,7 +5,7 @@
             [clojure.core.async.impl.protocols :as ap]
             [java-time        :as t]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.random         :as random]
+            [com.yetanalytics.datasim.math.random    :as random]
             [com.yetanalytics.datasim.timeseries     :as ts]
             [com.yetanalytics.datasim.xapi           :as xapi]
             [com.yetanalytics.datasim.xapi.profile   :as p]

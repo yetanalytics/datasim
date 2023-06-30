@@ -4,7 +4,7 @@
   (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
             [java-time              :as t]
-            [com.yetanalytics.datasim.random :as random]))
+            [com.yetanalytics.datasim.math.random :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ARMA (AutoRegressive Moving Average) Sequences

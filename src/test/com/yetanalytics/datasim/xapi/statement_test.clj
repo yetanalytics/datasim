@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.test-constants :as const]))

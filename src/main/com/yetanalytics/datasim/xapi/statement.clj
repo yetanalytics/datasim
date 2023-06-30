@@ -6,7 +6,7 @@
             [clojure.walk :as w]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.math.random  :as random]
             [com.yetanalytics.datasim.input] ; for input spec
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.xapi.path :as xp]

@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.random
+(ns com.yetanalytics.datasim.math.random
   "Seeded random functions"
   (:require [com.yetanalytics.datasim.util.maths :as maths]
             [clojure.spec.alpha :as s]

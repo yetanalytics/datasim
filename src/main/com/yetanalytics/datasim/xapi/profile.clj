@@ -6,7 +6,7 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.random :as random]
+            [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.pan.objects.concept :as concept]
             [com.yetanalytics.pan.objects.pattern :as pattern]
