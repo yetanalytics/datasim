@@ -2,8 +2,8 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.data.json :as json]
             [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.datasim.input.profile :as profile]
-            [com.yetanalytics.datasim.io :as dio]
+            [com.yetanalytics.datasim.input.profile  :as profile]
+            [com.yetanalytics.datasim.util.io        :as dio]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [java.io File]))
 

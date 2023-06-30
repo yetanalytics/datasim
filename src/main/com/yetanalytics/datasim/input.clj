@@ -5,7 +5,7 @@
             [com.yetanalytics.datasim.input.personae   :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.io               :as dio]))
+            [com.yetanalytics.datasim.util.io          :as dio]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
