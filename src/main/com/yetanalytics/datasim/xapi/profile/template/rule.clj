@@ -1,10 +1,11 @@
 (ns com.yetanalytics.datasim.xapi.profile.template.rule
   "Apply statement template rules for generation"
-  (:require [clojure.core.memoize          :as memo]
-            [clojure.set                   :as cset]
-            [clojure.string                :as cstr]
-            [clojure.spec.alpha            :as s]
-            [clojure.test.check.generators :as gen]
+  (:require [clojure.core.memoize           :as memo]
+            [clojure.set                    :as cset]
+            [clojure.string                 :as cstr]
+            [clojure.spec.alpha             :as s]
+            [clojure.test.check.generators  :as gen]
+            [clojure.walk                   :as w]
             [xapi-schema.spec               :as xs]
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
@@ -288,12 +289,15 @@
 
 ;; TODO: Distinguish between activity, context, and result extensions
 (defn- extension-spec
-  [iri-map extension-id spec]
-  (or (some->> extension-id
-               (get iri-map)
-               :inlineSchema
-               (jschema/schema->spec nil))
-      spec))
+  [type-iri-map extension-id spec]
+  (let [act-iri-map (get type-iri-map "ActivityExtension")
+        ctx-iri-map (get type-iri-map "ContextExtension")
+        res-iri-map (get type-iri-map "ResultExtension")
+        ext->spec   #(some->> % :inlineSchema (jschema/schema->spec nil))]
+    (or (some->> extension-id (get act-iri-map) ext->spec)
+        (some->> extension-id (get ctx-iri-map) ext->spec)
+        (some->> extension-id (get res-iri-map) ext->spec)
+        spec)))
 
 (defn- spec-generator [spec]
   (try (s/gen spec)
@@ -328,6 +332,30 @@
         (and (not valueset)
              (not ?all-set))
         (assoc :generator (spec-generator spec*))))))
+
+;; TODO: Move to common util namespace
+(defn- profile->statement-verb
+  [{:keys [id prefLabel]}]
+  {"id"      id
+   "display" (w/stringify-keys prefLabel)})
+
+(defn add-rules-valuegen
+  "Use information from `iri-map` and `activities` maps, to complete the
+   `parsed-rules` by adding additional valuesets or spec generators."
+  [type-iri-map activity-map parsed-rules]
+  (let [iri-verb-map   (get type-iri-map "Verb")
+        verbs          (->> iri-verb-map vals (map profile->statement-verb) set)
+        verb-ids       (->> iri-verb-map keys set)
+        activities     (->> activity-map vals (mapcat vals) set)
+        activity-ids   (->> activity-map vals (mapcat keys) set)
+        activity-types (->> activity-map keys set)
+        value-sets     {:verbs          verbs
+                        :verb-ids       verb-ids
+                        :activities     activities
+                        :activity-ids   activity-ids
+                        :activity-types activity-types}]
+    (mapv (partial add-rule-valuegen type-iri-map value-sets)
+          parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Follow

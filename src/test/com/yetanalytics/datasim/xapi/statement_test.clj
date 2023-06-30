@@ -6,7 +6,6 @@
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
             [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.xapi.activity :as activity]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;; FIXME: generate-statement will still generate statements with blatantly contradictory rules,
@@ -20,17 +19,8 @@
 
 (def top-seed 42)
 
-(def profile-iri-map
-  (-> const/simple-input :profiles profile/profiles->map))
-
-(def activities
-  (-> const/simple-input (activity/derive-cosmos 100)))
-
 (def actor
   (-> const/simple-input :personae-array first :member first (dissoc :role)))
-
-(def alignments*
-  (-> const/simple-input (get-in [:alignments :alignment-vector 0 :alignments])))
 
 (def alignments
   (reduce
@@ -38,10 +28,18 @@
      (assoc acc component {:weight          weight
                            :object-override objectOverride}))
    {}
-   alignments*))
+   (get-in const/simple-input
+           [:alignments :alignment-vector 0 :alignments])))
 
-(def template
-  (get profile-iri-map "https://w3id.org/xapi/cmi5#satisfied"))
+(def profiles-map
+  (profile/profiles->profile-map (:profiles const/simple-input)
+                                 (:parameters const/simple-input)
+                                 100))
+
+(def default-template
+  (get-in profiles-map [:type-iri-map
+                        "StatementTemplate"
+                        "https://w3id.org/xapi/cmi5#satisfied"]))
 
 (def pattern-ancestors
   [{:id      "https://w3id.org/xapi/cmi5#toplevel"
@@ -52,17 +50,15 @@
 (def registration
   "01234567-0000-4000-8000-123456789012")
 
-(def valid-args
-  {:input             const/simple-input
-   :iri-map           profile-iri-map
-   :activities        activities
-   :actor             actor
-   :alignment         alignments
-   :sim-t             0
-   :seed              top-seed #_(random/rand-long top-rng)
-   :template          template
-   :pattern-ancestors pattern-ancestors
-   :registration      registration})
+(def arguments
+  (merge profiles-map
+         {:actor             actor
+          :alignment         alignments
+          :sim-t             0
+          :seed              top-seed
+          :template          default-template
+          :pattern-ancestors pattern-ancestors
+          :registration      registration}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
@@ -73,7 +69,7 @@
        (merge {:id       "https://template-1"
                :type     "StatementTemplate"
                :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
-       (assoc valid-args :template)
+       (assoc arguments :template)
        generate-statement))
 
 (defn- statement-inputs? [statement]
@@ -123,7 +119,7 @@
                   (get-in statement ["actor" "mbox"]))))))
   
   ;; Verb 
-  
+
   (testing "Template specifies Verb"
     (testing "ID property"
       (let [statement
@@ -245,7 +241,7 @@
              {:objectActivityType "https://w3id.org/xapi/cmi5/activitytype/course"})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1550503926"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
@@ -256,7 +252,7 @@
                        :all      ["https://w3id.org/xapi/cmi5/activitytype/course"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1550503926"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
@@ -269,7 +265,7 @@
                        :any      ["Activity"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1550503926"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "objectType" "Activity"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
@@ -278,10 +274,10 @@
       (let [statement
             (gen-statement
              {:rules [{:location "$.object.id"
-                       :all      ["https://example.org/course/1550503926"]}]})]
+                       :all      ["https://example.org/course/1432714272"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1550503926"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
@@ -319,12 +315,12 @@
       (let [statement
             (gen-statement
              {:rules [{:location "$.object.id"
-                       :all      ["https://example.org/course/1550503926"]}
+                       :all      ["https://example.org/course/1432714272"]}
                       {:location "$.object.objectType"
                        :any      ["Activity"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1550503926"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "objectType" "Activity"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
@@ -336,8 +332,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/block/1432714272"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}
+        (is (= {"id"         "https://example.org/block/1550503926"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}
                (get statement "object")))))
 
     (testing "ID inclusion only"
@@ -347,8 +343,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/418707894"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}
+        (is (= {"id"         "https://example.org/course/1432714272"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
     (testing "activity type inclusion only"
@@ -358,7 +354,7 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1550503926"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object"))))))
 
@@ -616,7 +612,7 @@
         ;; chosen (since "Activity" is present in `any`) but the objectType
         ;; was separately and randomly chosen from `any`
         (is (not (s/valid? ::xs/statement statement)))
-        (is (= {"id"         "https://example.org/course/418707894"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "objectType" "StatementRef"}
                (get statement "object")))))
 
@@ -648,10 +644,10 @@
         (is (= {"objectType" "SubStatement"
                 "actor"      {"name" "Bob Fakename"
                               "mbox" "mailto:bobfake@example.org"}
-                "verb"       {"id" "https://w3id.org/xapi/adl/verbs/waived"
-                              "display" {"en" "waived"}}
-                "object"     {"id" "https://example.org/course/1550503926"
-                              "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}}
+                "verb"       {"id" "https://w3id.org/xapi/adl/verbs/abandoned"
+                              "display" {"en" "abandoned"}}
+                "object"     {"id"         "https://example.org/block/1550503926"
+                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}}
                (get statement "object")))))
 
     (testing "objectType + Activity object"
@@ -662,7 +658,7 @@
                        :any      ["SubStatement"]}
                       {:location "$.object.object.id"
                        :presence "included"
-                       :any      ["https://example.org/block/1432714272"]}
+                       :any      ["https://example.org/course/1432714272"]}
                       {:location "$.object.object.objectType"
                        :presence "included"
                        :any      ["Activity"]}]})]
@@ -670,9 +666,9 @@
         (is (statement-inputs? statement))
         (is (= "SubStatement"
                (get-in statement ["object" "objectType"])))
-        (is (= {"id"         "https://example.org/block/1432714272"
+        (is (= {"id"         "https://example.org/course/1432714272"
                 "objectType" "Activity"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get-in statement ["object" "object"])))))
 
     (testing "Agent object"
@@ -795,14 +791,13 @@
               ["https://w3id.org/xapi/cmi5/activities/block"]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"category" [{"id" "https://example.org/course/1550503926"
-                             "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
-                            {"id" "https://w3id.org/xapi/cmi5/v1.0"}]
+        (is (= {"category" [{"id" "https://example.org/course/1432714272"
+                             "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}} {"id" "https://w3id.org/xapi/cmi5/v1.0"}]
                 "grouping" [{"id" "https://example.org/course/418707894"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}]
-                "parent"   [{"id" "https://example.org/block/1432714272"
+                "parent"   [{"id" "https://example.org/block/1671689032"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}]
-                "other"    [{"id" "https://example.org/block/1671689032"
+                "other"    [{"id" "https://example.org/block/1550503926"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}]}
                (get-in statement ["context" "contextActivities"])))))
 
@@ -1027,7 +1022,7 @@
 
 (defn- gen-statement-override [object-override partial-template]
   (let [valid-args*
-        (-> valid-args
+        (-> arguments
             (assoc-in [:alignment "https://example.org/activity/a" :object-override]
                       object-override)
             (update-in [:alignment] dissoc "https://example.org/activity/c"))]
@@ -1124,7 +1119,7 @@
              "https://example.org/activity/c"
              {:weight 0.5, :object-override override-2}}
             statement
-            (generate-statement (assoc valid-args
+            (generate-statement (assoc arguments
                                        :alignment alignments
                                        :template  {:id       "https://template-1"
                                                    :type     "StatementTemplate"
@@ -1152,7 +1147,7 @@
              "https://example.org/activity/c"
              {:weight 1.0, :object-override override-2}}
             statement
-            (generate-statement (assoc valid-args
+            (generate-statement (assoc arguments
                                        :alignment alignments
                                        :template  {:id       "https://template-1"
                                                    :type     "StatementTemplate"
@@ -1166,11 +1161,11 @@
   (testing "Statement generation is valid regardless of seed"
     (let [the-rng (random/seed-rng top-seed)]
       (is (->> #(generate-statement
-                 (assoc valid-args :seed (random/rand-int* the-rng 1000)))
+                 (assoc arguments :seed (random/rand-int* the-rng 1000)))
                (repeatedly 30)
                (every? #(s/valid? ::xs/statement %))))))
   (testing "Statement generation is deterministic"
-    (is (->> #(generate-statement valid-args)
+    (is (->> #(generate-statement arguments)
              (repeatedly 100)
              (apply distinct?)
              not))))

@@ -9,7 +9,6 @@
             [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.input] ; for input spec
             [com.yetanalytics.datasim.input.alignments :as alignments]
-            [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.xapi.path :as xp]
             [com.yetanalytics.datasim.xapi.profile.template.rule :as rule])
   (:import [java.time Instant]))
@@ -20,15 +19,22 @@
 
 ;; Inputs
 
-;; Input for the whole simulation.
-(s/def ::input :com.yetanalytics.datasim/input)
+;; TODO: Consolidate some of these specs with those in `xapi.profile`
 
-;; Flat map of profile iris to objects
-(s/def ::iri-map ::profile/iri-map)
+;; Map of profile types -> IDs -> objects
+;; TODO: Real specs
+(s/def ::type-iri-map
+  (s/map-of string? (s/map-of string? map?)))
+
+(s/def ::statement-base-map
+  (s/map-of ::template/id map?))
+
+(s/def ::parsed-rules-map
+  (s/map-of ::template/id ::rule/parsed-rule))
 
 ;; All the activities we can use, by activity type:
 ;; a map of activity type IRIs to activity IRIs to activities
-(s/def ::activities
+(s/def ::activity-map
   (s/map-of ::xs/iri
             (s/map-of ::xs/iri
                       ::xs/activity)))
@@ -67,16 +73,17 @@
   any?) ; TODO: replace `any?` with real spec
 
 (s/def ::inputs
-  (s/keys :req-un [::input
-                   ::iri-map
-                   ::activities
+  (s/keys :req-un [::type-iri-map
+                   ::activity-map
+                   ::statement-base-map
+                   ::parsed-rules-map
                    ::actor
                    ::alignment
                    ::template
                    ::pattern-ancestors
-                   ::sim-t
                    ::seed
-                   ::registration]
+                   ::registration
+                   ::sim-t]
           :opt-un [::sub-registration]))
 
 ;; Metadata
@@ -125,7 +132,11 @@
   [attachment-usage-type]
   {"usageType" attachment-usage-type})
 
-(defn- template->base-statement
+(s/fdef template->statement-base
+  :args (s/cat :template ::template/template)
+  :ret map?)
+
+(defn template->statement-base
   "Form the base of a statement from the Determining Properties of
    the Template. Elements of array-valued properties (the context
    activity types and the attachment usage types) are added in order."
@@ -177,35 +188,48 @@
 ;; Statement Rule Application
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- template-rules
+(s/fdef template->parsed-rules
+  :args (s/cat :type-iri-map ::type-iri-map
+               :activity-map ::activity-map
+               :template     ::template/template)
+  :ret (s/every ::rule/parsed-rule))
+
+(defn template->parsed-rules
   "Return a collection of parsed rules derived from the template `rules`.
-   Uses information from `iri-map` and `activities` maps, as well as from
-   object-related Determining Properties, to complete the parsed rules."
-  [iri-map
-   activities
-   {object-activity-type :objectActivityType
+   Uses the object Determining Properties to assist with rule parsing."
+  [{object-activity-type :objectActivityType
     object-statement-ref :objectStatementRefTemplate
-    profile-id           :inScheme
     rules                :rules}]
-  (let [parsed-rules   (cond
-                         object-activity-type
-                         (rule/parse-rules :activity-type rules)
-                         object-statement-ref
-                         (rule/parse-rules :statement-ref rules)
-                         :else
-                         (rule/parse-rules rules))
-        ;; TODO: More efficient data structures
-        verbs          (->> iri-map vals (filter #(= "Verb" (:type %))) (map profile->statement-verb) set)
-        verb-ids       (->> verbs (map #(get % "id")) set)
-        activityies    (->> activities vals (mapcat vals) set #_(into #{{"id" profile-id}}))
-        activity-ids   (->> activities vals (mapcat keys) set #_(into #{profile-id}))
-        activity-types (->> activities keys set)
+  (cond
+    object-activity-type
+    (rule/parse-rules :activity-type rules)
+    object-statement-ref
+    (rule/parse-rules :statement-ref rules)
+    :else
+    (rule/parse-rules rules)))
+
+(s/fdef update-parsed-rules
+  :args (s/cat :type-iri-map ::type-iri-map
+               :activity-map ::activity-map
+               :parsed-rules (s/every ::rule/parsed-rule))
+  :ret (s/every ::rule/parsed-rule))
+
+(defn update-parsed-rules
+  "Use information from `iri-map` and `activities` maps, to complete the
+   `parsed-rules` by adding additional valuesets or spec generators."
+  [type-iri-map activity-map parsed-rules]
+  (let [iri-verb-map   (get type-iri-map "Verb")
+        verbs          (->> iri-verb-map vals (map profile->statement-verb) set)
+        verb-ids       (->> iri-verb-map keys set)
+        activities     (->> activity-map vals (mapcat vals) set)
+        activity-ids   (->> activity-map vals (mapcat keys) set)
+        activity-types (->> activity-map keys set)
         value-sets     {:verbs          verbs
                         :verb-ids       verb-ids
-                        :activities     activityies
+                        :activities     activities
                         :activity-ids   activity-ids
                         :activity-types activity-types}]
-    (mapv (partial rule/add-rule-valuegen iri-map value-sets)
+    (mapv (partial rule/add-rule-valuegen type-iri-map value-sets)
           parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -234,18 +258,19 @@
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
-               :inputs (s/keys :req-un [::profile/iri-map ::alignment])
+               :inputs (s/keys :req-un [::type-iri-map ::alignment])
                :rng    ::random/rng)
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{:strs [id] :as verb} {:keys [iri-map alignment]} rng]
-  (let [return-verb (fn [_] verb)
+  [{:strs [id] :as verb} {:keys [type-iri-map alignment]} rng]
+  (let [iri-map     (get type-iri-map "Verb")
+        return-verb (fn [_] verb)
         merge-verb  (fn [v] (merge-nested v verb))]
     (or
      ;; Verb found by ID
      (some->> id
-              (get iri-map)
+              iri-map
               profile->statement-verb
               merge-verb)
      ;; Verb w/ ID not found, return as-is
@@ -257,9 +282,7 @@
               merge-verb)
      ;; Choose random verb
      (some->> iri-map
-              vals
-              (filter #(= "Verb" (:type %)))
-              (map :id)
+              keys
               (random/choose rng alignment)
               (get iri-map)
               profile->statement-verb))))
@@ -274,28 +297,28 @@
 
 (s/fdef complete-activity
   :args (s/cat :activity (s/nilable map?)
-               :inputs   (s/keys :req-un [::activities ::alignment])
+               :inputs   (s/keys :req-un [::activity-map ::alignment])
                :rng      ::random/rng)
   :ret ::xs/activity)
 
 (defn complete-activity
   [{:strs [id] {:strs [type]} "definition" :as activity}
-   {:keys [activities alignment]}
+   {:keys [activity-map alignment]}
    rng]
   (let [return-activity (fn [_] activity)
         merge-activity  (fn [a] (merge-nested a activity))]
     (or
      ;; Get activity by ID
      (some->> id
-              (get (reduce merge {} (vals activities)))
+              (get (reduce merge {} (vals activity-map)))
               merge-activity)
      ;; Get activity by type
      (some->> type
-              (get activities)
+              (get activity-map)
               keys
               (random/choose rng alignment)
               (conj [type])
-              (get-in activities)
+              (get-in activity-map)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
      (some->> id
@@ -305,13 +328,13 @@
               (generate-activity rng)
               merge-activity)
      ;; Choose random activity
-     (some->> activities
+     (some->> activity-map
               keys
               (random/choose rng alignment)
-              (get activities)
+              (get activity-map)
               keys
               (random/choose rng alignment)
-              (get (reduce merge {} (vals activities)))))))
+              (get (reduce merge {} (vals activity-map)))))))
 
 ;; Agents ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -400,7 +423,7 @@
 
 (s/fdef complete-context
   :args (s/cat :context (s/nilable map?)
-               :inputs  (s/keys :req-un [::activities ::alignment])
+               :inputs  (s/keys :req-un [::activity-map ::alignment])
                :rng     ::random/rng)
   :ret ::xs/context)
 
@@ -501,8 +524,8 @@
 
 (s/fdef complete-sub-statement
   :args (s/cat :sub-statement map?
-               :inputs (s/keys :req-un [::profile/iri-map
-                                        ::activities
+               :inputs (s/keys :req-un [::type-iri-map
+                                        ::activity-map
                                         ::alignment])
                :rng ::random/rng)
   :ret ::xs/sub-statement)
@@ -550,8 +573,8 @@
 
 (s/fdef complete-statement
   :args (s/cat :statement map?
-               :inputs (s/keys :req-un [::profile/iri-map
-                                        ::activities
+               :inputs (s/keys :req-un [::type-iri-map
+                                        ::activity-map
                                         ::alignment])
                :rng ::random/rng)
   :ret ::xs/statement)
@@ -602,15 +625,8 @@
 ;; Statement Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: Add duration ms in the meta?
 (defn- statement-meta
-  "Return a map of statement metadata, consisting of a map of the following:
-   - `:end-ms`: The time (in milliseconds since the epoch) after which the
-     actor can continue the activity.
-   - `timestamp-ms: The time of the timestamp (in milliseconds since the epoch).
-     Note that it just has to be greater that `sim-t` and less than or equal
-     to `end-ms`; for the stub we just make it `sim-t`.
-   - `:template`: The template used to generate the statement, which will be
-     useful for a bunch of things."
   [template sim-t rng]
   {:end-ms       (end-time-ms sim-t rng)
    :timestamp-ms sim-t
@@ -625,24 +641,56 @@
 ;; TODO: ERROR/WARNING if generated statement fails spec (e.g. a required
 ;; property is excluded)
 (defn generate-statement
+  "Generate a single xAPI Statement. The `inputs` map accepts the following
+   map arguments:
+   
+   | Argument | Description
+   | ---      | ---
+   | `type-iri-map`       | A map from Profile object types to IDs to the object maps.
+   | `activity-map`       | A map from Activity Type IDs to Activity IDs to the Activity maps.
+   | `statement-base-map` | A map from Template IDs to the Statement base created using `template->statement-base`.
+   | `parsed-rules-map`   | A map from Template IDs to its parsed rules parsed using `template->parsed-rules`.
+   | `actor`              | The Actor used in the Statement.
+   | `alignment`          | The alignment map used for choosing Statement elements.
+   | `template`           | The Template used to generate this Statement.
+   | `registration`       | The registration UUID for the overall generated Statement sequence.
+   | `seed`               | The seed used to generate random numbers during generation.
+   | `pattern-ancestors`  | The coll of Patterns visited en route to `template`.
+   | `sub-registration`   | (NOT YET IMPLEMENTED) The sub-registration object of the Statement.
+   | `sim-t`              | The time (in ms) of this simulation.
+   
+   Returns a Statement with a map of the following as metadata:
+
+   | Metadata       | Description
+   | ---            | ---
+   | `end-ms`       | The time (in epoch ms) after which the `actor` can continue.
+   | `timestamp-ms` | The time of the timestamp (in epoch ms). It must be `> sim-t` and `<= end-ms`; for simplicity we just make it `sim-t`.
+   | `template`     | The Template used to generate this Statement"
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
-  [{{:keys [profiles]} :input
-    iri-map            :iri-map
-    activities         :activities
-    actor              :actor
-    alignment          :alignment
-    sim-t              :sim-t
-    seed               :seed
-    template           :template
-    pattern-ancestors  :pattern-ancestors
-    registration       :registration
-    ?sub-registration  :sub-registration
+  [{:keys [type-iri-map
+           activity-map
+           statement-base-map
+           parsed-rules-map
+           actor
+           alignment
+           template
+           seed
+           pattern-ancestors
+           registration
+           sub-registration
+           sim-t]
     :as inputs}]
-  (let [;; Prep
-        ;; TODO: Precompile these two so that they don't happen on
-        ;; every statement gen
-        template-base  (template->base-statement template)
-        template-rules (template-rules iri-map activities template)
+  (let [;; Template Prep
+        template-id
+        (:id template)
+        template-base
+        (or (get statement-base-map template-id)
+            (template->statement-base template))
+        template-rules
+        (or (get parsed-rules-map template-id)
+            (->> template
+                 template->parsed-rules
+                 (rule/add-rules-valuegen type-iri-map activity-map)))
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng alignment)

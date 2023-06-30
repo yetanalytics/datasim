@@ -1,8 +1,9 @@
 (ns com.yetanalytics.datasim.sim-test
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.sim :refer [build-skeleton sim-seq]]
+            [com.yetanalytics.datasim.sim :as sim :refer [build-skeleton sim-seq]]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -187,3 +188,14 @@
                "mailto:sally@example.org"
                "mailto:steve@example.org"}
              (set ids))))))
+
+(deftest sim-chan-test
+  (testing "async statement gen produces valid statements"
+    (let [agent-chan (-> const/simple-input sim/sim-chans (get alice-mbox))
+          async-res  (a/<!! (a/into [] agent-chan))]
+      (is (s/valid? (s/every ::xs/statement) async-res))))
+  (testing "sync vs async statement gen has same result"
+    (let [input     const/simple-input
+          sync-res  (->> input sim/sim-seq)
+          async-res (->> input sim/sim-chan (a/into []) a/<!!)]
+      (is (= sync-res async-res)))))
