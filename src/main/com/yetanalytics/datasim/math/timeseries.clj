@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.timeseries
+(ns com.yetanalytics.datasim.math.timeseries
   "Timeseries namespaces; all timeseries are lazy, potentially infinite
    sequences of numeric values."
   (:require [clojure.spec.alpha     :as s]

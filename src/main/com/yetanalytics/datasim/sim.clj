@@ -5,15 +5,15 @@
             [clojure.core.async.impl.protocols :as ap]
             [java-time        :as t]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.math.random    :as random]
-            [com.yetanalytics.datasim.timeseries     :as ts]
-            [com.yetanalytics.datasim.xapi           :as xapi]
-            [com.yetanalytics.datasim.xapi.profile   :as p]
-            [com.yetanalytics.datasim.xapi.statement :as statement]
-            [com.yetanalytics.datasim.util.xapi      :as xapiu]
-            [com.yetanalytics.datasim.util.maths     :as maths]
-            [com.yetanalytics.datasim.util.sequence  :as su]
-            [com.yetanalytics.datasim.util.async     :as au])
+            [com.yetanalytics.datasim.math.random     :as random]
+            [com.yetanalytics.datasim.math.timeseries :as ts]
+            [com.yetanalytics.datasim.xapi            :as xapi]
+            [com.yetanalytics.datasim.xapi.profile    :as p]
+            [com.yetanalytics.datasim.xapi.statement  :as statement]
+            [com.yetanalytics.datasim.util.xapi       :as xapiu]
+            [com.yetanalytics.datasim.util.maths      :as maths]
+            [com.yetanalytics.datasim.util.sequence   :as su]
+            [com.yetanalytics.datasim.util.async      :as au])
   (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
