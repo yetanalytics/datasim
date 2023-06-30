@@ -24,7 +24,8 @@
         :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
                      incanter/incanter-charts {:mvn/version "1.9.3"}
                      criterium/criterium {:mvn/version "0.4.5"}}}
-  :test {:extra-paths ["src/test"]}
+  :test {:extra-paths ["src/test"]
+         :extra-deps {same/ish {:mvn/version "0.1.6"}}}
   :runner
   {:extra-deps {com.cognitect/test-runner
                 {:git/url "https://github.com/cognitect-labs/test-runner"

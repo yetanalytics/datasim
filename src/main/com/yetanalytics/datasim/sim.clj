@@ -268,20 +268,20 @@
         t-start     (timestamp->millis start)
         ?t-from     (some-> ?from-stamp timestamp->millis)
         ?t-end      (some-> end timestamp->millis)
-        ?sample-n   (some-> ?t-end (- t-start))
+        ?sample-ms  (some-> ?t-end (- t-start))
         ;; Derive the actor event probability mask sequence.
         {:keys
-         [day-night-seq
-          min-seq
-          mod-seq]}     (ts/time-seqs :t-zero t-start
-                                      :sample-n ?sample-n
-                                      :zone zone-region)
+         [minute-ms-seq
+          minute-of-day-seq
+          minute-day-night-seq]} (ts/time-seqs :t-zero t-start
+                                               :sample-ms ?sample-ms
+                                               :zone zone-region)
         mask-arma-seed  (random/rand-long sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
-                                                       day-night-seq
-                                                       mod-seq)
-        ;; Derive actor seqs and maps
+                                                       minute-day-night-seq
+                                                       minute-of-day-seq)
+        ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
         ;; Derive profiles map
@@ -305,7 +305,7 @@
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
-                  actor-prob-seq  (map vector min-seq actor-prob-seq*)
+                  actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
                   actor-reg-seed  (random/rand-long sim-rng)
                   actor-reg-seq   (p/registration-seq (:type-iri-map profiles-map)
@@ -516,36 +516,3 @@
   (xapiu/agent-id {:name "Bob Fakename"
                    :mbox "mailto:bob@example.org"
                    :role "Lead Developer"}))
-
-(comment
-  ;; incanter is available if the :dev alias is present
-  (require '[incanter.core :as core])
-  (require '[incanter.charts :as chart])
-  
-  (def time-seqs
-    (ts/time-seqs :t-zero (.toEpochMilli (java.time.Instant/now))))
-  
-  (def prob-mask-arma-seq
-    (arma-seq 100))
-  
-  (def prob-mask-seq
-    (arma-time-seqs->prob-mask-seq prob-mask-arma-seq
-                                   (:day-night-seq time-seqs)
-                                   (:mod-seq time-seqs))) 
-  
-  (def prob-seq
-    (arma-mask-seqs->prob-seq (arma-seq 120) prob-mask-seq))
-
-  ;; Graphs should show a approximately sinusoidal pattern; graphing
-  ;; `prob-seq` should show how probabilities are zero during the night
-  ;; and the lunch hour, while varying sinusoidally during the rest of
-  ;; the day.
-
-  (core/view
-   (chart/line-chart (range 2000)
-                     (take 2000 prob-mask-seq)))
-  
-  (core/view
-   (chart/line-chart (range 2000)
-                     (take 2000 prob-seq)))
-  )
