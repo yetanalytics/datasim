@@ -3,7 +3,6 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
             [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.random :as random]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -15,39 +14,15 @@
 (def tla-id "https://w3id.org/xapi/tla")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Basic Tests
+;; Profile Map Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(deftest profiles->map-test
-  (testing "profiles->map function"
-    (is (s/valid? ::profile/iri-map
-                  (profile/profiles->map (:profiles const/simple-input))))))
-
-(deftest pattern-zip-test
-  (testing "pattern-zip function"
-    (is (= '(:zip/branch? :zip/children :zip/make-node ::profile/iri-map)
-           (-> const/simple-input
-               :profiles
-               profile/profiles->map
-               profile/pattern-zip
-               meta
-               keys)))
-    (is (s/valid? ::profile/iri-map
-                  (-> const/simple-input
-                      :profiles
-                      profile/profiles->map
-                      profile/pattern-zip
-                      profile/loc-iri-map
-                      (dissoc ::profile/root))))
-    (is (= {:id         ::profile/root
-            :type       "Pattern"
-            :alternates [cmi5-pattern-id]}
-           (-> const/simple-input
-               :profiles
-               profile/profiles->map
-               profile/pattern-zip
-               profile/loc-iri-map
-               ::profile/root)))))
+(deftest profile->type-iri-map-test
+  (testing "profiles->type-iri-map function"
+    (is (->> const/simple-input
+             :profiles
+             profile/profiles->type-iri-map
+             (s/valid? ::profile/type-iri-map)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; cmi5 profile primary pattern
@@ -166,26 +141,43 @@
   (s/cat :satisfieds cmi5-satisfieds?
          :typical-sessions cmi5-typical-sessions?))
 
-(s/fdef gen-single-walk
+(s/fdef gen-reg-seq-instance
   :args (s/cat :seed int?)
-  :ret cmi5-general-pattern?)
+  :ret (s/and cmi5-general-pattern?))
 
-(defn gen-single-walk [seed]
+(defn gen-reg-seq-instance [seed]
   (let [{:keys [profiles alignments]} const/simple-input
-        profile-map (profile/profiles->map profiles)
-        seeded-rng  (random/seed-rng seed)]
-    (->> (profile/rand-pattern-zip profile-map
-                                   alignments
-                                   seeded-rng)
-         profile/walk-once
-         (keep (fn [loc]
-                 (let [{obj-type :type :as loc-obj} (profile/loc-object loc)]
-                   (when (= "StatementTemplate" obj-type) loc-obj)))))))
+        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
+                         (reduce (fn [m {:keys [component] :as align}]
+                                   (assoc m component align))
+                                 {}))
+        profile-map (profile/profiles->type-iri-map profiles)]
+    (->> (profile/registration-seq-instance profile-map alignment seed)
+         (map :template))))
 
-(deftest zip-walk-test
-  (testing "rand-pattern-zip followed by walk-once"
+(s/fdef gen-registration-seq
+  :args (s/cat :seed int? :limit int?)
+  :ret (s/every ::profile/registration-map
+                :kind #(instance? clojure.lang.LazySeq %)))
+
+(defn- gen-registration-seq [seed limit]
+  (let [{:keys [profiles alignments]} const/simple-input
+        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
+                         (reduce (fn [m {:keys [component] :as align}]
+                                   (assoc m component align))
+                                 {}))
+        profile-map (profile/profiles->type-iri-map profiles)]
+    (->> (profile/registration-seq profile-map alignment seed)
+         (take limit))))
+
+(deftest registration-seq-test
+  (testing "Walk and generate seq for a single pattern"
     (let [{total :total check-passed :check-passed}
-          (stest/summarize-results (stest/check `gen-single-walk))]
+          (stest/summarize-results (stest/check `gen-reg-seq-instance))]
+      (is (= total check-passed))))
+  (testing "Walk and generate seq continuously"
+    (let [{total :total check-passed :check-passed}
+          (stest/summarize-results (stest/check `gen-registration-seq))]
       (is (= total check-passed)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -193,7 +185,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def combined-iri-map
-  (profile/profiles->map [const/cmi5-profile const/mom-profile]))
+  (profile/profiles->type-iri-map [const/cmi5-profile const/mom-profile]))
 
 (defn- primary-pattern-ids
   [patterns]
@@ -221,6 +213,7 @@
            (-> (profile/select-primary-patterns
                 combined-iri-map
                 {:gen-profiles [cmi5-id]})
+               (get "Pattern")
                vals
                primary-pattern-ids))))
   (testing "filters by pattern"
@@ -228,5 +221,6 @@
            (-> (profile/select-primary-patterns
                 combined-iri-map
                 {:gen-patterns [cmi5-pattern-id]})
+               (get "Pattern")
                vals
                primary-pattern-ids)))))

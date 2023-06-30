@@ -1,8 +1,9 @@
 (ns com.yetanalytics.datasim.sim-test
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.sim :refer [build-skeleton sim-seq]]
+            [com.yetanalytics.datasim.sim :as sim :refer [build-skeleton sim-seq]]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,7 +127,8 @@
     (let [double-input (update const/simple-input :profiles conj const/mom-profile)]
       (testing "respects gen-profiles param"
         (is (= [[{"id" cmi5-version-id}]
-                [{"id" cmi5-moveon-id}]]
+                [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
+                 {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
                (-> double-input
                    (update :parameters
                            assoc
@@ -135,7 +137,7 @@
                    (->> (map get-context-category-activities))
                    distinct))))
       (testing "respects gen-patterns param"
-        (is (= [nil [{"id" tla-version-id}]]
+        (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
                (-> double-input
                    (update :parameters
                            assoc
@@ -144,7 +146,7 @@
                    (->> (map get-context-category-activities))
                    distinct))))
       (testing "allows referential use of non-gen profiles"
-        (is (= [nil [{"id" tla-version-id}]]
+        (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
                (-> double-input
                    (update :profiles conj const/referential-profile)
                    (update :parameters
@@ -186,3 +188,14 @@
                "mailto:sally@example.org"
                "mailto:steve@example.org"}
              (set ids))))))
+
+(deftest sim-chan-test
+  (testing "async statement gen produces valid statements"
+    (let [agent-chan (-> const/simple-input sim/sim-chans (get alice-mbox))
+          async-res  (a/<!! (a/into [] agent-chan))]
+      (is (s/valid? (s/every ::xs/statement) async-res))))
+  (testing "sync vs async statement gen has same result"
+    (let [input     const/simple-input
+          sync-res  (->> input sim/sim-seq)
+          async-res (->> input sim/sim-chan (a/into []) a/<!!)]
+      (is (= sync-res async-res)))))

@@ -20,3 +20,16 @@
        (assoc m' k v)))
    {}
    m))
+
+(defn dynamic-or
+  "Similar to `s/or`, but accepts a coll of `[:key pred]` pairs. Unlike
+   `s/or`, this accepts a dynamic number of such pairs (hence why it
+   is a function instead of a macro). This will only work properly if
+   `preds` are keywords or predicate functions."
+  [key-pred-pairs]
+  (let [keys  (mapv first key-pred-pairs)
+        preds (mapv second key-pred-pairs)]
+    ;; Yes, spec says not to use `or-spec-impl`, but we need to create
+    ;; `s/or` specs at runtime and it is much easier to bypass the macro
+    ;; instead of mixing compile-time and run-time code.
+    (s/or-spec-impl keys preds preds nil)))
