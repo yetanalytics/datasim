@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.xapi.profile.template.rule-test
+(ns com.yetanalytics.datasim.xapi.rule-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.test.check.generators :as stest]
             [clojure.java.io    :as io]
@@ -8,7 +8,7 @@
             [com.yetanalytics.datasim.random      :as random]
             [com.yetanalytics.datasim.json.schema :as jschema]
             [com.yetanalytics.datasim.xapi.path   :as xp]
-            [com.yetanalytics.datasim.xapi.profile.template.rule :as r]
+            [com.yetanalytics.datasim.xapi.rule   :as r]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [clojure.lang ExceptionInfo]))
 

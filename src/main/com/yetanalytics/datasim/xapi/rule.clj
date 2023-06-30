@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.xapi.profile.template.rule
+(ns com.yetanalytics.datasim.xapi.rule
   "Apply statement template rules for generation"
   (:require [clojure.core.memoize           :as memo]
             [clojure.set                    :as cset]

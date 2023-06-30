@@ -10,7 +10,7 @@
             [com.yetanalytics.datasim.input] ; for input spec
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.xapi.profile.template.rule :as rule])
+            [com.yetanalytics.datasim.xapi.rule :as rule])
   (:import [java.time Instant]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
