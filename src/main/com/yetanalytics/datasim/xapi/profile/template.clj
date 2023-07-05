@@ -2,13 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.math.random  :as random] 
-            [com.yetanalytics.datasim.xapi.rule :as rule])
-  (:import [java.time Instant]))
-
-(defn- time-ms->timestamp
-  [time-ms]
-  (.toString (Instant/ofEpochMilli time-ms)))
+            [com.yetanalytics.datasim.xapi.rule :as rule]))
 
 (defn- profile->statement-verb
   [{:keys [id prefLabel]}]
@@ -71,13 +65,6 @@
     (update-in ["context" "contextActivities" "category"]
                (fnil conj [])
                {"id" profile-version-id})))
-
-(defn base-statement
-  [template-base {:keys [sim-t registration]} rng]
-  (-> template-base
-      (assoc-in ["id"] (random/rand-uuid rng))
-      (assoc-in ["timestamp"] (time-ms->timestamp sim-t))
-      (assoc-in ["context" "registration"] registration)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Rule Application
