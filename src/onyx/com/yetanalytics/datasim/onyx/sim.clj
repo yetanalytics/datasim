@@ -1,7 +1,6 @@
 (ns com.yetanalytics.datasim.onyx.sim
   "Feed datasim seqs into onyx"
-  (:require [com.yetanalytics.datasim.sim :as sim]
-            [com.yetanalytics.datasim.input :as input]
+  (:require [com.yetanalytics.datasim :as ds]
             [com.yetanalytics.datasim.onyx.util :as u]
             [onyx.plugin.protocols :as p]
             [clojure.core.async :as a]
@@ -21,10 +20,10 @@
    ]
   (lazy-seq
    (cond->> (if select-agents
-              (sim/sim-seq
+              (ds/generate-seq
                input
                :select-agents select-agents)
-              (sim/sim-seq
+              (ds/generate-seq
                input))
      take-n (take take-n)
      drop-n (drop (* drop-n batch-size))
@@ -89,8 +88,7 @@
                             job-id
                             (name task))
         {?take-n :take-n} args
-        input (cond-> (input/from-location :input :json
-                                           input-loc)
+        input (cond-> (ds/read-input input-loc)
                 ?take-n (u/override-max! ?take-n))
         rst (volatile! nil)
         completed? (volatile! nil)
@@ -199,7 +197,7 @@
          (println 'seg n 'checkpoint (p/checkpoint reader)))))
     )
 
-  (def i (input/from-location :input :json "dev-resources/input/mom.json"))
+  (def i (ds/read-input "dev-resources/input/mom.json"))
 
   (first (init-seq i {:batch-size 10} ""))
 

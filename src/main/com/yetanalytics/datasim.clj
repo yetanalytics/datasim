@@ -15,6 +15,7 @@
 
 ;; TODO: Add fdefs for generation functions
 ;; TODO: Extract more implementation code from `sim` namespace
+;; TODO: Use more opt-map passing (instead of `apply`) in Clojure 1.11
 
 (defn generate-seq
   "Given `input`, produce a lazy sequence of statements in a synchronous

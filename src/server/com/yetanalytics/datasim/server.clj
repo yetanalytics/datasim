@@ -13,9 +13,9 @@
             [buddy.auth.middleware                  :as middleware]
             [cheshire.core                          :as c]
             [environ.core                           :refer [env]]
-            [com.yetanalytics.datasim.sim           :as sim]
+            [com.yetanalytics.datasim               :as ds]
             [com.yetanalytics.datasim.input         :as sinput]
-            [com.yetanalytics.datasim.client   :as xapi-client]
+            [com.yetanalytics.datasim.client        :as xapi-client]
             [com.yetanalytics.pan.objects.profile   :as pan-prof]
             [com.yetanalytics.pan.objects.pattern   :as pan-pat]
             [com.yetanalytics.pan.errors            :as errors]
@@ -66,7 +66,7 @@
           ;; Write them wrapped in a list
           (.write w "[\n")
           (try
-            (let [statements (sim/sim-seq sim-input)]
+            (let [statements (ds/generate-seq sim-input)]
 
               (when send-to-lrs
                 (let [post-options (cond-> {:endpoint endpoint
@@ -89,7 +89,7 @@
                       (log/error :msg
                                  (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
                                          status (or (some-> error ex-message) "<none>")))))))
-              (doseq [s (sim/sim-seq sim-input)]
+              (doseq [s (ds/generate-seq sim-input)]
                 (c/generate-stream s w)
                 (.write w "\n")))
             (catch Exception e
