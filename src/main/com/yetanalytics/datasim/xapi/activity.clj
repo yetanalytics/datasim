@@ -3,7 +3,6 @@
             [clojure.string     :as cs]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.iri            :as iri]
             [com.yetanalytics.datasim.math.random    :as random]
             [com.yetanalytics.datasim.xapi.statement :as stmt]))
 
@@ -12,7 +11,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::activity-map
-  (s/map-of iri/iri-spec (s/map-of iri/iri-spec ::xs/activity)))
+  (s/map-of ::xs/iri (s/map-of ::xs/iri ::xs/activity)))
 
 (s/def ::min-per-type
   pos-int?)

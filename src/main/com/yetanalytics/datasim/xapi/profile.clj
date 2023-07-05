@@ -5,7 +5,6 @@
             [clojure.zip :as z]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.iri :as iri]
             [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.pan.objects.profile :as profile]
             [com.yetanalytics.pan.objects.concept :as concept]
@@ -22,7 +21,7 @@
 (s/def ::_profile-id ::profile/id)
 
 (s/def ::iri-map
-  (s/map-of iri/iri-spec
+  (s/map-of ::xs/iri
             ;; TODO: using s/and or s/merge to add ::_profile-id won't work
             ;; It will be present and should be expected
             (s/or :concept ::concept/concept
@@ -41,7 +40,7 @@
         :template ::template/template))
 
 (s/def ::type-iri-map
-  (s/map-of profile-types (s/map-of iri/iri-spec profile-object-spec)))
+  (s/map-of profile-types (s/map-of ::xs/iri profile-object-spec)))
 
 ;; TODO: Consolidate these specs with those in `xapi.statement`
 (s/def ::seed int?)

@@ -2,8 +2,7 @@
   "Alignment input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [xapi-schema.spec] ; need to bring in :statement/object
-            [com.yetanalytics.datasim.iri         :as iri]
+            [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.xapi        :as xapi]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
@@ -34,7 +33,7 @@
          :statement/object)) ; from xapi-schema
 
 (s/def ::component
-  iri/iri-spec)
+  ::xs/iri)
 
 (s/def ::weight
   (s/double-in :min -1.0 :max 1.0
