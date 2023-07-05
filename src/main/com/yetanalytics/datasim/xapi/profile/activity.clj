@@ -3,8 +3,8 @@
             [clojure.string     :as cs]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.math.random    :as random]
-            [com.yetanalytics.datasim.xapi.statement :as stmt]))
+            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.xapi.profile.template :as t]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -53,7 +53,7 @@
   "Derive Activity Type IDs from the Template's Rules"
   [template]
   (->> template
-       stmt/template->parsed-rules
+       t/template->parsed-rules
        rules->activity-type-ids))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
