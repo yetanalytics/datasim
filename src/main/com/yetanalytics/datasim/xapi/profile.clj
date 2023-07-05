@@ -7,7 +7,7 @@
             [com.yetanalytics.pan.objects.pattern :as pattern]
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.xapi.statement :as stmt]
-            [com.yetanalytics.datasim.xapi.activity :as activity]))
+            [com.yetanalytics.datasim.xapi.profile.activity :as activity]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs

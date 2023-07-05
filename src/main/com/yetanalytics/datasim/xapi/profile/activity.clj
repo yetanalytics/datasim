@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.xapi.activity
+(ns com.yetanalytics.datasim.xapi.profile.activity
   (:require [clojure.spec.alpha :as s]
             [clojure.string     :as cs]
             [clojure.walk       :as w]
