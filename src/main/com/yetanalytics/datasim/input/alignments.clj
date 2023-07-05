@@ -3,7 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.xapi        :as xapi]
+            [com.yetanalytics.datasim.xapi.agent  :as agent]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,7 +56,7 @@
 (defmulti actor-alignment? :type)
 
 (defmethod actor-alignment? "Agent" [_]
-  (fn [{agent-id :id}] (s/valid? ::xapi/agent-id agent-id)))
+  (fn [{agent-id :id}] (s/valid? ::agent/agent-id agent-id)))
 
 (defmethod actor-alignment? "Group" [_]
   (constantly true))

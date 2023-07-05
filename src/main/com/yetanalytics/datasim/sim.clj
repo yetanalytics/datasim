@@ -7,10 +7,9 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.math.random     :as random]
             [com.yetanalytics.datasim.math.timeseries :as ts]
-            [com.yetanalytics.datasim.xapi            :as xapi]
+            [com.yetanalytics.datasim.xapi.agent      :as agent]
             [com.yetanalytics.datasim.xapi.profile    :as p]
             [com.yetanalytics.datasim.xapi.statement  :as statement]
-            [com.yetanalytics.datasim.util.xapi       :as xapiu]
             [com.yetanalytics.datasim.util.maths      :as maths]
             [com.yetanalytics.datasim.util.sequence   :as su]
             [com.yetanalytics.datasim.util.async      :as au])
@@ -46,7 +45,7 @@
   (s/every ::xs/statement :kind #(instance? clojure.lang.LazySeq %)))
 
 (s/def ::skeleton
-  (s/map-of ::xapi/agent-id
+  (s/map-of ::agent/agent-id
             :skeleton/statement-seq))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -133,10 +132,10 @@
   [personae-array]
   (reduce
    (fn [m {actors :member :as personae}]
-     (let [group-id (xapiu/agent-id personae)]
+     (let [group-id (agent/agent-id personae)]
        (reduce
         (fn [m* actor]
-          (assoc m* (xapiu/agent-id actor) group-id))
+          (assoc m* (agent/agent-id actor) group-id))
         m
         actors)))
    {}
@@ -288,11 +287,11 @@
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
-         (sort-by xapiu/agent-id)
+         (sort-by agent/agent-id)
          (reduce
           (fn [m actor]
             (let [;; Actor basics + alignment
-                  actor-id        (xapiu/agent-id actor)
+                  actor-id        (agent/agent-id actor)
                   actor-role      (:role actor)
                   actor-group-id  (get actor-group-map actor-id)
                   actor-alignment (get-actor-alignments alignments
@@ -333,7 +332,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::select-agents
-  (s/every ::xapi/agent-id))
+  (s/every ::agent/agent-id))
 
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input
@@ -369,7 +368,7 @@
                :options (s/keys*
                          :opt-un [::select-agents
                                   ::pad-chan-max]))
-  :ret (s/map-of ::xapi/agent-id
+  :ret (s/map-of ::agent/agent-id
                  chan?))
 
 (defn sim-chans
@@ -499,7 +498,7 @@
    (fn [m {actors :member :as personae}]
      (let [group-id (:name personae)]
        (reduce
-        (fn [m' actor] (assoc m' (xapiu/agent-id actor) group-id))
+        (fn [m' actor] (assoc m' (agent/agent-id actor) group-id))
         m
         actors)))
    {}
@@ -512,6 +511,6 @@
                :mbox "mailto:alice@example.org"
                :role "Lead Developer"}]}])
 
-  (xapiu/agent-id {:name "Bob Fakename"
+  (agent/agent-id {:name "Bob Fakename"
                    :mbox "mailto:bob@example.org"
                    :role "Lead Developer"}))
