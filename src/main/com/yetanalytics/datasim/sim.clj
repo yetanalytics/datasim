@@ -5,14 +5,15 @@
             [clojure.core.async.impl.protocols :as ap]
             [java-time        :as t]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.math.random     :as random]
-            [com.yetanalytics.datasim.math.timeseries :as ts]
-            [com.yetanalytics.datasim.xapi.agent      :as agent]
-            [com.yetanalytics.datasim.xapi.profile    :as p]
-            [com.yetanalytics.datasim.xapi.statement  :as statement]
-            [com.yetanalytics.datasim.util.maths      :as maths]
-            [com.yetanalytics.datasim.util.sequence   :as su]
-            [com.yetanalytics.datasim.util.async      :as au])
+            [com.yetanalytics.datasim.math.random       :as random]
+            [com.yetanalytics.datasim.math.timeseries   :as ts]
+            [com.yetanalytics.datasim.xapi.agent        :as agent]
+            [com.yetanalytics.datasim.xapi.profile      :as p]
+            [com.yetanalytics.datasim.xapi.registration :as reg]
+            [com.yetanalytics.datasim.xapi.statement    :as statement]
+            [com.yetanalytics.datasim.util.maths        :as maths]
+            [com.yetanalytics.datasim.util.sequence     :as su]
+            [com.yetanalytics.datasim.util.async        :as au])
   (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -306,9 +307,9 @@
                   actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
                   actor-reg-seed  (random/rand-long sim-rng)
-                  actor-reg-seq   (p/registration-seq (:type-iri-map profiles-map)
-                                                      actor-alignment
-                                                      actor-reg-seed)
+                  actor-reg-seq   (reg/registration-seq (:type-iri-map profiles-map)
+                                                        actor-alignment
+                                                        actor-reg-seed)
                   ;; Additional seed for further gen
                   actor-seed      (random/rand-long sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
