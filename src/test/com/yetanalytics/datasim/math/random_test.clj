@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.random-test
+(ns com.yetanalytics.datasim.math.random-test
   (:require [clojure.test :refer [deftest is]]
             [clojure.spec.test.alpha :as stest]
             [com.yetanalytics.datasim.math.random :as r]))
