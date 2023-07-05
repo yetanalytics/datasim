@@ -272,12 +272,12 @@
                                  {})
                 (catch Exception e (-> e ex-data :type))))))
   (testing "extensions get special treatment"
-    (is (= :com.yetanalytics.datasim.json/any
+    (is (= ::path/extension
            (path/path->spec
             :statement/context
             ["extensions" "http://foo.org/extension"]
             {})))
-    (is (= :com.yetanalytics.datasim.json/any
+    (is (= ::path/extension
            (path/path->spec
             :statement/context
             ["extensions" "http://foo.org/extension"]

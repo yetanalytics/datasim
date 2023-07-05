@@ -11,13 +11,29 @@
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
-            [com.yetanalytics.datasim.json        :as j]
             [com.yetanalytics.datasim.xapi.path   :as xp]
             [com.yetanalytics.datasim.math.random :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; See also: ::xp/extension
+(s/def ::json
+  (s/nilable
+   (s/or :scalar
+         (s/or :string
+               string?
+               :number
+               (s/or :double (s/double-in :infinite? false :NaN? false)
+                     :int    int?)
+               :boolean
+               boolean?)
+         :coll
+         (s/or :map
+               (s/map-of string? ::json :gen-max 4)
+               :vector
+               (s/coll-of ::json :kind vector? :into [] :gen-max 4)))))
 
 (s/def ::location ::jpath/paths)
 
@@ -28,16 +44,16 @@
   ::xp/path)
 
 (s/def ::any
-  (s/every ::j/any :kind set? :into #{}))
+  (s/every ::json :kind set? :into #{}))
 
 (s/def ::all
-  (s/every ::j/any :kind set? :into #{}))
+  (s/every ::json :kind set? :into #{}))
 
 (s/def ::none
-  (s/every ::j/any :kind set? :into #{}))
+  (s/every ::json :kind set? :into #{}))
 
 (s/def ::valueset
-  (s/every ::j/any :kind set? :into #{} :min-count 1))
+  (s/every ::json :kind set? :into #{} :min-count 1))
 
 (s/def ::spec
   (s/or :keyword s/get-spec :pred s/spec?))
@@ -321,7 +337,7 @@
    {:keys [presence path valueset none spec] :as parsed-rule}]
   (if (= :excluded presence)
     parsed-rule
-    (let [spec*    (if (= ::j/any spec) ; only extensions have this spec
+    (let [spec*    (if (= ::xp/extension spec) ; only extensions have this spec
                      (extension-spec extension-map (peek path) spec)
                      spec)
           ?all-set (not-empty (spec->valueset valuesets spec))]
