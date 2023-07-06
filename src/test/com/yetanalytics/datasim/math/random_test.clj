@@ -8,9 +8,9 @@
                  `#{r/seed-rng
                     r/rand
                     r/rand-int
-                    r/rand-nth*
-                    r/shuffle*
-                    r/random-sample*
+                    r/rand-nth
+                    r/shuffle
+                    r/random-sample
                     r/rand-gaussian
                     r/rand-boolean
                     r/rand-unbound-int

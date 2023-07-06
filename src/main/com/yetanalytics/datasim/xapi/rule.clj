@@ -477,7 +477,7 @@
   (if (and distinct-vals?
            (>= (count value-set) num-locations))
     ;; Distinct values (e.g. IDs)
-    (vec (take num-locations (random/shuffle* rng value-set)))
+    (vec (take num-locations (random/shuffle rng value-set)))
     ;; Either values are not distinct or there are not enough distinct
     ;; values for every location (violating the Pigenhole Principle)
     (loop [n-values num-locations
@@ -485,7 +485,7 @@
            val-coll []]
       (cond
         (zero? n-values)
-        (vec (random/shuffle* rng val-coll))
+        (vec (random/shuffle rng val-coll))
         ;; n-values is nearly exhausted - choose one of each remaining value
         (<= n-values (count val-set))
         (let [x (first val-set)]

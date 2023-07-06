@@ -3,7 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [com.yetanalytics.datasim.util.maths :as maths])
-  (:refer-clojure :exclude [rand rand-int])
+  (:refer-clojure :exclude [rand rand-int rand-nth random-sample shuffle])
   (:import [java.util UUID Random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -145,12 +145,12 @@
     (throw (ex-info "Attempted to select elements from an empty collection!"
                     {:type ::empty-coll}))))
 
-(s/fdef rand-nth*
+(s/fdef rand-nth
   :args (s/cat :rng  ::rng
                :coll (s/every any? :min-count 1))
   :ret any?)
 
-(defn rand-nth*
+(defn rand-nth
   "Randomly select an element from `coll`. Each element has an equal
    probability of being selected.
    
@@ -159,32 +159,32 @@
   (validate-not-empty coll)
   (nth coll (rand-int rng (count coll))))
 
-(s/fdef shuffle*
+(s/fdef shuffle
   :args (s/cat :rng  ::rng
                :coll (s/every any?))
   :ret coll?
   :fn (fn [{{:keys [coll]} :args ret :ret}]
         (= (set coll) (set ret))))
 
-(defn shuffle*
+(defn shuffle
   "Randomly shuffle `coll` and return a lazy sequence as the result."
   ([rng coll]
-   (shuffle* rng coll (count coll)))
+   (shuffle rng coll (count coll)))
   ([rng coll cnt]
    (lazy-seq
     (when (< 0 cnt)
       (let [[head [x & tail]] (split-at (rand-int rng cnt) coll)]
         (cons x
-              (shuffle* rng (concat head tail) (dec cnt))))))))
+              (shuffle rng (concat head tail) (dec cnt))))))))
 
-(s/fdef random-sample*
+(s/fdef random-sample
   :args (s/cat :rng     ::rng
                :prob    ::prob
                :coll    (s/every any? :min-count 1)
                :weights (s/? (s/map-of any? ::weight)))
   :ret coll?)
 
-(defn random-sample*
+(defn random-sample
   "Probabilistically sample elements from `coll`, where each element has
    `prob` probability of being selected. If `weights` are provided, then
    the element associated with a weight has `(+ prob weight)` probability
@@ -236,9 +236,9 @@
   (def the-rng (seed-rng 100))
 
   (rand-uuid the-rng)
-  (rand-nth* the-rng [])
+  (rand-nth the-rng [])
   
-  (shuffle* the-rng [1 2 3])
+  (shuffle the-rng [1 2 3])
   
   (choose rng {} []))
 
