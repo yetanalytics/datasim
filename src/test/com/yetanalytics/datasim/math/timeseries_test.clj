@@ -28,7 +28,7 @@
               -1.5985374620272976
               -0.07756122563035872]
              ;; epsilon is standard normal for simplicity
-             (repeatedly 8 #(r/rand-gauss rng 0 1))))))
+             (repeatedly 8 #(r/rand-gaussian rng 0 1))))))
   (testing "arma-seq function with phi = 0.5, theta = 0.2, std. normal epsilon"
     (is (= [;; 0.6246292191371761
             (+ 0.6246292191371761
@@ -70,7 +70,7 @@
   (testing "arma-seq with no phi or theta values is just white noise"
     (let [seed 123
           rng  (r/seed-rng seed)]
-      (is (= (take 1000 (repeatedly #(r/rand-gauss rng 0 1)))
+      (is (= (take 1000 (repeatedly #(r/rand-gaussian rng 0 1)))
              (take 1000 (ts/arma-seq {:phi   []
                                       :theta []
                                       :std   1

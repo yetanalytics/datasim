@@ -70,7 +70,7 @@
 (def additional-time-ms-sd 0.5)
 
 (defn- end-time-ms [start-time-ms rng]
-  (->> (random/rand-gauss rng additional-time-ms-mean additional-time-ms-sd)
+  (->> (random/rand-gaussian rng additional-time-ms-mean additional-time-ms-sd)
        long
        (+ start-time-ms)))
 

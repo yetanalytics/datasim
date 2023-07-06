@@ -81,6 +81,18 @@
   [^Random rng]
   (.nextLong rng))
 
+(s/fdef rand-gaussian
+  :args (s/cat :rng ::rng
+               :mean double?
+               :sd double?)
+  :ret double?)
+
+(defn rand-gaussian
+  "Generate a pseudorandom, normally distributed double value with mean
+   `mean` and standard deviation `sd`."
+  [^Random rng mean sd]
+  (+ mean (* sd (.nextGaussian rng))))
+
 (s/fdef rand-nth*
   :args (s/cat :rng ::rng
                :coll (s/every any?
@@ -139,17 +151,6 @@
                                1.0)))
            coll)))
 
-(s/fdef rand-gauss
-  :args (s/cat :rng ::rng
-               :mean double?
-               :sd double?)
-  :ret double?)
-
-(defn rand-gauss
-  [^Random rng mean sd]
-  (+ mean
-     (* sd (.nextGaussian rng))))
-
 (s/fdef rand-uuid
   :args (s/cat :rng ::rng)
   :ret string?)
@@ -190,7 +191,7 @@
              (let [weight (get-in weights [el :weight] 0.0)]
                (if (<= weight -1.0)
                  -1.0
-                 (rand-gauss
+                 (rand-gaussian
                   rng
                   (+ even-odds (* sd weight))
                   sd))))
@@ -219,7 +220,7 @@
         runs 1000]
     (apply max
            (repeatedly runs
-            #(rand-gauss
+            #(rand-gaussian
               rng
               (/ 1 1000)
               (/ 1 1000)))))
