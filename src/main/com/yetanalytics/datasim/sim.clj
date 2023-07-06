@@ -307,7 +307,7 @@
                   actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
                   actor-reg-seed  (random/rand-long sim-rng)
-                  actor-reg-seq   (reg/registration-seq (:type-iri-map profiles-map)
+                  actor-reg-seq   (reg/registration-seq profiles-map
                                                         actor-alignment
                                                         actor-reg-seed)
                   ;; Additional seed for further gen

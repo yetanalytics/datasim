@@ -9,6 +9,7 @@
             [com.yetanalytics.pan.objects.template :as pan-template]
             [com.yetanalytics.datasim.xapi.profile.activity  :as act]
             [com.yetanalytics.datasim.xapi.profile.extension :as ext]
+            [com.yetanalytics.datasim.xapi.profile.pattern   :as pat]
             [com.yetanalytics.datasim.xapi.profile.template  :as tmp]
             [com.yetanalytics.datasim.xapi.profile.verb      :as vrb]))
 
@@ -39,7 +40,8 @@
                    ::vrb/verb-map
                    ::ext/extension-spec-map
                    ::tmp/statement-base-map
-                   ::tmp/parsed-rules-map]))
+                   ::tmp/parsed-rules-map
+                   ::pat/pattern-walk-fn]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile -> IRI Map
@@ -140,12 +142,14 @@
         extension-spec-map (ext/create-extension-spec-map type-iri-map)
         statement-base-map (tmp/create-statement-base-map type-iri-map)
         parsed-rules-map   (tmp/create-parsed-rules-map type-iri-map)
+        pattern-walk-fn    (pat/create-pattern-walk-fn type-iri-map)
         profile-map*       {:type-iri-map       type-iri-map
                             :activity-map       activity-map
                             :verb-map           verb-map
                             :extension-spec-map extension-spec-map
                             :statement-base-map statement-base-map
-                            :parsed-rules-map   parsed-rules-map}]
+                            :parsed-rules-map   parsed-rules-map
+                            :pattern-walk-fn    pattern-walk-fn}]
     (update profile-map*
             :parsed-rules-map
             (partial tmp/update-parsed-rules-map profile-map*))))
