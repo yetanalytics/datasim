@@ -87,45 +87,6 @@
           {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Profile Templates Prep
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::statement-base-map
-  (s/map-of ::template/id map?))
-
-(s/fdef profiles->base-statement-map
-  :args (s/cat :profiles (s/every ::profile/profile))
-  :ret ::statement-base-map)
-
-(defn profiles->base-statement-map
-  "Given `profiles`, return a map from those profiles' Statement Template
-   IDs to the base xAPI Statements they form."
-  [profiles]
-  (let [template-coll        (mapcat :templates profiles)
-        ->id-statement-pairs (juxt :id t/template->statement-base)]
-    (->> template-coll (map ->id-statement-pairs) (into {}))))
-
-;; TODO: More precise activity-map and parsed-rule specs
-
-(s/def ::parsed-rules-map
-  (s/map-of ::template/id map?))
-
-(s/fdef profiles->parsed-rule-map
-  :args (s/cat :profiles (s/every ::profile/profile)
-               :type-iri-map ::type-iri-map
-               :activity-map map?)
-  :ret ::parsed-rules-map)
-
-(defn profiles->parsed-rule-map
-  "Given `profiles`, as well as `type-iri-map` and `activity-map` (the latter
-   of which are ultimately derived from `profiles`), return a map from template
-   IDs to those Statement Template's parsed rules"
-  [profiles]
-  (let [template-coll    (mapcat :templates profiles)
-        ->id-rules-pairs (juxt :id t/template->parsed-rules)]
-    (->> template-coll (map ->id-rules-pairs) (into {}))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Primary Pattern Selection
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -187,18 +148,11 @@
   [profiles pattern-params activity-seed]
   (let [type-iri-map*      (profiles->type-iri-map profiles)
         type-iri-map       (select-primary-patterns type-iri-map* pattern-params)
-        statement-base-map (profiles->base-statement-map profiles)
-        parsed-rules-map*  (profiles->parsed-rule-map profiles)
         activity-map       (activity/create-activity-map type-iri-map activity-seed)
-        parsed-rules-map   (reduce-kv
-                            (fn [m id parsed-rules]
-                              (->> parsed-rules
-                                   (t/update-parsed-rules type-iri-map activity-map)
-                                   (assoc m id)))
-                            {}
-                            parsed-rules-map*)
         verb-map           (verb/create-verb-map type-iri-map)
-        extension-spec-map (ext/create-extension-spec-map type-iri-map)]
+        extension-spec-map (ext/create-extension-spec-map type-iri-map)
+        statement-base-map (t/create-statement-base-map type-iri-map)
+        parsed-rules-map   (t/create-parsed-rules-map type-iri-map verb-map activity-map)]
     {:type-iri-map       type-iri-map
      :activity-map       activity-map
      :verb-map           verb-map

@@ -1,7 +1,17 @@
 (ns com.yetanalytics.datasim.xapi.profile.template
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.rule :as rule]))
+            [com.yetanalytics.datasim.xapi.rule    :as rule]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::statement-base-map
+  (s/map-of ::template/id map?))
+
+(s/def ::parsed-rules-map
+  (s/map-of ::template/id (s/every ::rule/parsed-rule)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
@@ -107,3 +117,40 @@
                         :activity-types activity-types}]
     (mapv (partial rule/add-rule-valuegen type-iri-map value-sets)
           parsed-rules)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profile Templates -> Statement Base + Parsed Rules
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef create-statement-base-map
+  :args (s/cat :templates (s/every ::template/template))
+  :ret ::statement-base-map)
+
+(defn create-statement-base-map
+  "Given Statement Templates in `type-iri-map`, return a map from those
+   templates' IDs to the base xAPI Statements they form from their
+   Determining Properties and inScheme."
+  [type-iri-map]
+  (->> (get type-iri-map "StatementTemplate")
+       (reduce-kv (fn [m id template]
+                    (->> template
+                         template->statement-base
+                         (assoc m id)))
+                  {})))
+
+(s/fdef create-parsed-rules-map
+  :args (s/cat :templates (s/every ::template/template))
+  :ret ::parsed-rules-map)
+
+(defn create-parsed-rules-map
+  "Given Statement Templates in `type-iri-map`, return a map from those
+   templates' IDs to those their parsed rules"
+  [type-iri-map verb-map activity-map]
+  ;; TODO: Use map-values in Clojure 1.11
+  (->> (get type-iri-map "StatementTemplate")
+       (reduce-kv (fn [m id template]
+                    (->> template
+                         template->parsed-rules
+                         (update-parsed-rules verb-map activity-map)
+                         (assoc m id)))
+                  {})))
