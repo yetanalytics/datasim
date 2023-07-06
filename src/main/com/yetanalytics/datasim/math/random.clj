@@ -19,11 +19,24 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; RNG Creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef seed-rng
+  :args (s/cat)
+  :ret ::rng)
+
+(defn rng
+  "Create a pseudorandom RNG using an arbitrary seed value."
+  ^Random []
+  (Random.))
+
 (s/fdef seed-rng
   :args (s/cat :seed ::seed)
   :ret ::rng)
 
 (defn seed-rng
+  "Create a seeded deterministic, pseudorandom RNG, in which two RNGs created
+   using the same value of `seed` will output the same results."
   ^Random [^Long seed]
   (Random. seed))
 
