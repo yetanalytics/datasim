@@ -1,17 +1,17 @@
 (ns com.yetanalytics.datasim.xapi.statement
   "Generate Statements"
-  (:require [clojure.set :as cset]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.set                   :as cset]
+            [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as stest]
-            [clojure.walk :as w]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.math.random  :as random]
-            [com.yetanalytics.datasim.input] ; for input spec
-            [com.yetanalytics.datasim.input.alignments :as alignments]
+            [clojure.walk                  :as w]
+            [xapi-schema.spec              :as xs]
+            [com.yetanalytics.datasim.math.random           :as random]
+            [com.yetanalytics.datasim.input.alignments      :as alignments]
+            [com.yetanalytics.datasim.xapi.path             :as xp]
+            [com.yetanalytics.datasim.xapi.profile          :as profile]
             [com.yetanalytics.datasim.xapi.profile.template :as t]
-            [com.yetanalytics.datasim.xapi.path :as xp]
-            [com.yetanalytics.datasim.xapi.rule :as rule])
+            [com.yetanalytics.datasim.xapi.registration     :as reg]
+            [com.yetanalytics.datasim.xapi.rule             :as rule])
   (:import [java.time Instant]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,26 +20,6 @@
 
 ;; Inputs
 
-;; TODO: Consolidate some of these specs with those in `xapi.profile`
-
-;; Map of profile types -> IDs -> objects
-;; TODO: Real specs
-(s/def ::type-iri-map
-  (s/map-of string? (s/map-of string? map?)))
-
-(s/def ::statement-base-map
-  (s/map-of ::template/id map?))
-
-(s/def ::parsed-rules-map
-  (s/map-of ::template/id ::rule/parsed-rule))
-
-;; All the activities we can use, by activity type:
-;; a map of activity type IRIs to activity IRIs to activities
-(s/def ::activity-map
-  (s/map-of ::xs/iri
-            (s/map-of ::xs/iri
-                      ::xs/activity)))
-
 ;; The actor for the statement (may have to stringify keys?)
 (s/def ::actor ::xs/actor)
 
@@ -47,24 +27,12 @@
 ;; a nilable `:object-override` object.
 (s/def ::alignment ::alignments/alignment)
 
-;; The statement template to generate from
-(s/def ::template ::template/template)
-
-;; Antecedent patterns to the current template, and whether or not they're primary.
-;; TODO: replace `map?` with a real spec
-(s/def ::pattern-ancestors
-  (s/every map?))
-
 ;; Simulation time, in ms since epoch.
 (s/def ::sim-t pos-int?)
 
 ;; A seed to generate with. Note that if you're calling more seeded
 ;; generators, you'll need to make a seed from this one for each.
 (s/def ::seed ::random/seed)
-
-;; A registration UUID string.
-(s/def ::registration
-  ::xs/uuid)
 
 ;; TODO: subregistration from :pattern-ancestors logic
 ;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
@@ -74,18 +42,10 @@
   any?) ; TODO: replace `any?` with real spec
 
 (s/def ::inputs
-  (s/keys :req-un [::type-iri-map
-                   ::activity-map
-                   ::statement-base-map
-                   ::parsed-rules-map
-                   ::actor
-                   ::alignment
-                   ::template
-                   ::pattern-ancestors
-                   ::seed
-                   ::registration
-                   ::sim-t]
-          :opt-un [::sub-registration]))
+  (s/merge ::profile/profile-map
+           ::reg/registration-map
+           (s/keys :req-un [::actor ::alignment ::sim-t ::seed]
+                   :opt-un [::sub-registration])))
 
 ;; Metadata
 

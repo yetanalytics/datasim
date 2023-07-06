@@ -19,6 +19,7 @@
   {"id"      id
    "display" (w/stringify-keys prefLabel)})
 
+;; TODO: Bring in type-iri-map spec using :as-alias in Clojure 1.11
 (s/fdef create-verb-map
   :args (s/cat :type-iri-map map?)
   :ret ::verb-map)

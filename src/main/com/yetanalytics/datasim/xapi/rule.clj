@@ -9,8 +9,9 @@
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
-            [com.yetanalytics.datasim.xapi.path   :as xp]
-            [com.yetanalytics.datasim.math.random :as random]))
+            [com.yetanalytics.datasim.xapi.path          :as xp]
+            [com.yetanalytics.datasim.xapi.profile       :as profile]
+            [com.yetanalytics.datasim.math.random        :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -70,6 +71,9 @@
                    ::valueset
                    ::generator]))
 
+(s/def ::parsed-rules
+  (s/every ::parsed-rule))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Object Type derivation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,6 +110,10 @@
                    set
                    not-empty)))
           parsed-rules)))
+
+(s/fdef rules->object-types
+  :args (s/cat :parsed-rules ::parsed-rules)
+  :ret ::xp/object-types)
 
 (defn rules->object-types
   "Derive object types from `parsed-rules` and return a map from paths
@@ -271,7 +279,7 @@
 (s/fdef parse-rules
   :args (s/cat :object-property (s/? #{:activity-type :statement-ref})
                :rules (s/coll-of ::rule/rule))
-  :ret (s/coll-of ::parsed-rule))
+  :ret ::parsed-rules)
 
 (defn parse-rules
   "Parse a collection of `rules` and return a coll of parsed and
@@ -343,6 +351,11 @@
              (not ?all-set))
         (assoc :generator (spec-generator spec*))))))
 
+(s/fdef add-rules-valuegen
+  :args (s/cat :profile-map  ::profile/profile-map
+               :parsed-rules ::parsed-rules)
+  :ret ::parsed-rules)
+
 (defn add-rules-valuegen
   "Use information from `iri-map` and `activities` maps, to complete the
    `parsed-rules` by adding additional valuesets or spec generators."
@@ -382,7 +395,7 @@
            (empty? (cset/intersection (set ?values) ?none)))))
 
 (s/fdef follows-rule?
-  :args (s/cat :statement ::xs/statement
+  :args (s/cat :statement   ::xs/statement
                :parsed-rule ::parsed-rule)
   :ret boolean?)
 
@@ -583,7 +596,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef property-rule?
-  :args (s/cat :property string?
+  :args (s/cat :property    string?
                :parsed-rule ::parsed-rule)
   :ret boolean?)
 

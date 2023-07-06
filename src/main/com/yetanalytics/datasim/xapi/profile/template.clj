@@ -98,8 +98,11 @@
 ;; Profile Templates -> Statement Base + Parsed Rules
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: Bring in type-iri-map and profile-map specs using :as-alias
+;; in Clojure 1.11
+
 (s/fdef create-statement-base-map
-  :args (s/cat :templates (s/every ::template/template))
+  :args (s/cat :type-iri-map map?)
   :ret ::statement-base-map)
 
 (defn create-statement-base-map
@@ -115,7 +118,7 @@
                   {})))
 
 (s/fdef create-parsed-rules-map
-  :args (s/cat :templates (s/every ::template/template))
+  :args (s/cat :type-iri-map? map?)
   :ret ::parsed-rules-map)
 
 (defn create-parsed-rules-map
@@ -131,10 +134,9 @@
                   {})))
 
 (s/fdef update-parsed-rules-map
-  :args (s/cat :type-iri-map ::type-iri-map
-               :activity-map ::activity-map
-               :parsed-rules (s/every ::rule/parsed-rule))
-  :ret (s/every ::rule/parsed-rule))
+  :args (s/cat :profile-map map?
+               :parsed-rules-map ::parsed-rules-map)
+  :ret ::parsed-rules-map)
 
 (defn update-parsed-rules-map
   "Use information from `profile-map` to complete the rules in

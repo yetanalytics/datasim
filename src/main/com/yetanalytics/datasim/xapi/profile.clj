@@ -6,24 +6,16 @@
             [com.yetanalytics.pan.objects.concept :as concept]
             [com.yetanalytics.pan.objects.pattern :as pattern]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.profile.activity  :as activity]
+            [com.yetanalytics.datasim.xapi.profile.activity  :as act]
             [com.yetanalytics.datasim.xapi.profile.extension :as ext]
-            [com.yetanalytics.datasim.xapi.profile.verb      :as verb]
-            [com.yetanalytics.datasim.xapi.profile.template  :as t]))
+            [com.yetanalytics.datasim.xapi.profile.template  :as tmp]
+            [com.yetanalytics.datasim.xapi.profile.verb      :as vrb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::_profile-id ::profile/id)
-
-(s/def ::iri-map
-  (s/map-of ::xs/iri
-            ;; TODO: using s/and or s/merge to add ::_profile-id won't work
-            ;; It will be present and should be expected
-            (s/or :concept ::concept/concept
-                  :pattern ::pattern/pattern
-                  :template ::template/template)))
 
 (def profile-types
   #{"Verb" "ActivityType" "AttachmentUsageTypes"
@@ -32,22 +24,21 @@
     "Activity" "StatementTemplate" "Pattern"})
 
 (def profile-object-spec
-  (s/or :concept  ::concept/concept
-        :pattern  ::pattern/pattern
-        :template ::template/template))
+  (s/and (s/or :concept  ::concept/concept
+               :pattern  ::pattern/pattern
+               :template ::template/template)
+         (s/keys :req-un [::_profile-id])))
 
 (s/def ::type-iri-map
   (s/map-of profile-types (s/map-of ::xs/iri profile-object-spec)))
 
-;; TODO: Consolidate these specs with those in `xapi.statement`
-(s/def ::seed int?)
-(s/def ::pattern-ancestors (s/every ::pattern/pattern))
-
-(s/def ::registration-map
-  (s/keys :req-un [::template/template
-                   ::xs/registration
-                   ::seed
-                   ::pattern-ancestors]))
+(s/def ::profile-map
+  (s/keys :req-un [::type-iri-map
+                   ::act/activity-map
+                   ::vrb/verb-map
+                   ::ext/extension-spec-map
+                   ::tmp/statement-base-map
+                   ::tmp/parsed-rules-map]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile -> IRI Map
@@ -91,7 +82,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef select-primary-patterns
-  :args (s/cat :iri-map ::iri-map
+  :args (s/cat :type-iri-map ::type-iri-map
                :params ::params/parameters)
   :ret ::type-iri-map)
 
@@ -133,12 +124,7 @@
   :args (s/cat :profiles (s/every ::profile)
                :pattern-params ::params/parameters
                :activity-seed int?)
-  :ret (s/keys :req-un [::type-iri-map
-                        ::activity/activity-map
-                        ::verb/verb-map
-                        ::ext/extension-spec-map
-                        ::statement-base-map
-                        ::parsed-rules-map]))
+  :ret ::profile-map)
 
 (defn profiles->profile-map
   "Create a map from `profiles` that contains `type-iri-map`, `activity-map`,
@@ -148,11 +134,11 @@
   [profiles pattern-params activity-seed]
   (let [type-iri-map*      (profiles->type-iri-map profiles)
         type-iri-map       (select-primary-patterns type-iri-map* pattern-params)
-        activity-map       (activity/create-activity-map type-iri-map activity-seed)
-        verb-map           (verb/create-verb-map type-iri-map)
+        activity-map       (act/create-activity-map type-iri-map activity-seed)
+        verb-map           (vrb/create-verb-map type-iri-map)
         extension-spec-map (ext/create-extension-spec-map type-iri-map)
-        statement-base-map (t/create-statement-base-map type-iri-map)
-        parsed-rules-map   (t/create-parsed-rules-map type-iri-map)
+        statement-base-map (tmp/create-statement-base-map type-iri-map)
+        parsed-rules-map   (tmp/create-parsed-rules-map type-iri-map)
         profile-map*       {:type-iri-map       type-iri-map
                             :activity-map       activity-map
                             :verb-map           verb-map
@@ -161,4 +147,4 @@
                             :parsed-rules-map   parsed-rules-map}]
     (update profile-map*
             :parsed-rules-map
-            (partial t/update-parsed-rules-map profile-map*))))
+            (partial tmp/update-parsed-rules-map profile-map*))))

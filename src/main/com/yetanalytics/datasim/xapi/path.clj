@@ -4,8 +4,18 @@
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/def ::path
   (s/coll-of (s/or :key string? :index #{(symbol "*")}) :kind vector?))
+
+(def object-type-strings
+  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
+
+(s/def ::object-types
+  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
 (s/def ::extension
   (s/nilable
@@ -36,12 +46,6 @@
 
 ;; object type strings match the keyword names found in xapi-schema, e.g
 ;; `:statement-object/statement-ref`
-
-(def object-type-strings
-  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
-
-(s/def ::object-types
-  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
 (def object-type-kebab-case
   {"Activity"     "activity"

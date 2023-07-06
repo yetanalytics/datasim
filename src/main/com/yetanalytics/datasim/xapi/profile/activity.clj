@@ -49,6 +49,8 @@
                 nil)))
        (mapcat identity)))
 
+;; It's somewhat inefficient to parse rules in two different places during
+;; profile compilation, but it creates somewhat cleaner code.
 (defn- template-rule-activity-types
   "Derive Activity Type IDs from the Template's Rules"
   [template]
@@ -67,7 +69,9 @@
       (update-in [:definition] dissoc :_context)
       w/stringify-keys))
 
-(defn- assoc-activity [activity-map activity]
+(defn- assoc-activity
+  "Associate `activity` to `activity-map`."
+  [activity-map activity]
   (let [{activity-id :id {activity-type-id :type} :definition} activity]
     (assoc-in activity-map
               [activity-id activity-type-id]
@@ -87,7 +91,11 @@
         serial (random/rand-int* rng Integer/MAX_VALUE)]
     (format "https://example.org/%s/%d" tag serial)))
 
-(defn- assoc-activity-type-id [rng min-per-type activity-map activity-type-id]
+(defn- assoc-activity-type-id
+  "Create a new Activity from `activity-type-id` and associate it with
+   `activity-map`. Use `rng` to generate a new Activity ID, while `min-per-type`
+   limits the max number of Activities generated for `activity-type-id`."
+  [rng min-per-type activity-map activity-type-id]
   (let [id->activity (fn [activity-id]
                        {"id"         activity-id
                         "definition" {"type" activity-type-id}})
@@ -109,8 +117,9 @@
 ;; Putting it all together
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO: Bring in type-iri-map spec using :as-alias in Clojure 1.11
 (s/fdef create-activity-map
-  :args (s/cat :type-iri-map map? ; TODO: Better spec
+  :args (s/cat :type-iri-map map?
                :seed int?
                :kwargs (s/keys* :opt-un [::min-per-type]))
   :ret ::activity-map)
