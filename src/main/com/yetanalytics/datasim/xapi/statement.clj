@@ -82,9 +82,7 @@
   [rng alignment]
   (some->> alignment
            not-empty
-           keys
-           (random/choose rng alignment)
-           (get alignment)
+           (random/choose-map rng alignment)
            :object-override
            w/stringify-keys))
 

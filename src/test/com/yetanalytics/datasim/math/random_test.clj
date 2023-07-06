@@ -14,7 +14,8 @@
                     r/rand-gaussian
                     r/rand-unbound-int
                     r/rand-uuid
-                    r/choose})
+                    r/choose
+                    r/choose-map})
         {:keys [total
                 check-passed]} (stest/summarize-results results)]
     (is (= total check-passed))))

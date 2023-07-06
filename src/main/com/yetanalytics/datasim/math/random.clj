@@ -199,7 +199,20 @@
               (rand-gaussian rng (* sd weight) sd))))]
     (apply max-key rand-gauss coll)))
 
+(s/fdef choose-map
+  :args (s/cat :rng     ::rng
+               :weights (s/map-of any? (s/keys :req-un [::weight]))
+               :coll    (s/map-of any? any? :min-count 1)
+               :options (s/keys* :opt-un [::sd])))
+
+(defn choose-map
+  "Probabilistically select one value from the map `m`. The `weights` map
+   should be a map from the keys of `m` to their `:weight` maps."
+  [rng weights m & {:keys [sd] :or {sd 0.25}}]
+  (get m (choose rng weights (keys m) :sd sd)))
+
 (comment
+  
   (def the-rng (seed-rng 100))
 
   (rand-nth* the-rng [])
