@@ -1,7 +1,7 @@
-(ns com.yetanalytics.datasim.xapi.agent
+(ns com.yetanalytics.datasim.xapi.actor
   (:require [clojure.spec.alpha :as s]))
 
-(s/def ::agent-id
+(s/def ::actor-ifi
   (s/and string?
          not-empty
          (fn [^String s]
@@ -10,11 +10,14 @@
                (.startsWith s "mbox_sha1sum::")
                (.startsWith s "openid::")))))
 
-(defn agent-id
-  "Return a string representing the id of an agent in the sim. Will be prefixed
-   with the ifi property and two colons ::. For accounts, the homepage will
-   precede the name, and they will be delimited by a comma like:
-   account::https://foo.bar,baz. If an IFI cannot be found, returns nil."
+(defn actor-ifi
+  "Return a string representing the IFI of an Agent or Group. Will be prefixed
+   with the IFI property and two colons `::`.
+   
+   For accounts, the homepage will precede the name, and they will be delimited
+   by a comma as so: `account::https://foo.bar,baz`.
+   
+   If an IFI cannot be found, returns `nil`."
   [{:keys [mbox
            mbox_sha1sum
            openid]
