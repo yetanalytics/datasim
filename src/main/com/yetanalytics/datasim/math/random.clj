@@ -82,8 +82,8 @@
   :ret int?)
 
 (defn rand-unbound-int
-  "Generate a pseudorandom, uniformly distributed integer value anywhere
-   between `Integer/MIN_VALUE` and `Integer/MAX_VALUE`."
+  "Generate a pseudorandom, uniformly distributed integer value in the
+   entire range of possible Java long/Clojure integer values."
   [^Random rng]
   (.nextLong rng))
 
@@ -109,12 +109,14 @@
   "Generate a pseudorandom UUID (as a string)."
   [^Random rng]
   ;; Derived from `clojure.test.check.generators/uuid`
+  ;; We use decimal representations of bitmasks to avoid having to
+  ;; coerce to unchecked longs
   (let [x1 (-> (rand-unbound-int rng)
-               (bit-and -45057)
-               (bit-or 0x4000))
+               (bit-and -45057)                 ; 0xffffffffffff4fff
+               (bit-or 0x4000))                 ; 0x0000000000004000
         x2 (-> (rand-unbound-int rng)
-               (bit-or -9223372036854775808)
-               (bit-and -4611686018427387905))]
+               (bit-or -9223372036854775808)    ; 0x8000000000000000
+               (bit-and -4611686018427387905))] ; 0xbfffffffffffffff
     (.toString (UUID. x1 x2))))
 
 ;; Collection Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -215,6 +217,7 @@
   
   (def the-rng (seed-rng 100))
 
+  (rand-uuid the-rng)
   (rand-nth* the-rng [])
   
   (shuffle* the-rng [1 2 3])
