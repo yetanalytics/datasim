@@ -4,6 +4,7 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.test-constants :as const]
+            [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim :refer [generate-map
                                               generate-seq
                                               generate-map-async
@@ -67,22 +68,20 @@
    "name"       "Owen Overrider"
    "mbox"       "mailto:owoverrider@example.com"})
 
+(def double-profile-input
+  (update const/simple-input :profiles conj const/mom-profile))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (deftest generate-map-test
-  (testing "given valid input, returns a valid skeleton"
-    (is (s/valid?
-         :com.yetanalytics.datasim.sim/skeleton
-         (generate-map const/simple-input)))))
-
-(deftest disjoint-rng-test
+  (testing "Given valid input, returns a valid skeleton"
+    (is (s/valid? ::sim/skeleton (generate-map const/simple-input))))
   (testing "Make sure RNGs aren't shared across threads."
     (let [skeleton (generate-map (assoc-in const/simple-input
-                                             [:parameters :end]
-                                             nil))]
+                                           [:parameters :end]
+                                           nil))]
       (are [actor-id] (let [statement-seq (get skeleton
                                                actor-id)
                             f1 (future (nth statement-seq 1000))
@@ -90,21 +89,17 @@
                         (= @f1 @f2))
         alice-mbox
         bob-mbox
-        fred-mbox))))
-
-(deftest xapi-test
-  (testing "sim returns valid xapi statements"
+        fred-mbox)))
+  (testing "Simulation returns valid xapi statements"
     (let [skeleton (generate-map (assoc-in const/simple-input
-                                             [:parameters :end]
-                                             nil))]
+                                           [:parameters :end]
+                                           nil))]
       (are [actor-id] (s/valid? (s/every ::xs/statement)
                                 (get skeleton actor-id))
         alice-mbox
         bob-mbox
-        fred-mbox))))
-
-(deftest stack-test
-  (testing "that we can iterate for a long time w/o a stack overflow"
+        fred-mbox)))
+  (testing "We can iterate for a long time w/o a stack overflow"
     (is (s/valid? ::xs/statement
                   (-> const/simple-input
                       (assoc-in [:parameters :end] nil)
@@ -113,71 +108,69 @@
                       (nth 10000))))))
 
 (deftest generate-seq-test
-  (testing "returns statements"
+  (testing "Returns statements"
     (is (s/valid? (s/every ::xs/statement) (generate-seq const/simple-input))))
-  (testing "respects max param"
+  (testing "Respects `max` param"
     (let [ret (generate-seq (assoc-in const/simple-input [:parameters :max] 3))]
       (is (s/valid? (s/every ::xs/statement) ret))
       (is (= 3 (count ret)))))
-  (testing "respects from param"
+  (testing "Respects `from` param"
     (let [[s0 s1 & _] (generate-seq const/simple-input)
           [s1' & _]   (generate-seq (assoc-in const/simple-input
-                                         [:parameters :from]
-                                         (get-timestamp s0)))]
+                                              [:parameters :from]
+                                              (get-timestamp s0)))]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
-  (testing "multiple profiles"
-    (let [double-input (update const/simple-input :profiles conj const/mom-profile)]
-      (testing "respects gen-profiles param"
-        (is (= [[{"id" cmi5-version-id}]
-                [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
-                 {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
-               (-> double-input
-                   (update :parameters
-                           assoc
-                           :gen-profiles [cmi5-id])
-                   generate-seq
-                   (->> (map get-context-category-activities))
-                   distinct))))
-      (testing "respects gen-patterns param"
-        (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
-               (-> double-input
-                   (update :parameters
-                           assoc
-                           :gen-patterns [tla-completed-session-id])
-                   generate-seq
-                   (->> (map get-context-category-activities))
-                   distinct))))
-      (testing "allows referential use of non-gen profiles"
-        (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
-               (-> double-input
-                   (update :profiles conj const/referential-profile)
-                   (update :parameters
-                           assoc
-                           :gen-patterns [referential-completed-session-id])
-                   generate-seq
-                   (->> (map get-context-category-activities))
-                   distinct))))))
-  (testing "respects agent selection"
+  (testing "Respects `gen-profiles` param (w/ multiple profiles)"
+    (is (= [[{"id" cmi5-version-id}]
+            [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
+             {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
+           (-> double-profile-input
+               (update :parameters
+                       assoc
+                       :gen-profiles [cmi5-id])
+               generate-seq
+               (->> (map get-context-category-activities))
+               distinct))))
+  (testing "Respects `gen-patterns` param (w/ multiple profiles)"
+    (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
+           (-> double-profile-input
+               (update :parameters
+                       assoc
+                       :gen-patterns [tla-completed-session-id])
+               generate-seq
+               (->> (map get-context-category-activities))
+               distinct))))
+  (testing "Allows referential use of non-gen profiles"
+    (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
+           (-> double-profile-input
+               (update :profiles conj const/referential-profile)
+               (update :parameters
+                       assoc
+                       :gen-patterns [referential-completed-session-id])
+               generate-seq
+               (->> (map get-context-category-activities))
+               distinct))))
+  (testing "Respects agent selection"
     (let [ret (generate-seq (assoc-in const/simple-input [:parameters :max] 3)
                        ;; specify we only want the given agent(s)
-                       :select-agents [bob-mbox])]
+                            :select-agents [bob-mbox])]
       (is (every?
            #(= bob-mailto (get-actor-mbox %))
            ret))))
-  (testing "only actors in personae are generated"
+  (testing "Only actors in personae are generated"
     (is (= #{alice-mailto bob-mailto fred-mailto}
            (->> const/simple-input generate-seq (map get-actor-mbox) set))))
-  (testing "can apply object override"
+  (testing "Can apply object override"
     (let [ret (generate-seq (assoc const/simple-input
-                              :alignments const/override-alignments)
-                       :select-agents [bob-mbox])]
+                                   :alignments const/override-alignments)
+                            :select-agents [bob-mbox])]
       (is (every? #(or (= override-activity-1 %)
                        (= override-activity-2 %))
                   (map get-object ret)))))
-  (testing "can apply multiple personae"
+  (testing "Can apply multiple personae"
     (let [ret (generate-seq (update const/simple-input
-                               :personae-array conj const/tc3-personae))
+                                    :personae-array conj const/tc3-personae))
           ids (map get-actor-mbox ret)]
       (is (= #{;; simple personae
                alice-mailto
@@ -192,12 +185,12 @@
                "mailto:steve@example.org"}
              (set ids))))))
 
-(deftest sim-chan-test
-  (testing "async statement gen produces valid statements"
+(deftest generate-async-test
+  (testing "Async statement gen produces valid statements"
     (let [agent-chan (-> const/simple-input generate-map-async (get alice-mbox))
           async-res  (a/<!! (a/into [] agent-chan))]
       (is (s/valid? (s/every ::xs/statement) async-res))))
-  (testing "sync vs async statement gen has same result"
+  (testing "Sync vs async statement gen has same result"
     (let [input     const/simple-input
           sync-res  (->> input generate-seq)
           async-res (->> input generate-seq-async (a/into []) a/<!!)]
