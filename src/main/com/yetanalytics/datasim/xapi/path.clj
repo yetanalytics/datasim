@@ -1,5 +1,13 @@
 (ns com.yetanalytics.datasim.xapi.path
-  "Given a path into an xAPI structure, return a spec from xapi-schema"
+  "Paths of the form `[\"property\" '* ...]`, which are used to navigate
+   xAPI Statements.
+   
+   Functions include getting the appropriate spec for the path at the
+   location, as well as determining the valid objectTypes allowed at
+   the location.
+   
+   Note that this namespace is used both during Profile compilation and
+   Statement generation."
   (:require [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]))

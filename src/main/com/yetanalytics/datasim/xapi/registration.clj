@@ -1,6 +1,8 @@
 (ns com.yetanalytics.datasim.xapi.registration
+  "Registration map sequence generation. Each registration map is to be used
+   for Statement generation."
   (:require [clojure.spec.alpha :as s]
-            [xapi-schema.spec] ; for registration
+            [xapi-schema.spec] ; for registration spec
             [com.yetanalytics.datasim.input.alignments      :as alignment]
             [com.yetanalytics.datasim.math.random           :as random]
             [com.yetanalytics.datasim.xapi.profile          :as profile]

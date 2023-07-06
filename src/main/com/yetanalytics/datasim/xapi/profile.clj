@@ -1,4 +1,8 @@
 (ns com.yetanalytics.datasim.xapi.profile
+  "Profile compilation.
+   
+   Creates a `profile-map` data structure that is used for the simulation
+   of an entire Profile cosmos."
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.input.profile    :as profile]
@@ -133,10 +137,27 @@
   :ret ::profile-map)
 
 (defn profiles->profile-map
-  "Create a map from `profiles` that contains `type-iri-map`, `activity-map`,
-   `statement-base-map`, and `parsed-rules-map`. Uses `pattern-params` to
-   narrow down primary Patterns and `activity-seed` to generate additional
-   activities in the cosmos."
+  "Create a map from `profiles` that contains the following:
+   
+   - `type-iri-map`: A map from object types to IDs to the object maps (i.e.
+   Concepts, Statement Templates, and Patterns).
+   - `activity-map`: A map from Activity Type IDs to Activity IDs to the
+   Activity maps (in Statement, not Profile, form).
+   - `verb-map`: A map from Verb IDs to Verbs (in Statement, not Profile,
+   form).
+   - `extension-spec-map`: A map from one of `:activity`, `:context`, or
+   `:result` to an Extension ID to the Extension spec derived from its
+   `inlineSchema property`.
+   - `statement-base-map`: A map from Template IDs to the Template's
+   xAPI Statement base, as derived from its determining properties and inScheme.
+   - `parsed-rules-map`: A map from Template IDs to the Template's parsed
+   rules.
+   - `pattern-walk-fn`: A function that, when passed in `alignment` and `rng`
+   arguments, generates a lazy sequence of visited Templates for a particular
+   primary Pattern.
+   
+   Uses `pattern-params` to narrow down primary Patterns and `activity-seed` to
+   generate additional Activity IDs in the cosmos."
   [profiles pattern-params activity-seed]
   (let [type-iri-map*      (profiles->type-iri-map profiles)
         type-iri-map       (select-primary-patterns type-iri-map* pattern-params)

@@ -1,5 +1,10 @@
 (ns com.yetanalytics.datasim.xapi.actor
+  "Utilities for Agents and Groups (collectively known as Actors)."
   (:require [clojure.spec.alpha :as s]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::actor-ifi
   (s/and string?
@@ -9,6 +14,10 @@
                (.startsWith s "account::")
                (.startsWith s "mbox_sha1sum::")
                (.startsWith s "openid::")))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn actor-ifi
   "Return a string representing the IFI of an Agent or Group. Will be prefixed

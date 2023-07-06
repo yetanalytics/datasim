@@ -1,5 +1,9 @@
 (ns com.yetanalytics.datasim.xapi.rule
-  "Apply statement template rules for generation"
+  "Statement Template rules. Contains functions to parse rules, apply them to
+   Statements, and validate Statements against rules.
+   
+   Note that this namespace is used during both Profile compilation and
+   Statement generation."
   (:require [clojure.core.memoize           :as memo]
             [clojure.set                    :as cset]
             [clojure.string                 :as cstr]

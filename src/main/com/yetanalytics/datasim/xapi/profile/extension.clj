@@ -1,4 +1,5 @@
 (ns com.yetanalytics.datasim.xapi.profile.extension
+  "Creation of `extension-spec-map` for Profile compilation."
   (:require [clojure.spec.alpha       :as s]
             [com.yetanalytics.schemer :as schemer]))
 

@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.xapi.statement
-  "Generate Statements"
+  "Statement generation."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]

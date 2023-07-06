@@ -1,4 +1,6 @@
 (ns com.yetanalytics.datasim.xapi.profile.template
+  "Creation of `statement-base-map` and `parsed-rules-map` for Profile
+   compilation."
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.xapi.rule    :as rule]))

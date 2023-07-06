@@ -1,4 +1,5 @@
 (ns com.yetanalytics.datasim.xapi.profile.verb
+  "Creation of `verb-map` for Profile compilation."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]))

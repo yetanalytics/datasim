@@ -1,4 +1,5 @@
 (ns com.yetanalytics.datasim.xapi.profile.pattern
+  "Creation of `pattern-walk-fn` for Profile compilation."
   (:require [clojure.spec.alpha :as s]
             [clojure.zip        :as z]
             [com.yetanalytics.pan.objects.template     :as template]

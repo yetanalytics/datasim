@@ -1,4 +1,5 @@
 (ns com.yetanalytics.datasim.xapi.profile.activity
+  "Creation of `activity-map` for Profile compilation."
   (:require [clojure.spec.alpha :as s]
             [clojure.string     :as cs]
             [clojure.walk       :as w]
