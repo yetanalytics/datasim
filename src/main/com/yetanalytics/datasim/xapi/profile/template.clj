@@ -7,6 +7,8 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::template ::template/template)
+
 (s/def ::statement-base-map
   (s/map-of ::template/id map?))
 

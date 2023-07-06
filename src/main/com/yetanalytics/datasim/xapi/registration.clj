@@ -1,20 +1,22 @@
 (ns com.yetanalytics.datasim.xapi.registration
   (:require [clojure.spec.alpha :as s]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.pan.objects.template         :as template]
-            [com.yetanalytics.datasim.input.alignments     :as alignment]
-            [com.yetanalytics.datasim.math.random          :as random]
-            [com.yetanalytics.datasim.xapi.profile         :as profile]
-            [com.yetanalytics.datasim.xapi.profile.pattern :as pattern]))
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.input.alignments      :as alignment]
+            [com.yetanalytics.datasim.math.random           :as random]
+            [com.yetanalytics.datasim.xapi.profile          :as profile]
+            [com.yetanalytics.datasim.xapi.profile.template :as template]
+            [com.yetanalytics.datasim.xapi.profile.pattern  :as pattern]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::registration ::xs/registration)
+
 (s/def ::seed int?)
 
 (s/def ::registration-map
-  (s/keys :req-un [::xs/registration
+  (s/keys :req-un [::registration
                    ::seed
                    ::template/template
                    ::pattern/pattern-ancestors]))
