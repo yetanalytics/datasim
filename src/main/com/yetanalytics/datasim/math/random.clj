@@ -93,72 +93,16 @@
   [^Random rng mean sd]
   (+ mean (* sd (.nextGaussian rng))))
 
-(s/fdef rand-nth*
-  :args (s/cat :rng ::rng
-               :coll (s/every any?
-                              :min-count 1))
-  :ret any?)
-
-(defn rand-nth*
-  [rng coll]
-  (nth coll (rand-int rng (count coll))))
-
-(s/fdef shuffle*
-  :args (s/cat :rng ::rng
-               :coll (s/every any?))
-  :ret coll?
-  :fn (fn [{{:keys [rng coll cnt]} :args ret :ret}]
-        (= (set coll)
-           (set ret))))
-
-(defn shuffle*
-  ([rng coll]
-   (shuffle* rng coll (count coll)))
-  ([rng coll cnt]
-   (lazy-seq
-    (when (< 0 cnt)
-      (let [[head [x & tail]] (split-at
-                               (rand-int
-                                rng
-                                cnt)
-                               coll)]
-        (cons x
-              (shuffle*
-               rng
-               (concat head tail)
-               (dec cnt))))))))
-
-
-(s/fdef random-sample*
-  :args (s/cat :rng ::rng
-               :prob (s/double-in :min 0.0 :max 1.0 :NaN? false)
-               :coll (s/every any? :min-count 1)
-               :weights (s/?
-                         (s/map-of any? double?)))
-  :ret coll?)
-
-(defn random-sample*
-  ([rng prob]
-   (filter (fn [_] (< (rand rng) prob))))
-  ([rng prob coll]
-   (filter (fn [_] (< (rand rng) prob)) coll))
-  ([rng prob coll weights]
-   (filter (fn [el]
-             (< (rand rng)
-                (maths/min-max 0.0
-                               (+ prob
-                                  (get weights el 0.0))
-                               1.0)))
-           coll)))
+;; Technically a UUID is a number, right?
 
 (s/fdef rand-uuid
   :args (s/cat :rng ::rng)
   :ret string?)
 
 (defn rand-uuid
-  "Produce a random uuid (as a string) for the rng.
-  Derived from `clojure.test.check.generators/uuid`"
+  "Generate a pseudorandom UUID (as a string)."
   [^Random rng]
+  ;; Derived from `clojure.test.check.generators/uuid`
   (let [x1 (-> (rand-unbound-int rng)
                (bit-and -45057)
                (bit-or 0x4000))
@@ -167,6 +111,68 @@
                (bit-and -4611686018427387905))]
     (.toString (UUID. x1 x2))))
 
+;; Collection Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- validate-not-empty
+  [coll]
+  (when (empty? coll)
+    (throw (ex-info "Attempted to select elements from an empty collection!"
+                    {:type ::empty-coll}))))
+
+(s/fdef rand-nth*
+  :args (s/cat :rng  ::rng
+               :coll (s/every any? :min-count 1))
+  :ret any?)
+
+(defn rand-nth*
+  "Randomly select an element from `coll`. Each element has an equal
+   probability of being selected.
+   
+   Will throw an `::empty-coll` exception on an empty `coll`."
+  [rng coll]
+  (validate-not-empty coll)
+  (nth coll (rand-int rng (count coll))))
+
+(s/fdef shuffle*
+  :args (s/cat :rng  ::rng
+               :coll (s/every any?))
+  :ret coll?
+  :fn (fn [{{:keys [coll]} :args ret :ret}]
+        (= (set coll) (set ret))))
+
+(defn shuffle*
+  "Randomly shuffle `coll` and return a lazy sequence as the result."
+  ([rng coll]
+   (shuffle* rng coll (count coll)))
+  ([rng coll cnt]
+   (lazy-seq
+    (when (< 0 cnt)
+      (let [[head [x & tail]] (split-at (rand-int rng cnt) coll)]
+        (cons x
+              (shuffle* rng (concat head tail) (dec cnt))))))))
+
+(s/fdef random-sample*
+  :args (s/cat :rng     ::rng
+               :prob    (s/double-in :min 0.0 :max 1.0)
+               :coll    (s/every any? :min-count 1)
+               :weights (s/? (s/map-of any? double?)))
+  :ret coll?)
+
+(defn random-sample*
+  "Probabilistically sample elements from `coll`, where each element has
+   `prob` probability of being selected. If `weights` are provided, then
+   the element associated with a weight has `(+ prob weight)` probability
+   (up to 1.0) of being selected. Returns a transducer when `coll` is not
+   provided."
+  ([rng prob]
+   (filter (fn [_] (< (rand rng) prob))))
+  ([rng prob coll]
+   (filter (fn [_] (< (rand rng) prob)) coll))
+  ([rng prob coll weights]
+   (filter (fn [x]
+             (< (rand rng)
+                (maths/bound-probability (+ prob (get weights x 0.0)))))
+           coll)))
 
 (s/def ::sd
   (s/double-in :min 0.0 :infinite? false :NaN? false))
@@ -178,13 +184,13 @@
   :args (s/cat :rng ::rng
                :weights (s/map-of any? (s/keys :req-un [::weight]))
                :coll (s/every any? :min-count 1)
-               :options (s/keys*
-                         :opt-un [::sd])))
+               :options (s/keys* :opt-un [::sd])))
 
 (defn choose
-  [rng weights coll
-   & {:keys [sd]
-      :or {sd 0.25}}]
+  "Probabilistically select one element from `coll`. The `weights` map
+   should be a map of `coll` elements to map with a `:weight` value."
+  [rng weights coll & {:keys [sd] :or {sd 0.25}}]
+  (validate-not-empty coll)
   (let [even-odds (/ 1 (count coll))]
     (apply max-key
            (fn [el]
@@ -196,6 +202,14 @@
                   (+ even-odds (* sd weight))
                   sd))))
            coll)))
+
+(comment
+  (def the-rng (seed-rng 100))
+
+  (rand-nth* the-rng [])
+  
+  (shuffle* the-rng [1 2 3])
+  (choose rng {} []))
 
 (comment
 
