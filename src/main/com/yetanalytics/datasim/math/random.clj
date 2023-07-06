@@ -1,19 +1,23 @@
 (ns com.yetanalytics.datasim.math.random
-  "Seeded random functions"
-  (:require [com.yetanalytics.datasim.util.maths :as maths]
-            [clojure.spec.alpha :as s]
-            [clojure.spec.gen.alpha :as sgen])
-  (:import [java.util
-            UUID Random]))
+  "Random number generation and probabilistic operations."
+  (:require [clojure.spec.alpha :as s]
+            [clojure.spec.gen.alpha :as sgen]
+            [com.yetanalytics.datasim.util.maths :as maths])
+  (:import [java.util UUID Random]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::seed int?)
 
 (s/def ::rng
   (s/with-gen #(instance? Random %)
-    (fn []
-      (sgen/fmap (fn [s]
-                   (Random. s))
-                 (s/gen ::seed)))))
+    (fn [] (sgen/fmap (fn [s] (Random. s)) (s/gen ::seed)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef seed-rng
   :args (s/cat :seed ::seed)
