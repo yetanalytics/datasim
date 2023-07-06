@@ -33,11 +33,11 @@
 
 (defn- pattern-zipper
   "Create a zipper over the Patterns and Statement Templates found in
-     `type-iri-map`. A special `::root` sentinel Pattern is created as an
-     alternates Pattern of all the primary Patterns in the profiles.
-     The zipper can then be walked; traversal will be done in a deterministic,
-     pseudorandom fashion, in which `rng` and `alignment` is used to choose
-     the children of each node in the zipper."
+   `type-iri-map`. A special `::root` sentinel Pattern is created as an
+   alternates Pattern of all the primary Patterns in the profiles.
+   The zipper can then be walked; traversal will be done in a deterministic,
+   pseudorandom fashion, in which `rng` and `alignment` is used to choose
+   the children of each node in the zipper."
   [type-iri-map alignment rng repeat-max]
   (let [temp-iri-map    (get type-iri-map "StatementTemplate")
         pat-iri-map     (get type-iri-map "Pattern")
@@ -81,10 +81,10 @@
                  (->> pattern-loc z/path rest (keep node->pattern) vec)))))
 
 (defn- walk-pattern-zipper
-  "From the root of a pattern zip, perform a single walk of a primary Pattern,
-     returning a seq of locs. Which primary Pattern is walked will be chosen
-     in a pseudorandom, deterministic fashion (see how the root node is
-     constructed in `pattern-zip`)."
+  "From the root of `pattern-zip`, perform a single walk of a primary Pattern,
+   returning a sequence of Templates. Which primary Pattern is walked will be
+   chosen in a pseudorandom, deterministic fashion (see how the root node is
+   constructed in `pattern-zipper`)."
   [pattern-zip]
   (->> pattern-zip
        (iterate z/next)
@@ -99,6 +99,9 @@
   :ret ::pattern-walk-fn)
 
 (defn create-pattern-walk-fn
+  "Return a function that, when called with the args `alignment rng
+   & {:keys [repeat-max]}`, returns a lazy sequence of Statement Templates
+   that have `:pattern-ancestors` metadata."
   [type-iri-map]
   (fn [alignment rng & {:keys [repeat-max]
                         :or {repeat-max 5}}]

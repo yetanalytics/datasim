@@ -2,7 +2,9 @@
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.pan.objects.template         :as template]
+            [com.yetanalytics.datasim.input.alignments     :as alignment]
             [com.yetanalytics.datasim.math.random          :as random]
+            [com.yetanalytics.datasim.xapi.profile         :as profile]
             [com.yetanalytics.datasim.xapi.profile.pattern :as pattern]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -22,9 +24,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef registration-seq
-  :args (s/cat :type-iri-map map? #_::type-iri-map
-               :alignment map? ; TODO: Better spec
-               :seed number?)
+  :args (s/cat :type-iri-map ::profile/type-iri-map
+               :alignment    ::alignment/alignment
+               :seed         number?)
   :ret (s/every ::registration-map :kind #(instance? clojure.lang.LazySeq %)))
 
 (defn- registration-seq**

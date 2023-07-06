@@ -84,6 +84,9 @@
 ;; Primary Pattern Selection
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; We don't put this in `profile.pattern` since this is part of the process
+;; of creating the type-iri-map.
+
 (s/fdef select-primary-patterns
   :args (s/cat :type-iri-map ::type-iri-map
                :params ::params/parameters)
