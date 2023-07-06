@@ -16,6 +16,12 @@
   (s/with-gen #(instance? Random %)
     (fn [] (sgen/fmap (fn [s] (Random. s)) (s/gen ::seed)))))
 
+(s/def ::sd
+  (s/double-in :min 0.0 :infinite? false :NaN? false))
+
+(s/def ::weight
+  (s/double-in -1.0 1.0))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -82,9 +88,9 @@
   (.nextLong rng))
 
 (s/fdef rand-gaussian
-  :args (s/cat :rng ::rng
+  :args (s/cat :rng  ::rng
                :mean double?
-               :sd double?)
+               :sd   ::sd)
   :ret double?)
 
 (defn rand-gaussian
@@ -155,7 +161,7 @@
   :args (s/cat :rng     ::rng
                :prob    (s/double-in :min 0.0 :max 1.0)
                :coll    (s/every any? :min-count 1)
-               :weights (s/? (s/map-of any? double?)))
+               :weights (s/? (s/map-of any? ::weight)))
   :ret coll?)
 
 (defn random-sample*
@@ -174,16 +180,10 @@
                 (maths/bound-probability (+ prob (get weights x 0.0)))))
            coll)))
 
-(s/def ::sd
-  (s/double-in :min 0.0 :infinite? false :NaN? false))
-
-(s/def ::weight
-  (s/double-in -1.0 1.0))
-
 (s/fdef choose
-  :args (s/cat :rng ::rng
+  :args (s/cat :rng     ::rng
                :weights (s/map-of any? (s/keys :req-un [::weight]))
-               :coll (s/every any? :min-count 1)
+               :coll    (s/every any? :min-count 1)
                :options (s/keys* :opt-un [::sd])))
 
 (defn choose
@@ -191,17 +191,13 @@
    should be a map of `coll` elements to map with a `:weight` value."
   [rng weights coll & {:keys [sd] :or {sd 0.25}}]
   (validate-not-empty coll)
-  (let [even-odds (/ 1 (count coll))]
-    (apply max-key
-           (fn [el]
-             (let [weight (get-in weights [el :weight] 0.0)]
-               (if (<= weight -1.0)
-                 -1.0
-                 (rand-gaussian
-                  rng
-                  (+ even-odds (* sd weight))
-                  sd))))
-           coll)))
+  (let [rand-gauss
+        (fn [x]
+          (let [weight (get-in weights [x :weight] 0.0)]
+            (if (<= weight -1.0)
+              -1.0
+              (rand-gaussian rng (* sd weight) sd))))]
+    (apply max-key rand-gauss coll)))
 
 (comment
   (def the-rng (seed-rng 100))
@@ -209,6 +205,7 @@
   (rand-nth* the-rng [])
   
   (shuffle* the-rng [1 2 3])
+  
   (choose rng {} []))
 
 (comment
