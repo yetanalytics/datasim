@@ -6,8 +6,8 @@
 (deftest random-functions-test
   (let [results (stest/check
                  `#{r/seed-rng
-                    r/rand*
-                    r/rand-int*
+                    r/rand
+                    r/rand-int
                     r/rand-nth*
                     r/shuffle*
                     r/random-sample*

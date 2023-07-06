@@ -3,6 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [com.yetanalytics.datasim.util.maths :as maths])
+  (:refer-clojure :exclude [rand rand-int])
   (:import [java.util UUID Random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,25 +41,35 @@
   ^Random [^Long seed]
   (Random. seed))
 
-(s/fdef rand*
+;; Random Number Generation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef rand
   :args (s/cat :rng ::rng
                :n (s/? number?))
   :ret double?)
 
-(defn rand*
+(defn rand
+  "Generate a pseudorando, uniformly distributed double value between 0 and
+   `n` (both inclusive).
+   
+   See also: `clojure.core/rand`"
   (^Double [^Random rng]
    (.nextDouble rng))
   (^Double [^Random rng n]
-   (* n (rand* rng))))
+   (* n (rand rng))))
 
-(s/fdef rand-int*
+(s/fdef rand-int
   :args (s/cat :rng ::rng
                :n (s/int-in Integer/MIN_VALUE Integer/MAX_VALUE))
-  :ret number?)
+  :ret int?)
 
-(defn rand-int*
+(defn rand-int
+  "Generate a pseudorandom, uniformly distributed integer value between 0
+   (inclusive) and `n` (exclusive).
+   
+   See also: `clojure.core/rand-int`"
   [rng n]
-  (int (rand* rng n)))
+  (long (rand rng n)))
 
 (s/fdef rand-nth*
   :args (s/cat :rng ::rng
@@ -68,7 +79,7 @@
 
 (defn rand-nth*
   [rng coll]
-  (nth coll (rand-int* rng (count coll))))
+  (nth coll (rand-int rng (count coll))))
 
 (s/fdef shuffle*
   :args (s/cat :rng ::rng
@@ -85,7 +96,7 @@
    (lazy-seq
     (when (< 0 cnt)
       (let [[head [x & tail]] (split-at
-                               (rand-int*
+                               (rand-int
                                 rng
                                 cnt)
                                coll)]
@@ -106,12 +117,12 @@
 
 (defn random-sample*
   ([rng prob]
-   (filter (fn [_] (< (rand* rng) prob))))
+   (filter (fn [_] (< (rand rng) prob))))
   ([rng prob coll]
-   (filter (fn [_] (< (rand* rng) prob)) coll))
+   (filter (fn [_] (< (rand rng) prob)) coll))
   ([rng prob coll weights]
    (filter (fn [el]
-             (< (rand* rng)
+             (< (rand rng)
                 (maths/min-max 0.0
                                (+ prob
                                   (get weights el 0.0))

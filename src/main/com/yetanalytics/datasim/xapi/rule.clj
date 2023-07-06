@@ -501,7 +501,7 @@
         ;; choose a value and repeat it between 0 (inclusive) and n-values (exclusive) times
         :else
         (let [x (first val-set)
-              n (random/rand-int* rng n-values)]
+              n (random/rand-int rng n-values)]
           (recur (- n-values n)
                  (disj val-set x)
                  (into val-coll (repeat n x))))))))
@@ -520,7 +520,7 @@
         enum-max   (if (and distincts? valueset)
                      (count valueset)
                      max-enumerated-paths)
-        enum-limit (inc (random/rand-int* rng enum-max))
+        enum-limit (inc (random/rand-int rng enum-max))
         opt-map    {:wildcard-append? (not (some? all)) ; any only = append
                     :wildcard-limit   enum-limit}
         paths      (path/speculate-paths* statement location opt-map)

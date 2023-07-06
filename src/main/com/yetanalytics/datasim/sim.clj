@@ -61,7 +61,7 @@
    
    This is for additional spiciness :)"
   [time-ms rng]
-  (long (+ time-ms (random/rand-int* rng min-ms))))
+  (long (+ time-ms (random/rand-int rng min-ms))))
 
 (defn- drop-time-probs
   "Given `prob-seq` consisting of `[time-ms prob]` pairs, drop the first couple
@@ -75,7 +75,7 @@
            ;; micro-optimization - don't bother with rng if `prob` is 0
            (zero? prob)
            ;; choose `minutes` with probability `prob`
-           (>= (random/rand* rng) prob))))
+           (>= (random/rand rng) prob))))
        not-empty))
 
 (defn- drop-past-time-probs
