@@ -71,6 +71,16 @@
   [rng n]
   (long (rand rng n)))
 
+(s/fdef rand-unbound-int
+  :args (s/cat :rng ::rng)
+  :ret int?)
+
+(defn rand-unbound-int
+  "Generate a pseudorandom, uniformly distributed integer value anywhere
+   between `Integer/MIN_VALUE` and `Integer/MAX_VALUE`."
+  [^Random rng]
+  (.nextLong rng))
+
 (s/fdef rand-nth*
   :args (s/cat :rng ::rng
                :coll (s/every any?
@@ -140,14 +150,6 @@
   (+ mean
      (* sd (.nextGaussian rng))))
 
-(s/fdef rand-long
-  :args (s/cat :rng ::rng)
-  :ret int?)
-
-(defn rand-long
-  [^Random rng]
-  (.nextLong rng))
-
 (s/fdef rand-uuid
   :args (s/cat :rng ::rng)
   :ret string?)
@@ -156,10 +158,10 @@
   "Produce a random uuid (as a string) for the rng.
   Derived from `clojure.test.check.generators/uuid`"
   [^Random rng]
-  (let [x1 (-> (rand-long rng)
+  (let [x1 (-> (rand-unbound-int rng)
                (bit-and -45057)
                (bit-or 0x4000))
-        x2 (-> (rand-long rng)
+        x2 (-> (rand-unbound-int rng)
                (bit-or -9223372036854775808)
                (bit-and -4611686018427387905))]
     (.toString (UUID. x1 x2))))

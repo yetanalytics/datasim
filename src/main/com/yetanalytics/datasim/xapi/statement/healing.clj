@@ -63,7 +63,7 @@
 (def verb-id-gen (s/gen :verb/id))
 
 (defn- generate-verb [rng _]
-  {"id" (stest/generate verb-id-gen 1 (random/rand-long rng))})
+  {"id" (stest/generate verb-id-gen 1 (random/rand-unbound-int rng))})
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
@@ -100,7 +100,7 @@
 (def activity-id-gen (s/gen :activity/id))
 
 (defn- generate-activity [rng _]
-  {"id" (stest/generate activity-id-gen 1 (random/rand-long rng))
+  {"id" (stest/generate activity-id-gen 1 (random/rand-unbound-int rng))
    "objectType" "Activity"})
 
 (s/fdef complete-activity
@@ -167,7 +167,7 @@
         agent*  (assoc agent "objectType" "Agent")]
     (cond
       (nil? ifi)
-      (merge (stest/generate agent-gen 1 (random/rand-long rng)) agent*)
+      (merge (stest/generate agent-gen 1 (random/rand-unbound-int rng)) agent*)
       (and account
            (or (not (contains? account "homePage"))
                (not (contains? account "name"))))
@@ -175,7 +175,7 @@
               "account"
               (partial merge (stest/generate agent-account-gen
                                              1
-                                             (random/rand-long rng))))
+                                             (random/rand-unbound-int rng))))
       :else
       agent*)))
 
@@ -202,7 +202,7 @@
                                                 members)))]
     (cond
       (and (nil? ifi) (nil? members))
-      (merge (stest/generate group-gen 1 (random/rand-long rng)) group*)
+      (merge (stest/generate group-gen 1 (random/rand-unbound-int rng)) group*)
       (and account
            (or (not (contains? account "homePage"))
                (not (contains? account "name"))))
@@ -210,7 +210,7 @@
               "account"
               (partial merge (stest/generate group-account-gen
                                              1
-                                             (random/rand-long rng))))
+                                             (random/rand-unbound-int rng))))
       :else
       group*)))
 
@@ -286,7 +286,7 @@
 
 (defn- complete-attachment
   [rng attachment]
-  (merge (stest/generate attachment-gen 1 (random/rand-long rng)) attachment))
+  (merge (stest/generate attachment-gen 1 (random/rand-unbound-int rng)) attachment))
 
 (s/fdef complete-attachments
   :args (s/cat :attachments (s/coll-of map?)
@@ -313,7 +313,7 @@
   (cond-> (assoc statement-ref "objectType" "StatementRef")
     (nil? id) (assoc "id" (stest/generate statement-ref-id-gen
                                           1
-                                          (random/rand-long rng)))))
+                                          (random/rand-unbound-int rng)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sub Statement

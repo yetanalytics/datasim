@@ -130,7 +130,7 @@
                         :r    rand-long})
                      minute-ms-seq
                      bob-prob
-                     (repeatedly #(random/rand-long bob-rng)))]
+                     (repeatedly #(random/rand-unbound-int bob-rng)))]
     ;; Plot Bob's probability as a function of time
     (view (time-series-plot
            (map :t bob-seq)

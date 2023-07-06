@@ -275,7 +275,7 @@
           minute-day-night-seq]} (ts/time-seqs :t-zero t-start
                                                :sample-ms ?sample-ms
                                                :zone zone-region)
-        mask-arma-seed  (random/rand-long sim-rng)
+        mask-arma-seed  (random/rand-unbound-int sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
                                                        minute-day-night-seq
@@ -284,7 +284,7 @@
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
         ;; Derive profiles map
-        activity-seed   (random/rand-long sim-rng)
+        activity-seed   (random/rand-unbound-int sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
@@ -300,18 +300,18 @@
                                                         actor-group-id
                                                         actor-role)
                   ;; Actor probability seq
-                  actor-arma-seed (random/rand-long sim-rng)
+                  actor-arma-seed (random/rand-unbound-int sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
                   actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
-                  actor-reg-seed  (random/rand-long sim-rng)
+                  actor-reg-seed  (random/rand-unbound-int sim-rng)
                   actor-reg-seq   (reg/registration-seq profiles-map
                                                         actor-alignment
                                                         actor-reg-seed)
                   ;; Additional seed for further gen
-                  actor-seed      (random/rand-long sim-rng)
+                  actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq

@@ -12,7 +12,7 @@
                     r/shuffle*
                     r/random-sample*
                     r/rand-gauss
-                    r/rand-long
+                    r/rand-unbound-int
                     r/rand-uuid
                     r/choose})
         {:keys [total

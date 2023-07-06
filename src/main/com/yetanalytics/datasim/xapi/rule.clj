@@ -447,7 +447,7 @@
                        (partial (complement contains?) none))
         generator    (cond->> generator
                        ?none-filter (gen/such-that ?none-filter))
-        generate-fn  #(gen/generate generator 30 (random/rand-long rng))]
+        generate-fn  #(gen/generate generator 30 (random/rand-unbound-int rng))]
     (try (vec (repeatedly gen-size generate-fn))
          (catch clojure.lang.ExceptionInfo exi
            (throw (ex-info "Generation error!"
