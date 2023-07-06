@@ -1,6 +1,6 @@
 (ns com.yetanalytics.datasim.xapi.registration
   (:require [clojure.spec.alpha :as s]
-            [xapi-schema.spec   :as xs]
+            [xapi-schema.spec] ; for registration
             [com.yetanalytics.datasim.input.alignments      :as alignment]
             [com.yetanalytics.datasim.math.random           :as random]
             [com.yetanalytics.datasim.xapi.profile          :as profile]
@@ -11,7 +11,7 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::registration ::xs/registration)
+(s/def ::registration :context/registration)
 
 (s/def ::seed int?)
 
