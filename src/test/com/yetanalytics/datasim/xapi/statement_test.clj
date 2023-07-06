@@ -60,7 +60,7 @@
           :registration      registration}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Tests
+;; Regular Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- gen-statement [partial-template]
@@ -1019,8 +1019,12 @@
                      :presence "included"}]})]
       (is (not (s/valid? ::xs/statement statement))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Object Override Tests Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn- gen-statement-override [object-override partial-template]
-  (let [valid-args*
+  (let [arguments*
         (-> arguments
             (assoc-in [:alignment "https://example.org/activity/a" :object-override]
                       object-override)
@@ -1029,7 +1033,7 @@
          (merge {:id       "https://template-1"
                  :type     "StatementTemplate"
                  :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
-         (assoc valid-args* :template)
+         (assoc arguments* :template)
          generate-statement)))
 
 (deftest generate-statemnet-override-test
@@ -1155,6 +1159,10 @@
         (is (statement-inputs? statement))
         (is (= (w/stringify-keys override-2)
                (get statement "object")))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Repeat Generation Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftest generate-statement-repeat-test
   (testing "Statement generation is valid regardless of seed"

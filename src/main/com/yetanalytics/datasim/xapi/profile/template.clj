@@ -94,30 +94,6 @@
     :else
     (rule/parse-rules rules)))
 
-(s/fdef update-parsed-rules
-  :args (s/cat :type-iri-map ::type-iri-map
-               :activity-map ::activity-map
-               :parsed-rules (s/every ::rule/parsed-rule))
-  :ret (s/every ::rule/parsed-rule))
-
-(defn update-parsed-rules
-  "Use information from `iri-map` and `activities` maps, to complete the
-   `parsed-rules` by adding additional valuesets or spec generators."
-  [type-iri-map activity-map parsed-rules]
-  (let [iri-verb-map   (get type-iri-map "Verb")
-        verbs          (->> iri-verb-map vals set)
-        verb-ids       (->> iri-verb-map keys set)
-        activities     (->> activity-map vals (mapcat vals) set)
-        activity-ids   (->> activity-map vals (mapcat keys) set)
-        activity-types (->> activity-map keys set)
-        value-sets     {:verbs          verbs
-                        :verb-ids       verb-ids
-                        :activities     activities
-                        :activity-ids   activity-ids
-                        :activity-types activity-types}]
-    (mapv (partial rule/add-rule-valuegen type-iri-map value-sets)
-          parsed-rules)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile Templates -> Statement Base + Parsed Rules
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -145,12 +121,28 @@
 (defn create-parsed-rules-map
   "Given Statement Templates in `type-iri-map`, return a map from those
    templates' IDs to those their parsed rules"
-  [type-iri-map verb-map activity-map]
+  [type-iri-map]
   ;; TODO: Use map-values in Clojure 1.11
   (->> (get type-iri-map "StatementTemplate")
        (reduce-kv (fn [m id template]
                     (->> template
                          template->parsed-rules
-                         (update-parsed-rules verb-map activity-map)
                          (assoc m id)))
                   {})))
+
+(s/fdef update-parsed-rules-map
+  :args (s/cat :type-iri-map ::type-iri-map
+               :activity-map ::activity-map
+               :parsed-rules (s/every ::rule/parsed-rule))
+  :ret (s/every ::rule/parsed-rule))
+
+(defn update-parsed-rules-map
+  "Use information from `profile-map` to complete the rules in
+   `parsed-rules-map` by adding additional valuesets or spec generators."
+  [profile-map parsed-rules-map]
+  (reduce-kv (fn [m template-id parsed-rules]
+               (->> parsed-rules
+                    (rule/add-rules-valuegen profile-map)
+                    (assoc m template-id)))
+             {}
+             parsed-rules-map))

@@ -152,10 +152,13 @@
         verb-map           (verb/create-verb-map type-iri-map)
         extension-spec-map (ext/create-extension-spec-map type-iri-map)
         statement-base-map (t/create-statement-base-map type-iri-map)
-        parsed-rules-map   (t/create-parsed-rules-map type-iri-map verb-map activity-map)]
-    {:type-iri-map       type-iri-map
-     :activity-map       activity-map
-     :verb-map           verb-map
-     :extension-spec-map extension-spec-map
-     :statement-base-map statement-base-map
-     :parsed-rules-map   parsed-rules-map}))
+        parsed-rules-map   (t/create-parsed-rules-map type-iri-map)
+        profile-map*       {:type-iri-map       type-iri-map
+                            :activity-map       activity-map
+                            :verb-map           verb-map
+                            :extension-spec-map extension-spec-map
+                            :statement-base-map statement-base-map
+                            :parsed-rules-map   parsed-rules-map}]
+    (update profile-map*
+            :parsed-rules-map
+            (partial t/update-parsed-rules-map profile-map*))))
