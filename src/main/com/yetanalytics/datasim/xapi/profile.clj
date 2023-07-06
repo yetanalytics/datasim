@@ -1,11 +1,12 @@
 (ns com.yetanalytics.datasim.xapi.profile
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [com.yetanalytics.pan.objects.concept :as concept]
-            [com.yetanalytics.pan.objects.pattern :as pattern]
-            [com.yetanalytics.pan.objects.template :as template]
+            [com.yetanalytics.pan.objects.profile  :as pan-profile]
+            [com.yetanalytics.pan.objects.concept  :as pan-concept]
+            [com.yetanalytics.pan.objects.pattern  :as pan-pattern]
+            [com.yetanalytics.pan.objects.template :as pan-template]
             [com.yetanalytics.datasim.xapi.profile.activity  :as act]
             [com.yetanalytics.datasim.xapi.profile.extension :as ext]
             [com.yetanalytics.datasim.xapi.profile.template  :as tmp]
@@ -15,7 +16,7 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::_profile-id ::profile/id)
+(s/def ::_profile-id ::pan-profile/id)
 
 (def profile-types
   #{"Verb" "ActivityType" "AttachmentUsageTypes"
@@ -24,10 +25,10 @@
     "Activity" "StatementTemplate" "Pattern"})
 
 (def profile-object-spec
-  (s/and (s/or :concept  ::concept/concept
-               :pattern  ::pattern/pattern
-               :template ::template/template)
-         (s/keys :req-un [::_profile-id])))
+  (s/and (s/keys :req [::_profile-id])
+         (s/or :concept  ::pan-concept/concept
+               :pattern  ::pan-pattern/pattern
+               :template ::pan-template/template)))
 
 (s/def ::type-iri-map
   (s/map-of profile-types (s/map-of ::xs/iri profile-object-spec)))
@@ -121,9 +122,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef profiles->profile-map
-  :args (s/cat :profiles (s/every ::profile)
+  :args (s/cat :profiles       ::profile/profiles
                :pattern-params ::params/parameters
-               :activity-seed int?)
+               :activity-seed  int?)
   :ret ::profile-map)
 
 (defn profiles->profile-map

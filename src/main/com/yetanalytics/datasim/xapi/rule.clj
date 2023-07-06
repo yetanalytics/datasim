@@ -10,7 +10,6 @@
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
             [com.yetanalytics.datasim.xapi.path          :as xp]
-            [com.yetanalytics.datasim.xapi.profile       :as profile]
             [com.yetanalytics.datasim.math.random        :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -351,8 +350,9 @@
              (not ?all-set))
         (assoc :generator (spec-generator spec*))))))
 
+;; TODO: Bring in profile-map spec using :as-alias in Clojure 1.11
 (s/fdef add-rules-valuegen
-  :args (s/cat :profile-map  ::profile/profile-map
+  :args (s/cat :profile-map  map?
                :parsed-rules ::parsed-rules)
   :ret ::parsed-rules)
 
