@@ -1,13 +1,7 @@
 (ns com.yetanalytics.datasim.xapi.profile.template
   (:require [clojure.spec.alpha :as s]
-            [clojure.walk :as w]
             [com.yetanalytics.pan.objects.template :as template]
             [com.yetanalytics.datasim.xapi.rule :as rule]))
-
-(defn- profile->statement-verb
-  [{:keys [id prefLabel]}]
-  {"id"      id
-   "display" (w/stringify-keys prefLabel)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Base
@@ -101,7 +95,7 @@
    `parsed-rules` by adding additional valuesets or spec generators."
   [type-iri-map activity-map parsed-rules]
   (let [iri-verb-map   (get type-iri-map "Verb")
-        verbs          (->> iri-verb-map vals (map profile->statement-verb) set)
+        verbs          (->> iri-verb-map vals set)
         verb-ids       (->> iri-verb-map keys set)
         activities     (->> activity-map vals (mapcat vals) set)
         activity-ids   (->> activity-map vals (mapcat keys) set)

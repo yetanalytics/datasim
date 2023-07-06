@@ -6,8 +6,10 @@
             [com.yetanalytics.pan.objects.concept :as concept]
             [com.yetanalytics.pan.objects.pattern :as pattern]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.profile.activity :as activity]
-            [com.yetanalytics.datasim.xapi.profile.template :as t]))
+            [com.yetanalytics.datasim.xapi.profile.activity  :as activity]
+            [com.yetanalytics.datasim.xapi.profile.extension :as ext]
+            [com.yetanalytics.datasim.xapi.profile.verb      :as verb]
+            [com.yetanalytics.datasim.xapi.profile.template  :as t]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -172,6 +174,8 @@
                :activity-seed int?)
   :ret (s/keys :req-un [::type-iri-map
                         ::activity/activity-map
+                        ::verb/verb-map
+                        ::ext/extension-spec-map
                         ::statement-base-map
                         ::parsed-rules-map]))
 
@@ -192,8 +196,12 @@
                                    (t/update-parsed-rules type-iri-map activity-map)
                                    (assoc m id)))
                             {}
-                            parsed-rules-map*)]
+                            parsed-rules-map*)
+        verb-map           (verb/create-verb-map type-iri-map)
+        extension-spec-map (ext/create-extension-spec-map type-iri-map)]
     {:type-iri-map       type-iri-map
      :activity-map       activity-map
+     :verb-map           verb-map
+     :extension-spec-map extension-spec-map
      :statement-base-map statement-base-map
      :parsed-rules-map   parsed-rules-map}))

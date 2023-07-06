@@ -140,11 +140,6 @@
 (defn- generate-verb [rng _]
   {"id" (stest/generate verb-id-gen 1 (random/rand-long rng))})
 
-(defn- profile->statement-verb
-  [{:keys [id prefLabel]}]
-  {"id"      id
-   "display" (w/stringify-keys prefLabel)})
-
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
                :inputs (s/keys :req-un [::type-iri-map ::alignment])
@@ -152,15 +147,13 @@
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{:strs [id] :as verb} {:keys [type-iri-map alignment]} rng]
-  (let [iri-map     (get type-iri-map "Verb")
-        return-verb (fn [_] verb)
+  [{:strs [id] :as verb} {:keys [verb-map alignment]} rng]
+  (let [return-verb (fn [_] verb)
         merge-verb  (fn [v] (merge-nested v verb))]
     (or
      ;; Verb found by ID
      (some->> id
-              iri-map
-              profile->statement-verb
+              verb-map
               merge-verb)
      ;; Verb w/ ID not found, return as-is
      (some->> id
@@ -170,11 +163,10 @@
               (generate-verb rng)
               merge-verb)
      ;; Choose random verb
-     (some->> iri-map
+     (some->> verb-map
               keys
               (random/choose rng alignment)
-              (get iri-map)
-              profile->statement-verb))))
+              (get verb-map)))))
 
 ;; Activities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -564,7 +556,9 @@
    | `template`     | The Template used to generate this Statement"
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
   [{:keys [type-iri-map
+           verb-map
            activity-map
+           extension-map
            statement-base-map
            parsed-rules-map
            actor
@@ -586,7 +580,7 @@
         (or (get parsed-rules-map template-id)
             (->> template
                  t/template->parsed-rules
-                 (rule/add-rules-valuegen type-iri-map activity-map)))
+                 (rule/add-rules-valuegen inputs)))
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng alignment)
