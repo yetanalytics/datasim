@@ -19,8 +19,11 @@
 (s/def ::sd
   (s/double-in :min 0.0 :infinite? false :NaN? false))
 
+(s/def ::prob
+  (s/double-in :min 0.0 :max 1.0))
+
 (s/def ::weight
-  (s/double-in -1.0 1.0))
+  (s/double-in :min -1.0 :max 1.0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
@@ -99,7 +102,22 @@
   [^Random rng mean sd]
   (+ mean (* sd (.nextGaussian rng))))
 
-;; Technically a UUID is a number, right?
+;; A boolean is just a Bernoulli-distribued random number (1 = true, 0 = false)
+
+(s/fdef rand-boolean
+  :args (s/cat :rng  ::rng
+               :prob ::prob)
+  :ret boolean?)
+
+(defn rand-boolean
+  "Generate a pseudorandom boolean value where `true` is returned with
+   probability `prob` and `false` with probablility `1 - prob`. This
+   function can be used to realize `prob`, and is equivalent to generating
+   a Bernoulli-distributed value."
+  [rng prob]
+  (< (rand rng) prob))
+
+;; Technically a UUID is also a number, right?
 
 (s/fdef rand-uuid
   :args (s/cat :rng ::rng)
@@ -107,7 +125,7 @@
 
 (defn rand-uuid
   "Generate a pseudorandom UUID (as a string)."
-  [^Random rng]
+  [rng]
   ;; Derived from `clojure.test.check.generators/uuid`
   ;; We use decimal representations of bitmasks to avoid having to
   ;; coerce to unchecked longs
@@ -161,7 +179,7 @@
 
 (s/fdef random-sample*
   :args (s/cat :rng     ::rng
-               :prob    (s/double-in :min 0.0 :max 1.0)
+               :prob    ::prob
                :coll    (s/every any? :min-count 1)
                :weights (s/? (s/map-of any? ::weight)))
   :ret coll?)
@@ -173,13 +191,13 @@
    (up to 1.0) of being selected. Returns a transducer when `coll` is not
    provided."
   ([rng prob]
-   (filter (fn [_] (< (rand rng) prob))))
+   (filter (fn [_] (rand-boolean rng prob))))
   ([rng prob coll]
-   (filter (fn [_] (< (rand rng) prob)) coll))
+   (filter (fn [_] (rand-boolean rng prob)) coll))
   ([rng prob coll weights]
    (filter (fn [x]
-             (< (rand rng)
-                (maths/bound-probability (+ prob (get weights x 0.0)))))
+             (let [prob* (maths/bound-probability (+ prob (get weights x 0.0)))]
+               (rand-boolean rng prob*)))
            coll)))
 
 (s/fdef choose

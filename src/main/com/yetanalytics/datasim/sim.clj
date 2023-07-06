@@ -75,7 +75,8 @@
            ;; micro-optimization - don't bother with rng if `prob` is 0
            (zero? prob)
            ;; choose `minutes` with probability `prob`
-           (>= (random/rand rng) prob))))
+           ;; in other words, drop with probability `1 - prob`
+           (random/rand-boolean rng (- 1.0 prob)))))
        not-empty))
 
 (defn- drop-past-time-probs
@@ -232,9 +233,6 @@
        day-night-seq
        (lunch-hour-seq min-of-day-seq)))
 
-(defn- clamp-probability [x]
-  (maths/min-max 0.0 x 1.0))
-
 (defn- arma-mask-seqs->prob-seq
   "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
    value, then use that value to derive a probability value in `[0,1]`.
@@ -243,7 +241,7 @@
   (map (fn [arma-val prob-mask-val]
          (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
              (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
-             clamp-probability
+             maths/bound-probability
              double))
        arma-seq
        prob-mask-seq))

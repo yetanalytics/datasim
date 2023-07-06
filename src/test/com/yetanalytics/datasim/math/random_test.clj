@@ -12,6 +12,7 @@
                     r/shuffle*
                     r/random-sample*
                     r/rand-gaussian
+                    r/rand-boolean
                     r/rand-unbound-int
                     r/rand-uuid
                     r/choose
