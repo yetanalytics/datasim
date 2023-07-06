@@ -173,7 +173,7 @@
                         override-seed
                         (assoc-in [:parameters :seed]
                                   (if (= -1 override-seed)
-                                    (.nextLong (random/rng))
+                                    (random/rand-unbound-int (random/rng))
                                     override-seed)))]
             (if-let [errors (not-empty (input/validate :input input))]
               (bail! (errors/map-coll->strs errors))

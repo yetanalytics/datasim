@@ -154,7 +154,9 @@
   "Randomly select an element from `coll`. Each element has an equal
    probability of being selected.
    
-   Will throw an `::empty-coll` exception on an empty `coll`."
+   Will throw an `::empty-coll` exception on an empty `coll`.
+   
+   See also: `clojure.core/rand-nth`"
   [rng coll]
   (validate-not-empty coll)
   (nth coll (rand-int rng (count coll))))
@@ -167,7 +169,9 @@
         (= (set coll) (set ret))))
 
 (defn shuffle
-  "Randomly shuffle `coll` and return a lazy sequence as the result."
+  "Randomly shuffle `coll` and return a lazy sequence as the result.
+   
+   See also: `clojure.core/shuffle`"
   ([rng coll]
    (shuffle rng coll (count coll)))
   ([rng coll cnt]
@@ -189,7 +193,9 @@
    `prob` probability of being selected. If `weights` are provided, then
    the element associated with a weight has `(+ prob weight)` probability
    (up to 1.0) of being selected. Returns a transducer when `coll` is not
-   provided."
+   provided.
+   
+   See also: `clojure.core/random-sample`"
   ([rng prob]
    (filter (fn [_] (rand-boolean rng prob))))
   ([rng prob coll]

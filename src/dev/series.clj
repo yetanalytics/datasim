@@ -90,7 +90,7 @@
                      :std   0.25
                      :c     0.0}
         ;; Generate a seed for the group
-        group-seed (.nextLong sim-rng)
+        group-seed (random/rand-unbound-int sim-rng)
         ;; Create a stochastic seq for the group
         group-arma (ts/arma-seq (merge common-arma
                                        {:seed group-seed}))
@@ -107,7 +107,7 @@
                   minute-day-night-seq
                   lunch-hour-seq)
         ;; Create a seed for Bob's seq
-        bob-arma-seed (.nextLong sim-rng)
+        bob-arma-seed (random/rand-unbound-int sim-rng)
         ;; Create a stochastic seq for Bob
         bob-arma (ts/arma-seq
                   (merge common-arma
@@ -119,7 +119,7 @@
                       bob-arma
                       mask)
         ;; To keep it deterministic, give Bob another seeded RNG to take with him.
-        bob-rng (random/seed-rng (.nextLong sim-rng))
+        bob-rng (random/seed-rng (random/rand-unbound-int sim-rng))
         ;; Compose the time (in minute increments), Bob's probability
         ;; and his RNG and you have everything you need to generate events for
         ;; bob. Here the RNG is used to generate a sequence for demonstration,
