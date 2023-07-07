@@ -8,6 +8,7 @@
             [com.yetanalytics.datasim.util.errors :as errors]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.client :as http]
+            [com.yetanalytics.datasim.math.random :as random]
             [clojure.pprint :refer [pprint]])
   (:import [java.util Random])
   (:gen-class))
@@ -172,7 +173,7 @@
                         override-seed
                         (assoc-in [:parameters :seed]
                                   (if (= -1 override-seed)
-                                    (.nextLong (Random.))
+                                    (random/rand-unbound-int (random/rng))
                                     override-seed)))]
             (if-let [errors (not-empty (input/validate :input input))]
               (bail! (errors/map-coll->strs errors))

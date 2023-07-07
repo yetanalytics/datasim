@@ -39,7 +39,7 @@
     (->> (pattern-walk-fn alignment rng)
          (map (fn [template]
                 {:registration      registration
-                 :seed              (random/rand-long rng)
+                 :seed              (random/rand-unbound-int rng)
                  :template          template
                  :pattern-ancestors (-> template meta :pattern-ancestors)})))))
 

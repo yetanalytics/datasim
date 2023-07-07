@@ -1168,7 +1168,7 @@
   (testing "Statement generation is valid regardless of seed"
     (let [the-rng (random/seed-rng top-seed)]
       (is (->> #(generate-statement
-                 (assoc arguments :seed (random/rand-int* the-rng 1000)))
+                 (assoc arguments :seed (random/rand-int the-rng 1000)))
                (repeatedly 30)
                (every? #(s/valid? ::xs/statement %))))))
   (testing "Statement generation is deterministic"

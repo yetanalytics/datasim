@@ -89,7 +89,7 @@
                         peek
                         (re-matches #"[a-zA-Z0-9]*"))
                    "activity")
-        serial (random/rand-int* rng Integer/MAX_VALUE)]
+        serial (random/rand-int rng Integer/MAX_VALUE)]
     (format "https://example.org/%s/%d" tag serial)))
 
 (defn- assoc-activity-type-id

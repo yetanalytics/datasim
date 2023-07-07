@@ -60,9 +60,9 @@
                                        (random/choose rng alignment)
                                        vector)
                               [])
-               oneOrMore  (repeat (inc (random/rand-int* rng repeat-max))
+               oneOrMore  (repeat (inc (random/rand-int rng repeat-max))
                                   oneOrMore)
-               zeroOrMore (repeat (random/rand-int* rng repeat-max)
+               zeroOrMore (repeat (random/rand-int rng repeat-max)
                                   zeroOrMore))))
          (fn make-node [node-id _child-ids] ; this is a no-op
            node-id)

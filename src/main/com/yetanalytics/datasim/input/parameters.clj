@@ -112,4 +112,4 @@
       {:start    start
        :from     (or from start)
        :timezone (or timezone "UTC")
-       :seed     (or seed (random/rand-long (Random.)))}))))
+       :seed     (or seed (random/rand-unbound-int (random/rng)))}))))

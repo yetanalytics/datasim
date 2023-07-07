@@ -61,7 +61,7 @@
    
    This is for additional spiciness :)"
   [time-ms rng]
-  (long (+ time-ms (random/rand-int* rng min-ms))))
+  (long (+ time-ms (random/rand-int rng min-ms))))
 
 (defn- drop-time-probs
   "Given `prob-seq` consisting of `[time-ms prob]` pairs, drop the first couple
@@ -75,7 +75,8 @@
            ;; micro-optimization - don't bother with rng if `prob` is 0
            (zero? prob)
            ;; choose `minutes` with probability `prob`
-           (>= (random/rand* rng) prob))))
+           ;; in other words, drop with probability `1 - prob`
+           (random/rand-boolean rng (- 1.0 prob)))))
        not-empty))
 
 (defn- drop-past-time-probs
@@ -232,9 +233,6 @@
        day-night-seq
        (lunch-hour-seq min-of-day-seq)))
 
-(defn- clamp-probability [x]
-  (maths/min-max 0.0 x 1.0))
-
 (defn- arma-mask-seqs->prob-seq
   "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
    value, then use that value to derive a probability value in `[0,1]`.
@@ -243,7 +241,7 @@
   (map (fn [arma-val prob-mask-val]
          (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
              (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
-             clamp-probability
+             maths/bound-probability
              double))
        arma-seq
        prob-mask-seq))
@@ -275,7 +273,7 @@
           minute-day-night-seq]} (ts/time-seqs :t-zero t-start
                                                :sample-ms ?sample-ms
                                                :zone zone-region)
-        mask-arma-seed  (random/rand-long sim-rng)
+        mask-arma-seed  (random/rand-unbound-int sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
                                                        minute-day-night-seq
@@ -284,7 +282,7 @@
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
         ;; Derive profiles map
-        activity-seed   (random/rand-long sim-rng)
+        activity-seed   (random/rand-unbound-int sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
@@ -300,18 +298,18 @@
                                                         actor-group-id
                                                         actor-role)
                   ;; Actor probability seq
-                  actor-arma-seed (random/rand-long sim-rng)
+                  actor-arma-seed (random/rand-unbound-int sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
                   actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
-                  actor-reg-seed  (random/rand-long sim-rng)
+                  actor-reg-seed  (random/rand-unbound-int sim-rng)
                   actor-reg-seq   (reg/registration-seq profiles-map
                                                         actor-alignment
                                                         actor-reg-seed)
                   ;; Additional seed for further gen
-                  actor-seed      (random/rand-long sim-rng)
+                  actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq

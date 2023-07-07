@@ -447,7 +447,7 @@
                        (partial (complement contains?) none))
         generator    (cond->> generator
                        ?none-filter (gen/such-that ?none-filter))
-        generate-fn  #(gen/generate generator 30 (random/rand-long rng))]
+        generate-fn  #(gen/generate generator 30 (random/rand-unbound-int rng))]
     (try (vec (repeatedly gen-size generate-fn))
          (catch clojure.lang.ExceptionInfo exi
            (throw (ex-info "Generation error!"
@@ -477,7 +477,7 @@
   (if (and distinct-vals?
            (>= (count value-set) num-locations))
     ;; Distinct values (e.g. IDs)
-    (vec (take num-locations (random/shuffle* rng value-set)))
+    (vec (take num-locations (random/shuffle rng value-set)))
     ;; Either values are not distinct or there are not enough distinct
     ;; values for every location (violating the Pigenhole Principle)
     (loop [n-values num-locations
@@ -485,7 +485,7 @@
            val-coll []]
       (cond
         (zero? n-values)
-        (vec (random/shuffle* rng val-coll))
+        (vec (random/shuffle rng val-coll))
         ;; n-values is nearly exhausted - choose one of each remaining value
         (<= n-values (count val-set))
         (let [x (first val-set)]
@@ -501,7 +501,7 @@
         ;; choose a value and repeat it between 0 (inclusive) and n-values (exclusive) times
         :else
         (let [x (first val-set)
-              n (random/rand-int* rng n-values)]
+              n (random/rand-int rng n-values)]
           (recur (- n-values n)
                  (disj val-set x)
                  (into val-coll (repeat n x))))))))
@@ -520,7 +520,7 @@
         enum-max   (if (and distincts? valueset)
                      (count valueset)
                      max-enumerated-paths)
-        enum-limit (inc (random/rand-int* rng enum-max))
+        enum-limit (inc (random/rand-int rng enum-max))
         opt-map    {:wildcard-append? (not (some? all)) ; any only = append
                     :wildcard-limit   enum-limit}
         paths      (path/speculate-paths* statement location opt-map)
