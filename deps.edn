@@ -1,7 +1,7 @@
 {:paths ["resources" "src/main"]
  :deps {org.clojure/clojure      {:mvn/version "1.11.1"}
         org.clojure/core.async   {:mvn/version "1.6.673"}
-        org.clojure/core.memoize {:mvn/version "0.8.2"}
+        org.clojure/core.memoize {:mvn/version "1.0.257"}
         com.yetanalytics/xapi-schema
         {:mvn/version "1.2.0"
          :exclusions  [org.clojure/clojurescript]}
