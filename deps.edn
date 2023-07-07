@@ -13,7 +13,7 @@
         org.apache.jena/jena-iri {:mvn/version "4.8.0"}
         ;; JSON Path Parser built with
         org.blancas/kern {:mvn/version "1.1.0"}
-        org.clojure/test.check {:mvn/version "1.0.0"}
+        org.clojure/test.check {:mvn/version "1.1.1"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
         http-kit/http-kit {:mvn/version "2.5.0"}
         cheshire/cheshire {:mvn/version "5.11.0"}}
