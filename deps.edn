@@ -1,6 +1,6 @@
 {:paths ["resources" "src/main"]
  :deps {org.clojure/clojure      {:mvn/version "1.11.1"}
-        org.clojure/core.async   {:mvn/version "1.3.610"}
+        org.clojure/core.async   {:mvn/version "1.6.673"}
         org.clojure/core.memoize {:mvn/version "0.8.2"}
         com.yetanalytics/xapi-schema
         {:mvn/version "1.2.0"
@@ -19,8 +19,7 @@
         cheshire/cheshire {:mvn/version "5.11.0"}}
  :aliases
  {:cli {:extra-paths ["src/cli"]
-        :extra-deps {org.clojure/tools.cli {:git/url "https://github.com/clojure/tools.cli"
-                                            :sha "c84e20639257d05b46583db73e203cc0cc275d64"}}}
+        :extra-deps {org.clojure/tools.cli {:mvn/version "1.0.219"}}}
   :run {:main-opts ["-m" "com.yetanalytics.datasim.main"]}
   :dev {:extra-paths ["dev-resources" "src/dev"]
         :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
