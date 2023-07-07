@@ -17,7 +17,7 @@
    [com.yetanalytics.datasim.random :as random]
    [com.yetanalytics.pan.objects.template :as template]
    [xapi-schema.spec :as xs]
-   [java-time :as t])
+   [java-time.api :as t])
   (:import [java.time Instant ZoneRegion]
            [java.util Random]))
 
