@@ -1,12 +1,49 @@
 (ns com.yetanalytics.datasim.xapi.path
-  "Given a path into an xAPI structure, return a spec from xapi-schema"
-  (:require [com.yetanalytics.datasim.json :as json]
-            [clojure.spec.alpha :as s]
+  "Paths of the form `[\"property\" '* ...]`, which are used to navigate
+   xAPI Statements.
+   
+   Functions include getting the appropriate spec for the path at the
+   location, as well as determining the valid objectTypes allowed at
+   the location.
+   
+   Note that this namespace is used both during Profile compilation and
+   Statement generation."
+  (:require [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/def ::path
   (s/coll-of (s/or :key string? :index #{(symbol "*")}) :kind vector?))
+
+(def object-type-strings
+  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
+
+(s/def ::object-types
+  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
+
+(s/def ::extension
+  (s/nilable
+   (s/or :scalar
+         (s/or :string
+               string?
+               :number
+               (s/or :double
+                     (s/double-in :infinite? false :NaN? false
+                                  ;; Limit generation to these values
+                                  :max 1000.0 :min -1000.0)
+                     :int
+                     int?)
+               :boolean
+               boolean?)
+         :coll
+         (s/or :map
+               (s/map-of string? ::extension :gen-max 4)
+               :vector
+               (s/coll-of ::extension :kind vector? :into [] :gen-max 4)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Path -> Object Types
@@ -17,12 +54,6 @@
 
 ;; object type strings match the keyword names found in xapi-schema, e.g
 ;; `:statement-object/statement-ref`
-
-(def object-type-strings
-  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
-
-(s/def ::object-types
-  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
 (def object-type-kebab-case
   {"Activity"     "activity"
@@ -450,7 +481,7 @@
   (advance-custom-map-spec ::xs/language-tag ::xs/language-map-text path p))
 
 (defmethod path-spec ::xs/extensions [_ path p _]
-  (advance-custom-map-spec ::xs/iri ::json/any path p))
+  (advance-custom-map-spec ::xs/iri ::extension path p))
 
 (s/fdef path->spec
   :args (s/cat :spec (s/or :keyword s/get-spec :spec-obj s/spec?)
@@ -472,7 +503,7 @@
               (path-spec spec prefix (first suffix) object-types)]
       (let [suffix* (cond
                       ;; Short-circuit on extension
-                      (= ::json/any new-spec)
+                      (= ::extension new-spec)
                       []
                       ;; We advanced one spot in the path
                       (= (-> prefix count inc) (-> prefix* count))

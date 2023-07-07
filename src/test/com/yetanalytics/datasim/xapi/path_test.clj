@@ -1,11 +1,10 @@
 (ns com.yetanalytics.datasim.xapi.path-test
-  (:require [clojure.test :refer [deftest testing is are]]
-            [clojure.java.io :as io]
+  (:require [clojure.test       :refer [deftest testing is are]]
+            [clojure.java.io    :as io]
             [clojure.spec.alpha :as s]
-            [cheshire.core :as json]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.json.zip :as pzip]
-            [com.yetanalytics.datasim.xapi.path :as path]
+            [cheshire.core      :as json]
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.xapi.path      :as path]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -26,21 +25,37 @@
     "length"      4235
     "sha2"        "672fa5fa658017f1b72d65036f13379c6ab05d4ab3b6664908d8acf0b6a0c634"}])
 
-(defn- kv-map [statement]
-  (->> statement
-       pzip/json->path-map
-       (reduce-kv (fn [m k v] (assoc m (mapv #(if (int? %) '* %) k) v))
-                  {})))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Path to Spec Tests
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (def object-types
   {["object"] #{"activity"}
    ["context" "instructor"] #{"agent"}
    ["actor"] #{"group"}
    ["authority"] #{"agent"}})
+
+;; See: https://dnaeon.github.io/clojure-map-ks-paths/
+(defn- json->path-map
+  [json-value]
+  (letfn [(children [node]
+            (let [v (get-in json-value node)]
+              (cond
+                (map? v)  (map (fn [k] (conj node k)) (keys v))
+                (coll? v) (map (fn [i] (conj node i)) (range (count v)))
+                :else     [])))
+          (branch? [node]
+            (-> node children seq boolean))]
+    (->> (cond
+           (map? json-value) (keys json-value)
+           (coll? json-value) (range (count json-value)))
+         (map vector)
+         (mapcat (partial tree-seq branch? children))
+         (reduce (fn [m path]
+                   (assoc m
+                          (mapv #(if (int? %) '* %) path)
+                          (get-in json-value path)))
+                 {}))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Path to Spec Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Tests are chosen to ensure nearly-complete test coverage of
 ;; path-spec multimethod
@@ -56,7 +71,7 @@
                                        object-types)]
              (and spec
                   (s/valid? spec v))))
-         (kv-map long-statement)))
+         (json->path-map long-statement)))
     (is (every?
          (fn [[path v]]
            (let [spec (path/path->spec :statement/attachments
@@ -64,7 +79,7 @@
                                        object-types)]
              (and spec
                   (s/valid? spec v))))
-         (kv-map sample-attachments)))
+         (json->path-map sample-attachments)))
     (is (every?
          (fn [[path v]]
            (let [spec (path/path->spec ::xs/sub-statement
@@ -72,10 +87,11 @@
                                        object-types)]
              (and spec
                   (s/valid? spec v))))
-         (kv-map (-> long-statement
-                     (assoc "objectType" "SubStatement"
-                            "attachments" sample-attachments)
-                     (dissoc "id" "stored" "version" "authority"))))))
+         (json->path-map
+          (-> long-statement
+              (assoc "objectType" "SubStatement"
+                     "attachments" sample-attachments)
+              (dissoc "id" "stored" "version" "authority"))))))
   (testing "works for arbitrary and relative paths"
     (is (= :score/max
            (path/path->spec ::xs/result
@@ -256,12 +272,12 @@
                                  {})
                 (catch Exception e (-> e ex-data :type))))))
   (testing "extensions get special treatment"
-    (is (= :com.yetanalytics.datasim.json/any
+    (is (= ::path/extension
            (path/path->spec
             :statement/context
             ["extensions" "http://foo.org/extension"]
             {})))
-    (is (= :com.yetanalytics.datasim.json/any
+    (is (= ::path/extension
            (path/path->spec
             :statement/context
             ["extensions" "http://foo.org/extension"]

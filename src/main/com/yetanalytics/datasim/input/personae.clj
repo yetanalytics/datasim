@@ -2,9 +2,8 @@
   "Personae input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [com.yetanalytics.datasim.util        :as u]
-            [com.yetanalytics.datasim.util.errors :as errs]
-            [com.yetanalytics.datasim.util.xapi   :as xapiu]))
+            [com.yetanalytics.datasim.xapi.actor  :as agent]
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -44,9 +43,17 @@
         :identified (s/keys :req-un [:group/objectType ::member]
                             :opt-un [:group/name])))
 
+(defn- remove-nil-vals
+  "Remove nil values from an associative structure. Does not recurse."
+  [m]
+  (reduce-kv
+   (fn [m* k v] (cond-> m* (some? v) (assoc k v)))
+   {}
+   m))
+
 ;; An open-validating group spec, ignores extra nils
 (s/def ::personae
-  (s/and (s/conformer u/remove-nil-vals)
+  (s/and (s/conformer remove-nil-vals)
          (s/conformer w/keywordize-keys w/stringify-keys)
          ::group))
 
@@ -55,7 +62,7 @@
   (let [member-ids (->> personaes
                         (map :member)
                         (apply concat)
-                        (map xapiu/agent-id))]
+                        (map agent/actor-ifi))]
     (= (-> member-ids count)
        (-> member-ids distinct count))))
 

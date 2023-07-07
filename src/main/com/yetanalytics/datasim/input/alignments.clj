@@ -2,9 +2,8 @@
   "Alignment input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [xapi-schema.spec] ; need to bring in :statement/object
-            [com.yetanalytics.datasim.iri         :as iri]
-            [com.yetanalytics.datasim.xapi        :as xapi]
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.xapi.actor  :as agent]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -34,7 +33,7 @@
          :statement/object)) ; from xapi-schema
 
 (s/def ::component
-  iri/iri-spec)
+  ::xs/iri)
 
 (s/def ::weight
   (s/double-in :min -1.0 :max 1.0
@@ -57,7 +56,7 @@
 (defmulti actor-alignment? :type)
 
 (defmethod actor-alignment? "Agent" [_]
-  (fn [{agent-id :id}] (s/valid? ::xapi/agent-id agent-id)))
+  (fn [{agent-id :id}] (s/valid? ::agent/actor-ifi agent-id)))
 
 (defmethod actor-alignment? "Group" [_]
   (constantly true))

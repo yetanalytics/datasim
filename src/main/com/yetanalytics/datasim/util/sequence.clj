@@ -33,7 +33,7 @@
        (chunk-cons (chunk cb) (re-chunk n (drop n xs)))))))
 
 (comment
-  (require '[com.yetanalytics.datasim.random :as r])
+  (require '[com.yetanalytics.datasim.math.random :as r])
 
   (defn rand-monotonic-seq
     [seed & [start]]

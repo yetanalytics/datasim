@@ -1,33 +1,27 @@
 (ns com.yetanalytics.datasim.xapi.profile
-  "Understanding elements of xAPI profiles
-  Generate Profile walks"
+  "Profile compilation.
+   
+   Creates a `profile-map` data structure that is used for the simulation
+   of an entire Profile cosmos."
   (:require [clojure.spec.alpha :as s]
-            [clojure.zip :as z]
             [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.random :as random]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [com.yetanalytics.pan.objects.concept :as concept]
-            [com.yetanalytics.pan.objects.pattern :as pattern]
-            [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.statement :as stmt]
-            [com.yetanalytics.datasim.xapi.activity :as activity])
-  (:import [java.util Random]))
+            [com.yetanalytics.pan.objects.profile  :as pan-profile]
+            [com.yetanalytics.pan.objects.concept  :as pan-concept]
+            [com.yetanalytics.pan.objects.pattern  :as pan-pattern]
+            [com.yetanalytics.pan.objects.template :as pan-template]
+            [com.yetanalytics.datasim.xapi.profile.activity  :as act]
+            [com.yetanalytics.datasim.xapi.profile.extension :as ext]
+            [com.yetanalytics.datasim.xapi.profile.pattern   :as pat]
+            [com.yetanalytics.datasim.xapi.profile.template  :as tmp]
+            [com.yetanalytics.datasim.xapi.profile.verb      :as vrb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::_profile-id ::profile/id)
-
-(s/def ::iri-map
-  (s/map-of iri/iri-spec
-            ;; TODO: using s/and or s/merge to add ::_profile-id won't work
-            ;; It will be present and should be expected
-            (s/or :concept ::concept/concept
-                  :pattern ::pattern/pattern
-                  :template ::template/template)))
+(s/def ::_profile-id ::pan-profile/id)
 
 (def profile-types
   #{"Verb" "ActivityType" "AttachmentUsageTypes"
@@ -36,22 +30,22 @@
     "Activity" "StatementTemplate" "Pattern"})
 
 (def profile-object-spec
-  (s/or :concept  ::concept/concept
-        :pattern  ::pattern/pattern
-        :template ::template/template))
+  (s/and (s/keys :req [::_profile-id])
+         (s/or :concept  ::pan-concept/concept
+               :pattern  ::pan-pattern/pattern
+               :template ::pan-template/template)))
 
 (s/def ::type-iri-map
-  (s/map-of profile-types (s/map-of iri/iri-spec profile-object-spec)))
+  (s/map-of profile-types (s/map-of ::xs/iri profile-object-spec)))
 
-;; TODO: Consolidate these specs with those in `xapi.statement`
-(s/def ::seed int?)
-(s/def ::pattern-ancestors (s/every ::pattern/pattern))
-
-(s/def ::registration-map
-  (s/keys :req-un [::template/template
-                   ::xs/registration
-                   ::seed
-                   ::pattern-ancestors]))
+(s/def ::profile-map
+  (s/keys :req-un [::type-iri-map
+                   ::act/activity-map
+                   ::vrb/verb-map
+                   ::ext/extension-spec-map
+                   ::tmp/statement-base-map
+                   ::tmp/parsed-rules-map
+                   ::pat/pattern-walk-fn]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile -> IRI Map
@@ -91,171 +85,14 @@
           {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Profile Templates Prep
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::statement-base-map
-  (s/map-of ::template/id map?))
-
-(s/fdef profiles->base-statement-map
-  :args (s/cat :profiles (s/every ::profile/profile))
-  :ret ::statement-base-map)
-
-(defn profiles->base-statement-map
-  "Given `profiles`, return a map from those profiles' Statement Template
-   IDs to the base xAPI Statements they form."
-  [profiles]
-  (let [template-coll        (mapcat :templates profiles)
-        ->id-statement-pairs (juxt :id stmt/template->statement-base)]
-    (->> template-coll (map ->id-statement-pairs) (into {}))))
-
-;; TODO: More precise activity-map and parsed-rule specs
-
-(s/def ::parsed-rules-map
-  (s/map-of ::template/id map?))
-
-(s/fdef profiles->parsed-rule-map
-  :args (s/cat :profiles (s/every ::profile/profile)
-               :type-iri-map ::type-iri-map
-               :activity-map map?)
-  :ret ::parsed-rules-map)
-
-(defn profiles->parsed-rule-map
-  "Given `profiles`, as well as `type-iri-map` and `activity-map` (the latter
-   of which are ultimately derived from `profiles`), return a map from template
-   IDs to those Statement Template's parsed rules"
-  [profiles]
-  (let [template-coll    (mapcat :templates profiles)
-        ->id-rules-pairs (juxt :id stmt/template->parsed-rules)]
-    (->> template-coll (map ->id-rules-pairs) (into {}))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Registration Sequence
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- pattern-zip
-  "Create a zipper over the Patterns and Statement Templates found in
-   `type-iri-map`. A special `::root` sentinel Pattern is created as an
-   alternates Pattern of all the primary Patterns in the profiles.
-   The zipper can then be walked; traversal will be done in a deterministic,
-   pseudorandom fashion, in which `rng` and `alignment` is used to choose
-   the children of each node in the zipper."
-  [type-iri-map alignment rng & {:keys [repeat-max]
-                                 :or   {repeat-max 5}}]
-  (let [pat-iri-map     (get type-iri-map "Pattern")
-        primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
-        root-pattern    {:id         ::root
-                         :type       "Pattern"
-                         :alternates primary-pat-ids}
-        pat-iri-map*    (assoc pat-iri-map ::root root-pattern)]
-    (z/zipper
-     (fn branch? [node-id] ; it is a branch if it's a pattern
-       (contains? pat-iri-map* node-id))
-     (fn children [node-id] ; choose children using rng
-       (let [{:keys [sequence alternates optional oneOrMore zeroOrMore]}
-             (get pat-iri-map* node-id)]
-         (cond
-           sequence   sequence
-           alternates [(random/choose rng alignment alternates)]
-           optional   (or (some->> [nil optional]
-                                   (random/choose rng alignment)
-                                   vector)
-                          [])
-           oneOrMore  (repeat (inc (random/rand-int* rng repeat-max))
-                              oneOrMore)
-           zeroOrMore (repeat (random/rand-int* rng repeat-max)
-                              zeroOrMore))))
-     (fn make-node [node-id _child-ids] ; this is a no-op
-       node-id)
-     ::root)))
-
-(defn- walk-once
-  "From the root of a pattern zip, perform a single walk of a primary Pattern,
-   returning a seq of locs. Which primary Pattern is walked will be chosen
-   in a pseudorandom, deterministic fashion (see how the root node is
-   constructed in `pattern-zip`)."
-  [loc]
-  (->> loc
-       (iterate z/next)
-       (take-while (complement z/end?))
-       rest              ; cut the root node off the top
-       (filter z/node))) ; empty seq nodes will be `nil`, so filter them out
-
-;; This `registration-seq-instance` public function exists in order to test
-;; pattern zip creation and registration seq generation; it's not used in
-;; production (but `registration-seq-instance*` is).
-
-(s/fdef registration-seq-instance
-  :args (s/cat :type-iri-map ::type-iri-map
-               :alignment map? ; TODO: Better spec
-               :seed number?)
-  :ret (s/every ::registration-map))
-
-(defn- registration-seq-instance*
-  [type-iri-map pattern-zip rng]
-  (let [registration   (random/rand-uuid rng)
-        node->template (fn [node-id]
-                         (get-in type-iri-map ["StatementTemplate" node-id]))
-        node->pattern  (fn [node-id]
-                         (get-in type-iri-map ["Pattern" node-id]))
-        loc->reg-map   (fn [loc]
-                         (when-some [template (node->template (z/node loc))]
-                           {:registration registration
-                            :template     template
-                            :seed         (random/rand-long rng)
-                             ;; Every previous node that is a Pattern
-                            :pattern-ancestors (->> loc
-                                                    z/path
-                                                    rest
-                                                    (keep node->pattern)
-                                                    vec)}))]
-    ;; Do one deterministc walk, then get the Statement Templates
-    (->> pattern-zip walk-once (keep loc->reg-map))))
-
-(defn registration-seq-instance
-  "Given `seed`, `alignment` and a `type-iri-map`, return a sequence
-   of registration maps. This is similar to `registration-seq` except that
-   it will generate one Pattern's seq, instead of continuing infinitely."
-  [type-iri-map alignment seed]
-  (let [^Random rng (random/seed-rng seed)
-        pattern-zip (pattern-zip type-iri-map alignment rng)]
-    (registration-seq-instance* type-iri-map pattern-zip rng)))
-
-(s/fdef registration-seq
-  :args (s/cat :type-iri-map ::type-iri-map
-               :alignment map? ; TODO: Better spec
-               :seed number?)
-  :ret (s/every ::registration-map :kind #(instance? clojure.lang.LazySeq %)))
-
-(defn- registration-seq*
-  [type-iri-map pattern-zip rng]
-  (lazy-seq
-   (concat (registration-seq-instance* type-iri-map pattern-zip rng)
-           (registration-seq* type-iri-map pattern-zip rng))))
-
-;; TODO: Configurable keep-max arg
-(defn registration-seq
-  "Given `seed`, `alignment` and a `type-iri-map`, return an infinite lazy seq
-   of registration maps with the following properties:
-   - `:registration` is a UUID string that will be the Statement's Context
-     Registration property
-   - `:template` is the Statement Template used to generate the Statement
-   - `:seed` is a derived seed for generating the Statement
-   - `:pattern-ancestors` is the vector of Patterns leading up to the Statement
-     Template in the current Pattern path.
-   
-   Each registration map will be able to generate a single Statement."
-  [type-iri-map alignment seed]
-  (let [^Random rng (random/seed-rng seed)
-        pattern-zip (pattern-zip type-iri-map alignment rng)]
-    (registration-seq* type-iri-map pattern-zip rng)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Primary Pattern Selection
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; We don't put this in `profile.pattern` since this is part of the process
+;; of creating the type-iri-map.
+
 (s/fdef select-primary-patterns
-  :args (s/cat :iri-map ::iri-map
+  :args (s/cat :type-iri-map ::type-iri-map
                :params ::params/parameters)
   :ret ::type-iri-map)
 
@@ -294,33 +131,49 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef profiles->profile-map
-  :args (s/cat :profiles (s/every ::profile)
+  :args (s/cat :profiles       ::profile/profiles
                :pattern-params ::params/parameters
-               :activity-seed int?)
-  :ret (s/keys :req-un [::type-iri-map
-                        ::activity/activity-map
-                        ::statement-base-map
-                        ::parsed-rules-map]))
+               :activity-seed  int?)
+  :ret ::profile-map)
 
 (defn profiles->profile-map
-  "Create a map from `profiles` that contains `type-iri-map`, `activity-map`,
-   `statement-base-map`, and `parsed-rules-map`. Uses `pattern-params` to
-   narrow down primary Patterns and `activity-seed` to generate additional
-   activities in the cosmos."
+  "Create a map from `profiles` that contains the following:
+   
+   - `type-iri-map`: A map from object types to IDs to the object maps (i.e.
+   Concepts, Statement Templates, and Patterns).
+   - `activity-map`: A map from Activity Type IDs to Activity IDs to the
+   Activity maps (in Statement, not Profile, form).
+   - `verb-map`: A map from Verb IDs to Verbs (in Statement, not Profile,
+   form).
+   - `extension-spec-map`: A map from one of `:activity`, `:context`, or
+   `:result` to an Extension ID to the Extension spec derived from its
+   `inlineSchema property`.
+   - `statement-base-map`: A map from Template IDs to the Template's
+   xAPI Statement base, as derived from its determining properties and inScheme.
+   - `parsed-rules-map`: A map from Template IDs to the Template's parsed
+   rules.
+   - `pattern-walk-fn`: A function that, when passed in `alignment` and `rng`
+   arguments, generates a lazy sequence of visited Templates for a particular
+   primary Pattern.
+   
+   Uses `pattern-params` to narrow down primary Patterns and `activity-seed` to
+   generate additional Activity IDs in the cosmos."
   [profiles pattern-params activity-seed]
   (let [type-iri-map*      (profiles->type-iri-map profiles)
         type-iri-map       (select-primary-patterns type-iri-map* pattern-params)
-        statement-base-map (profiles->base-statement-map profiles)
-        parsed-rules-map*  (profiles->parsed-rule-map profiles)
-        activity-map       (activity/create-activity-map type-iri-map activity-seed)
-        parsed-rules-map   (reduce-kv
-                            (fn [m id parsed-rules]
-                              (->> parsed-rules
-                                   (stmt/update-parsed-rules type-iri-map activity-map)
-                                   (assoc m id)))
-                            {}
-                            parsed-rules-map*)]
-    {:type-iri-map       type-iri-map
-     :activity-map       activity-map
-     :statement-base-map statement-base-map
-     :parsed-rules-map   parsed-rules-map}))
+        activity-map       (act/create-activity-map type-iri-map activity-seed)
+        verb-map           (vrb/create-verb-map type-iri-map)
+        extension-spec-map (ext/create-extension-spec-map type-iri-map)
+        statement-base-map (tmp/create-statement-base-map type-iri-map)
+        parsed-rules-map   (tmp/create-parsed-rules-map type-iri-map)
+        pattern-walk-fn    (pat/create-pattern-walk-fn type-iri-map)
+        profile-map*       {:type-iri-map       type-iri-map
+                            :activity-map       activity-map
+                            :verb-map           verb-map
+                            :extension-spec-map extension-spec-map
+                            :statement-base-map statement-base-map
+                            :parsed-rules-map   parsed-rules-map
+                            :pattern-walk-fn    pattern-walk-fn}]
+    (update profile-map*
+            :parsed-rules-map
+            (partial tmp/update-parsed-rules-map profile-map*))))

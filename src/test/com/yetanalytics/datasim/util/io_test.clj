@@ -1,6 +1,6 @@
-(ns com.yetanalytics.datasim.io-test
+(ns com.yetanalytics.datasim.util.io-test
   (:require [clojure.test :refer [deftest testing is]]
-            [com.yetanalytics.datasim.io :as io]
+            [com.yetanalytics.datasim.util.io :as io]
             [com.yetanalytics.datasim.test-constants :as const]))
 
 (deftest read-json-location-test

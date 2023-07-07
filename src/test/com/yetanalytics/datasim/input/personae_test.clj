@@ -1,6 +1,6 @@
 (ns com.yetanalytics.datasim.input.personae-test
   (:require [clojure.test :refer [deftest testing is]]
-            [com.yetanalytics.datasim.io :as dio]
+            [com.yetanalytics.datasim.util.io        :as dio]
             [com.yetanalytics.datasim.input.personae :as personae]
             [com.yetanalytics.datasim.test-constants :as const]))
 

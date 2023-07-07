@@ -3,10 +3,10 @@
             [incanter.core   :refer [view]]
             [incanter.charts :refer [histogram time-series-plot]]
             [incanter.stats  :as stats]
-            [com.yetanalytics.datasim.util.maths :as maths]
-            [com.yetanalytics.datasim.random     :as random]
-            [com.yetanalytics.datasim.timeseries :as ts]
-            [com.yetanalytics.datasim.sim        :as sim]))
+            [com.yetanalytics.datasim.util.maths      :as maths]
+            [com.yetanalytics.datasim.math.random     :as random]
+            [com.yetanalytics.datasim.math.timeseries :as ts]
+            [com.yetanalytics.datasim.sim             :as sim]))
 
 ;; ARMA seq plot + sample mean plot
 ;; Try it with different values of phi and theta

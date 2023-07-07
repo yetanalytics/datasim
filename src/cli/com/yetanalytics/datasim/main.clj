@@ -2,12 +2,12 @@
   (:require [clojure.tools.cli :as cli :refer [parse-opts]]
             [clojure.spec.alpha :as s]
             [clojure.core.async :as a]
+            [cheshire.core      :as json]
+            [com.yetanalytics.datasim :as ds]
             [com.yetanalytics.datasim.input :as input]
             [com.yetanalytics.datasim.util.errors :as errors]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.runtime :as runtime]
-            [com.yetanalytics.datasim.sim :as sim]
-            [com.yetanalytics.datasim.xapi.client :as http]
+            [com.yetanalytics.datasim.client :as http]
             [clojure.pprint :refer [pprint]])
   (:import [java.util Random])
   (:gen-class))
@@ -127,6 +127,15 @@
     (flush)
     (System/exit status)))
 
+;; TODO: Use I/O util functions to write to *out*
+(defn- run-sim!
+  "Generate statement seqs and writes them to stdout."
+  [input & rest-args]
+  (doseq [statement-seq (apply ds/generate-seq input rest-args)]
+    (json/generate-stream statement-seq *out*)
+    (.write *out* "\n")
+    (flush)))
+
 (defn -main [& args]
   (let [{:keys [options
                 arguments
@@ -188,7 +197,7 @@
                                              (assoc-in [:http-options :basic-auth] [username password]))]
                           (if async
                             ;; ASYNC Operation
-                            (let [sim-chan (sim/sim-chan
+                            (let [sim-chan (ds/generate-seq-async
                                             (cond-> input
                                               ;; when async, we just use the post
                                               ;; limit as the max
@@ -216,8 +225,9 @@
                                       (recur)))
                                   (System/exit 0))))
                             ;; SYNC operation
-                            (let [statements (cond->> (sim/sim-seq input
-                                                                   :select-agents select-agents)
+                            (let [statements (cond->> (ds/generate-seq
+                                                       input
+                                                       :select-agents select-agents)
                                                (not= post-limit -1)
                                                (take post-limit))
                                   {:keys [success ;; Count of successfully transacted statements
@@ -239,7 +249,7 @@
                         ;; Endpoint is required when posting
                         (bail! ["-E / --endpoint REQUIRED for post."])))
                     ;; Stdout
-                    (runtime/run-sim! input :select-agents select-agents))
+                    (run-sim! input :select-agents select-agents))
 
                   ;; If they just want to validate and we're this far, we're done.
                   ;; Just return the input spec as JSON

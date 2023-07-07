@@ -1,9 +1,9 @@
-(ns com.yetanalytics.datasim.timeseries-test
+(ns com.yetanalytics.datasim.math.timeseries-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.test.alpha :as stest]
             [same.core :refer [ish?]]
-            [com.yetanalytics.datasim.random     :as r]
-            [com.yetanalytics.datasim.timeseries :as ts]))
+            [com.yetanalytics.datasim.math.random :as r]
+            [com.yetanalytics.datasim.math.timeseries :as ts]))
 
 (deftest timeseries-generative-test
   (testing "generative testing"

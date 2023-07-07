@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.io
+(ns com.yetanalytics.datasim.util.io
   (:require [clojure.java.io :as io]
             [clojure.string  :as cstr]
             [cheshire.core   :as json])

@@ -1,10 +1,10 @@
-(ns com.yetanalytics.datasim.timeseries
+(ns com.yetanalytics.datasim.math.timeseries
   "Timeseries namespaces; all timeseries are lazy, potentially infinite
    sequences of numeric values."
   (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
             [java-time              :as t]
-            [com.yetanalytics.datasim.random :as random]))
+            [com.yetanalytics.datasim.math.random :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ARMA (AutoRegressive Moving Average) Sequences
