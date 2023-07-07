@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.2.0] - 2023-07-07
+- Update the following dependencies:
+  - clojure to `1.11.1` (this is a potential breaking change to any downstream apps that use DATASIM with a previous Clojure version)
+  - core.async to `1.6.673`
+  - core.memoize to `1.0.257`
+  - test.check to `1.1.1`
+  - clojure.java-time to `1.2.0`
+  - http-kit to `2.7.0`
+
 ## [0.1.16] - 2023-06-27
 - Update dependencies to address CVEs:
   - Update Pedestal dependencies to `0.6.0`
