@@ -9,7 +9,7 @@
   (satisfies? ap/Channel x))
 
 (defn heads-chans
-  "Get a sorted map of [head-val <channel>], where channel is open."
+  "Get a sorted map of `[head-val <channel>]`, where `channel` is open."
   ([chans]
    (heads-chans compare chans))
   ([compfn chans]

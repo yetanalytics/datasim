@@ -38,8 +38,9 @@
               callback-fn)))
 
 (defn post-statements
-  "Given LRS options and a seq of statements, send them to an LRS in sync batches
-  If an emit-ids-fn is given it will be called with posted statement ids on success."
+  "Given LRS options and a statement seq, send them to an LRS in synchronous
+   batches. If an `emit-ids-fn` is given it will be called with posted statement
+   IDs on success."
   [{:keys [endpoint
            batch-size
            http-options]
@@ -72,11 +73,11 @@
        :fail    fail})))
 
 (defn post-statements-async
-  "Given LRS options and a channel with statements, send them to an LRS in async
-   batches
+  "Given LRS options and a channel with statements, send them to an LRS in
+   asynchronous batches.
 
-   Returns a channel that will reciveve [:success <list of statement ids>] for
-   each batch or [:fail <failing request>]. Will stop sending on failure."
+   Returns a channel that will reciveve `[:success <list of statement ids>]`
+   for each batch or `[:fail <failing request>]`. Will stop sending on failure."
   [{:keys [endpoint
            batch-size
            http-options]
@@ -86,8 +87,8 @@
              buffer-in
              buffer-out]
       :or {concurrency 4
-           buffer-in 100 ;; 10x default batch size
-           buffer-out 100}}]
+           buffer-in   100 ; 10x default batch size
+           buffer-out  100}}]
   (let [run?     (atom true)
         in-chan  (a/chan buffer-in (partition-all batch-size))
         out-chan (a/chan buffer-out) ; is this.. backpressure?
@@ -102,11 +103,11 @@
                              [:success (mapv id->uuid (decode-body body))]))
                    ;; Close the return channel
                    (a/close! port))
-        async-fn  (fn [batch port]
-                    (let [callback (partial callback port)]
-                      (if @run?
-                        (post-batch endpoint http-options batch callback)
-                        (a/close! port))))]
+        async-fn (fn [batch port]
+                   (let [callback (partial callback port)]
+                     (if @run?
+                       (post-batch endpoint http-options batch callback)
+                       (a/close! port))))]
     (a/pipeline-async concurrency out-chan async-fn in-chan)
     ;; Pipe to in-chan
     (a/pipe statement-chan in-chan)
