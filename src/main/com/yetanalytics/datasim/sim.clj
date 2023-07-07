@@ -4,14 +4,15 @@
             [clojure.core.async :as a]
             [java-time        :as t]
             [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.math.random     :as random]
-            [com.yetanalytics.datasim.math.timeseries :as ts]
-            [com.yetanalytics.datasim.xapi.agent      :as agent]
-            [com.yetanalytics.datasim.xapi.profile    :as p]
-            [com.yetanalytics.datasim.xapi.statement  :as statement]
-            [com.yetanalytics.datasim.util.maths      :as maths]
-            [com.yetanalytics.datasim.util.sequence   :as su]
-            [com.yetanalytics.datasim.util.async      :as au])
+            [com.yetanalytics.datasim.math.random       :as random]
+            [com.yetanalytics.datasim.math.timeseries   :as ts]
+            [com.yetanalytics.datasim.xapi.actor        :as actor]
+            [com.yetanalytics.datasim.xapi.profile      :as p]
+            [com.yetanalytics.datasim.xapi.registration :as reg]
+            [com.yetanalytics.datasim.xapi.statement    :as statement]
+            [com.yetanalytics.datasim.util.maths        :as maths]
+            [com.yetanalytics.datasim.util.sequence     :as su]
+            [com.yetanalytics.datasim.util.async        :as au])
   (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,7 +45,7 @@
   (s/every ::xs/statement :kind #(instance? clojure.lang.LazySeq %)))
 
 (s/def ::skeleton
-  (s/map-of ::agent/agent-id
+  (s/map-of ::actor/actor-ifi
             :skeleton/statement-seq))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -59,7 +60,7 @@
    
    This is for additional spiciness :)"
   [time-ms rng]
-  (long (+ time-ms (random/rand-int* rng min-ms))))
+  (long (+ time-ms (random/rand-int rng min-ms))))
 
 (defn- drop-time-probs
   "Given `prob-seq` consisting of `[time-ms prob]` pairs, drop the first couple
@@ -73,7 +74,8 @@
            ;; micro-optimization - don't bother with rng if `prob` is 0
            (zero? prob)
            ;; choose `minutes` with probability `prob`
-           (>= (random/rand* rng) prob))))
+           ;; in other words, drop with probability `1 - prob`
+           (random/rand-boolean rng (- 1.0 prob)))))
        not-empty))
 
 (defn- drop-past-time-probs
@@ -131,10 +133,10 @@
   [personae-array]
   (reduce
    (fn [m {actors :member :as personae}]
-     (let [group-id (agent/agent-id personae)]
+     (let [group-id (actor/actor-ifi personae)]
        (reduce
         (fn [m* actor]
-          (assoc m* (agent/agent-id actor) group-id))
+          (assoc m* (actor/actor-ifi actor) group-id))
         m
         actors)))
    {}
@@ -230,9 +232,6 @@
        day-night-seq
        (lunch-hour-seq min-of-day-seq)))
 
-(defn- clamp-probability [x]
-  (maths/min-max 0.0 x 1.0))
-
 (defn- arma-mask-seqs->prob-seq
   "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
    value, then use that value to derive a probability value in `[0,1]`.
@@ -241,7 +240,7 @@
   (map (fn [arma-val prob-mask-val]
          (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
              (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
-             clamp-probability
+             maths/bound-probability
              double))
        arma-seq
        prob-mask-seq))
@@ -273,7 +272,7 @@
           minute-day-night-seq]} (ts/time-seqs :t-zero t-start
                                                :sample-ms ?sample-ms
                                                :zone zone-region)
-        mask-arma-seed  (random/rand-long sim-rng)
+        mask-arma-seed  (random/rand-unbound-int sim-rng)
         mask-arma-seq   (arma-seq mask-arma-seed)
         prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
                                                        minute-day-night-seq
@@ -282,15 +281,15 @@
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
         ;; Derive profiles map
-        activity-seed   (random/rand-long sim-rng)
+        activity-seed   (random/rand-unbound-int sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
-         (sort-by agent/agent-id)
+         (sort-by actor/actor-ifi)
          (reduce
           (fn [m actor]
             (let [;; Actor basics + alignment
-                  actor-id        (agent/agent-id actor)
+                  actor-id        (actor/actor-ifi actor)
                   actor-role      (:role actor)
                   actor-group-id  (get actor-group-map actor-id)
                   actor-alignment (get-actor-alignments alignments
@@ -298,18 +297,18 @@
                                                         actor-group-id
                                                         actor-role)
                   ;; Actor probability seq
-                  actor-arma-seed (random/rand-long sim-rng)
+                  actor-arma-seed (random/rand-unbound-int sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
                   actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
                                                             prob-mask-seq)
                   actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
-                  actor-reg-seed  (random/rand-long sim-rng)
-                  actor-reg-seq   (p/registration-seq (:type-iri-map profiles-map)
-                                                      actor-alignment
-                                                      actor-reg-seed)
+                  actor-reg-seed  (random/rand-unbound-int sim-rng)
+                  actor-reg-seq   (reg/registration-seq profiles-map
+                                                        actor-alignment
+                                                        actor-reg-seed)
                   ;; Additional seed for further gen
-                  actor-seed      (random/rand-long sim-rng)
+                  actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
                   ;; Statement seq
@@ -331,7 +330,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::select-agents
-  (s/every ::agent/agent-id))
+  (s/every ::actor/actor-ifi))
 
 (s/fdef sim-seq
   :args (s/cat :input :com.yetanalytics.datasim/input
@@ -363,7 +362,7 @@
                :options (s/keys*
                          :opt-un [::select-agents
                                   ::pad-chan-max]))
-  :ret (s/map-of ::agent/agent-id au/chan?))
+  :ret (s/map-of ::actor/actor-ifi au/chan?))
 
 (defn sim-chans
   "Given input, build a skeleton and produce a map from agent IFIs to
@@ -492,7 +491,7 @@
    (fn [m {actors :member :as personae}]
      (let [group-id (:name personae)]
        (reduce
-        (fn [m' actor] (assoc m' (agent/agent-id actor) group-id))
+        (fn [m' actor] (assoc m' (actor/actor-ifi actor) group-id))
         m
         actors)))
    {}
@@ -505,6 +504,6 @@
                :mbox "mailto:alice@example.org"
                :role "Lead Developer"}]}])
 
-  (agent/agent-id {:name "Bob Fakename"
+  (actor/actor-ifi {:name "Bob Fakename"
                    :mbox "mailto:bob@example.org"
                    :role "Lead Developer"}))

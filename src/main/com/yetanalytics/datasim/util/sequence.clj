@@ -38,7 +38,7 @@
   (defn rand-monotonic-seq
     [seed & [start]]
     (let [rng (r/seed-rng seed)]
-      (rest (iterate #(+ % (r/rand* rng)) (or start 0)))))
+      (rest (iterate #(+ % (r/rand rng)) (or start 0)))))
 
   (let [ss (seq-sort
             identity

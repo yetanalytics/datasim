@@ -5,16 +5,21 @@
 
 (deftest random-functions-test
   (let [results (stest/check
-                 `#{r/seed-rng
-                    r/rand*
-                    r/rand-int*
-                    r/rand-nth*
-                    r/shuffle*
-                    r/random-sample*
-                    r/rand-gauss
-                    r/rand-long
+                 `#{r/rng
+                    r/seed-rng
+                    r/rand
+                    r/rand-int
+                    r/rand-unbound-int
+                    r/rand-gaussian
+                    r/rand-boolean
                     r/rand-uuid
-                    r/choose})
+                    r/rand-nth
+                    r/shuffle
+                    r/random-sample
+                    r/choose
+                    r/choose-map})
         {:keys [total
                 check-passed]} (stest/summarize-results results)]
     (is (= total check-passed))))
+
+;; TODO: Functions to test that probability distributions are correct

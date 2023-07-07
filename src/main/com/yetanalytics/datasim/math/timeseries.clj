@@ -84,7 +84,7 @@
          arma-seq*
          (fn arma-seq* [prev-xs prev-epsilons]
            (lazy-seq
-            (let [epsilon (random/rand-gauss rng 0.0 std)
+            (let [epsilon (random/rand-gaussian rng 0.0 std)
                   sum-ar  (->> (map * phi prev-xs)
                                (reduce + 0.0))
                   sum-ma  (->> (map * theta prev-epsilons)

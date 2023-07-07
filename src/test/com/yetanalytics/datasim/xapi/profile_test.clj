@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as stest]
+            [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.xapi.profile :as profile]
             [com.yetanalytics.datasim.test-constants :as const]))
 
@@ -25,7 +26,7 @@
              (s/valid? ::profile/type-iri-map)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; cmi5 profile primary pattern
+;; Pattern Walk Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO: Add test for max-repeats (for oneOrMore and zeroOrMore)
@@ -141,47 +142,28 @@
   (s/cat :satisfieds cmi5-satisfieds?
          :typical-sessions cmi5-typical-sessions?))
 
-(s/fdef gen-reg-seq-instance
+(s/fdef walk-pattern
   :args (s/cat :seed int?)
-  :ret (s/and cmi5-general-pattern?))
+  :ret cmi5-general-pattern?)
 
-(defn gen-reg-seq-instance [seed]
+(defn walk-pattern [seed]
   (let [{:keys [profiles alignments]} const/simple-input
         alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
                          (reduce (fn [m {:keys [component] :as align}]
                                    (assoc m component align))
                                  {}))
-        profile-map (profile/profiles->type-iri-map profiles)]
-    (->> (profile/registration-seq-instance profile-map alignment seed)
-         (map :template))))
+        {:keys [pattern-walk-fn]}
+        (profile/profiles->profile-map profiles {} 100)]
+    (pattern-walk-fn alignment (random/seed-rng seed))))
 
-(s/fdef gen-registration-seq
-  :args (s/cat :seed int? :limit int?)
-  :ret (s/every ::profile/registration-map
-                :kind #(instance? clojure.lang.LazySeq %)))
-
-(defn- gen-registration-seq [seed limit]
-  (let [{:keys [profiles alignments]} const/simple-input
-        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
-                         (reduce (fn [m {:keys [component] :as align}]
-                                   (assoc m component align))
-                                 {}))
-        profile-map (profile/profiles->type-iri-map profiles)]
-    (->> (profile/registration-seq profile-map alignment seed)
-         (take limit))))
-
-(deftest registration-seq-test
+(deftest walk-pattern-test
   (testing "Walk and generate seq for a single pattern"
     (let [{total :total check-passed :check-passed}
-          (stest/summarize-results (stest/check `gen-reg-seq-instance))]
-      (is (= total check-passed))))
-  (testing "Walk and generate seq continuously"
-    (let [{total :total check-passed :check-passed}
-          (stest/summarize-results (stest/check `gen-registration-seq))]
+          (stest/summarize-results (stest/check `walk-pattern))]
       (is (= total check-passed)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; cmi5 + tla profiles tests
+;; Select Primary Pattern Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def combined-iri-map
