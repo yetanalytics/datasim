@@ -1,16 +1,13 @@
 (ns com.yetanalytics.datasim.main
-  (:require [clojure.tools.cli :as cli :refer [parse-opts]]
-            [clojure.spec.alpha :as s]
-            [clojure.core.async :as a]
+  (:require [clojure.core.async :as a]
+            [clojure.tools.cli  :as cli]
             [cheshire.core      :as json]
             [com.yetanalytics.datasim :as ds]
-            [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.util.errors :as errors]
-            [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.client :as http]
+            [com.yetanalytics.datasim.input  :as input]
+            [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.math.random :as random]
-            [clojure.pprint :refer [pprint]])
-  (:import [java.util Random])
+            [com.yetanalytics.datasim.util.errors :as errors])
   (:gen-class))
 
 (defn- conj-input
@@ -142,13 +139,14 @@
                 arguments
                 summary
                 errors]
-         :as parsed-opts} (parse-opts args
-                                      (cli-options
-                                       ;; if the verb is "validate-input", we
-                                       ;; skip tools.cli validation and do a
-                                       ;; more in-depth one.
-                                       (not= "validate-input"
-                                             (last args))))
+         :as parsed-opts}
+        (cli/parse-opts
+         args
+         (cli-options
+          ;; if the verb is "validate-input", we
+          ;; skip tools.cli validation and do a
+          ;; more in-depth one.
+          (not= "validate-input" (last args))))
         [?command & rest-args] arguments]
     (cond (seq errors)
           (bail! errors)
