@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        target: [test-unit, test-cli]
+        target: [test-unit, test-unit-onyx, test-cli]
 
     steps:
     - name: Checkout Repository

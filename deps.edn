@@ -25,13 +25,19 @@
         :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
                      incanter/incanter-charts {:mvn/version "1.9.3"}
                      criterium/criterium {:mvn/version "0.4.5"}}}
-  :test {:extra-paths ["src/test"]}
-  :runner
-  {:extra-deps {com.cognitect/test-runner
-                {:git/url "https://github.com/cognitect-labs/test-runner"
-                 :sha "cb96e80f6f3d3b307c59cbeb49bb0dcb3a2a780b"}}
+  :test {:extra-paths ["src/test" "src/test_onyx"]}
+  :run-tests
+  {:extra-paths ["src/test"]
+   :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                      :git/sha "dfb30dd"}}
    :main-opts ["-m" "cognitect.test-runner"
                "-d" "src/test"]}
+  :run-onyx-tests
+  {:extra-paths ["src/test_onyx"]
+   :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                      :git/sha "dfb30dd"}}
+   :main-opts ["-m" "cognitect.test-runner"
+               "-d" "src/test_onyx"]}
   :server
   {:extra-paths ["src/server"]
    :extra-deps

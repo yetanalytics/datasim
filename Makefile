@@ -1,4 +1,4 @@
-.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit ci server test-bundle-output validate-template
+.PHONY: clean bundle test-cli test-cli-comprehensive test-cli-output test-unit test-unit-onyx ci server test-bundle-output validate-template
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
@@ -38,7 +38,10 @@ bundle: target/bundle
 
 
 test-unit:
-	clojure -Adev:cli:onyx:test:runner
+	clojure -Adev:cli:run-tests
+
+test-unit-onyx:
+	clojure -Adev:cli:onyx:run-onyx-tests
 
 test-cli:
 	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -l dev-resources/alignments/simple.json -o dev-resources/parameters/simple.json validate-input dev-resources/input/simple.json
@@ -58,7 +61,7 @@ validate-template:
 	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/1_zk.yml
 	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/2_cluster.yml
 
-ci: test-unit test-cli validate-template
+ci: test-unit test-unit-onyx test-cli validate-template
 
 server:
 	clojure -A:server
