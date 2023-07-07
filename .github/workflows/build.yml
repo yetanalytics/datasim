@@ -72,7 +72,7 @@ jobs:
 
     - name: Extract version
       id: version
-      run: version=${GITHUB_REF#refs\/tags\/v} >> $GITHUB_OUTPUT
+      run: echo version=${GITHUB_REF#refs\/tags\/v} >> $GITHUB_OUTPUT
 
     - name: Build and deploy to Clojars
       uses: yetanalytics/actions/deploy-clojars@v0.0.4
