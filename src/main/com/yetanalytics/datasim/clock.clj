@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.clock
-  (:require [java-time :as t])
+  (:require [java-time.api :as t])
   (:import [java.time Clock Instant Period]))
 
 (defn sim-instant

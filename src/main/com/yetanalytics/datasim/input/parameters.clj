@@ -5,7 +5,7 @@
             [xapi-schema.spec :as xs]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [java-time :as t]
+            [java-time.api :as t]
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [java.time.zone ZoneRulesException]
            [java.time Instant]

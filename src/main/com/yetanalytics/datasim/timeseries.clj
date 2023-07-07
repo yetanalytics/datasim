@@ -3,7 +3,7 @@
             [clojure.spec.gen.alpha :as sgen]
             ;; [incanter.interpolation :as interp]
             [com.yetanalytics.datasim.clock :as clock]
-            [java-time :as t]
+            [java-time.api :as t]
             [com.yetanalytics.datasim.util.maths :as maths])
   (:import [java.util Random]))
 
