@@ -2,7 +2,7 @@
   "Personae input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [com.yetanalytics.datasim.xapi.agent  :as agent]
+            [com.yetanalytics.datasim.xapi.actor  :as agent]
             [com.yetanalytics.datasim.util.errors :as errs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,7 +62,7 @@
   (let [member-ids (->> personaes
                         (map :member)
                         (apply concat)
-                        (map agent/agent-id))]
+                        (map agent/actor-ifi))]
     (= (-> member-ids count)
        (-> member-ids distinct count))))
 

@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.onyx.job
   (:require [com.yetanalytics.datasim.onyx.sim :as dsim]
             [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.xapi.agent :as agent]
+            [com.yetanalytics.datasim.xapi.actor :as actor]
             [com.yetanalytics.datasim.onyx.util :as u]
             [com.yetanalytics.datasim.onyx.http :as http]
             [cheshire.core :as json]
@@ -100,7 +100,7 @@
         actor-ids (-> input
                       :personae-array
                       (->> (mapcat :member)
-                           (map agent/agent-id)
+                           (map actor/actor-ifi)
                            distinct))
         _ (assert (<= gen-concurrency (count actor-ids))
                   "Gen concurrency may not be higher than actor count")

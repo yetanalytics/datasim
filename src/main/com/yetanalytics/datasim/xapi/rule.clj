@@ -1,18 +1,20 @@
 (ns com.yetanalytics.datasim.xapi.rule
-  "Apply statement template rules for generation"
+  "Statement Template rules. Contains functions to parse rules, apply them to
+   Statements, and validate Statements against rules.
+   
+   Note that this namespace is used during both Profile compilation and
+   Statement generation."
   (:require [clojure.core.memoize           :as memo]
             [clojure.set                    :as cset]
             [clojure.string                 :as cstr]
             [clojure.spec.alpha             :as s]
             [clojure.test.check.generators  :as gen]
-            [clojure.walk                   :as w]
             [xapi-schema.spec               :as xs]
-            [com.yetanalytics.schemer       :as schemer]
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
-            [com.yetanalytics.datasim.xapi.path   :as xp]
-            [com.yetanalytics.datasim.math.random :as random]))
+            [com.yetanalytics.datasim.xapi.path          :as xp]
+            [com.yetanalytics.datasim.math.random        :as random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -72,6 +74,9 @@
                    ::valueset
                    ::generator]))
 
+(s/def ::parsed-rules
+  (s/every ::parsed-rule))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Rule Object Type derivation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -108,6 +113,10 @@
                    set
                    not-empty)))
           parsed-rules)))
+
+(s/fdef rules->object-types
+  :args (s/cat :parsed-rules ::parsed-rules)
+  :ret ::xp/object-types)
 
 (defn rules->object-types
   "Derive object types from `parsed-rules` and return a map from paths
@@ -273,7 +282,7 @@
 (s/fdef parse-rules
   :args (s/cat :object-property (s/? #{:activity-type :statement-ref})
                :rules (s/coll-of ::rule/rule))
-  :ret (s/coll-of ::parsed-rule))
+  :ret ::parsed-rules)
 
 (defn parse-rules
   "Parse a collection of `rules` and return a coll of parsed and
@@ -305,15 +314,11 @@
 
 ;; TODO: Distinguish between activity, context, and result extensions
 (defn- extension-spec
-  [type-iri-map extension-id spec]
-  (let [act-iri-map (get type-iri-map "ActivityExtension")
-        ctx-iri-map (get type-iri-map "ContextExtension")
-        res-iri-map (get type-iri-map "ResultExtension")
-        ext->spec   #(some->> % :inlineSchema (schemer/schema->spec nil))]
-    (or (some->> extension-id (get act-iri-map) ext->spec)
-        (some->> extension-id (get ctx-iri-map) ext->spec)
-        (some->> extension-id (get res-iri-map) ext->spec)
-        spec)))
+  [{:keys [activity context result] :as _extensions} extension-id spec]
+  (or (get activity extension-id)
+      (get context extension-id)
+      (get result extension-id)
+      spec))
 
 (defn- spec-generator [spec]
   (try (s/gen spec)
@@ -332,13 +337,13 @@
    come up with a value.
    
    Also revises any extension specs to those specified in `extension-map`."
-  [extension-map
+  [extension-spec-map
    valuesets
    {:keys [presence path valueset none spec] :as parsed-rule}]
   (if (= :excluded presence)
     parsed-rule
     (let [spec*    (if (= ::xp/extension spec) ; only extensions have this spec
-                     (extension-spec extension-map (peek path) spec)
+                     (extension-spec extension-spec-map (peek path) spec)
                      spec)
           ?all-set (not-empty (spec->valueset valuesets spec))]
       (cond-> (assoc parsed-rule :spec spec*)
@@ -349,19 +354,18 @@
              (not ?all-set))
         (assoc :generator (spec-generator spec*))))))
 
-;; TODO: Move to common util namespace
-(defn- profile->statement-verb
-  [{:keys [id prefLabel]}]
-  {"id"      id
-   "display" (w/stringify-keys prefLabel)})
+;; TODO: Bring in profile-map spec using :as-alias in Clojure 1.11
+(s/fdef add-rules-valuegen
+  :args (s/cat :profile-map  map?
+               :parsed-rules ::parsed-rules)
+  :ret ::parsed-rules)
 
 (defn add-rules-valuegen
   "Use information from `iri-map` and `activities` maps, to complete the
    `parsed-rules` by adding additional valuesets or spec generators."
-  [type-iri-map activity-map parsed-rules]
-  (let [iri-verb-map   (get type-iri-map "Verb")
-        verbs          (->> iri-verb-map vals (map profile->statement-verb) set)
-        verb-ids       (->> iri-verb-map keys set)
+  [{:keys [activity-map verb-map extension-spec-map]} parsed-rules]
+  (let [verbs          (->> verb-map vals set)
+        verb-ids       (->> verb-map keys set)
         activities     (->> activity-map vals (mapcat vals) set)
         activity-ids   (->> activity-map vals (mapcat keys) set)
         activity-types (->> activity-map keys set)
@@ -370,7 +374,7 @@
                         :activities     activities
                         :activity-ids   activity-ids
                         :activity-types activity-types}]
-    (mapv (partial add-rule-valuegen type-iri-map value-sets)
+    (mapv (partial add-rule-valuegen extension-spec-map value-sets)
           parsed-rules)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -395,7 +399,7 @@
            (empty? (cset/intersection (set ?values) ?none)))))
 
 (s/fdef follows-rule?
-  :args (s/cat :statement ::xs/statement
+  :args (s/cat :statement   ::xs/statement
                :parsed-rule ::parsed-rule)
   :ret boolean?)
 
@@ -596,7 +600,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef property-rule?
-  :args (s/cat :property string?
+  :args (s/cat :property    string?
                :parsed-rule ::parsed-rule)
   :ret boolean?)
 

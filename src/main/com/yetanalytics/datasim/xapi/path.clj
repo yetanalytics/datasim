@@ -1,11 +1,29 @@
 (ns com.yetanalytics.datasim.xapi.path
-  "Given a path into an xAPI structure, return a spec from xapi-schema"
+  "Paths of the form `[\"property\" '* ...]`, which are used to navigate
+   xAPI Statements.
+   
+   Functions include getting the appropriate spec for the path at the
+   location, as well as determining the valid objectTypes allowed at
+   the location.
+   
+   Note that this namespace is used both during Profile compilation and
+   Statement generation."
   (:require [clojure.spec.alpha :as s]
             [clojure.set :as cset]
             [xapi-schema.spec :as xs]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (s/def ::path
   (s/coll-of (s/or :key string? :index #{(symbol "*")}) :kind vector?))
+
+(def object-type-strings
+  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
+
+(s/def ::object-types
+  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
 (s/def ::extension
   (s/nilable
@@ -36,12 +54,6 @@
 
 ;; object type strings match the keyword names found in xapi-schema, e.g
 ;; `:statement-object/statement-ref`
-
-(def object-type-strings
-  #{"activity" "agent" "group" "statement-ref" "sub-statement"})
-
-(s/def ::object-types
-  (s/map-of ::path (s/coll-of object-type-strings :kind set?)))
 
 (def object-type-kebab-case
   {"Activity"     "activity"
