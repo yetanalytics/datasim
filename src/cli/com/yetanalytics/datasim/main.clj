@@ -32,7 +32,8 @@
     :desc "The location of an xAPI profile, can be used multiple times."
     :parse-fn (partial input/from-location :profile :json)
     :validate (if validate?
-                [input/validate-throw "Failed to validate profile."]
+                [(partial input/validate-throw :profile)
+                 "Failed to validate profile."]
                 [])
     :assoc-fn conj-input]
    ["-a" "--actor-personae URI" "Actor Personae Location"
@@ -40,7 +41,8 @@
     :desc "The location of an Actor Personae document indicating the actors in the sim."
     :parse-fn (partial input/from-location :personae :json)
     :validate (if validate?
-                [input/validate-throw "Failed to validate personae."]
+                [(partial input/validate-throw :personae)
+                 "Failed to validate personae."]
                 [])
     :assoc-fn conj-input]
    ["-l" "--alignments URI" "Actor Alignments Location"
@@ -48,28 +50,27 @@
     :desc "The location of an Actor Alignments Document."
     :parse-fn (partial input/from-location :alignments :json)
     :validate (if validate?
-                [input/validate-throw "Failed to validate Alignments."]
+                [(partial input/validate-throw :alignments)
+                 "Failed to validate Alignments."]
                 [])]
    ["-o" "--parameters URI" "Sim Parameters Location"
     :id :parameters
     :desc "The location of a Sim Parameters Document."
     :parse-fn (partial input/from-location :parameters :json)
     :validate (if validate?
-                [input/validate-throw "Failed to validate Parameters."]
+                [(partial input/validate-throw :parameters)
+                 "Failed to validate Parameters."]
                 [])
-    ;; TODO: it looks like, when the validation is skipped, a simple empty
-    ;; default doesn't work here, as the full input spec fails.
-    ;; For now we just hack it by calling the defaults fn directly.
-    :default (params/add-defaults {})]
+    :default (params/apply-defaults)]
 
    ["-i" "--input URI" "Combined Simulation input"
     :id :input
     :desc "The location of a JSON file containing a combined simulation input spec."
     :parse-fn (partial input/from-location :input :json)
     :validate (if validate?
-                [input/validate-throw "Failed to validate input."]
-                [])
-    ]
+                [(partial input/validate-throw :input)
+                 "Failed to validate input."]
+                [])]
    [nil "--seed SEED" "Override input seed"
     :id :override-seed
     :parse-fn #(Integer/parseInt %)
@@ -157,13 +158,14 @@
                                           :alignments])
                 {:keys [override-seed
                         select-agents]} options
-                input (cond-> (or (:input sim-options) (input/map->Input sim-options))
+                input (cond-> (or (:input sim-options)
+                                  (dissoc sim-options :input))
                         override-seed
                         (assoc-in [:parameters :seed]
                                   (if (= -1 override-seed)
                                     (.nextLong (Random.))
                                     override-seed)))]
-            (if-let [errors (not-empty (input/validate input))]
+            (if-let [errors (not-empty (input/validate :input input))]
               (bail! (errors/map-coll->strs errors))
               (if ?command
                 (case ?command

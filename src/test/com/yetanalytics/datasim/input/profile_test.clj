@@ -2,8 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.data.json :as json]
             [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.input.profile :refer [map->Profile]]
+            [com.yetanalytics.datasim.input.profile :as profile]
             [com.yetanalytics.datasim.io :as dio]
             [com.yetanalytics.datasim.test-constants :as const])
   (:import [java.io File]))
@@ -13,7 +12,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def minimal-profile
-  (dio/read-loc-json (map->Profile {}) const/minimal-profile-filepath))
+  (dio/read-json-location const/minimal-profile-filepath))
 
 (def minimal-profile-map
   {:id         "https://xapinet.org/xapi/yet/minimal"
@@ -28,9 +27,22 @@
                 :name "Yet Analytics"
                 :type "Organization"}})
 
+(def cmi5-satisfied-bad-1 "https://w3id.org/xapi/cmi5#satisfiedbad1")
+(def cmi5-satisfied-bad-2 "https://w3id.org/xapi/cmi5#satisfiedbad2")
+(def cmi5-satisfied-bad-3 "https://w3id.org/xapi/cmi5#satisfiedbad3")
+(def cmi5-initialized "https://w3id.org/xapi/cmi5#initialized")
+(def cmi5-terminated "https://w3id.org/xapi/cmi5#terminated")
+(def cmi5-completed "https://w3id.org/xapi/cmi5#completed")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- profile-key [k]
+  (let [kname (name k)]
+    (if (= "@context" kname)
+      :_context
+      (keyword kname))))
 
 (deftest minimal-profile-test 
   (testing "produces the correct profile"
@@ -38,14 +50,57 @@
     (is (= minimal-profile-map
            (into {} minimal-profile))))
   (testing "is valid"
-    (is (nil? (p/validate minimal-profile))))
+    (is (nil? (profile/validate-profile minimal-profile))))
   (testing "is valid when written"
     (let [^File tf (File/createTempFile "profiletest" nil)]
       (try
-        (dio/write-loc-json minimal-profile tf)
+        (dio/write-json-location minimal-profile tf)
         (is (nil? (pan/validate-profile
-                   (json/read-str (slurp tf)
-                                  :key-fn
-                                  (partial p/read-key-fn minimal-profile)))))
+                   (json/read-str (slurp tf) :key-fn profile-key))))
         (finally
           (.delete tf))))))
+
+(deftest profile-cosmos-validation-test
+  (testing "input is valid if all template refs are valid"
+    (is (nil? (profile/validate-profiles [const/cmi5-profile]))))
+  (testing "input is invalid if invalid template ref iri exists"
+    (is (= 1 (->> [(-> const/cmi5-profile
+                       (assoc-in [:patterns 0 :zeroOrMore]
+                                 "https://w3id.org/xapi/cmi5#bad-template"))]
+                  profile/validate-profiles
+                  count)))
+    ;; XXX: If we replaced satisfiedbad3 with satisfiedbad2, we only get a count
+    ;; of 2 errors, not 3.
+    (is (= 3
+           (->> [(-> const/cmi5-profile
+                     (assoc-in [:patterns 0 :zeroOrMore] cmi5-satisfied-bad-1)
+                     (assoc-in [:patterns 1 :sequence 0] cmi5-satisfied-bad-2)
+                     (assoc-in [:patterns 1 :sequence 2] cmi5-satisfied-bad-3))]
+                profile/validate-profiles
+                count))))
+  (testing "validation works for multi-profile cosmos"
+    (is (nil? (profile/validate-profiles
+               [const/cmi5-profile const/video-profile])))
+    ;; Add connections between Profiles
+    (is (nil? (profile/validate-profiles
+               [const/cmi5-profile
+                (-> const/video-profile
+                    (assoc-in [:patterns 0 :sequence 0] cmi5-initialized)
+                    (assoc-in [:patterns 0 :sequence 2] cmi5-terminated)
+                    (assoc-in [:patterns 1 :alternates 6] cmi5-completed))])))
+    (is (= 1 (->> [(-> const/cmi5-profile
+                       (assoc-in [:patterns 0 :zeroOrMore]
+                                 "https://w3id.org/xapi/cmi5#bad-template"))
+                   const/video-profile]
+                  profile/validate-profiles
+                  count))))
+  (testing "fixed / valid profiles"
+    (is (nil? (profile/validate-profiles [const/acrossx-profile])))
+    (is (nil? (profile/validate-profiles [const/activity-profile])))
+    (is (nil? (profile/validate-profiles [const/tc3-profile]))))
+  ;; Following tests exist to point out flaws in Profiles
+  (testing "invalid profiles"
+    ;; AcrossX and ActivityStreams violate spec:
+    ;; "related MUST only be used on deprecated Concepts"
+    (is (some? (profile/validate-profiles [const/acrossx-profile*])))
+    (is (some? (profile/validate-profiles [const/activity-profile*])))))

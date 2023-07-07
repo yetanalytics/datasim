@@ -42,7 +42,7 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [data           {:profiles       (sinput/from-location :profiles :json
+  (let [sim-input      {:profiles       (sinput/from-location :profiles :json
                                                               (get-stream input "profiles"))
                         :personae-array (sinput/from-location :personae-array :json
                                                               (get-stream input "personae-array"))
@@ -53,11 +53,10 @@
         send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
                          (read-string send-to-lrs)
                          false)
-        sim-input      (sinput/map->Input data)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
         api-secret-key (get input "api-secret-key")]
-    (if-some [spec-errors (sinput/validate sim-input)]
+    (if-some [spec-errors (sinput/validate :input sim-input)]
       ;; Return a coll of maps that are acceptable to the Datasim UI
       (mapv #(assoc % :visible true) spec-errors)
       ;; Anon fn that accepts the output stream for the response body.

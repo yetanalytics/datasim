@@ -1,17 +1,22 @@
 (ns com.yetanalytics.datasim.input.parameters
-  "Simulation global parameters"
+  "Parameter input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.protocols :as p]
-            [xapi-schema.spec :as xs]
+            [java-time          :as t]
+            [xapi-schema.spec   :as xs]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [java-time :as t]
+            [com.yetanalytics.datasim.random      :as random]
             [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.time.zone ZoneRulesException]
+  (:import [clojure.lang ExceptionInfo]
+           [java.time.zone ZoneRulesException]
            [java.time Instant]
            [java.util Random]))
 
-;; all options are optional, but everything except `end` will get defaults
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; All options are optional, but everything except `end` will get defaults
 
 ;; (optional) start of the simulation (inclusive), 8601 stamp
 (s/def ::start
@@ -26,17 +31,18 @@
 (s/def ::end
   (s/nilable ::xs/timestamp))
 
+(defn- timezone-string? [s]
+  (try (t/zone-id s)
+       (catch ExceptionInfo exi
+         (if (= ZoneRulesException (type (ex-cause exi)))
+           false
+           (throw exi)))))
+
 ;; (optional) timezone, defaults to UTC
 (s/def ::timezone
   (s/and string?
          not-empty
-         (fn [s]
-           (try (t/zone-id s)
-                (catch clojure.lang.ExceptionInfo exi
-                  (if (= (type (ex-cause exi))
-                         ZoneRulesException)
-                    false
-                    (throw exi)))))))
+         timezone-string?))
 
 ;; Seed is required, but will be generated if not present
 (s/def ::seed
@@ -54,6 +60,21 @@
 (s/def ::gen-patterns
   (s/every ::pat/id))
 
+(defn- ordered-timestamps?
+  "Are the `start`, `from`, and `end` timestamps ordered properly?"
+  [{:keys [start from end]}]
+  (let [start-t (t/instant start)
+        ?from-t (some->> from t/instant)
+        ?end-t  (some->> end t/instant)]
+    (and (or (not ?end-t)
+             (t/before? start-t ?end-t))
+         (or (not ?end-t)
+             (not ?from-t)
+             (t/before? ?from-t ?end-t))
+         (or (not ?from-t)
+             (= ?from-t start-t)
+             (t/before? start-t ?from-t)))))
+
 (s/def ::parameters
   (s/and
    (s/keys :req-un [::start
@@ -64,49 +85,31 @@
                     ::max
                     ::gen-profiles
                     ::gen-patterns])
-   (fn [{:keys [start from end]}]
-     (when end
-       (assert (t/before? (t/instant start)
-                          (t/instant end))
-               "Sim must start before it ends.")
-       (when from
-         (assert (t/before? (t/instant from)
-                            (t/instant end))
-                 "From must be before end.")))
-     (when from
-       (assert (or (= from start)
-                   (t/before? (t/instant start)
-                              (t/instant from)))
-               "Sim start must be before or equal to from."))
-     true)))
+   ordered-timestamps?))
 
-(defn add-defaults
-  "Generate defualts"
-  [{:keys [start from timezone seed] :as params}]
-  (merge
-   params
-   (let [s (or start (.toString (Instant/now)))]
-     {:start s
-      :from (or from s)
-      :timezone (or timezone "UTC")
-      :seed (or seed (.nextLong (Random.)))})))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrecord Parameters [start
-                       end
-                       timezone
-                       seed]
-  p/FromInput
-  (validate [this]
-    (when-some [ed (s/explain-data ::parameters this)]
-      (errs/explain-to-map-coll ::parameters ed)))
+(defn validate-parameters
+  [parameters]
+  (some->> (s/explain-data ::parameters parameters)
+           (errs/explain-to-map-coll ::parameters)))
 
-  p/JSONRepresentable
-  (read-key-fn [this k]
-    (keyword nil (name k)))
-  (read-body-fn [this json-result]
-    (map->Parameters
-     (add-defaults json-result)))
-  (write-key-fn [this k]
-    (name k))
-  (write-body-fn [this]
-    (into {} this)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Defaults
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn apply-defaults
+  "Apply defaults to `params` with the current time and a random seed.
+   If `params` is not provided simply return the default parameters."
+  ([]
+   (apply-defaults {}))
+  ([{:keys [start from timezone seed] :as params}]
+   (merge
+    params
+    (let [start (or start (.toString (Instant/now)))]
+      {:start    start
+       :from     (or from start)
+       :timezone (or timezone "UTC")
+       :seed     (or seed (random/rand-long (Random.)))}))))

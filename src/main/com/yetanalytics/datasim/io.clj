@@ -1,81 +1,91 @@
 (ns com.yetanalytics.datasim.io
   (:require [clojure.java.io :as io]
-            [clojure.edn :as edn]
-            [com.yetanalytics.datasim.protocols :as p]
-            [cheshire.core :as json]))
+            [clojure.string  :as cstr]
+            [cheshire.core   :as json])
+  (:import [java.io IOException]))
 
-(defn read-loc-json
-  "Reads in a file from the given location and parses it."
-  [record loc]
-  (try (with-open [r (io/reader loc)]
-         (try
-           (p/read-body-fn
-            record
-            (doall ;; Force eager parsing of the entire file
-             (json/parse-stream r (partial p/read-key-fn record))))
-           (catch Exception e
-             (throw (ex-info "Parse Error"
-                             {:type ::parse-error
-                              :location loc}
-                             e)))))
-       (catch java.io.IOException e
-         (throw (ex-info "I/O Error"
-                         {:type ::io-error
-                          :location loc}
-                         e)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Exceptions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn read-loc-array
-  "Reads from a stream but assumes an array with the members of the record type passed to it"
-  [record loc]
-  (try (with-open [r (io/reader loc)]
-         (try
-           (let [input-coll (json/parse-stream r (partial p/read-key-fn record))]
-             (mapv (fn [input]
-                     (p/read-body-fn record input))
-                   input-coll))
-           (catch Exception e
-             (throw (ex-info "Parse Error"
-                             {:type ::parse-error
-                              :location loc}
-                             e)))))
-       (catch java.io.IOException e
-         (throw (ex-info "I/O Error"
-                         {:type ::io-error
-                          :location loc}
-                         e)))))
+(defn- throw-parse-error [location cause-exn]
+  (throw (ex-info "Parse Error"
+                  {:type     ::parse-error
+                   :location location}
+                  cause-exn)))
 
+(defn- throw-unparse-error [location cause-exn]
+  (throw (ex-info "Unparse Error"
+                  {:type     ::unparse-error
+                   :location location}
+                  cause-exn)))
+
+(defn- throw-io-error [location cause-exn]
+  (throw (ex-info "I/O Error"
+                  {:type     ::io-error
+                   :location location}
+                  cause-exn)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Keyword Key Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- keywordize-json-key
+  [k]
+  (keyword (cond-> k
+             (= \@ (first k))
+             (cstr/replace-first \@ \_))))
+
+(defn- stringify-edn-key
+  [k]
+  (let [named-key (name k)]
+    (cond-> named-key
+      (= \_ (first named-key))
+      (cstr/replace-first \_ \@))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; JSON I/O Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn read-json-location
+  "Reads in a file from the given `location` and parses it into EDN. If
+   the data being read is an array or sequence, return all the data
+   as a seq."
+  [location]
+  (try (with-open [r (io/reader location)]
+         (try (doall (json/parse-stream r keywordize-json-key))
+              (catch Exception e
+                (throw-parse-error location e))))
+       (catch IOException e
+         (throw-io-error location e))))
 
 (defn- write-json!
-  [record loc w]
-  (try
-    (json/generate-stream (p/write-body-fn record)
-                          w
-                          {:key-fn (partial p/write-key-fn record)})
-    (catch Exception e
-      (throw (ex-info "Unparse Error"
-                      {:type ::unparse-error
-                       :location loc}
-                      e)))))
+  [data location writer]
+  (try (json/generate-stream data writer {:key-fn stringify-edn-key})
+       (catch Exception e
+         (throw-unparse-error location e))))
 
-(defn write-loc-json
-  "Write a record to a location"
-  [record loc]
-  (try (if (#{*out* *err*} loc)
-         (let [w (io/writer loc)]
-           (write-json! record loc w)
+(defn write-json-location
+  "Write the contents of `data` to the `location`, which can be `*out*`
+   for stdout or `*err*` for stderr."
+  [data location]
+  (try (if (#{*out* *err*} location)
+         ;; Write to stdout or stderr
+         (let [w (io/writer location)]
+           (write-json! data location w)
            (.write w "\n")
            (.flush w))
-         (with-open [w (io/writer loc)]
-           (write-json! record loc w)))
-       (catch java.io.IOException e
-         (throw (ex-info "I/O Error"
-                         {:type ::io-error
-                          :location loc}
-                         e)))))
+         ;; Write to a file
+         (with-open [w (io/writer location)]
+           (write-json! data location w)))
+       (catch IOException e
+         (throw-io-error location e))))
 
-(defn write-file-json
-  "Write a record to a file"
-  [record loc]
-  (let [file (io/file loc)]
+(defn write-json-file
+  "Write the contents of `data` to the file `location`; a file will be
+   created if it does not exist."
+  [data location]
+  (let [file (io/file location)]
     (io/make-parents file)
-    (write-loc-json record file)))
+    (with-open [w (io/writer location)]
+      (write-json! data location w))))

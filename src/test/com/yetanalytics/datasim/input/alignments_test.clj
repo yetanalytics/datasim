@@ -1,7 +1,6 @@
 (ns com.yetanalytics.datasim.input.alignments-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.alignments :as a]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,11 +64,3 @@
               (->> {(keyword "https://foo.org") true}
                    (assoc-in object-override-example [:definition :extensions])
                    (assoc-in actor-alignment1 [:alignments 0 :objectOverride])))))))
-
-(deftest protocols-test
-  (testing "alignment protocols"
-    (is (satisfies? p/FromInput (a/map->Alignments alignments-example)))
-    (is (satisfies? p/FromInput (a/map->Alignments
-                                 (assoc-in alignments-example
-                                           [0 :alignments 0 :objectOverride]
-                                           object-override-example))))))

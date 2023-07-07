@@ -1,260 +1,177 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :as cs]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.pan :as pan]
-            [com.yetanalytics.datasim.input.profile :as profile]
-            [com.yetanalytics.datasim.input.personae :as personae]
+            [com.yetanalytics.datasim.input.profile    :as profile]
+            [com.yetanalytics.datasim.input.personae   :as personae]
             [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.io :as dio]
-            [com.yetanalytics.datasim.util.xapi :as xapiu]
-            [com.yetanalytics.datasim.util.errors :as errs]))
+            [com.yetanalytics.datasim.io               :as dio]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::profiles
+  ::profile/profiles)
 
 ;; This is our system:
 ;;   persona: a single Agent who is a member of a Group
 ;;   personae: a Group that contains one or more Agent, i.e. persona
 ;;   personae-array: an array of one or more Groups
 
-(defn- distinct-member-ids?
-  [personaes]
-  (let [member-ids (->> personaes
-                        (map :member)
-                        (apply concat)
-                        (map xapiu/agent-id))]
-    (= (-> member-ids count)
-       (-> member-ids distinct count))))
-
 (s/def ::personae-array
-  (s/and
-   (s/every ::personae/personae :min-count 1 :into [])
-   distinct-member-ids?))
+  ::personae/personae-array)
 
+;; TODO: `::alignments` is the name of two separate things: the top-level
+;; alignments input vector, and the inner vector associated with each actor.
+;; Find separate names for each.
 (s/def ::alignments
-  ::alignments/alignments-input)
+  ::alignments/alignment-vector)
 
 (s/def ::parameters
   ::params/parameters)
 
-(defn validate-profiles
-  [profile-coll]
-  (if (vector? profile-coll)
-    (let [prof-errs (pan/validate-profile-coll profile-coll
-                                               :syntax? true
-                                               :pattern-rels? true
-                                               :result :type-path-string)]
-      (errs/type-path-string-ms->map-coll (map :id profile-coll)
-                                          prof-errs))
-    ;; TODO: Something more solid/less hacky, particularly in the Pan lib itself
-    [{:path [::profiles]
-      :text "Profiles must be a vector!"
-      :id   [::profiles]}]))
-
-(defn validate-personae-array
-  [personae-array]
-  (when-some [ed (s/explain-data ::personae-array personae-array)]
-    (errs/explain-to-map-coll ::personae-array ed)))
-
-(defn validate-alignments
-  [alignments]
-  (when-some [ed (s/explain-data ::alignments alignments)]
-    (errs/explain-to-map-coll ::alignments ed)))
-
-(defn validate-parameters
-  [parameters]
-  (when-some [ed (s/explain-data ::parameters parameters)]
-    (errs/explain-to-map-coll ::parameters ed)))
-
-(defn validate-pattern-filters
-  [{{:keys [gen-profiles
-            gen-patterns]} :parameters
-    :keys                  [profiles]}]
-  (let [profile-idset (into #{}
-                            (map :id profiles))
-        pattern-idset (into #{}
-                            (keep (fn [{:keys [id primary]}]
-                                    (when (and primary)
-                                      id))
-                                  (mapcat :patterns profiles)))]
-    (concat
-     (for [[idx profile-id] (map-indexed vector gen-profiles)
-           :when            (not (contains? profile-idset profile-id))]
-       {:id   (str "parameters-gen-profiles-" idx)
-        :path [:parameters :gen-profiles idx]
-        :text (format "Profile ID %s is not one of provided profiles: %s"
-                      profile-id
-                      (cs/join \, profile-idset))})
-     (for [[idx pattern-id] (map-indexed vector gen-patterns)
-           :when            (not (contains? pattern-idset pattern-id))]
-       {:id   (str "parameters-gen-patterns-" idx)
-        :path [:parameters :gen-patterns idx]
-        :text
-        (format
-         "Pattern ID %s is not among primary patterns in provided profiles: %s"
-         pattern-id
-         (cs/join \, pattern-idset))}))))
-
 (s/def :com.yetanalytics.datasim/input
-  ;; "Comprehensive input spec"
   (s/keys :req-un [::profiles
                    ::personae-array
                    ::alignments
                    ::parameters]))
 
-(def subobject-constructors
-  {:profile profile/map->Profile
-   :personae personae/map->Personae
-   :alignments alignments/map->Alignments
-   :parameters params/map->Parameters
-   ;; Hack for array-valued inputs
-   :profiles profile/map->Profile
-   :personae-array personae/map->Personae})
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn realize-subobjects
-  "Make subobjects from JSON into records"
-  [json-result]
-  (reduce-kv
-   (fn [m k v]
-     (if-let [constructor (get subobject-constructors k)]
-       (let [rec (constructor {})
-             key-fn
-             (partial
-              p/read-key-fn
-              rec)
-             body-fn
-             (cond->> (partial
-                       p/read-body-fn
-                       rec)
-               ;; for profiles and personae-array, it's a vector
-               (#{:profiles :personae-array} k)
-               (partial mapv))]
-         (assoc m
-                k
-                (body-fn
-                 (w/postwalk
-                  (fn [node]
-                    ;; here we can be sure every prop is a key
-                    ;; since we force it with read-key-fn on input
-                    (if (keyword? node)
-                      (let [nn (name node)]
-                        (key-fn node))
-                      node))
-                  v))))
-       (throw (ex-info (format "Unknown key %s" k)
-                       {:type ::unknown-key
-                        :key k
-                        :json json-result}))))
-   {}
-   json-result))
+;; We need this function here since it's the only validation function that
+;; makes use of two different parts of the input spec
 
-(defn unrealize-subobjects
-  "Make subobjects ready for writing to JSON"
-  [input]
-  (reduce-kv
-   (fn [m k v]
-     (if-let [constructor (get subobject-constructors k)]
-       (let [rec (constructor {})
-             key-fn
-             (partial
-              p/write-key-fn
-              rec)
-             body-fn
-             (cond->> p/write-body-fn
-               ;; for profiles and persoane-array, it's a vector
-               (#{:profiles :personae-array} k)
-               (partial mapv))]
-         (assoc m
-                k
-                (w/postwalk
-                 (fn [node]
-                   ;; Here we can't know it's a key unless we find it in a map
-                   (if (map? node)
-                     (reduce-kv
-                      (fn [m' k' v']
-                        (assoc m' (key-fn k') v'))
-                      {}
-                      node)
-                     node))
-                 (body-fn v))))
-       (throw (ex-info (format "Unknown key %s" k)
-                       {:type ::unknown-key
-                        :key k
-                        :input input}))))
-   {}
-   input))
+(defn validate-pattern-filters
+  [{{:keys [gen-profiles gen-patterns]} :parameters
+    profiles :profiles}]
+  (concat (profile/validate-profile-filters profiles gen-profiles)
+          (profile/validate-pattern-filters profiles gen-patterns)))
 
-(defrecord Input [profiles
-                  personae-array
-                  alignments
-                  parameters]
-  p/FromInput
-  (validate [this]
-    (-> (concat (validate-profiles (:profiles this))
-                (validate-personae-array (:personae-array this))
-                (validate-alignments (:alignments this))
-                (validate-parameters (:parameters this))
-                (validate-pattern-filters this))
-        vec
-        not-empty))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input I/O
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  p/JSONRepresentable
-  (read-key-fn [this k]
-    (keyword nil k))
-  (read-body-fn [this json-result]
-    (map->Input
-     (realize-subobjects json-result)))
-  (write-key-fn [this k]
-    (name k))
-  (write-body-fn [this]
-    (unrealize-subobjects this)))
+(defn- throw-unknown-key [type-k]
+  (throw (ex-info (format "Unknown key %s" type-k)
+                  {:type ::unknown-key
+                   :key  type-k})))
 
-(defn from-location
-  [type-k fmt-k location]
-  (if-let [constructor (if (= type-k :input)
-                         map->Input
-                         (get subobject-constructors type-k))]
-    (case fmt-k
-      ;; currently only JSON
-      :json (if (#{:profiles :personae-array} type-k)
-              (dio/read-loc-array (constructor {}) location)
-              (dio/read-loc-json (constructor {}) location)))
-    (throw (ex-info (format "Unknown key %s" type-k)
-                    {:type ::unknown-key
-                     :key type-k}))))
+(defn- throw-unknown-format [format-k]
+  (throw (ex-info (format "Unknown format %s" format-k)
+                  {:type   ::unknown-format
+                   :format format-k})))
 
-(defn to-file
-  [record fmt-k location]
-  (case fmt-k
-    ;; currently only JSON
-    :json (dio/write-file-json record location)))
+;; Read Input
 
-(defn to-out
-  [record fmt-k]
-  (case fmt-k
-    ;; currently only JSON
-    :json (dio/write-loc-json record *out*)))
+(defmulti from-location
+  (fn [type-k format-k _] [type-k format-k]))
 
-(defn to-err
-  [record fmt-k]
-  (case fmt-k
-    ;; currently only JSON
-    :json (dio/write-loc-json record *err*)))
+(defmethod from-location :default [type-k format-k _]
+  (if (#{:json} format-k)
+    (throw-unknown-key type-k)
+    (throw-unknown-format format-k)))
 
-(defn validate
+(defmethod from-location [:input :json] [_ _ location]
+  (-> (dio/read-json-location location)
+      (update :parameters params/apply-defaults)))
+
+(defmethod from-location [:profile :json] [_ _ location]
+  (dio/read-json-location location))
+
+(defmethod from-location [:profiles :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       vec))
+
+(defmethod from-location [:personae :json] [_ _ location]
+  (dio/read-json-location location))
+
+(defmethod from-location [:personae-array :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       vec))
+
+(defmethod from-location [:alignments :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       vec))
+
+(defmethod from-location [:parameters :json] [_ _ location]
+  (->> (dio/read-json-location location)
+       params/apply-defaults))
+
+;; Write to file
+
+(defmulti to-file (fn [_ format-k _] format-k))
+
+(defmethod to-file :default [_ format-k _]
+  (throw-unknown-format format-k))
+
+(defmethod to-file :json [data _ location]
+  (dio/write-json-file data location))
+
+;; Write to stdout
+
+(defmulti to-out (fn [_ fmt-k] fmt-k))
+
+(defmethod to-out :default [_ format-k _]
+  (throw-unknown-format format-k))
+
+(defmethod to-out :json [data _]
+  (dio/write-json-location data *out*))
+
+;; Write to stderr
+
+(defmulti to-err (fn [_ fmt-k] fmt-k))
+
+(defmethod to-err :default [_ format-k _]
+  (throw-unknown-format format-k))
+
+(defmethod to-err :json [data _]
+  (dio/write-json-location data *err*))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Input Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmulti validate
   "Validate input using the FromInput protocol. Does no handling on result.
    Returns a coll of maps on failure, `nil` on success."
-  [input]
-  (p/validate input))
+  (fn [type-k _] type-k))
+
+(defmethod validate :default [type-k _]
+  (throw-unknown-key type-k))
+
+(defmethod validate :input
+  [_ {:keys [profiles personae-array alignments parameters] :as input}]
+  (-> (concat (profile/validate-profiles profiles)
+              (personae/validate-personae-array personae-array)
+              (alignments/validate-alignments alignments)
+              (params/validate-parameters parameters)
+              (validate-pattern-filters input))
+      vec
+      not-empty))
+
+(defmethod validate :profile [_ profile]
+  (profile/validate-profile profile))
+
+(defmethod validate :personae [_ personae]
+  (personae/validate-personae personae))
+
+(defmethod validate :alignments [_ alignments]
+  (alignments/validate-alignments alignments))
+
+(defmethod validate :parameters [_ parameters]
+  (params/validate-parameters parameters))
 
 (defn validate-throw
   "Validate input using the FromInput protocol. Throw an exception if the input
    isn't valid."
-  [input]
-  (if-let [errors (not-empty (p/validate input))]
-    (throw (ex-info "Validation Errors"
-                    {:type ::invalid-input
-                     :input input
+  [type-k input]
+  (if-let [errors (not-empty (validate type-k input))]
+    (throw (ex-info (format "Validation Errors on %s" (name type-k))
+                    {:type   ::invalid-input
+                     :key    type-k
+                     :input  input
                      :errors errors}))
     input))

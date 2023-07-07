@@ -258,9 +258,8 @@
   
    Spooky."
   [{:keys [profiles personae-array parameters alignments]}]
-  (let [;; Input parameters and alignments
+  (let [;; Input parameters
         {:keys [start end timezone seed] ?from-stamp :from} parameters
-        {alignments :alignment-vector} alignments
         ;; RNG for generating the rest of the seeds
         sim-rng     (random/seed-rng seed)
         ;; Set timezone region and timestamps
