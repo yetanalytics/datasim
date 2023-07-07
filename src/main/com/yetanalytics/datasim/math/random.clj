@@ -31,7 +31,7 @@
 
 ;; RNG Creation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/fdef seed-rng
+(s/fdef rng
   :args (s/cat)
   :ret ::rng)
 
