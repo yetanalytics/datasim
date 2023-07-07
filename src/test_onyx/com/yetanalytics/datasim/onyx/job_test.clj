@@ -1,15 +1,20 @@
 (ns com.yetanalytics.datasim.onyx.job-test
   (:require [clojure.test :refer [deftest testing is]]
-            [com.yetanalytics.datasim.onyx.job       :as job]
-            [com.yetanalytics.datasim.onyx.http      :as http]
-            [com.yetanalytics.datasim.onyx.sim       :as sim]
-            [com.yetanalytics.datasim.test-constants :as const]))
+            [com.yetanalytics.datasim.onyx.job  :as job]
+            [com.yetanalytics.datasim.onyx.http :as http]
+            [com.yetanalytics.datasim.onyx.sim  :as sim]))
+
+(def simple-input-filepath
+  "dev-resources/input/simple.json")
+
+(def mom-input-filepath
+  "dev-resources/input/mom64.json")
 
 (deftest mom-partition-test
   (let [{:keys [workflow
                 lifecycles]}
         (job/config
-         {:input-loc const/mom-input-filepath
+         {:input-loc mom-input-filepath
           :gen-concurrency 4})
         inputs (keep ::sim/input-loc lifecycles)
         parts (keep ::sim/select-agents
@@ -33,7 +38,7 @@
 (deftest config-test
   (testing "produces a valid job config from input"
     (is (= (job/config
-            {:input-loc       const/simple-input-filepath
+            {:input-loc       simple-input-filepath
              :gen-concurrency 3})
            {:workflow
             [[:in-0 :out-0] [:in-1 :out-1] [:in-2 :out-2]],
@@ -49,21 +54,21 @@
               ::http/lrs-request lifecycle-lrs-request}
              {:lifecycle/task     :in-0,
               :lifecycle/calls    ::sim/in-calls,
-              ::sim/input-loc     const/simple-input-filepath,
+              ::sim/input-loc     simple-input-filepath,
               ::sim/strip-ids?    false,
               ::sim/remove-refs?  false,
               ::sim/select-agents #{"mbox::mailto:bobfake@example.org"},
               ::sim/batch-size    1}
              {:lifecycle/task     :in-1,
               :lifecycle/calls    ::sim/in-calls,
-              ::sim/input-loc     const/simple-input-filepath,
+              ::sim/input-loc     simple-input-filepath,
               ::sim/strip-ids?    false,
               ::sim/remove-refs?  false,
               ::sim/select-agents #{"mbox::mailto:frederstaz@example.org"},
               ::sim/batch-size    1}
              {:lifecycle/task     :in-2,
               :lifecycle/calls    ::sim/in-calls,
-              ::sim/input-loc     const/simple-input-filepath,
+              ::sim/input-loc     simple-input-filepath,
               ::sim/strip-ids?    false,
               ::sim/remove-refs?  false,
               ::sim/select-agents #{"mbox::mailto:alicefaux@example.org"},
@@ -127,5 +132,5 @@
   ;; to gracefully print, useful for making more tests
   (pprint
    (job/config
-    {:input-loc const/simple-input-filepath
+    {:input-loc simple-input-filepath
      :gen-concurrency 3})))

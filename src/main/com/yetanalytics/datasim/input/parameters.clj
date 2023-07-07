@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.input.parameters
   "Parameter input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [java-time          :as t]
+            [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
@@ -9,8 +9,7 @@
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [clojure.lang ExceptionInfo]
            [java.time.zone ZoneRulesException]
-           [java.time Instant]
-           [java.util Random]))
+           [java.time Instant]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs

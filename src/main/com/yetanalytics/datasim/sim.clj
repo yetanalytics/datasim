@@ -2,8 +2,8 @@
   "Given input, compose a simulation model"
   (:require [clojure.spec.alpha :as s]
             [clojure.core.async :as a]
-            [java-time        :as t]
-            [xapi-schema.spec :as xs]
+            [java-time.api      :as t]
+            [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.math.random       :as random]
             [com.yetanalytics.datasim.math.timeseries   :as ts]
             [com.yetanalytics.datasim.xapi.actor        :as actor]
