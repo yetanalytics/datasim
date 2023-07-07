@@ -2,7 +2,6 @@
   "Given input, compose a simulation model"
   (:require [clojure.spec.alpha :as s]
             [clojure.core.async :as a]
-            [clojure.core.async.impl.protocols :as ap]
             [java-time        :as t]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.math.random       :as random]
@@ -353,10 +352,6 @@
 ;; Statement Sequence Simulation (Async)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- chan?
-  [x]
-  (satisfies? ap/Channel x))
-
 ;; simulate multiple channels
 
 (s/def ::pad-chan-max
@@ -367,8 +362,7 @@
                :options (s/keys*
                          :opt-un [::select-agents
                                   ::pad-chan-max]))
-  :ret (s/map-of ::actor/actor-ifi
-                 chan?))
+  :ret (s/map-of ::actor/actor-ifi au/chan?))
 
 (defn sim-chans
   "Given input, build a skeleton and produce a map from agent IFIs to
@@ -422,7 +416,7 @@
                                   ::pad-chan-max
                                   ::sort
                                   ::buffer-size]))
-  :ret chan?)
+  :ret au/chan?)
 
 (defn sim-chan
   "Merged output of `sim-chans` for parallel generation."
