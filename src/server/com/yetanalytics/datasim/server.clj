@@ -47,6 +47,14 @@
    :parameters     (input/from-location :parameters :json
                                         (get-stream input "parameters"))})
 
+(defn- run-sim-post!
+  [post-options statement-batch]
+  (let [{:keys [fail]}
+        (client/post-statements post-options statement-batch)]
+    (when (not-empty fail)
+      (doseq [{:keys [status error]} fail]
+        (log/error :msg (client/post-error-message status error))))))
+
 (defn run-sim!
   "Returns a function that will accept an output stream to write to the client.
    Inside that function, a writer will open and the simulation will run.
@@ -80,12 +88,7 @@
               ;; order to avoid keeping them all in memory.
               (doseq [statement-batch (partition-all batch-size statements)]
                 (when send-to-lrs
-                  (let [{:keys [fail]}
-                        (client/post-statements post-options statement-batch)]
-                    (when (not-empty fail)
-                      (for [{:keys [status error]} fail]
-                        (log/error :msg
-                                   (client/post-error-message status error))))))
+                  (run-sim-post! post-options statement-batch))
                 (doseq [statement statement-batch]
                   (dio/write-json statement w :key-fn? false)
                   (.write w "\n"))))
@@ -110,10 +113,8 @@
         ;; Create a map of every allowed credential
         (reduce (fn [m cred]
                   (let [[user pass] (cstr/split cred #":")]
-                    (assoc m
-                           user
-                           {:username user
-                            :password pass})))
+                    (assoc m user {:username user
+                                   :password pass})))
                 {}
                 users')
         (do

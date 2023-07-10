@@ -1,13 +1,15 @@
 (ns com.yetanalytics.datasim.client
-  "Simple xAPI LRS client fns"
+  "Simple xAPI LRS client functions."
   (:require [clojure.core.async :as a]
             [clojure.java.io    :as io]
             [cheshire.core      :as json]
             [org.httpkit.client :as http]
             [com.yetanalytics.datasim.util.io :as dio]))
 
-(defn post-error-message [status error]
-  (format "POST Request FAILED with STATUS: %d, MESSAGE:%s"
+(defn post-error-message
+  "Error message for when POSTing to an LRS fails."
+  [status error]
+  (format "POST Request FAILED with STATUS: %d, MESSAGE: %s"
           status
           (or (some-> error ex-message) "<none>")))
 
