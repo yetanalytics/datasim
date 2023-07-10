@@ -23,11 +23,27 @@
 ;; Datasim fns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-stream
-  "Given a map and a key, retrieve the content of the key as an input stream."
-  [m k]
-  (let [raw-bytes (.getBytes (get m k))]
+;; TODO: Get rid of multipart form params and replace them with JSON params.
+
+(defn- get-stream
+  "Given an input map `input` and a key `k` into the input map, retrieve the
+   content, which should be multipart form data, as an input stream. This
+   input stream will then be read via `input/from-location`, which is weird
+   but makes sense if you think of input streams as a location in memory."
+  [input k]
+  (let [raw-bytes (.getBytes (get input k))]
     (io/input-stream raw-bytes)))
+
+(defn- sim-input
+  [input]
+  {:profiles       (input/from-location :profiles :json
+                                        (get-stream input "profiles"))
+   :personae-array (input/from-location :personae-array :json
+                                        (get-stream input "personae-array"))
+   :alignments     (input/from-location :alignments :json
+                                        (get-stream input "alignments"))
+   :parameters     (input/from-location :parameters :json
+                                        (get-stream input "parameters"))})
 
 (defn run-sim!
   "Returns a function that will accept an output stream to write to the client.
@@ -36,15 +52,8 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [sim-input      {:profiles       (input/from-location :profiles :json
-                                                             (get-stream input "profiles"))
-                        :personae-array (input/from-location :personae-array :json
-                                                             (get-stream input "personae-array"))
-                        :alignments     (input/from-location :alignments :json
-                                                             (get-stream input "alignments"))
-                        :parameters     (input/from-location :parameters :json
-                                                             (get-stream input "parameters"))}
-        send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
+  (let [sim-input      (sim-input input)
+        send-to-lrs    (if-some [send-to-lrs (get input "send-to-lrs")]
                          (read-string send-to-lrs)
                          false)
         endpoint       (get input "lrs-endpoint")
@@ -61,7 +70,6 @@
           (.write w "[\n")
           (try
             (let [statements (ds/generate-seq sim-input)]
-
               (when send-to-lrs
                 (let [post-options (cond-> {:endpoint endpoint
                                             :batch-size 20}
@@ -96,15 +104,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Reach into the environment and grab all of the user credentials from there
-;;  that will be used in basic auth.
+;; that will be used in basic auth.
 (defonce users
   (delay
     (let [credentials (env :credentials "")
-          users'       (clojure.string/split credentials #",")]
+          users'      (cstr/split credentials #",")]
       (if (not= [""] users')
         ;; Create a map of every allowed credential
         (reduce (fn [m cred]
-                  (let [[user pass] (clojure.string/split cred #":")]
+                  (let [[user pass] (cstr/split cred #":")]
                     (assoc m
                            user
                            {:username user
