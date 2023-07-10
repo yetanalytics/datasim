@@ -1,13 +1,13 @@
 (ns com.yetanalytics.datasim.main
   (:require [clojure.core.async :as a]
             [clojure.tools.cli  :as cli]
-            [com.yetanalytics.datasim :as ds]
-            [com.yetanalytics.datasim.client :as http]
-            [com.yetanalytics.datasim.input  :as input]
+            [com.yetanalytics.datasim                  :as ds]
+            [com.yetanalytics.datasim.client           :as client]
+            [com.yetanalytics.datasim.input            :as input]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.math.random :as random]
-            [com.yetanalytics.datasim.util.errors :as errors]
-            [com.yetanalytics.datasim.util.io     :as dio])
+            [com.yetanalytics.datasim.math.random      :as random]
+            [com.yetanalytics.datasim.util.errors      :as errors]
+            [com.yetanalytics.datasim.util.io          :as dio])
   (:gen-class))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -164,7 +164,7 @@
         sim-chan    (ds/generate-seq-async
                      gen-input
                      :select-agents select-agents)
-        result-chan (http/post-statements-async
+        result-chan (client/post-statements-async
                      post-options
                      sim-chan
                      :concurrency concurrency)]
@@ -173,7 +173,7 @@
         (case tag
           :fail
           (let [{:keys [status error]} ret]
-            (bail! [(http/post-error-message status error)]))
+            (bail! [(client/post-error-message status error)]))
           :success
           (do
             (dio/println-coll ret) ; Statement ID strings
@@ -186,10 +186,10 @@
                                  :select-agents select-agents)
                          (not= post-limit -1)
                          (take post-limit))
-        {:keys [fail]} (http/post-statements post-options statements)]
+        {:keys [fail]} (client/post-statements post-options statements)]
     (when (not-empty fail)
       (bail! (for [{:keys [status error]} fail]
-               (http/post-error-message status error))))))
+               (client/post-error-message status error))))))
 
 (defn- post-sim!
   [input options]
