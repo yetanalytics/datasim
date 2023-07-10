@@ -127,6 +127,16 @@
 ;; Interceptors/Middleware
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def response-headers
+  {"Content-Type" "application/json; charset=utf-8"})
+
+(defn health-interceptor
+  "Route implementation for the health endpoint.
+   Returns a 200 OK if the server is up and running."
+  [_]
+  {:status 200
+   :body   "OK"})
+
 ;; A wrapper for Buddy to know what the authentication fn is
 (def backend
   (backends/basic {:realm  "MyApi"
@@ -147,66 +157,56 @@
    [ctx ex]
    [{:exception-type :clojure.lang.ExceptionInfo :stage :enter}]
    (try
-     (assoc ctx
-            :response
-            (middleware/authorization-error (:request ctx)
-                                            ex
-                                            backend))
+     (->> (middleware/authorization-error (:request ctx) ex backend)
+          (assoc ctx :response))
      (catch Exception e
        (assoc ctx ::chain/error e)))
-   :else (assoc ctx ::chain/error ex)))
-
-(def generate
-  {:name  :datasim.route/generate
-   :enter (fn [context]
-            ;; Generate response to stream simulation to the client.
-            ;; Return a json file, and set it to be downloaded by the user.
-            (if (auth/authenticated? (:request context))
-              (assoc context
-                     :response
-                     (try
-                       (let [response-body
-                             (run-sim! (-> context
-                                           :request
-                                           :multipart-params))]
-                         {:status  (if (fn? response-body)
-                                     200
-                                     400)
-                          :headers {"Content-Type"        "application/json; charset=utf-8"}
-                          :body    response-body})
-                       (catch Exception e
-                         {:status 500
-                          :body   (.getMessage e)})))
-              (if (get (-> context :request :headers) "authorization")
-                (assoc context
-                       :response
-                       {:status 403
-                        :body   "Not Authenticated"})
-                (assoc context
-                       :response
-                       {:status 401
-                        :body   "No Authorization"}))))})
-
-
+   :else
+   (assoc ctx ::chain/error ex)))
 
 (def common-interceptors
   [authentication-interceptor
    (authorization-interceptor backend)])
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Route implementations
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Generate response to stream simulation to the client.
+;; Return a json file, and set it to be downloaded by the user.
+(defn- generate-interceptor-response
+  [{request-headers :headers
+    input :multipart-params
+    :as request}]
+  (if (auth/authenticated? request)
+    (try
+      (let [response-body (run-sim! input)]
+        {:status  (if (fn? response-body) 200 400)
+         :headers response-headers
+         :body    response-body})
+      (catch Exception e
+        {:status 500
+         :body   (.getMessage e)}))
+    (if (get request-headers "authorization")
+      {:status 403
+       :body   "Not Authenticated"}
+      {:status 401
+       :body   "No Authorization"})))
 
-(defn health
-  "Route implementation for the health endpoint.
-   Currently it just returns a 200 OK if the server is up and running."
-  [_]
-  {:status 200
-   :body   "OK"})
+(def generate-interceptor
+  {:name  :datasim.route/generate
+   :enter (fn [{:keys [request] :as context}]
+            (assoc context
+                   :response
+                   (generate-interceptor-response request)))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Routes and server configs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def default-api-host "0.0.0.0")
+
+(def default-api-port 9090)
+
+(def default-allowed-origins
+  ["https://yetanalytics.github.io"
+   "http://localhost:9091"])
 
 (defn- assert-valid-root-path
   [root-path]
@@ -225,14 +225,22 @@
   (let [root-path (get env :api-root-path "")]
     (assert-valid-root-path root-path)
     {:root-path       root-path
-     :host            (get env :api-host
-                           "0.0.0.0")
+     :host            (or (some-> env :api-host)
+                          default-api-host)
      :port            (or (some-> env :api-port Long/parseLong)
-                          9090)
-     :allowed-origins (if-let [allowed-str (:api-allowed-origins env)]
-                        (cstr/split allowed-str #",")
-                        ["https://yetanalytics.github.io"
-                         "http://localhost:9091"])}))
+                          default-api-port)
+     :allowed-origins (or (some-> env :api-allowed-origins (cstr/split #","))
+                          default-allowed-origins)}))
+
+(defn- routes [root-path]
+  (-> #{[(str root-path "/health")
+         :get        health-interceptor
+         :route-name :datasim.route/health]
+        [(str root-path "/api/v1/generate")
+         :post (into common-interceptors
+                     [(ring-mid/multipart-params)
+                      generate-interceptor])]}
+      route/expand-routes))
 
 (defn create-server
   []
@@ -241,19 +249,12 @@
                 port
                 allowed-origins]} (env-config env)]
     (log/info :msg "Starting DATASIM API..."
-              :root-path root-path
               :host host
               :port port
+              :root-path root-path
               :allowed-origins allowed-origins)
     (http/create-server
-     {::http/routes          (route/expand-routes
-                              #{[(str root-path "/health")
-                                 :get        health
-                                 :route-name :datasim.route/health]
-                                [(str root-path "/api/v1/generate")
-                                 :post (into common-interceptors
-                                             [(ring-mid/multipart-params)
-                                              generate])]})
+     {::http/routes          (routes root-path)
       ::http/type            :jetty
       ::http/allowed-origins allowed-origins
       ::http/host            host
