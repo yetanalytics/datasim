@@ -1,13 +1,13 @@
 (ns com.yetanalytics.datasim.main
   (:require [clojure.core.async :as a]
             [clojure.tools.cli  :as cli]
-            [cheshire.core      :as json]
             [com.yetanalytics.datasim :as ds]
             [com.yetanalytics.datasim.client :as http]
             [com.yetanalytics.datasim.input  :as input]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.math.random :as random]
-            [com.yetanalytics.datasim.util.errors :as errors])
+            [com.yetanalytics.datasim.util.errors :as errors]
+            [com.yetanalytics.datasim.util.io     :as dio])
   (:gen-class))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,11 +127,8 @@
   "Print error messages to std error and exit."
   [errors & {:keys [status]
              :or {status 1}}]
-  (binding [*out* *err*]
-    (doseq [e-msg errors]
-      (println e-msg))
-    (flush)
-    (System/exit status)))
+  (dio/println-err-coll errors)
+  (System/exit status))
 
 (defn- sim-input [options]
   (let [sim-options (select-keys options [:input
@@ -157,16 +154,6 @@
 
 ;; POST to LRS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- lrs-error-message [status error]
-  (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-          status
-          (or (some-> error ex-message) "<none>")))
-
-(defn- print-uuids [uuid-coll]
-  (doseq [^java.util.UUID id uuid-coll]
-    (printf "%s\n" (.toString id))
-    (flush)))
-
 (defn- post-async!
   [input post-options post-limit select-agents concurrency]
   (let [gen-input   (cond-> input
@@ -189,7 +176,7 @@
             (bail! [(http/post-error-message status error)]))
           :success
           (do
-            (print-uuids ret)
+            (dio/println-coll (map str ret))
             (recur)))))))
 
 (defn- post-sync!
@@ -202,7 +189,7 @@
         {:keys [fail]} (http/post-statements post-options statements)]
     (when (not-empty fail)
       (bail! (for [{:keys [status error]} fail]
-               (lrs-error-message status error))))))
+               (http/post-error-message status error))))))
 
 (defn- post-sim!
   [input options]
@@ -230,20 +217,16 @@
 
 ;; Print sim to stdout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Use I/O util functions to write to *out*
 (defn- print-sim!
   "Generate statement seqs and writes them to stdout."
   [input {:keys [select-agents]}]
-  (doseq [statement-seq (ds/generate-seq input :select-agents select-agents)]
-    (json/generate-stream statement-seq *out*)
-    (.write *out* "\n")
-    (flush)))
+  (doseq [statement (ds/generate-seq input :select-agents select-agents)]
+    (dio/write-json-stdout statement :key-fn? false)))
 
 ;; Write Input mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- write-input!
   ([input]
-   ;; TODO: Figure out why we get a stream closed error here
    (input/to-out input :json))
   ([input location]
    (input/to-file input :json location)

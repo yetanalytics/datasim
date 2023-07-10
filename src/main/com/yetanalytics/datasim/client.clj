@@ -3,7 +3,8 @@
   (:require [clojure.core.async :as a]
             [clojure.java.io    :as io]
             [cheshire.core      :as json]
-            [org.httpkit.client :as http])
+            [org.httpkit.client :as http]
+            [com.yetanalytics.datasim.util.io :as dio])
   (:import [java.util UUID]))
 
 (defn post-error-message [status error]
@@ -15,6 +16,7 @@
   {:headers {"X-Experience-Api-Version" "1.0.3"
              "Content-Type" "application/json"}})
 
+;; TODO: These UUIDs are never used as UUIDs, only as strings
 (defn- id->uuid [^String id]
   (UUID/fromString id))
 
@@ -42,11 +44,6 @@
               (post-options http-options batch)
               callback-fn)))
 
-(defn- print-uuids [uuid-coll]
-  (doseq [^java.util.UUID id uuid-coll]
-    (printf "%s\n" (.toString id))
-    (flush)))
-
 (defn post-statements
   "Given LRS options and a `statement-seq`, send them to an LRS in synchronous
    batches. If `print-ids?` is `true`, returned statement IDs will be printed
@@ -73,7 +70,7 @@
             ;; FIXME: Shouldn't other codes like 204 be supported?
             (let [statement-ids (map id->uuid (decode-body body))]
               (when print-ids?
-                (print-uuids statement-ids))
+                (dio/println-coll (map str statement-ids)))
               (recur (rest batches)
                      (+ success (count statement-ids))
                      fail))

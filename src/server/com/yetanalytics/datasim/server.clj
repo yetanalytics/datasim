@@ -2,7 +2,6 @@
   (:require [environ.core                      :refer [env]]
             [clojure.string                    :as cstr]
             [clojure.java.io                   :as io]
-            [cheshire.core                     :as json]
             [buddy.auth                        :as auth]
             [buddy.auth.backends               :as backends]
             [buddy.auth.middleware             :as middleware]
@@ -15,7 +14,8 @@
             [io.pedestal.interceptor.error     :as error]
             [com.yetanalytics.datasim          :as ds]
             [com.yetanalytics.datasim.input    :as input]
-            [com.yetanalytics.datasim.client   :as client])
+            [com.yetanalytics.datasim.client   :as client]
+            [com.yetanalytics.datasim.util.io  :as dio])
   (:import [javax.servlet ServletOutputStream])
   (:gen-class))
 
@@ -87,7 +87,7 @@
                         (log/error :msg
                                    (client/post-error-message status error))))))
                 (doseq [statement statement-batch]
-                  (json/generate-stream statement w)
+                  (dio/write-json statement w :key-fn? false)
                   (.write w "\n"))))
             (catch Exception e
               (log/error :msg "Error Building Simulation Skeleton"
