@@ -1,6 +1,5 @@
 (ns com.yetanalytics.datasim.server
   (:require [clojure.java.io                        :refer [writer input-stream]]
-            [clojure.core.async                     :as async]
             [io.pedestal.log                        :as log]
             [io.pedestal.http                       :as http]
             [io.pedestal.http.route                 :as route]
@@ -16,11 +15,6 @@
             [com.yetanalytics.datasim               :as ds]
             [com.yetanalytics.datasim.input         :as sinput]
             [com.yetanalytics.datasim.client        :as xapi-client]
-            [com.yetanalytics.pan.objects.profile   :as pan-prof]
-            [com.yetanalytics.pan.objects.pattern   :as pan-pat]
-            [com.yetanalytics.pan.errors            :as errors]
-            [clojure.spec.alpha                     :as s]
-            [com.yetanalytics.datasim.util.sequence :as su]
             [clojure.string                         :as str])
   (:import [javax.servlet ServletOutputStream])
   (:gen-class))
@@ -73,18 +67,16 @@
                                             :batch-size 20}
                                      (and api-key api-secret-key)
                                      (assoc-in [:http-options :basic-auth] [api-key api-secret-key]))
-                      {:keys [success ;; Count of successfully transacted statements
-                              fail ;; list of failed requests
-                              ]
-                       :as post-results} (xapi-client/post-statements
-                                          post-options
-                                          statements
-                                          :emit-ids-fn
-                                          (fn [ids]
-                                            (doseq [^java.util.UUID id ids]
-                                              (printf "%s\n" (.toString id))
-                                              (flush))))]
-                  (if (not-empty fail)
+                      {:keys [fail]}
+                      (xapi-client/post-statements
+                       post-options
+                       statements
+                       :emit-ids-fn
+                       (fn [ids]
+                         (doseq [^java.util.UUID id ids]
+                           (printf "%s\n" (.toString id))
+                           (flush))))]
+                  (when (not-empty fail)
                     (for [{:keys [status error]} fail]
                       (log/error :msg
                                  (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
@@ -123,9 +115,10 @@
           (log/info :msg "No Basic-Auth Credentials were set.")
           {})))))
 
+;; `request` is unused but is needed for `backends/basic`
 (defn auth-fn
   "This function will ensure that the creds from Basic Auth are authenticated."
-  [request {:keys [username password]}]
+  [_request {:keys [username password]}]
   (when-let [user (get @users username)]
     (when (= password (:password user))
       username)))
@@ -149,17 +142,19 @@
 (defn authorization-interceptor
   "Port of buddy-auth's wrap-authorization middleware."
   [backend]
-  (error-dispatch [ctx ex]
-                  [{:exception-type :clojure.lang.ExceptionInfo :stage :enter}]
-                  (try
-                    (assoc ctx
-                           :response
-                           (middleware/authorization-error (:request ctx)
-                                                           ex
-                                                           backend))
-                    (catch Exception e
-                      (assoc ctx ::chain/error e)))
-                  :else (assoc ctx ::chain/error ex)))
+  #_{:clj-kondo/ignore [:unresolved-symbol]}
+  (error-dispatch
+   [ctx ex]
+   [{:exception-type :clojure.lang.ExceptionInfo :stage :enter}]
+   (try
+     (assoc ctx
+            :response
+            (middleware/authorization-error (:request ctx)
+                                            ex
+                                            backend))
+     (catch Exception e
+       (assoc ctx ::chain/error e)))
+   :else (assoc ctx ::chain/error ex)))
 
 (def generate
   {:name  :datasim.route/generate
@@ -205,7 +200,7 @@
 (defn health
   "Route implementation for the health endpoint.
    Currently it just returns a 200 OK if the server is up and running."
-  [request]
+  [_]
   {:status 200
    :body   "OK"})
 
@@ -270,5 +265,5 @@
   (http/start (create-server)))
 
 (defn -main
-  [& args]
+  [& _args]
   (start))
