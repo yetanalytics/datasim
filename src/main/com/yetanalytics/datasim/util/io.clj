@@ -65,21 +65,25 @@
        (catch Exception e
          (throw-unparse-error location e))))
 
-(defn write-json-location
-  "Write the contents of `data` to the `location`, which can be `*out*`
-   for stdout or `*err*` for stderr."
-  [data location]
-  (try (if (#{*out* *err*} location)
-         ;; Write to stdout or stderr
-         (let [w (io/writer location)]
-           (write-json! data location w)
-           (.write w "\n")
-           (.flush w))
-         ;; Write to a file
-         (with-open [w (io/writer location)]
-           (write-json! data location w)))
-       (catch IOException e
-         (throw-io-error location e))))
+;; Avoid `with-open` to prevent stdout/stderr writers from being closed
+
+(defn write-json-stdout
+  "Write the contents of `data` to standard output."
+  [data]
+  (let [w (io/writer *out*)]
+    (write-json data w)
+    (.write w "\n")
+    (.flush w)))
+
+(defn write-json-stderr
+  "Write the contents of `data` to standard error."
+  [data]
+  (let [w (io/writer *err*)]
+    (write-json data w)
+    (.write w "\n")
+    (.flush w)))
+
+;; Use `with-open` to ensure that the file writer gets closed
 
 (defn write-json-file
   "Write the contents of `data` to the file `location`; a file will be

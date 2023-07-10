@@ -118,9 +118,10 @@
   (throw-unknown-format format-k))
 
 (defmethod to-out :json [data _]
-  (dio/write-json-location data *out*))
+  (dio/write-json-stdout data))
 
 ;; Write to stderr
+;; TODO: Currently unused
 
 (defmulti to-err (fn [_ fmt-k] fmt-k))
 
@@ -128,7 +129,7 @@
   (throw-unknown-format format-k))
 
 (defmethod to-err :json [data _]
-  (dio/write-json-location data *err*))
+  (dio/write-json-stderr data))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input Validation

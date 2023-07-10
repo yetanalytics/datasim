@@ -54,7 +54,7 @@
   (testing "is valid when written"
     (let [^File tf (File/createTempFile "profiletest" nil)]
       (try
-        (dio/write-json-location minimal-profile tf)
+        (dio/write-json-file minimal-profile tf)
         (is (nil? (pan/validate-profile
                    (json/read-str (slurp tf) :key-fn profile-key))))
         (finally
