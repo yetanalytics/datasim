@@ -186,7 +186,7 @@
         (case tag
           :fail
           (let [{:keys [status error]} ret]
-            (bail! [(lrs-error-message status error)]))
+            (bail! [(http/post-error-message status error)]))
           :success
           (do
             (print-uuids ret)
@@ -194,15 +194,12 @@
 
 (defn- post-sync!
   [input post-options post-limit select-agents]
-  (let [statements (cond->> (ds/generate-seq
-                             input
-                             :select-agents select-agents)
-                     (not= post-limit -1)
-                     (take post-limit))
-        {:keys [fail]}
-        (http/post-statements post-options
-                              statements
-                              :emit-ids-fn print-uuids)]
+  (let [statements     (cond->> (ds/generate-seq
+                                 input
+                                 :select-agents select-agents)
+                         (not= post-limit -1)
+                         (take post-limit))
+        {:keys [fail]} (http/post-statements post-options statements)]
     (when (not-empty fail)
       (bail! (for [{:keys [status error]} fail]
                (lrs-error-message status error))))))
@@ -222,11 +219,10 @@
     (when-not endpoint
       (bail! ["-E / --endpoint REQUIRED for post."]))
     ;; Endpoint present - OK
-    (let [post-options
-          (cond-> {:endpoint   endpoint
-                   :batch-size batch-size}
-            (and username password)
-            (assoc-in [:http-options :basic-auth] [username password]))]
+    (let [post-options {:endpoint   endpoint
+                        :batch-size batch-size
+                        :username   username
+                        :password   password}]
       (if async
         (post-async! input post-options post-limit select-agents concurrency)
         (post-sync! input post-options post-limit select-agents))

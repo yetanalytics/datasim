@@ -71,24 +71,16 @@
           (try
             (let [statements (ds/generate-seq sim-input)]
               (when send-to-lrs
-                (let [post-options (cond-> {:endpoint endpoint
-                                            :batch-size 20}
-                                     (and api-key api-secret-key)
-                                     (assoc-in [:http-options :basic-auth] [api-key api-secret-key]))
+                (let [post-options {:endpoint   endpoint
+                                    :batch-size 20
+                                    :username   api-key
+                                    :password   api-secret-key}
                       {:keys [fail]}
-                      (client/post-statements
-                       post-options
-                       statements
-                       :emit-ids-fn
-                       (fn [ids]
-                         (doseq [^java.util.UUID id ids]
-                           (printf "%s\n" (.toString id))
-                           (flush))))]
+                      (client/post-statements post-options statements)]
                   (when (not-empty fail)
                     (for [{:keys [status error]} fail]
                       (log/error :msg
-                                 (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-                                         status (or (some-> error ex-message) "<none>")))))))
+                                 (client/post-error-message status error))))))
               (doseq [s (ds/generate-seq sim-input)]
                 (json/generate-stream s w)
                 (.write w "\n")))
