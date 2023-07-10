@@ -176,7 +176,7 @@
             (bail! [(http/post-error-message status error)]))
           :success
           (do
-            (dio/println-coll (map str ret))
+            (dio/println-coll ret) ; Statement ID strings
             (recur)))))))
 
 (defn- post-sync!

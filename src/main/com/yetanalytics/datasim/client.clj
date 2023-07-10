@@ -4,8 +4,7 @@
             [clojure.java.io    :as io]
             [cheshire.core      :as json]
             [org.httpkit.client :as http]
-            [com.yetanalytics.datasim.util.io :as dio])
-  (:import [java.util UUID]))
+            [com.yetanalytics.datasim.util.io :as dio]))
 
 (defn post-error-message [status error]
   (format "POST Request FAILED with STATUS: %d, MESSAGE:%s"
@@ -15,10 +14,6 @@
 (def default-http-options
   {:headers {"X-Experience-Api-Version" "1.0.3"
              "Content-Type" "application/json"}})
-
-;; TODO: These UUIDs are never used as UUIDs, only as strings
-(defn- id->uuid [^String id]
-  (UUID/fromString id))
 
 (defn- decode-body [body]
   (with-open [rdr (io/reader body)]
@@ -68,9 +63,9 @@
           (if (= 200 status)
             ;; Success!
             ;; FIXME: Shouldn't other codes like 204 be supported?
-            (let [statement-ids (map id->uuid (decode-body body))]
+            (let [statement-ids (decode-body body)]
               (when print-ids?
-                (dio/println-coll (map str statement-ids)))
+                (dio/println-coll statement-ids))
               (recur (rest batches)
                      (+ success (count statement-ids))
                      fail))
@@ -114,7 +109,7 @@
                         (a/put! port [:fail ret]))
                       ;; Success: Continue
                       (a/put! port
-                              [:success (mapv id->uuid (decode-body body))]))
+                              [:success (decode-body body)]))
                     ;; Close the return channel
                     (a/close! port))
         async-fn (fn [batch port]
