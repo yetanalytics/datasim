@@ -23,6 +23,8 @@
 ;; Datasim fns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def batch-size 20)
+
 ;; TODO: Get rid of multipart form params and replace them with JSON params.
 
 (defn- get-stream
@@ -58,7 +60,11 @@
                          false)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
-        api-secret-key (get input "api-secret-key")]
+        api-secret-key (get input "api-secret-key")
+        post-options   {:endpoint   endpoint
+                        :batch-size batch-size
+                        :username   api-key
+                        :password   api-secret-key}]
     (if-some [spec-errors (input/validate :input sim-input)]
       ;; Return a coll of maps that are acceptable to the Datasim UI
       (mapv #(assoc % :visible true) spec-errors)
@@ -70,20 +76,19 @@
           (.write w "[\n")
           (try
             (let [statements (ds/generate-seq sim-input)]
-              (when send-to-lrs
-                (let [post-options {:endpoint   endpoint
-                                    :batch-size 20
-                                    :username   api-key
-                                    :password   api-secret-key}
-                      {:keys [fail]}
-                      (client/post-statements post-options statements)]
-                  (when (not-empty fail)
-                    (for [{:keys [status error]} fail]
-                      (log/error :msg
-                                 (client/post-error-message status error))))))
-              (doseq [s (ds/generate-seq sim-input)]
-                (json/generate-stream s w)
-                (.write w "\n")))
+              ;; We need to batch the generated statements before POSTing in
+              ;; order to avoid keeping them all in memory.
+              (doseq [statement-batch (partition-all batch-size statements)]
+                (when send-to-lrs
+                  (let [{:keys [fail]}
+                        (client/post-statements post-options statement-batch)]
+                    (when (not-empty fail)
+                      (for [{:keys [status error]} fail]
+                        (log/error :msg
+                                   (client/post-error-message status error))))))
+                (doseq [statement statement-batch]
+                  (json/generate-stream statement w)
+                  (.write w "\n"))))
             (catch Exception e
               (log/error :msg "Error Building Simulation Skeleton"
                          :e   (.getMessage e)))
