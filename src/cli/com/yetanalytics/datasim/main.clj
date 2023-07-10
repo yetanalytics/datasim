@@ -212,8 +212,7 @@
                         :password   password}]
       (if async
         (post-async! input post-options post-limit select-agents concurrency)
-        (post-sync! input post-options post-limit select-agents))
-      (System/exit 0))))
+        (post-sync! input post-options post-limit select-agents)))))
 
 ;; Print sim to stdout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
