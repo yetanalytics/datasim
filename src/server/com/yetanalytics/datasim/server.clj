@@ -1,21 +1,21 @@
 (ns com.yetanalytics.datasim.server
-  (:require [clojure.java.io                        :refer [writer input-stream]]
-            [io.pedestal.log                        :as log]
-            [io.pedestal.http                       :as http]
-            [io.pedestal.http.route                 :as route]
-            [io.pedestal.http.ring-middlewares      :refer [multipart-params]]
-            [io.pedestal.interceptor                :as interceptor]
-            [io.pedestal.interceptor.chain          :as chain]
-            [io.pedestal.interceptor.error          :refer [error-dispatch]]
-            [buddy.auth                             :as auth]
-            [buddy.auth.backends                    :as backends]
-            [buddy.auth.middleware                  :as middleware]
-            [cheshire.core                          :as c]
-            [environ.core                           :refer [env]]
-            [com.yetanalytics.datasim               :as ds]
-            [com.yetanalytics.datasim.input         :as sinput]
-            [com.yetanalytics.datasim.client        :as xapi-client]
-            [clojure.string                         :as str])
+  (:require [environ.core                      :refer [env]]
+            [clojure.string                    :as cstr]
+            [clojure.java.io                   :as io]
+            [cheshire.core                     :as json]
+            [buddy.auth                        :as auth]
+            [buddy.auth.backends               :as backends]
+            [buddy.auth.middleware             :as middleware]
+            [io.pedestal.log                   :as log]
+            [io.pedestal.http                  :as http]
+            [io.pedestal.http.route            :as route]
+            [io.pedestal.http.ring-middlewares :as ring-mid]
+            [io.pedestal.interceptor           :as interceptor]
+            [io.pedestal.interceptor.chain     :as chain]
+            [io.pedestal.interceptor.error     :as error]
+            [com.yetanalytics.datasim          :as ds]
+            [com.yetanalytics.datasim.input    :as input]
+            [com.yetanalytics.datasim.client   :as client])
   (:import [javax.servlet ServletOutputStream])
   (:gen-class))
 
@@ -27,7 +27,7 @@
   "Given a map and a key, retrieve the content of the key as an input stream."
   [m k]
   (let [raw-bytes (.getBytes (get m k))]
-    (input-stream raw-bytes)))
+    (io/input-stream raw-bytes)))
 
 (defn run-sim!
   "Returns a function that will accept an output stream to write to the client.
@@ -36,26 +36,26 @@
   [input]
   ;; Uses multipart message for the request.
   ;; Read in each part of the input file, and convert into EDN
-  (let [sim-input      {:profiles       (sinput/from-location :profiles :json
-                                                              (get-stream input "profiles"))
-                        :personae-array (sinput/from-location :personae-array :json
-                                                              (get-stream input "personae-array"))
-                        :alignments     (sinput/from-location :alignments :json
-                                                              (get-stream input "alignments"))
-                        :parameters     (sinput/from-location :parameters :json
-                                                              (get-stream input "parameters"))}
+  (let [sim-input      {:profiles       (input/from-location :profiles :json
+                                                             (get-stream input "profiles"))
+                        :personae-array (input/from-location :personae-array :json
+                                                             (get-stream input "personae-array"))
+                        :alignments     (input/from-location :alignments :json
+                                                             (get-stream input "alignments"))
+                        :parameters     (input/from-location :parameters :json
+                                                             (get-stream input "parameters"))}
         send-to-lrs    (if-let [send-to-lrs (get input "send-to-lrs")]
                          (read-string send-to-lrs)
                          false)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")
         api-secret-key (get input "api-secret-key")]
-    (if-some [spec-errors (sinput/validate :input sim-input)]
+    (if-some [spec-errors (input/validate :input sim-input)]
       ;; Return a coll of maps that are acceptable to the Datasim UI
       (mapv #(assoc % :visible true) spec-errors)
       ;; Anon fn that accepts the output stream for the response body.
       (fn [^ServletOutputStream os]
-        (with-open [w (writer os)]
+        (with-open [w (io/writer os)]
           ;; Iterate over the entire input skeleton, generate statements.
           ;; Write them wrapped in a list
           (.write w "[\n")
@@ -68,7 +68,7 @@
                                      (and api-key api-secret-key)
                                      (assoc-in [:http-options :basic-auth] [api-key api-secret-key]))
                       {:keys [fail]}
-                      (xapi-client/post-statements
+                      (client/post-statements
                        post-options
                        statements
                        :emit-ids-fn
@@ -82,7 +82,7 @@
                                  (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
                                          status (or (some-> error ex-message) "<none>")))))))
               (doseq [s (ds/generate-seq sim-input)]
-                (c/generate-stream s w)
+                (json/generate-stream s w)
                 (.write w "\n")))
             (catch Exception e
               (log/error :msg "Error Building Simulation Skeleton"
@@ -143,7 +143,7 @@
   "Port of buddy-auth's wrap-authorization middleware."
   [backend]
   #_{:clj-kondo/ignore [:unresolved-symbol]}
-  (error-dispatch
+  (error/error-dispatch
    [ctx ex]
    [{:exception-type :clojure.lang.ExceptionInfo :stage :enter}]
    (try
@@ -211,11 +211,11 @@
 (defn- assert-valid-root-path
   [root-path]
   (when (not-empty root-path)
-    (when-not (str/starts-with? root-path "/")
+    (when-not (cstr/starts-with? root-path "/")
       (throw (ex-info "API_ROOT_PATH must start with /"
                       {:type      ::invalid-root-path
                        :root-path root-path})))
-    (when (str/ends-with? root-path "/")
+    (when (cstr/ends-with? root-path "/")
       (throw (ex-info "API_ROOT_PATH must not end with /"
                       {:type      ::invalid-root-path
                        :root-path root-path})))))
@@ -230,7 +230,7 @@
      :port            (or (some-> env :api-port Long/parseLong)
                           9090)
      :allowed-origins (if-let [allowed-str (:api-allowed-origins env)]
-                        (str/split allowed-str #",")
+                        (cstr/split allowed-str #",")
                         ["https://yetanalytics.github.io"
                          "http://localhost:9091"])}))
 
@@ -252,7 +252,7 @@
                                  :route-name :datasim.route/health]
                                 [(str root-path "/api/v1/generate")
                                  :post (into common-interceptors
-                                             [(multipart-params)
+                                             [(ring-mid/multipart-params)
                                               generate])]})
       ::http/type            :jetty
       ::http/allowed-origins allowed-origins
