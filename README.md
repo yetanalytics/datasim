@@ -224,7 +224,7 @@ This endpoint takes a set of simulation inputs, returns a file with the output d
 
     profiles: Array of json-ld xAPI Profiles
 
-    personae: JSON Object containing Actors formatted as above
+    personae-array: Array of JSON Objects containing Actors formatted as above
 
     alignments: JSON Object containing Alignments formatted as above
 

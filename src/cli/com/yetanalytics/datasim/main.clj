@@ -1,17 +1,18 @@
 (ns com.yetanalytics.datasim.main
-  (:require [clojure.tools.cli :as cli :refer [parse-opts]]
-            [clojure.spec.alpha :as s]
-            [clojure.core.async :as a]
-            [cheshire.core      :as json]
-            [com.yetanalytics.datasim :as ds]
-            [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.util.errors :as errors]
+  (:require [clojure.core.async :as a]
+            [clojure.tools.cli  :as cli]
+            [com.yetanalytics.datasim                  :as ds]
+            [com.yetanalytics.datasim.client           :as client]
+            [com.yetanalytics.datasim.input            :as input]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.client :as http]
-            [com.yetanalytics.datasim.math.random :as random]
-            [clojure.pprint :refer [pprint]])
-  (:import [java.util Random])
+            [com.yetanalytics.datasim.math.random      :as random]
+            [com.yetanalytics.datasim.util.errors      :as errors]
+            [com.yetanalytics.datasim.util.io          :as dio])
   (:gen-class))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CLI Input
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- conj-input
   "Conj the input (either a Profile or a personae) to return a
@@ -115,151 +116,155 @@
    [nil "--gen-pattern IRI" "Only generate based on the given primary pattern. May be given multiple times to include multiple patterns."
     :id :gen-patterns
     :assoc-fn conj-param-input]
-
+   ;; Help
    ["-h" "--help"]])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CLI Run
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn bail!
   "Print error messages to std error and exit."
   [errors & {:keys [status]
              :or {status 1}}]
-  (binding [*out* *err*]
-    (doseq [e-msg errors]
-      (println e-msg))
-    (flush)
-    (System/exit status)))
+  (dio/println-err-coll errors)
+  (System/exit status))
 
-;; TODO: Use I/O util functions to write to *out*
-(defn- run-sim!
-  "Generate statement seqs and writes them to stdout."
-  [input & rest-args]
-  (doseq [statement-seq (apply ds/generate-seq input rest-args)]
-    (json/generate-stream statement-seq *out*)
-    (.write *out* "\n")
-    (flush)))
-
-(defn -main [& args]
-  (let [{:keys [options
-                arguments
-                summary
-                errors]
-         :as parsed-opts} (parse-opts args
-                                      (cli-options
-                                       ;; if the verb is "validate-input", we
-                                       ;; skip tools.cli validation and do a
-                                       ;; more in-depth one.
-                                       (not= "validate-input"
-                                             (last args))))
-        [?command & rest-args] arguments]
-    (cond (seq errors)
-          (bail! errors)
-
-          (or (empty? args) (:help options))
-          (println summary)
-
-          :else
-          ;; At this point, we have valid individual inputs. However, there may
-          ;; be cross-validation that needs to happen, so we compose the
-          ;; comprehensive spec from the options and check that.
-          (let [sim-options (select-keys options
-                                         [:input
+(defn- sim-input [options]
+  (let [sim-options (select-keys options [:input
                                           :profiles
                                           :personae-array
                                           :parameters
                                           :alignments])
-                {:keys [override-seed
-                        select-agents]} options
-                input (cond-> (or (:input sim-options)
-                                  (dissoc sim-options :input))
-                        override-seed
-                        (assoc-in [:parameters :seed]
-                                  (if (= -1 override-seed)
-                                    (random/rand-unbound-int (random/rng))
-                                    override-seed)))]
-            (if-let [errors (not-empty (input/validate :input input))]
-              (bail! (errors/map-coll->strs errors))
-              (if ?command
-                (case ?command
-                  ;; Where the CLI will actually perform generation
-                  "generate"
-                  (if (= "post" (first rest-args))
-                    ;; Attempt to post to an LRS
-                    (let [{:keys [endpoint
-                                  username
-                                  password
-                                  batch-size
-                                  concurrency
-                                  post-limit
-                                  async]} options
-                          ]
-                      (if endpoint
-                        (let [post-options (cond-> {:endpoint endpoint
-                                                    :batch-size batch-size}
-                                             (and username password)
-                                             (assoc-in [:http-options :basic-auth] [username password]))]
-                          (if async
-                            ;; ASYNC Operation
-                            (let [sim-chan (ds/generate-seq-async
-                                            (cond-> input
-                                              ;; when async, we just use the post
-                                              ;; limit as the max
-                                              (not= post-limit -1)
-                                              (assoc-in [:parameters :max] post-limit)
-                                              )
-                                            :select-agents select-agents)
-                                  result-chan (http/post-statements-async
-                                               post-options
-                                               sim-chan
-                                               :concurrency concurrency)]
+        {:keys [override-seed]} options]
+    (cond-> (or (:input sim-options)
+                (dissoc sim-options :input))
+      override-seed
+      (assoc-in [:parameters :seed]
+                (if (= -1 override-seed)
+                  (random/rand-unbound-int (random/rng))
+                  override-seed)))))
 
-                              (loop []
-                                (if-let [[tag ret] (a/<!! result-chan)]
-                                  (case tag
-                                    :fail
-                                    (let [{:keys [status error]} ret]
-                                      (bail! [(format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-                                                      status (or (some-> error ex-message) "<none>"))]))
-                                    :success
-                                    (do
-                                      (doseq [^java.util.UUID id ret]
-                                        (printf "%s\n" (.toString ^java.util.UUID id))
-                                        (flush))
-                                      (recur)))
-                                  (System/exit 0))))
-                            ;; SYNC operation
-                            (let [statements (cond->> (ds/generate-seq
-                                                       input
-                                                       :select-agents select-agents)
-                                               (not= post-limit -1)
-                                               (take post-limit))
-                                  {:keys [success ;; Count of successfully transacted statements
-                                          fail ;; list of failed requests
-                                          ]
-                                   :as post-results} (http/post-statements
-                                                      post-options
-                                                      statements
-                                                      :emit-ids-fn
-                                                      (fn [ids]
-                                                        (doseq [^java.util.UUID id ids]
-                                                          (printf "%s\n" (.toString id))
-                                                          (flush))))]
-                              (if (not-empty fail)
-                                (bail! (for [{:keys [status error]} fail]
-                                         (format "LRS Request FAILED with STATUS: %d, MESSAGE:%s"
-                                                 status (or (some-> error ex-message) "<none>"))))
-                                (System/exit 0)))))
-                        ;; Endpoint is required when posting
-                        (bail! ["-E / --endpoint REQUIRED for post."])))
-                    ;; Stdout
-                    (run-sim! input :select-agents select-agents))
+;; When this is called, we should have valid individual inputs. However, there
+;; may be cross-validation that needs to happen, so we compose the
+;; comprehensive spec from the options and check that.
+(defn- assert-valid-input [input]
+  (when-let [errors (not-empty (input/validate :input input))]
+    (bail! (errors/map-coll->strs errors))))
 
-                  ;; If they just want to validate and we're this far, we're done.
-                  ;; Just return the input spec as JSON
-                  "validate-input"
-                  (let [[location] rest-args]
-                    (if location
-                      (do (input/to-file input :json location)
-                          (println (format "Input specification written to %s" location)))
-                      ;; TODO: Figure out why we get a stream closed error here
-                      (input/to-out input :json))))
-                (do (println "No command entered.")
-                    (println summary))))))))
+;; POST to LRS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- post-async!
+  [input post-options post-limit select-agents concurrency]
+  (let [gen-input   (cond-> input
+                      ;; when async, we just use the post
+                      ;; limit as the max
+                      (not= post-limit -1)
+                      (assoc-in [:parameters :max] post-limit))
+        sim-chan    (ds/generate-seq-async
+                     gen-input
+                     :select-agents select-agents)
+        result-chan (client/post-statements-async
+                     post-options
+                     sim-chan
+                     :concurrency concurrency)]
+    (loop []
+      (when-let [[tag ret] (a/<!! result-chan)]
+        (case tag
+          :fail
+          (let [{:keys [status error]} ret]
+            (bail! [(client/post-error-message status error)]))
+          :success
+          (do
+            (dio/println-coll ret) ; Statement ID strings
+            (recur)))))))
+
+(defn- post-sync!
+  [input post-options post-limit select-agents]
+  (let [statements     (cond->> (ds/generate-seq
+                                 input
+                                 :select-agents select-agents)
+                         (not= post-limit -1)
+                         (take post-limit))
+        {:keys [fail]} (client/post-statements post-options statements)]
+    (when (not-empty fail)
+      (bail! (for [{:keys [status error]} fail]
+               (client/post-error-message status error))))))
+
+(defn- post-sim!
+  [input options]
+  (let [{:keys [endpoint
+                username
+                password
+                batch-size
+                concurrency
+                post-limit
+                select-agents
+                async]}
+        options]
+    ;; Endpoint is required when posting
+    (when-not endpoint
+      (bail! ["-E / --endpoint REQUIRED for post."]))
+    ;; Endpoint present - OK
+    (let [post-options {:endpoint   endpoint
+                        :batch-size batch-size
+                        :username   username
+                        :password   password}]
+      (if async
+        (post-async! input post-options post-limit select-agents concurrency)
+        (post-sync! input post-options post-limit select-agents)))))
+
+;; Print sim to stdout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- print-sim!
+  "Generate statement seqs and writes them to stdout."
+  [input {:keys [select-agents]}]
+  (doseq [statement (ds/generate-seq input :select-agents select-agents)]
+    (dio/write-json-stdout statement :key-fn? false)))
+
+;; Write Input mode ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- write-input!
+  ([input]
+   (input/to-out input :json))
+  ([input location]
+   (input/to-file input :json location)
+   (println (format "Input specification written to %s" location))))
+
+;; Main function ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn -main [& args]
+  (let [;; If the verb is "validate-input", we
+        ;; skip tools.cli validation and do a
+        ;; more in-depth one.
+        cli-opts
+        (cli-options (not= "validate-input" (last args)))
+        {:keys [options arguments summary errors]}
+        (cli/parse-opts args cli-opts)
+        [?command & rest-args]
+        arguments]
+    (cond
+      ;; Invalid CLI input
+      (seq errors)
+      (bail! errors)
+      ;; Help
+      (or (empty? args) (:help options))
+      (println summary)
+      :else
+      (let [input (sim-input options)]
+        (assert-valid-input input)
+        (case ?command
+          ;; Where the CLI will actually perform generation
+          "generate"
+          (if (= "post" (first rest-args))
+            (post-sim! input options)
+            (print-sim! input options))
+          ;; If they just want to validate and we're this far, we're done.
+          ;; Just return the input spec as JSON.
+          "validate-input"
+          (if-some [location (first rest-args)]
+            (write-input! input location)
+            (write-input! input))
+          ;; No command
+          (do (println "No command entered.")
+              (println summary)))))))
