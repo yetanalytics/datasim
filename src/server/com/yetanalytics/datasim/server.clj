@@ -136,7 +136,9 @@
 (def response-headers
   {"Content-Type" "application/json; charset=utf-8"})
 
-(defn health-interceptor
+;; Ring handlers are used as interceptors in Pedestal, but are not exclusive
+;; to Pedestal, hence this is not strictly an interceptor.
+(defn health-handler
   "Route implementation for the health endpoint.
    Returns a 200 OK if the server is up and running."
   [_]
@@ -240,7 +242,7 @@
 
 (defn- routes [root-path]
   (-> #{[(str root-path "/health")
-         :get        health-interceptor
+         :get        health-handler
          :route-name :datasim.route/health]
         [(str root-path "/api/v1/generate")
          :post (into common-interceptors
