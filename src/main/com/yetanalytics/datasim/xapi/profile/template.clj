@@ -3,7 +3,8 @@
    compilation."
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.rule    :as rule]))
+            [com.yetanalytics.datasim.xapi.rule    :as rule]
+            [com.yetanalytics.datasim.xapi.profile :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -102,11 +103,8 @@
 ;; Profile Templates -> Statement Base + Parsed Rules
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Bring in type-iri-map and profile-map specs using :as-alias
-;; in Clojure 1.11
-
 (s/fdef create-statement-base-map
-  :args (s/cat :type-iri-map map?)
+  :args (s/cat :type-iri-map ::profile/type-iri-map)
   :ret ::statement-base-map)
 
 (defn create-statement-base-map
@@ -114,31 +112,24 @@
    templates' IDs to the base xAPI Statements they form from their
    Determining Properties and inScheme."
   [type-iri-map]
-  (->> (get type-iri-map "StatementTemplate")
-       (reduce-kv (fn [m id template]
-                    (->> template
-                         template->statement-base
-                         (assoc m id)))
-                  {})))
+  (-> type-iri-map
+      (get "StatementTemplate")
+      (update-vals template->statement-base)))
 
 (s/fdef create-parsed-rules-map
-  :args (s/cat :type-iri-map? map?)
+  :args (s/cat :type-iri-map? ::profile/type-iri-map)
   :ret ::parsed-rules-map)
 
 (defn create-parsed-rules-map
   "Given Statement Templates in `type-iri-map`, return a map from those
    templates' IDs to those their parsed rules"
   [type-iri-map]
-  ;; TODO: Use map-values in Clojure 1.11
-  (->> (get type-iri-map "StatementTemplate")
-       (reduce-kv (fn [m id template]
-                    (->> template
-                         template->parsed-rules
-                         (assoc m id)))
-                  {})))
+  (-> type-iri-map
+      (get "StatementTemplate")
+      (update-vals template->parsed-rules)))
 
 (s/fdef update-parsed-rules-map
-  :args (s/cat :profile-map map?
+  :args (s/cat :profile-map ::profile/profile-map
                :parsed-rules-map ::parsed-rules-map)
   :ret ::parsed-rules-map)
 
@@ -146,9 +137,5 @@
   "Use information from `profile-map` to complete the rules in
    `parsed-rules-map` by adding additional valuesets or spec generators."
   [profile-map parsed-rules-map]
-  (reduce-kv (fn [m template-id parsed-rules]
-               (->> parsed-rules
-                    (rule/add-rules-valuegen profile-map)
-                    (assoc m template-id)))
-             {}
-             parsed-rules-map))
+  (update-vals parsed-rules-map
+               (partial rule/add-rules-valuegen profile-map)))

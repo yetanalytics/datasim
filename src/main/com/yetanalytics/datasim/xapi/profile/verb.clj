@@ -2,7 +2,8 @@
   "Creation of `verb-map` for Profile compilation."
   (:require [clojure.spec.alpha :as s]
             [clojure.walk       :as w]
-            [xapi-schema.spec   :as xs]))
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.xapi.profile :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -20,15 +21,12 @@
   {"id"      id
    "display" (w/stringify-keys prefLabel)})
 
-;; TODO: Bring in type-iri-map spec using :as-alias in Clojure 1.11
 (s/fdef create-verb-map
-  :args (s/cat :type-iri-map map?)
+  :args (s/cat :type-iri-map ::profile/type-iri-map)
   :ret ::verb-map)
 
 (defn create-verb-map
   "Create a map of verb IDs to Statement verbs out of Profile Verbs from
    `type-iri-map`."
   [type-iri-map]
-  (reduce-kv (fn [m id verb] (assoc m id (profile->statement-verb verb)))
-             {}
-             (get type-iri-map "Verb")))
+  (-> type-iri-map (get "Verb") (update-vals profile->statement-verb)))

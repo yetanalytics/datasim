@@ -5,7 +5,8 @@
             [com.yetanalytics.pan.objects.template     :as template]
             [com.yetanalytics.pan.objects.pattern      :as pattern]
             [com.yetanalytics.datasim.input.alignments :as alignment]
-            [com.yetanalytics.datasim.math.random      :as random]))
+            [com.yetanalytics.datasim.math.random      :as random]
+            [com.yetanalytics.datasim.xapi.profile     :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -94,9 +95,8 @@
        (filter z/node) ; empty seq nodes will be `nil`, so filter them out
        (keep (partial pattern-loc->template (meta pattern-zip)))))
 
-;; TODO: Bring in type-iri-map spec using :as-alias in Clojure 1.11
 (s/fdef create-pattern-walk-fn
-  :args (s/cat :type-iri-map map?)
+  :args (s/cat :type-iri-map ::profile/type-iri-map)
   :ret ::pattern-walk-fn)
 
 (defn create-pattern-walk-fn

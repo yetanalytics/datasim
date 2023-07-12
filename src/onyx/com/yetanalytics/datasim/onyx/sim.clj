@@ -19,12 +19,9 @@
    task-prefix
    ]
   (lazy-seq
-   (cond->> (if select-agents
-              (ds/generate-seq
-               input
-               :select-agents select-agents)
-              (ds/generate-seq
-               input))
+   (cond->> (ds/generate-seq
+             input
+             (cond-> {} select-agents (assoc :select-agents select-agents)))
      take-n (take take-n)
      drop-n (drop (* drop-n batch-size))
      strip-ids?
@@ -169,7 +166,7 @@
                   :batch-size nil}
        :onyx.core/task :out-0
        :onyx.core/tenancy-id "foo"
-       :onyx.core/job-id (java.util.UUID/randomUUID)})
+       :onyx.core/job-id (random-uuid)})
      nil nil
      ))
 
@@ -187,7 +184,7 @@
                             }
                  :onyx.core/task :out-0
                  :onyx.core/tenancy-id "foo"
-                 :onyx.core/job-id (java.util.UUID/randomUUID)})]
+                 :onyx.core/job-id (random-uuid)})]
     (p/recover! reader nil nil)
     (time
      (dotimes [n 10000]

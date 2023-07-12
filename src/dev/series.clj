@@ -1,5 +1,5 @@
 (ns series
-  (:require [java-time       :as t]
+  (:require [java-time.api   :as t]
             [incanter.core   :refer [view]]
             [incanter.charts :refer [histogram time-series-plot]]
             [incanter.stats  :as stats]

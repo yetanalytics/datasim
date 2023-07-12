@@ -14,7 +14,7 @@
 
 (comment
   ;; Run things in an enclosed environment
-  (let [id (java.util.UUID/randomUUID)
+  (let [id (random-uuid)
         {:keys [env-config peer-config]} (-> (config/get-config)
                                              (assoc-in [:env-config :onyx/tenancy-id] id)
                                              (assoc-in [:peer-config :onyx/tenancy-id] id))]

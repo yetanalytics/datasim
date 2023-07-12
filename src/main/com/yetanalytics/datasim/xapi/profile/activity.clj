@@ -4,8 +4,9 @@
             [clojure.string     :as cs]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.math.random :as random]
-            [com.yetanalytics.datasim.xapi.profile.template :as t]))
+            [com.yetanalytics.datasim.math.random           :as random]
+            [com.yetanalytics.datasim.xapi.profile          :as-alias profile]
+            [com.yetanalytics.datasim.xapi.profile.template :as template]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -56,7 +57,7 @@
   "Derive Activity Type IDs from the Template's Rules"
   [template]
   (->> template
-       t/template->parsed-rules
+       template/template->parsed-rules
        rules->activity-type-ids))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -118,9 +119,8 @@
 ;; Putting it all together
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Bring in type-iri-map spec using :as-alias in Clojure 1.11
 (s/fdef create-activity-map
-  :args (s/cat :type-iri-map map?
+  :args (s/cat :type-iri-map ::profile/type-iri-map
                :seed int?
                :kwargs (s/keys* :opt-un [::min-per-type]))
   :ret ::activity-map)

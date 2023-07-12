@@ -382,21 +382,18 @@
    & {:keys [select-agents
              pad-chan-max]
       :or {pad-chan-max 1}}]
-  (let [skeleton (cond-> (build-skeleton input)
-                   select-agents
-                   (select-keys select-agents))
-        ?take-n  (when ?max-statements ; TODO: Handle division by zero error
-                   (->> (count skeleton)
-                        (quot ?max-statements)
-                        (+ pad-chan-max)))]
-    ;; TODO: Use reduce-vals after updating to Clojure 1.11
-    (reduce-kv
-     (fn [m k agent-seq]
-       (assoc m k (cond->> (a/to-chan! agent-seq)
-                    ?take-n
-                    (a/take ?take-n))))
-     (empty skeleton)
-     skeleton)))
+  (let [skeleton  (cond-> (build-skeleton input)
+                    select-agents
+                    (select-keys select-agents))
+        ?take-n   (when ?max-statements ; TODO: Handle division by zero error
+                    (->> (count skeleton)
+                         (quot ?max-statements)
+                         (+ pad-chan-max)))
+        seq->chan (fn [agent-seq]
+                    (cond->> (a/to-chan! agent-seq)
+                      ?take-n
+                      (a/take ?take-n)))]
+    (update-vals skeleton seq->chan)))
 
 ;; simulate single channel
 
@@ -425,9 +422,7 @@
       :or {sort true
            buffer-size 100}
       :as kwargs}]
-  (let [chan-map (apply sim-chans
-                        input
-                        (mapcat identity kwargs))
+  (let [chan-map (sim-chans input kwargs)
         chans    (vals chan-map)]
     (if sort
       (->> chans

@@ -22,46 +22,60 @@
             )
   (:import [java.net InetAddress]))
 
+;; TODO: More variations, e.g. positive ints only
+(def ^:private validate-int
+  [int? "Not an integer."])
+
 (def cli-options
   [;; Peer
    ["-n" "--n-vpeers N_VPEERS" "Number of VPEERS to launch. Overrides config value."
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    ;; Peer + Submit
    ["-t" "--tenancy-id TENANCY_ID" "Onyx Tenancy ID"]
    ;; Submit
    ;; sim
    ["-i" "--input-loc INPUT_LOC" "DATASIM input location"]
    ["-m" "--override-max OVERRIDE_MAX" "Override max statements"
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    ;; Gen overrides
    [nil "--[no-]strip-ids" "Strip IDs from generated statements" :default false]
    [nil "--[no-]remove-refs" "Filter out statement references" :default false]
 
    ["-c" "--gen-concurrency GEN_CONCURRENCY" "Desired concurrency of generation."
     :default 1
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    ["-b" "--gen-batch-size GEN_BATCH_SIZE" "Generate this number of statements at a time."
     :default 1000
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    ["-r" "--out-ratio OUT_RATIO" "Ratio of inputs to outputs, defaults to 8"
     :default 1
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    [nil "--percentage PERCENTAGE" "Percentage of cluster to utilize"
     :default 100
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
 
    [nil "--in-batch-size IN_BATCH_SIZE" "Onyx input batch size"
     :default 1
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    [nil "--in-batch-timeout IN_BATCH_TIMEOUT" "Input batch timeout"
     :default 50
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    [nil "--out-batch-size OUT_BATCH_SIZE" "Batch Size of Output"
     :default 1
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    [nil "--out-batch-timeout OUT_BATCH_TIMEOUT" "Output batch timeout"
     :default 50
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
 
    [nil "--out-mode OUT_MODE" "Output type, LRS or S3"
     :parse-fn keyword
@@ -77,13 +91,16 @@
    [nil "--lrs-x-api-key X_API_KEY" "AWS API Gateway API key (optional)"]
    [nil "--lrs-retry-base-sleep-ms RETRY_BASE_SLEEP_MS" "Backoff retry sleep time"
     :default 500 ;; real cool about it
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    [nil "--lrs-retry-max-sleep-ms RETRY_MAX_SLEEP_MS" "Backoff retry sleep time max per retry."
     :default 30000 ;; every 30 sec max
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    [nil "--lrs-retry-max-total-sleep-ms RETRY_MAX_TOTAL_SLEEP_MS" "Backoff retry sleep time max total."
     :default 3600000 ;; an hour, why not
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
 
    ;; S3 OUT
    [nil "--s3-bucket S3_BUCKET" "S3 out bucket"]
@@ -96,7 +113,8 @@
     :default :none]
    [nil "--s3-max-concurrent-uploads S3_MAX_CONCURRENT_UPLOADS" "S3 Max concurrent uploads per peer"
     :default 16 ;; For a sim with conc of 64 this can easily overload s3 and get a 503
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
 
 
    ;; Blocking (a little hard to predict)
@@ -106,7 +124,8 @@
    [nil "--nrepl-bind NREPL_BIND" "If provided on peer launch will start an nrepl server bound to this address"
     :default "0.0.0.0"]
    [nil "--nrepl-port NREPL_PORT" "If provided on peer launch will start an nrepl server on this port"
-    :parse-fn #(Integer/parseInt %)]
+    :parse-fn parse-long
+    :validate validate-int]
    ["-h" "--help"]])
 
 (defn usage [options-summary]
