@@ -422,9 +422,7 @@
       :or {sort true
            buffer-size 100}
       :as kwargs}]
-  (let [chan-map (apply sim-chans
-                        input
-                        (mapcat identity kwargs))
+  (let [chan-map (sim-chans input kwargs)
         chans    (vals chan-map)]
     (if sort
       (->> chans

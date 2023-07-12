@@ -19,12 +19,9 @@
    task-prefix
    ]
   (lazy-seq
-   (cond->> (if select-agents
-              (ds/generate-seq
-               input
-               :select-agents select-agents)
-              (ds/generate-seq
-               input))
+   (cond->> (ds/generate-seq
+             input
+             (cond-> {} select-agents (assoc :select-agents select-agents)))
      take-n (take take-n)
      drop-n (drop (* drop-n batch-size))
      strip-ids?
