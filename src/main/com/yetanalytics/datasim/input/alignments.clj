@@ -4,7 +4,8 @@
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.xapi.actor  :as agent]
-            [com.yetanalytics.datasim.util.errors :as errs]))
+            [com.yetanalytics.datasim.util.errors :as errs]
+            [clojure.spec.gen.alpha :as sgen]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -28,9 +29,13 @@
     true))
 
 (s/def ::objectOverride
-  (s/and (s/conformer w/stringify-keys w/keywordize-keys)
-         no-iri-keys?
-         :statement/object)) ; from xapi-schema
+  (s/with-gen (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+                     no-iri-keys?
+                     :statement/object) ; from xapi-schema
+    (fn [] ; TODO: More comprehensive gen
+      (sgen/return
+       {"id" "http://example.com/object-override"
+        "objectType" "Activity"}))))
 
 (s/def ::component
   ::xs/iri)
