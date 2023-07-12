@@ -1,5 +1,27 @@
 # Change Log
 
+## [0.3.0] - 2023-07-13
+- Major reworking and refactoring of internal namespaces; some notable changes:
+  - Completely reworked the structure of the `datasim.xapi` directory
+  - Removed the `datasim.json` directory in favor of using the [pathetic](https://github.com/yetanalytics/pathetic) and [schemer](https://github.com/yetanalytics/schemer) libraries
+  - Move `timestamp` and `random` namespaces to a new `datasim.math` namespace
+  - Change input functions to use multimethods instead of records
+  - Refactored CLI and server namespaces
+- Add top-level API functions to the `datasim` namespace:
+  - `read-input` that wraps `input/from-location` for JSON input maps
+  - `generate-seq` and `generate-map` for synchronous statement sequence and skeleton map gen, respectively
+  - `generate-seq-async` and `generate-map-async` for async versions of the above
+- Changes to Statement generation:
+  - Template Context Activities and Attachment Usage Type properties are now supported
+  - Performs basic "statement healing" by filling in required properties after Template rule/property application; verbs and activities are healed mainly by selecting values from the profile cosmos, while other objects are healed using spec generation
+  - Supports complected JSONPath locations and selectors, e.g. those that use the pipe operator
+  - Removes object rules and properties if an object override is present, preventing redundant rule application and potential clashes
+  - Rules with `recommended` presence now have their values be applied/generated
+  - Fix a bug where ARMA squences, which form the basis of statement generation, were incorrectly generated
+  - Precompile Statement Template properties and rules before statement generation, as an optimization measure.
+
+For more information on all changes, see Pull Requests #89, #93 to #97, #98 to #103, and #106 to #108.
+
 ## [0.2.0] - 2023-07-07
 - Update the following dependencies:
   - clojure to `1.11.1` (this is a potential breaking change to any downstream apps that use DATASIM with a previous Clojure version)
