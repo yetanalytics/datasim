@@ -89,7 +89,11 @@
               merge-verb)
      ;; Choose random verb
      (some->> verb-map
-              (random/choose-map rng alignment)))))
+              not-empty
+              (random/choose-map rng alignment))
+     ;; Generate random verb
+     (some->> {}
+              (generate-verb rng)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Activities
@@ -121,6 +125,7 @@
      ;; Get activity by type
      (some->> type
               (get activity-map)
+              not-empty
               (random/choose-map rng alignment)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
@@ -132,8 +137,12 @@
               merge-activity)
      ;; Choose random activity
      (some->> activity-map
+              not-empty
               (random/choose-map rng alignment)
-              (random/choose-map rng alignment)))))
+              (random/choose-map rng alignment))
+     ;; Generate random activity
+     (some->> {}
+              (generate-activity rng)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Agents
