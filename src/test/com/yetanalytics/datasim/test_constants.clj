@@ -11,6 +11,8 @@
 
 (def minimal-profile-filepath
   "dev-resources/profiles/minimal.jsonld")
+(def no-concept-profile-filepath
+  "dev-resources/profiles/no_concept.jsonld")
 (def cmi5-profile-filepath
   "dev-resources/profiles/cmi5/fixed.json")
 (def video-profile-filepath
@@ -75,6 +77,9 @@
 
 (def minimal-profile
   (input/from-location :profile :json minimal-profile-filepath))
+
+(def no-concept-profile
+  (input/from-location :profile :json no-concept-profile-filepath))
 
 (def cmi5-profile
   (input/from-location :profile :json cmi5-profile-filepath))

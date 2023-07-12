@@ -71,6 +71,9 @@
 (def double-profile-input
   (update const/simple-input :profiles conj const/mom-profile))
 
+(def no-concepts-profile-input
+  (assoc const/simple-input :profiles [const/no-concept-profile]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,6 +81,8 @@
 (deftest generate-map-test
   (testing "Given valid input, returns a valid skeleton"
     (is (s/valid? ::sim/skeleton (generate-map const/simple-input))))
+  (testing "Profiles w/o concepts count as valid input"
+    (is (s/valid? ::sim/skeleton (generate-map no-concepts-profile-input))))
   (testing "Make sure RNGs aren't shared across threads."
     (let [skeleton (generate-map (assoc-in const/simple-input
                                            [:parameters :end]
@@ -110,6 +115,8 @@
 (deftest generate-seq-test
   (testing "Returns statements"
     (is (s/valid? (s/every ::xs/statement) (generate-seq const/simple-input))))
+  (testing "Returns statements even without concepts"
+    (is (s/valid? (s/every ::xs/statement) (generate-seq no-concepts-profile-input))))
   (testing "Respects `max` param"
     (let [ret (generate-seq (assoc-in const/simple-input [:parameters :max] 3))]
       (is (s/valid? (s/every ::xs/statement) ret))
@@ -153,7 +160,7 @@
                distinct))))
   (testing "Respects agent selection"
     (let [ret (generate-seq (assoc-in const/simple-input [:parameters :max] 3)
-                       ;; specify we only want the given agent(s)
+                            ;; specify we only want the given agent(s)
                             :select-agents [bob-mbox])]
       (is (every?
            #(= bob-mailto (get-actor-mbox %))
