@@ -3,7 +3,8 @@
    compilation."
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.xapi.rule    :as rule]))
+            [com.yetanalytics.datasim.xapi.rule    :as rule]
+            [com.yetanalytics.datasim.xapi.profile :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -102,11 +103,8 @@
 ;; Profile Templates -> Statement Base + Parsed Rules
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Bring in type-iri-map and profile-map specs using :as-alias
-;; in Clojure 1.11
-
 (s/fdef create-statement-base-map
-  :args (s/cat :type-iri-map map?)
+  :args (s/cat :type-iri-map ::profile/type-iri-map)
   :ret ::statement-base-map)
 
 (defn create-statement-base-map
@@ -119,7 +117,7 @@
       (update-vals template->statement-base)))
 
 (s/fdef create-parsed-rules-map
-  :args (s/cat :type-iri-map? map?)
+  :args (s/cat :type-iri-map? ::profile/type-iri-map)
   :ret ::parsed-rules-map)
 
 (defn create-parsed-rules-map
@@ -131,7 +129,7 @@
       (update-vals template->parsed-rules)))
 
 (s/fdef update-parsed-rules-map
-  :args (s/cat :profile-map map?
+  :args (s/cat :profile-map ::profile/profile-map
                :parsed-rules-map ::parsed-rules-map)
   :ret ::parsed-rules-map)
 

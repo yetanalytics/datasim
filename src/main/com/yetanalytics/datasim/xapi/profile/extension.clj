@@ -1,7 +1,8 @@
 (ns com.yetanalytics.datasim.xapi.profile.extension
   "Creation of `extension-spec-map` for Profile compilation."
   (:require [clojure.spec.alpha       :as s]
-            [com.yetanalytics.schemer :as schemer]))
+            [com.yetanalytics.schemer :as schemer]
+            [com.yetanalytics.datasim.xapi.profile :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -18,9 +19,8 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Bring in type-iri-map spec using :as-alias in Clojure 1.11
 (s/fdef create-extension-spec-map
-  :args (s/cat :type-iri-map map?)
+  :args (s/cat :type-iri-map ::profile/type-iri-map)
   :ret ::extension-spec-map)
 
 (defn create-extension-spec-map
