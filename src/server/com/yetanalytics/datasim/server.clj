@@ -64,7 +64,7 @@
   ;; Read in each part of the input file, and convert into EDN
   (let [sim-input      (sim-input input)
         send-to-lrs    (if-some [send-to-lrs (get input "send-to-lrs")]
-                         (read-string send-to-lrs)
+                         (parse-boolean send-to-lrs)
                          false)
         endpoint       (get input "lrs-endpoint")
         api-key        (get input "api-key")

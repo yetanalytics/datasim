@@ -75,7 +75,8 @@
                 [])]
    [nil "--seed SEED" "Override input seed"
     :id :override-seed
-    :parse-fn #(Integer/parseInt %)
+    :parse-fn parse-long
+    :validate [int? "Seed is not an integer."]
     :desc "An integer seed to override the one in the input spec. Use -1 for random."]
    [nil "--actor AGENT_ID" "Select actor(s) by agent ID"
     :id :select-agents
@@ -95,17 +96,20 @@
    ["-B" "--batch-size SIZE" "LRS POST batch size"
     :id :batch-size
     :default 25
-    :parse-fn #(Integer/parseInt %)
+    :parse-fn parse-long
+    :validate [int? "Batch size is not an integer."]
     :desc "The batch size for POSTing to an LRS"]
    ["-C" "--concurrency CONC" "LRS POST concurrency"
     :id :concurrency
     :default 4
-    :parse-fn #(Integer/parseInt %)
+    :parse-fn parse-long
+    :validate [int? "Concurrency is not an integer."]
     :desc "The max concurrency of the LRS POST pipeline"]
    ["-L" "--post-limit LIMIT" "LRS POST total statement limit"
     :id :post-limit
     :default 999
-    :parse-fn #(Integer/parseInt %)
+    :parse-fn parse-long
+    :validate [int? "POST statement limit is not an integer."]
     :desc "The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit."]
    ["-A" "--[no-]async" "Async operation. Use --no-async if statements must be sent to server in timestamp order."
     :id :async
