@@ -3,7 +3,8 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
             [com.yetanalytics.datasim.util.maths :as maths])
-  (:refer-clojure :exclude [rand rand-int rand-nth random-sample shuffle])
+  (:refer-clojure :exclude
+                  [rand rand-int rand-nth random-sample random-uuid shuffle])
   (:import [java.util UUID Random]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

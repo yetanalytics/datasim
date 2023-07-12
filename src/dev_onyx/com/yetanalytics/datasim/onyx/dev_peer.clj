@@ -14,7 +14,7 @@
   [& args]
   ;; VERY MUCH JUST DEV RIGHT NOW
   (let [;; DEV ENV config, should go away for prod things
-        id (java.util.UUID/randomUUID)
+        id (random-uuid)
         {:keys [env-config peer-config]
          {:keys [n-vpeers]} :launch-config} (-> (config/get-config)
                                              (assoc-in [:env-config :onyx/tenancy-id] id)

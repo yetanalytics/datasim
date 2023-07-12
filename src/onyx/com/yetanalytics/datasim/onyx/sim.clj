@@ -169,7 +169,7 @@
                   :batch-size nil}
        :onyx.core/task :out-0
        :onyx.core/tenancy-id "foo"
-       :onyx.core/job-id (java.util.UUID/randomUUID)})
+       :onyx.core/job-id (random-uuid)})
      nil nil
      ))
 
@@ -187,7 +187,7 @@
                             }
                  :onyx.core/task :out-0
                  :onyx.core/tenancy-id "foo"
-                 :onyx.core/job-id (java.util.UUID/randomUUID)})]
+                 :onyx.core/job-id (random-uuid)})]
     (p/recover! reader nil nil)
     (time
      (dotimes [n 10000]
