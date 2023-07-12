@@ -72,16 +72,16 @@
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{:strs [id] :as verb} {:keys [verb-map alignment]} rng]
+  [{verb-id "id" :as verb} {:keys [verb-map alignment]} rng]
   (let [return-verb (fn [_] verb)
         merge-verb  (fn [v] (merge-nested v verb))]
     (or
      ;; Verb found by ID
-     (some->> id
+     (some->> verb-id
               verb-map
               merge-verb)
      ;; Verb w/ ID not found, return as-is
-     (some->> id
+     (some->> verb-id
               return-verb)
      ;; Verb w/o ID not found, generate ID
      (some->> verb
@@ -89,7 +89,11 @@
               merge-verb)
      ;; Choose random verb
      (some->> verb-map
-              (random/choose-map rng alignment)))))
+              not-empty
+              (random/choose-map rng alignment))
+     ;; Generate random verb as verb map is empty
+     (some->> {}
+              (generate-verb rng)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Activities
@@ -108,23 +112,24 @@
   :ret ::xs/activity)
 
 (defn complete-activity
-  [{:strs [id] {:strs [type]} "definition" :as activity}
+  [{activity-id "id" {activity-type "type"} "definition" :as activity}
    {:keys [activity-map alignment]}
    rng]
   (let [return-activity (fn [_] activity)
         merge-activity  (fn [a] (merge-nested a activity))]
     (or
      ;; Get activity by ID
-     (some->> id
+     (some->> activity-id
               (get (reduce merge {} (vals activity-map)))
               merge-activity)
      ;; Get activity by type
-     (some->> type
+     (some->> activity-type
               (get activity-map)
+              not-empty
               (random/choose-map rng alignment)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
-     (some->> id
+     (some->> activity-id
               return-activity)
      ;; Activity w/o ID not found, assoc generated
      (some->> activity
@@ -132,8 +137,12 @@
               merge-activity)
      ;; Choose random activity
      (some->> activity-map
+              not-empty
               (random/choose-map rng alignment)
-              (random/choose-map rng alignment)))))
+              (random/choose-map rng alignment))
+     ;; Generate random activity as activity map is empty
+     (some->> {}
+              (generate-activity rng)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Agents
