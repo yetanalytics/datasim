@@ -68,21 +68,19 @@
    \"StatementTemplate\", \"Pattern\"), to a map from object ID IRIs to
    the objects themselves."
   [profiles]
-  (let [profiles  (map assoc-profile-id profiles)
-        concepts  (mapcat :concepts profiles)
-        templates (mapcat :templates profiles)
-        patterns  (mapcat :patterns profiles)]
-    (->> (cond-> (group-by :type concepts)
-           (not-empty templates) (assoc "StatementTemplate" templates)
-           (not-empty patterns)  (assoc "Pattern" patterns))
-         (reduce-kv
-          (fn [m type objects]
-            (->> objects
-                 (reduce (fn [m* {:keys [id] :as object}]
-                           (assoc m* id object))
-                         {})
-                 (assoc m type)))
-          {}))))
+  (let [profiles   (map assoc-profile-id profiles)
+        concepts   (mapcat :concepts profiles)
+        templates  (mapcat :templates profiles)
+        patterns   (mapcat :patterns profiles)
+        type-obj-m (cond-> (group-by :type concepts)
+                     (not-empty templates) (assoc "StatementTemplate" templates)
+                     (not-empty patterns)  (assoc "Pattern" patterns))
+        objects->m (fn [objects]
+                     (reduce
+                      (fn [m {:keys [id] :as object}] (assoc m id object))
+                      {}
+                      objects))]
+    (update-vals type-obj-m objects->m)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Primary Pattern Selection
@@ -116,15 +114,10 @@
                          (cond-> pattern
                            primary?
                            (assoc :primary
-                                  (primary-pat? profile-id pattern-id))))]
-    ;; TODO: Use clojure.core/update-vals instead once we update to Clojure 1.11
-    (update type-iri-map
-            "Pattern"
-            (fn [iri-map]
-              (reduce-kv
-               (fn [m k pattern] (assoc m k (update-pattern pattern)))
-               (empty iri-map)
-               iri-map)))))
+                                  (primary-pat? profile-id pattern-id))))
+        update-pat-map (fn [pattern-map]
+                         (update-vals pattern-map update-pattern))]
+    (update type-iri-map "Pattern" update-pat-map)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Putting it all Together

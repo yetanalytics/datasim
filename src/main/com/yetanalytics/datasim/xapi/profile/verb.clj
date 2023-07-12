@@ -29,6 +29,4 @@
   "Create a map of verb IDs to Statement verbs out of Profile Verbs from
    `type-iri-map`."
   [type-iri-map]
-  (reduce-kv (fn [m id verb] (assoc m id (profile->statement-verb verb)))
-             {}
-             (get type-iri-map "Verb")))
+  (-> type-iri-map (get "Verb") (update-vals profile->statement-verb)))

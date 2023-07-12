@@ -25,13 +25,13 @@
 
 (defn create-extension-spec-map
   [type-iri-map]
-  (let [ext->spec   #(some->> % :inlineSchema (schemer/schema->spec nil))
-        reduce-ext  (partial reduce-kv
-                             (fn [m id ext] (assoc m id (ext->spec ext)))
-                             {})
+  (let [ext->spec   (fn [ext]
+                      (some->> ext :inlineSchema (schemer/schema->spec nil)))
+        reduce-exts (fn [ext-map]
+                      (update-vals ext-map ext->spec))
         act-iri-map (get type-iri-map "ActivityExtension")
         ctx-iri-map (get type-iri-map "ContextExtension")
         res-iri-map (get type-iri-map "ResultExtension")]
-    {:activity (reduce-ext act-iri-map)
-     :context  (reduce-ext ctx-iri-map)
-     :result   (reduce-ext res-iri-map)}))
+    {:activity (reduce-exts act-iri-map)
+     :context  (reduce-exts ctx-iri-map)
+     :result   (reduce-exts res-iri-map)}))
