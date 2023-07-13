@@ -30,7 +30,7 @@
 			"type": "StatementTemplate",
 			"rules": [
 				{
-					"location": "$.object.id",
+					"location": "$.context",
 					"presence": "included"
 				}
 			],

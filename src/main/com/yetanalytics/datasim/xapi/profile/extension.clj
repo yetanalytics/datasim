@@ -1,16 +1,21 @@
 (ns com.yetanalytics.datasim.xapi.profile.extension
   "Creation of `extension-spec-map` for Profile compilation."
-  (:require [clojure.spec.alpha       :as s]
-            [com.yetanalytics.schemer :as schemer]
+  (:require [clojure.spec.alpha          :as s]
+            [com.yetanalytics.schemer    :as schemer]
+            [com.yetanalytics.pan.axioms :as ax]
             [com.yetanalytics.datasim.xapi.profile :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::activity s/spec?)
-(s/def ::context s/spec?)
-(s/def ::result s/spec?)
+(def json-schema-spec
+  (s/or :keyword (s/and keyword? s/get-spec)
+        :spec s/spec?))
+
+(s/def ::activity (s/map-of ::ax/iri (s/nilable json-schema-spec)))
+(s/def ::context (s/map-of ::ax/iri (s/nilable json-schema-spec)))
+(s/def ::result (s/map-of ::ax/iri (s/nilable json-schema-spec)))
 
 (s/def ::extension-spec-map
   (s/keys :req-un [::activity ::context ::result]))

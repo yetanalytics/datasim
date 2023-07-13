@@ -4,6 +4,8 @@
             [clojure.string     :as cs]
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.pan.objects.concepts.activity-type :as pan-at]
+            [com.yetanalytics.pan.objects.concepts.activity      :as pan-a]
             [com.yetanalytics.datasim.math.random           :as random]
             [com.yetanalytics.datasim.xapi.profile          :as-alias profile]
             [com.yetanalytics.datasim.xapi.profile.template :as template]))
@@ -13,7 +15,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::activity-map
-  (s/map-of ::xs/iri (s/map-of ::xs/iri ::xs/activity)))
+  (s/map-of (s/nilable ::pan-at/id) ; not all activities have activity types
+            (s/map-of ::pan-a/id ::xs/activity)))
 
 (s/def ::min-per-type
   pos-int?)
@@ -65,18 +68,19 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- profile->statement-activity
-  [activity]
-  (-> activity
-      (select-keys [:id :definition])
-      (update-in [:definition] dissoc :_context)
-      w/stringify-keys))
+  [{:keys [id definition]}]
+  (cond-> {"id" id}
+    definition
+    (assoc "definition" (-> definition
+                            (dissoc definition :_context)
+                            w/stringify-keys))))
 
 (defn- assoc-activity
   "Associate `activity` to `activity-map`."
   [activity-map activity]
   (let [{activity-id :id {activity-type-id :type} :definition} activity]
     (assoc-in activity-map
-              [activity-id activity-type-id]
+              [activity-type-id activity-id]
               (profile->statement-activity activity))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

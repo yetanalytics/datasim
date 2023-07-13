@@ -333,15 +333,16 @@
           types (reduce (fn [types* prop]
                           (-> (get xp/spec-hint-properties-m prop)
                               (cset/intersection types*)))
-                        (get xp/default-object-type-m ["object"])
+                        (get xp/default-object-type-m ["object" "object"])
                         props)]
       (condp #(contains? %2 %1) types
         "activity"      (complete-activity object inputs rng)
         "agent"         (complete-agent object rng)
         "group"         (complete-group object rng)
         "statement-ref" (complete-statement-ref object rng)
-        (throw (ex-info "Unknown Statement object type"
+        (throw (ex-info "Unknown SubStatement object type"
                         {:kind   ::unknown-object-type
+                         :sub?   true
                          :object object
                          :types  types}))))))
 
@@ -395,6 +396,7 @@
         "sub-statement" (complete-sub-statement object inputs rng)
         (throw (ex-info "Unknown Statement object type"
                         {:kind   ::unknown-object-type
+                         :sub?   false
                          :object object
                          :types  types}))))))
 
