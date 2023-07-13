@@ -15,3 +15,10 @@ pom.xml.asc
 *.md.tmp
 *.log
 .rebel_readline_history
+
+# VSCode
+.calva/
+.clj-kondo/
+.lsp/
+.vscode/
+

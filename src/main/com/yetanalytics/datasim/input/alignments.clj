@@ -1,11 +1,15 @@
 (ns com.yetanalytics.datasim.input.alignments
+  "Alignment input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.xapi :as xapi]
-            [com.yetanalytics.datasim.util.errors :as errs]))
+            [clojure.walk       :as w]
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.xapi.actor  :as agent]
+            [com.yetanalytics.datasim.util.errors :as errs]
+            [clojure.spec.gen.alpha :as sgen]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Alignment: Map of Component, Weight, and Object Override properties
 
@@ -25,12 +29,16 @@
     true))
 
 (s/def ::objectOverride
-  (s/and (s/conformer w/stringify-keys w/keywordize-keys)
-         no-iri-keys?
-         :statement/object)) ; from xapi-schema
+  (s/with-gen (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+                     no-iri-keys?
+                     :statement/object) ; from xapi-schema
+    (fn [] ; TODO: More comprehensive gen
+      (sgen/return
+       {"id" "http://example.com/object-override"
+        "objectType" "Activity"}))))
 
 (s/def ::component
-  iri/iri-spec)
+  ::xs/iri)
 
 (s/def ::weight
   (s/double-in :min -1.0 :max 1.0
@@ -53,9 +61,12 @@
 (defmulti actor-alignment? :type)
 
 (defmethod actor-alignment? "Agent" [_]
-  (fn [align] (->> align :id (s/valid? ::xapi/agent-id))))
+  (fn [{agent-id :id}] (s/valid? ::agent/actor-ifi agent-id)))
 
-(defmethod actor-alignment? :default [_] ; "Group" and "Role"
+(defmethod actor-alignment? "Group" [_]
+  (constantly true))
+
+(defmethod actor-alignment? "Role" [_]
   (constantly true))
 
 (s/def ::actor-alignment
@@ -67,22 +78,11 @@
 (s/def ::alignment-vector
   (s/every ::actor-alignment))
 
-;; Alignment input
-(s/def ::alignments-input
-  (s/keys :req-un [::alignment-vector]))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrecord Alignments [alignment-vector]
-  p/FromInput
-  (validate [this]
-    (when-some [ed (s/explain-data ::alignments-input this)]
-      (errs/explain-to-map-coll ::alignments-input ed)))
-
-  p/JSONRepresentable
-  (read-key-fn [this k]
-    (keyword nil (name k)))
-  (read-body-fn [this json-result]
-    (map->Alignments {:alignment-vector (into [] json-result)}))
-  (write-key-fn [this k]
-    (name k))
-  (write-body-fn [this]
-    alignment-vector))
+(defn validate-alignments
+  [alignments]
+  (some->> (s/explain-data ::alignment-vector alignments)
+           (errs/explain-to-map-coll ::alignment-vector)))

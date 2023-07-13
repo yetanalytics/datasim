@@ -1,0 +1,58 @@
+{
+	"id": "https://www.example.com/xapi/profile",
+	"conformsTo": "https://w3id.org/xapi/profiles#1.0",
+	"versions": [
+		{
+			"id": "https://example.com/xapi/profile/v1.0.0",
+			"generatedAtTime": "2022-11-15T16:35:26.240428Z"
+		}
+	],
+	"@context": "https://w3id.org/xapi/profiles/context",
+	"definition": {
+		"en": "Test Profile with no Verbs, Activities, or other Concepts"
+	},
+	"prefLabel": {
+		"en": "Test Profile"
+	},
+	"type": "Profile",
+	"author": {
+		"type": "Organization",
+		"name": "Yet Analytics"
+	},
+	"templates": [
+		{
+			"definition": {
+				"en": "Test Template"
+			},
+			"prefLabel": {
+				"en": "Test Template"
+			},
+			"type": "StatementTemplate",
+			"rules": [
+				{
+					"location": "$.context",
+					"presence": "included"
+				}
+			],
+			"inScheme": "https://example.com/xapi/profile/v1.0.0",
+			"id": "https://example.com/xapi/profile/template"
+		}
+	],
+	"patterns": [
+		{
+			"definition": {
+				"en": "Test Pattern"
+			},
+			"primary": true,
+			"prefLabel": {
+				"en": "Test Pattern"
+			},
+			"type": "Pattern",
+			"inScheme": "https://example.com/xapi/profile/v1.0.0",
+			"id": "https://example.com/xapi/profile/pattern",
+			"sequence": [
+				"https://example.com/xapi/profile/template"
+			]
+		}
+	]
+}

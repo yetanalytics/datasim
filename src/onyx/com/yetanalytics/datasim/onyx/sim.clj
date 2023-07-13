@@ -1,7 +1,6 @@
 (ns com.yetanalytics.datasim.onyx.sim
   "Feed datasim seqs into onyx"
-  (:require [com.yetanalytics.datasim.sim :as sim]
-            [com.yetanalytics.datasim.input :as input]
+  (:require [com.yetanalytics.datasim :as ds]
             [com.yetanalytics.datasim.onyx.util :as u]
             [onyx.plugin.protocols :as p]
             [clojure.core.async :as a]
@@ -20,12 +19,9 @@
    task-prefix
    ]
   (lazy-seq
-   (cond->> (if select-agents
-              (sim/sim-seq
-               input
-               :select-agents select-agents)
-              (sim/sim-seq
-               input))
+   (cond->> (ds/generate-seq
+             input
+             (cond-> {} select-agents (assoc :select-agents select-agents)))
      take-n (take take-n)
      drop-n (drop (* drop-n batch-size))
      strip-ids?
@@ -89,8 +85,7 @@
                             job-id
                             (name task))
         {?take-n :take-n} args
-        input (cond-> (input/from-location :input :json
-                                           input-loc)
+        input (cond-> (ds/read-input input-loc)
                 ?take-n (u/override-max! ?take-n))
         rst (volatile! nil)
         completed? (volatile! nil)
@@ -171,7 +166,7 @@
                   :batch-size nil}
        :onyx.core/task :out-0
        :onyx.core/tenancy-id "foo"
-       :onyx.core/job-id (java.util.UUID/randomUUID)})
+       :onyx.core/job-id (random-uuid)})
      nil nil
      ))
 
@@ -189,7 +184,7 @@
                             }
                  :onyx.core/task :out-0
                  :onyx.core/tenancy-id "foo"
-                 :onyx.core/job-id (java.util.UUID/randomUUID)})]
+                 :onyx.core/job-id (random-uuid)})]
     (p/recover! reader nil nil)
     (time
      (dotimes [n 10000]
@@ -199,7 +194,7 @@
          (println 'seg n 'checkpoint (p/checkpoint reader)))))
     )
 
-  (def i (input/from-location :input :json "dev-resources/input/mom.json"))
+  (def i (ds/read-input "dev-resources/input/mom.json"))
 
   (first (init-seq i {:batch-size 10} ""))
 

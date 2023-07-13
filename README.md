@@ -17,7 +17,7 @@ This documentation and repository refer to the simulation engine of DATASIM, whi
 To use the core DATASIM library in your project, use the following dependency in your `deps.edn` file:
 
 ```clojure
-com.yetanalytics/datasim {:mvn/version "0.2.0"}
+com.yetanalytics/datasim {:mvn/version "0.3.0"}
 ```
 
 If you wish to install DATASIM as an application with features such as CLI or the webserver, perform the following steps:
@@ -224,7 +224,7 @@ This endpoint takes a set of simulation inputs, returns a file with the output d
 
     profiles: Array of json-ld xAPI Profiles
 
-    personae: JSON Object containing Actors formatted as above
+    personae-array: Array of JSON Objects containing Actors formatted as above
 
     alignments: JSON Object containing Alignments formatted as above
 

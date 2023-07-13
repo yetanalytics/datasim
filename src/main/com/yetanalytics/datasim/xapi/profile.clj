@@ -1,282 +1,172 @@
 (ns com.yetanalytics.datasim.xapi.profile
-  "Understanding elements of xAPI profiles
-  Generate Profile walks"
+  "Profile compilation.
+   
+   Creates a `profile-map` data structure that is used for the simulation
+   of an entire Profile cosmos."
   (:require [clojure.spec.alpha :as s]
+            [xapi-schema.spec :as xs]
+            [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.iri :as iri]
-            [com.yetanalytics.datasim.random :as random]
-            [com.yetanalytics.pan.objects.profile :as profile]
-            [com.yetanalytics.pan.objects.concept :as concept]
-            [com.yetanalytics.pan.objects.pattern :as pattern]
-            [com.yetanalytics.pan.objects.template :as template]
-            [clojure.zip :as z])
-  (:import [java.util Random]))
+            [com.yetanalytics.pan.objects.profile  :as pan-profile]
+            [com.yetanalytics.pan.objects.concept  :as pan-concept]
+            [com.yetanalytics.pan.objects.pattern  :as pan-pattern]
+            [com.yetanalytics.pan.objects.template :as pan-template]
+            [com.yetanalytics.datasim.xapi.profile.activity  :as act]
+            [com.yetanalytics.datasim.xapi.profile.extension :as ext]
+            [com.yetanalytics.datasim.xapi.profile.pattern   :as pat]
+            [com.yetanalytics.datasim.xapi.profile.template  :as tmp]
+            [com.yetanalytics.datasim.xapi.profile.verb      :as vrb]))
 
-(s/def ::_profile-id ::profile/id)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::iri-map
-  (s/map-of iri/iri-spec
-            ;; TODO: using s/and or s/merge to add ::_profile-id won't work
-            ;; It will be present and should be expected
-            (s/or :concept ::concept/concept
-                  :pattern ::pattern/pattern
-                  :template ::template/template)))
+(s/def ::_profile-id ::pan-profile/id)
 
-(s/fdef profiles->map
+(def profile-types
+  #{"Verb" "ActivityType" "AttachmentUsageTypes"
+    "ActivityExtension" "ContextExtension" "ResultExtension"
+    "StateResource" "AgentProfileResource" "ActivityProfileResource"
+    "Activity" "StatementTemplate" "Pattern"})
+
+(def profile-object-spec
+  (s/and (s/keys :req [::_profile-id])
+         (s/or :concept  ::pan-concept/concept
+               :pattern  ::pan-pattern/pattern
+               :template ::pan-template/template)))
+
+(s/def ::type-iri-map
+  (s/map-of profile-types (s/map-of ::xs/iri profile-object-spec)))
+
+(s/def ::profile-map
+  (s/keys :req-un [::type-iri-map
+                   ::act/activity-map
+                   ::vrb/verb-map
+                   ::ext/extension-spec-map
+                   ::tmp/statement-base-map
+                   ::tmp/parsed-rules-map
+                   ::pat/pattern-walk-fn]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Profile -> IRI Map
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- assoc-profile-id [{profile-id :id :as profile}]
+  (let [update-object  (fn [obj] (assoc obj ::_profile-id profile-id))
+        update-objects (fn [objects] (map update-object objects))]
+    (-> profile
+        (update :concepts update-objects)
+        (update :patterns update-objects)
+        (update :templates update-objects))))
+
+(s/fdef profiles->type-iri-map
   :args (s/cat :profiles (s/every ::profile/profile))
-  :ret ::iri-map)
+  :ret ::type-iri-map)
 
-(defn profiles->map
-  "Given any number of profiles, return all IRIs mapped to what they reference"
+(defn profiles->type-iri-map
+  "Given a collection of profiles, return a map of type (e.g. \"Verb\",
+   \"StatementTemplate\", \"Pattern\"), to a map from object ID IRIs to
+   the objects themselves."
   [profiles]
-  (assert (seq profiles) "At least one profile is required.")
-  (into {}
-        (for [{profile-id :id
-               :as profile} profiles
-              [_ things] (select-keys profile [:concepts :patterns :templates])
-              {:keys [id] :as thing} things]
-          [id (assoc thing
-                     ::_profile-id
-                     profile-id)])))
+  (let [profiles   (map assoc-profile-id profiles)
+        concepts   (mapcat :concepts profiles)
+        templates  (mapcat :templates profiles)
+        patterns   (mapcat :patterns profiles)
+        type-obj-m (cond-> (group-by :type concepts)
+                     (not-empty templates) (assoc "StatementTemplate" templates)
+                     (not-empty patterns)  (assoc "Pattern" patterns))
+        objects->m (fn [objects]
+                     (reduce
+                      (fn [m {:keys [id] :as object}] (assoc m id object))
+                      {}
+                      objects))]
+    (update-vals type-obj-m objects->m)))
 
-(defn loc-iri-map
-  "Given a zipper loc, get the map of profile subobjects by IRI"
-  [loc]
-  (get (meta loc) ::iri-map))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Primary Pattern Selection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn loc-object
-  "Given a zipper loc, look up the object from the IRI"
-  [loc]
-  (get (loc-iri-map loc) (z/node loc)))
-
-(defn root-node?
-  [node-iri]
-  (= ::root node-iri))
-
-(defn pattern-zip
-  "Given one or more profiles, create a zipper that traverses the patterns and
-  templates. Root is a special keyword ::root with the primary patterns as
-  `alternates` children."
-  [iri-map']
-  (let [primary-pattern-iris
-        (keep
-         (fn [{id :id
-               node-type :type
-               primary :primary}]
-           (when (and (= node-type "Pattern")
-                      primary)
-             id))
-         (vals iri-map'))]
-    (assert (seq primary-pattern-iris)
-            "Profile input must contain primary patterns!")
-    ;; Add the virtual top level before proceeding
-    (let [iri-map (assoc iri-map'
-                         ::root
-                         {:id ::root
-                          :type "Pattern"
-                          :alternates (into [] primary-pattern-iris)})]
-      (->
-       (z/zipper
-        (fn branch? [node-iri]
-          (let [{node-type :type} (get iri-map node-iri)]
-            (= node-type "Pattern")))
-        ;; The default children function leaves all options open
-        ;; We can override :zip/children to make it decide things.
-        (fn children [node-iri]
-          (let [{:keys [sequence
-                        alternates
-                        optional
-                        oneOrMore
-                        zeroOrMore
-                        ]} (get iri-map node-iri)]
-            (or sequence
-                alternates
-                (and optional
-                     [optional])
-                (and oneOrMore
-                     [oneOrMore])
-                (and zeroOrMore
-                     [zeroOrMore]))))
-        ;; Make node doesn't really mean much here, as we don't edit.
-        (fn make-node
-          [node-iri kid-iris]
-          node-iri)
-        ::root)
-       ;; We store the map in meta, which is always preserved
-       (vary-meta assoc ::iri-map iri-map)))))
-
-(defn rand-pattern-zip
-  "Building on the comprehension from pattern-zip, return a zipper that uses a
-  deterministic pseudorandom walk for choosing children/paths."
-  [iri-map'
-   alignment
-   ^Random rng
-   & {:keys [repeat-max]
-      :or {repeat-max 5}}]
-  (let [pzip (pattern-zip iri-map')
-        iri-map (::iri-map (meta pzip))]
-    (vary-meta pzip
-               assoc
-               :zip/children
-               (fn rand-children
-                 [node-iri]
-                 (let [{:keys [id
-                               type
-                               primary
-
-                               alternates
-                               optional
-                               oneOrMore
-                               sequence
-                               zeroOrMore
-                               ]
-                        {label :en} :prefLabel
-                        :as profile-obj} (get iri-map node-iri)]
-                   (assert profile-obj "Can't navigate if not a pattern")
-                   (cond
-                     alternates
-                     [(random/choose rng alignment alternates)]
-
-                     optional
-                     (if-let [yeah (random/choose rng alignment [nil optional])]
-                       [optional]
-                       [])
-                     ;; TODO: Figure out effect, if any
-                     oneOrMore
-                     (repeat (inc (random/rand-int* rng repeat-max))
-                             oneOrMore)
-                     zeroOrMore
-                     (repeat (random/rand-int* rng repeat-max)
-                             zeroOrMore)
-                     sequence
-                     sequence
-                     ))))))
-
-;; TODO: Pass antecedent patterns in the result of registration seq
-
-(defn walk-once
-  "From the root of a pattern zip, perform a single walk of a primary pattern,
-  returning a seq of locs"
-  [loc]
-  (->> loc
-       (iterate z/next)
-       (take-while (complement z/end?))
-       ;; cut the root node off the top
-       rest
-       ;; empty seq nodes will be nil, so only keep the good'ns
-       (filter z/node)))
-
-(defn registration-seq
-  "Given a seed, alignment and profiles, return an infinite seq of maps where
-  `:registration` is a string uuid
-  `:template` is a statement template
-  `:seed` is a derived seed for generating the statement."
-  ([iri-map
-    alignment
-    seed]
-   (lazy-seq
-    (let [^Random rng (random/seed-rng seed)
-          root-loc (rand-pattern-zip iri-map alignment rng)]
-      (registration-seq root-loc rng))))
-  ([root-loc
-    ^Random rng]
-   (lazy-seq
-    (let [registration (random/rand-uuid rng)]
-      (concat
-       (->> root-loc
-            ;; do one deterministic walk
-            walk-once
-            ;; Get the statement templates
-            (keep (fn [loc]
-                    (let [{obj-type :type
-                           :as o} (loc-object loc)
-                          iri-map (::iri-map (meta loc))]
-                      (when (= "StatementTemplate" obj-type)
-                        {:registration registration
-                         :template o
-                         :seed (random/rand-long rng)
-                         :pattern-ancestors
-                         (into []
-                               (for [iri (rest (z/path loc))
-                                     :let [{:keys [primary]} (get iri-map iri)]]
-                                 {:id iri
-                                  :primary (true? primary)}))})))))
-       (registration-seq
-        root-loc
-        rng))))))
+;; We don't put this in `profile.pattern` since this is part of the process
+;; of creating the type-iri-map.
 
 (s/fdef select-primary-patterns
-  :args (s/cat :iri-map ::iri-map
+  :args (s/cat :type-iri-map ::type-iri-map
                :params ::params/parameters)
-  :ret ::iri-map)
+  :ret ::type-iri-map)
 
 (defn select-primary-patterns
-  "Given an iri-map and params, select primary patterns for generation"
-  [iri-map
-   {:keys [gen-profiles
-           gen-patterns]}]
-  (let [?profile-set (some-> gen-profiles not-empty set)
-        ?pattern-set (some-> gen-patterns not-empty set)]
-    (reduce-kv
-     (fn [m k {obj-type :type
-               profile-id ::_profile-id
-               :keys [id primary]
-               :as v}]
-       (assoc m k
-              (cond-> v
-                (and (= obj-type "Pattern")
-                     primary)
-                (assoc :primary
-                       (and
-                        (or (nil? ?profile-set)
-                            (contains? ?profile-set profile-id))
-                        (or (nil? ?pattern-set)
-                            (contains? ?pattern-set id)))))))
-     (empty iri-map)
-     iri-map)))
+  "Given `type-iri-map` and the `gen-profiles` and `gen-patterns` params,
+   update the Pattern map to further specify primary patterns for generation.
+   Primary patterns in this context must be specified by `gen-profiles` or
+   `gen-patterns`, or else they will no longer be counted as primary patterns."
+  [type-iri-map {:keys [gen-profiles gen-patterns]}]
+  (let [?profile-set   (some-> gen-profiles not-empty set)
+        ?pattern-set   (some-> gen-patterns not-empty set)
+        primary-pat?   (fn [profile-id pattern-id]
+                         (and (or (nil? ?profile-set)
+                                  (contains? ?profile-set profile-id))
+                              (or (nil? ?pattern-set)
+                                  (contains? ?pattern-set pattern-id))))
+        update-pattern (fn [{profile-id ::_profile-id
+                             pattern-id :id
+                             primary?   :primary
+                             :as pattern}]
+                         (cond-> pattern
+                           primary?
+                           (assoc :primary
+                                  (primary-pat? profile-id pattern-id))))
+        update-pat-map (fn [pattern-map]
+                         (update-vals pattern-map update-pattern))]
+    (update type-iri-map "Pattern" update-pat-map)))
 
-(comment
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Putting it all Together
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/fdef profiles->profile-map
+  :args (s/cat :profiles       ::profile/profiles
+               :pattern-params ::params/parameters
+               :activity-seed  int?)
+  :ret ::profile-map)
 
-  (require '[com.yetanalytics.datasim.input :as i])
-
-  (def p
-    (i/from-location
-     :profile :json "dev-resources/profiles/cmi5/fixed.json"))
-
-  (-> p
-      :templates
-      (->> (mapcat :rules))
-      clojure.pprint/pprint)
-
-
-
-  ;; traverse randomly
-  (-> (rand-pattern-zip
-       (profiles->map [p]) {} (Random. ) #_(random/seed-rng 2)
-        )
-      walk-once
-      (->> (map z/node))
-      last
-      )
-  (->> (registration-seq (profiles->map [p]) {} 42)
-       first
-       clojure.pprint/pprint
-       )
-
-
-  (def loc (atom (rand-pattern-zip
-                  (profiles->map [p]) {} (random/seed-rng 45)
-                  )))
-
-
-  (z/node @loc
-          )
-  (some #(when (nil? (z/node %))
-           %)
-        (iterate z/next @loc))
-
-
-
-
-  )
+(defn profiles->profile-map
+  "Create a map from `profiles` that contains the following:
+   
+   - `type-iri-map`: A map from object types to IDs to the object maps (i.e.
+   Concepts, Statement Templates, and Patterns).
+   - `activity-map`: A map from Activity Type IDs to Activity IDs to the
+   Activity maps (in Statement, not Profile, form).
+   - `verb-map`: A map from Verb IDs to Verbs (in Statement, not Profile,
+   form).
+   - `extension-spec-map`: A map from one of `:activity`, `:context`, or
+   `:result` to an Extension ID to the Extension spec derived from its
+   `inlineSchema property`.
+   - `statement-base-map`: A map from Template IDs to the Template's
+   xAPI Statement base, as derived from its determining properties and inScheme.
+   - `parsed-rules-map`: A map from Template IDs to the Template's parsed
+   rules.
+   - `pattern-walk-fn`: A function that, when passed in `alignment` and `rng`
+   arguments, generates a lazy sequence of visited Templates for a particular
+   primary Pattern.
+   
+   Uses `pattern-params` to narrow down primary Patterns and `activity-seed` to
+   generate additional Activity IDs in the cosmos."
+  [profiles pattern-params activity-seed]
+  (let [type-iri-map*      (profiles->type-iri-map profiles)
+        type-iri-map       (select-primary-patterns type-iri-map* pattern-params)
+        activity-map       (act/create-activity-map type-iri-map activity-seed)
+        verb-map           (vrb/create-verb-map type-iri-map)
+        extension-spec-map (ext/create-extension-spec-map type-iri-map)
+        statement-base-map (tmp/create-statement-base-map type-iri-map)
+        parsed-rules-map   (tmp/create-parsed-rules-map type-iri-map)
+        pattern-walk-fn    (pat/create-pattern-walk-fn type-iri-map)
+        profile-map*       {:type-iri-map       type-iri-map
+                            :activity-map       activity-map
+                            :verb-map           verb-map
+                            :extension-spec-map extension-spec-map
+                            :statement-base-map statement-base-map
+                            :parsed-rules-map   parsed-rules-map
+                            :pattern-walk-fn    pattern-walk-fn}]
+    (update profile-map*
+            :parsed-rules-map
+            (partial tmp/update-parsed-rules-map profile-map*))))

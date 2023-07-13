@@ -1,231 +1,190 @@
 (ns com.yetanalytics.datasim.xapi.statement
-  "Generate Statements"
+  "Statement generation."
   (:require [clojure.spec.alpha :as s]
-            [clojure.set :as cset]
-            [clojure.string :as string]
-            [clojure.walk :as w]
-            [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.xapi.activity :as activity]
-            [com.yetanalytics.datasim.input :as input]
-            [com.yetanalytics.datasim.input.alignments :as alignments]
-            [com.yetanalytics.datasim.input.personae :as personae]
-            [com.yetanalytics.pan.objects.template :as template]
-            [com.yetanalytics.datasim.random :as random]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.xapi.profile.template.rule :as rule]
-            [com.yetanalytics.datasim.json.schema :as j-schema]
-            [com.yetanalytics.datasim.xapi.extensions :as ext])
+            [clojure.walk       :as w]
+            [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.input.alignments       :as alignments]
+            [com.yetanalytics.datasim.xapi.profile           :as profile]
+            [com.yetanalytics.datasim.xapi.profile.template  :as t]
+            [com.yetanalytics.datasim.xapi.registration      :as reg]
+            [com.yetanalytics.datasim.xapi.rule              :as rule]
+            [com.yetanalytics.datasim.xapi.statement.healing :as heal])
   (:import [java.time Instant]))
 
-;; The duration, in milliseconds, of the returned statement
-;; This is so we can resume processing AFTER the statement timestamp + duration
-(s/def ::end-ms
-  pos-int?)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::timestamp-ms
-  pos-int?)
+;; Inputs
 
-(s/def ::meta
-  (s/keys :req-un [::timestamp-ms
-                   ::end-ms]))
+;; The actor for the statement (may have to stringify keys?)
+(s/def ::actor ::xs/actor)
 
-(s/def ::alignment
-  ::alignments/alignment)
+;; The alignment, a map of IRI to a map of `:weights` from -1.0 to 1.0 and
+;; a nilable `:object-override` object.
+(s/def ::alignment ::alignments/alignment)
 
+;; Simulation time, in ms since epoch.
 (s/def ::sim-t pos-int?)
 
-#_(s/def ::seed int?)
-
-(s/def ::registration
-  ::xs/uuid)
-
-(s/def ::sub-registration
-  ::xs/uuid)
-
-;; TODO: this is a stub for the real ones
-(s/def ::pattern-ancestors
-  (s/every map?))
-
-;; a stub for a map of activities by IRI
-(s/def ::activities
-  (s/map-of ::xs/iri ;; activity type
-            (s/map-of ::xs/iri
-                      ::xs/activity)))
-
-(s/fdef generate-statement
-  :args
-  (s/cat
-   :args-map
-   (s/keys
-    :req-un [;; input for the whole simulation
-             :com.yetanalytics.datasim/input
-             ;; flat map of profile iris to objects
-             ::profile/iri-map
-             ;; all the activities we can use, by activity type
-             ::activities
-             ;; the actor for the statement
-             ;; (may have to stringify keys?)
-             ::xs/actor
-             ;; their alignment, a map of IRI to -1.0->1.0
-             ::alignment
-             ;; a statement template to generate from
-             ::template/template
-             ;; antecedent patterns to the current template, and whether or not
-             ;; they are primary
-             ::pattern-ancestors
-             ;; Simulation time, in ms since epoch
-             ::sim-t
-             ;; A seed to generate with. Note that if you're calling more seeded
-             ;; generators, you'll need to make a seed from this one for each.
-             ::random/seed
-             ;; A registration UUID string
-             ::registration]
-    :opt-un [::sub-registration]))
-  :ret (s/and ::xs/statement
-              (s/conformer meta)
-              ::meta))
-
-(defn- search-rules
-  [template-rules target-location]
-  ;; filter `template-rules` for a rule whose location is set to `target-location`
-  (->> template-rules
-       (filterv (fn [r] (= (:location r) target-location)))
-       first
-       not-empty))
-
-(defn- handle-rule-vals [rng alignment the-rule]
-  ;; handle `:any` and/or `:all` within `the-rule`
-  (let [{any-coll :any
-         all-coll :all} the-rule
-        n-any           (count any-coll)
-        n-all           (count all-coll)]
-    ;; returns single item from `:any` or `:all` or returns nil
-    (cond (and (> n-any 0) (> n-all 0))
-          ;; both any and all for some reason
-          ;; -> use all to filter any
-          (let [remaining (into [] (cset/intersection (set all-coll) (set any-coll)))]
-            (random/choose rng alignment remaining))
-          (= n-all 1)
-          ;; not handling (> n-all 1) as it doesn't make sense in isolation
-          (first all-coll)
-          (> n-any 0)
-          ;; allow for users to shoot themselves in the foot
-          (random/choose rng alignment any-coll))))
+;; A seed to generate with. Note that if you're calling more seeded
+;; generators, you'll need to make a seed from this one for each.
+(s/def ::seed ::random/seed)
 
 ;; TODO: subregistration from :pattern-ancestors logic
 ;; -> "https://w3id.org/xapi/profiles/extensions/subregistration"
 ;;    -> subregistration extension key
 ;;    -> only necessary when a primary pattern contains another primary pattern
+(s/def ::sub-registration
+  any?) ; TODO: replace `any?` with real spec
 
+(s/def ::inputs
+  (s/merge ::profile/profile-map
+           ::reg/registration-map
+           (s/keys :req-un [::actor ::alignment ::sim-t ::seed]
+                   :opt-un [::sub-registration])))
+
+;; Metadata
+
+;; The duration, in milliseconds, of the returned statement.
+;; This is so we can resume processing AFTER the statement timestamp + duration.
+(s/def ::end-ms pos-int?)
+
+(s/def ::timestamp-ms pos-int?)
+
+(s/def ::meta
+  (s/keys :req-un [::timestamp-ms
+                   ::end-ms]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- time-ms->timestamp
+  [time-ms]
+  (.toString (Instant/ofEpochMilli time-ms)))
+
+(def additional-time-ms-mean 600000.0)
+
+(def additional-time-ms-sd 0.5)
+
+(defn- end-time-ms [start-time-ms rng]
+  (->> (random/rand-gaussian rng additional-time-ms-mean additional-time-ms-sd)
+       long
+       (+ start-time-ms)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Object Override
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- select-object-override
+  [rng alignment]
+  (some->> alignment
+           not-empty
+           (random/choose-map rng alignment)
+           :object-override
+           w/stringify-keys))
+
+(defn- remove-object-rules
+  [rules ?object-override]
+  (cond->> rules
+    ?object-override
+    (filterv (partial rule/property-rule? "object"))))
+
+(defn- apply-object-override
+  [statement ?object-override]
+  (cond-> statement
+    ?object-override
+    (assoc "object" ?object-override)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Statement Generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- base-statement
+  [template-base {:keys [sim-t registration]} rng]
+  (-> template-base
+      (assoc-in ["id"] (random/rand-uuid rng))
+      (assoc-in ["timestamp"] (time-ms->timestamp sim-t))
+      (assoc-in ["context" "registration"] registration)))
+
+;; TODO: Add duration ms in the meta?
+(defn- statement-meta
+  [template sim-t rng]
+  {:end-ms       (end-time-ms sim-t rng)
+   :timestamp-ms sim-t
+   :template     template})
+
+(s/fdef generate-statement
+  :args (s/cat :args-map ::inputs)
+  :ret (s/and ::xs/statement
+              (s/conformer meta)
+              ::meta))
+
+;; TODO: ERROR/WARNING if generated statement fails spec (e.g. a required
+;; property is excluded)
 (defn generate-statement
-  [{{:keys [profiles]} :input
-    iri-map :iri-map
-    activities :activities
-    actor :actor
-    alignment :alignment
-    sim-t :sim-t
-    seed :seed
-    {template-iri :id
-     ?verb-id :verb
-     ?activity-type :objectActivityType
-     template-rules :rules
-     template-in-scheme :inScheme
-     :as template} :template
-    pattern-ancestors :pattern-ancestors
-    registration :registration
-    ?sub-registration :sub-registration}]
-  (let [rng           (random/seed-rng seed)
-        ?obj-override (some->> alignment
-                               not-empty
-                               keys
-                               (random/choose rng alignment)
-                               (get alignment)
-                               :object-override
-                               w/stringify-keys)
-        ;; components of `base-stmt`
-        stmt-id    (random/rand-uuid rng)
-        stmt-actor (w/stringify-keys actor)
-        stmt-verb  (or
-                    ;; explicit verb
-                    (and ?verb-id
-                         (merge {"id" ?verb-id}
-                                (when-let [lmap (get-in iri-map [?verb-id :prefLabel])]
-                                  {"display" (w/stringify-keys lmap)})))
-                    ;; choose a verb from the prof
-                    (when-let [verbs (not-empty (into {}
-                                                      (filter (comp (partial = "Verb")
-                                                                    :type second))
-                                                      iri-map))]
-                      (let [some-v-id (random/choose rng alignment (keys verbs))
-                            v-concept (get verbs some-v-id)]
-                        (merge {"id" some-v-id}
-                               (when-let [lmap (get v-concept :prefLabel)]
-                                 {"display" (w/stringify-keys lmap)}))))
-                    {"id" "http://adlnet.gov/expapi/verbs/experienced"
-                     "display" {"en" "experienced"}})
-        stmt-obj   (or
-                    ;; object override is valid for the template and is present
-                    ;; in the alignment
-                    ;; - note: ?obj-override will get overriden; we are using
-                    ;;   it as a placeholder
-                    (when ?obj-override ?obj-override)
-                    ;; quick scan rules for "$.object.id"
-                    ;; -> when found, use `?activity-type` or look for "$.object.definition.type" rule
-                    ;;    -> use `obj-at` to lookup `rule-obj-id` in `activities`, nil if not found
-                    ;;    -> remove activity type level from `activities` and search for `rule-obj-id`, nil if not found
-                    (when-let [rule-obj-id (handle-rule-vals rng alignment (search-rules template-rules "$.object.id"))]
-                      ;; there's a rule specifying object.id, prep for lookup in `activities`
-                      (if-let [obj-at (or ?activity-type
-                                          (when-let [obj-type-rule (search-rules template-rules "$.object.definition.type")]
-                                            (handle-rule-vals rng alignment obj-type-rule)))]
-                        (get-in activities [obj-at rule-obj-id])
-                        (get (reduce merge (vals activities)) rule-obj-id)))
-                    ;; there's an activity type we choose one of those
-                    (and ?activity-type
-                         (let [some-activity-id
-                               (random/choose rng
-                                              alignment
-                                              (keys (get activities ?activity-type)))]
-                           (get-in activities [?activity-type some-activity-id])))
-                    ;; no type, choose any activity
-                    (let [flat-activities
-                          (reduce merge
-                                  (vals activities))
+  "Generate a single xAPI Statement. The `inputs` map accepts the following
+   map arguments:
+   
+   | Argument | Description
+   | ---      | ---
+   | `type-iri-map`       | A map from Profile object types to IDs to the object maps.
+   | `activity-map`       | A map from Activity Type IDs to Activity IDs to the Activity maps.
+   | `statement-base-map` | A map from Template IDs to the Statement base created using `template->statement-base`.
+   | `parsed-rules-map`   | A map from Template IDs to its parsed rules parsed using `template->parsed-rules`.
+   | `actor`              | The Actor used in the Statement.
+   | `alignment`          | The alignment map used for choosing Statement elements.
+   | `template`           | The Template used to generate this Statement.
+   | `registration`       | The registration UUID for the overall generated Statement sequence.
+   | `seed`               | The seed used to generate random numbers during generation.
+   | `pattern-ancestors`  | The coll of Patterns visited en route to `template`.
+   | `sub-registration`   | (NOT YET IMPLEMENTED) The sub-registration object of the Statement.
+   | `sim-t`              | The time (in ms) of this simulation.
+   
+   Returns a Statement with a map of the following as metadata:
 
-                          some-activity-id
-                          (random/choose rng
-                                         alignment
-                                         (keys flat-activities))]
-                      (get flat-activities some-activity-id)))
-        stmt-ctx   {"contextActivities" {"category" [{"id" template-in-scheme}]}
-                    "registration"      registration}
-        stmt-ts    (.toString (Instant/ofEpochMilli sim-t))
-        ;; Start with this and reduce over the rules
-        base-stmt  {"id"        stmt-id
-                    "actor"     stmt-actor
-                    "verb"      stmt-verb
-                    "object"    stmt-obj
-                    "context"   stmt-ctx
-                    "timestamp" stmt-ts}
-        ;; addition of `:spec` key to 0 or more `template-rules`
-        template-rules! (ext/derive-generation-hint profiles rng template-rules)]
-    (with-meta
-      (let [stmt (rule/apply-rules-gen base-stmt
-                                       template-rules!
-                                       :seed (random/rand-long rng))]
-        ;; Need to override object again, in case object is changed
-        ;; by the Template rules.
-        (if ?obj-override (assoc stmt "object" ?obj-override) stmt))
-      ;; The duration in MS so we can continue the sim
-      {;; The time (in millis since the epoch) after which the actor can
-       ;; continue activity
-       :end-ms (+ sim-t
-                  (long
-                   (random/rand-gauss
-                    rng 600000.0 0.5)))
-       ;; the time of the timestamp (in millis since the epoch)
-       ;; note that just has to be greater that sim-t and less than or eq to end-ms,
-       ;; it's up to you. For the stub we just make it sim-t
-       :timestamp-ms sim-t
-       ;; Return the template, useful for a bunch of things
-       :template template})))
+   | Metadata       | Description
+   | ---            | ---
+   | `end-ms`       | The time (in epoch ms) after which the `actor` can continue.
+   | `timestamp-ms` | The time of the timestamp (in epoch ms). It must be `> sim-t` and `<= end-ms`; for simplicity we just make it `sim-t`.
+   | `template`     | The Template used to generate this Statement"
+  #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
+  [{:keys [type-iri-map
+           verb-map
+           activity-map
+           extension-map
+           statement-base-map
+           parsed-rules-map
+           actor
+           alignment
+           template
+           seed
+           pattern-ancestors
+           registration
+           sub-registration
+           sim-t]
+    :as inputs}]
+  (let [;; Template Prep
+        template-id
+        (:id template)
+        template-base
+        (or (get statement-base-map template-id)
+            (t/template->statement-base template))
+        template-rules
+        (or (get parsed-rules-map template-id)
+            (->> template
+                 t/template->parsed-rules
+                 (rule/add-rules-valuegen inputs)))
+        ;; Basics
+        rng             (random/seed-rng seed)
+        object-override (select-object-override rng alignment)
+        template-rules* (remove-object-rules template-rules object-override)]
+    (-> template-base
+        (base-statement inputs rng)
+        (apply-object-override object-override)
+        (rule/apply-inclusion-rules template-rules* rng)
+        (heal/complete-statement inputs rng)
+        (rule/apply-exclusion-rules template-rules*)
+        (with-meta (statement-meta template sim-t rng)))))

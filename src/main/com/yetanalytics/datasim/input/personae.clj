@@ -1,14 +1,13 @@
 (ns com.yetanalytics.datasim.input.personae
+  "Personae input specs and parsing."
   (:require [clojure.spec.alpha :as s]
-            [clojure.walk :as w]
-            [xapi-schema.spec :as xs]
-            [com.yetanalytics.datasim.protocols :as p]
-            [com.yetanalytics.datasim.xapi :as xapi]
-            [com.yetanalytics.datasim.util :as u]
-            [com.yetanalytics.datasim.util.errors :as errs])
-  (:import [java.io Reader Writer]))
+            [clojure.walk       :as w]
+            [com.yetanalytics.datasim.xapi.actor  :as agent]
+            [com.yetanalytics.datasim.util.errors :as errs]))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; We model the input personae as an xAPI group.
 ;; It can be anonymous, but the name may be used in some way.
@@ -16,17 +15,9 @@
 ;; If functionality is added to express further groupings we'll have to revise
 ;; this strategy.
 
-
-;; FIXME: This spec is unused
-(s/def ::ifi-map
-  (s/map-of ::xapi/agent-id
-            ::xs/actor
-            :min-count 1))
-
-;; We cannot apply xapi-schema specs directly, as xapi-schema restricts which
-;; properties can be in the Group, including the `role` property.
-;;
-;; We still use :agent and :group spec namespaces from xapi-schema.
+;; Note: We cannot apply xapi-schema specs directly, as xapi-schema restrict
+;; which properties can be in the Group, including the `role` property.
+;; We still use `agent` and `group` spec namespaces from xapi-schema.
 
 (s/def ::role string?)
 
@@ -52,31 +43,43 @@
         :identified (s/keys :req-un [:group/objectType ::member]
                             :opt-un [:group/name])))
 
+(defn- remove-nil-vals
+  "Remove nil values from an associative structure. Does not recurse."
+  [m]
+  (reduce-kv
+   (fn [m* k v] (cond-> m* (some? v) (assoc k v)))
+   {}
+   m))
+
 ;; An open-validating group spec, ignores extra nils
 (s/def ::personae
-  (s/and (s/conformer u/remove-nil-vals)
+  (s/and (s/conformer remove-nil-vals)
          (s/conformer w/keywordize-keys w/stringify-keys)
          ::group))
 
+(defn- distinct-member-ids?
+  [personaes]
+  (let [member-ids (->> personaes
+                        (map :member)
+                        (apply concat)
+                        (map agent/actor-ifi))]
+    (= (-> member-ids count)
+       (-> member-ids distinct count))))
 
-(defrecord Personae [member
-                     objectType
-                     mbox
-                     mbox_sha1sum
-                     openid
-                     account]
-  p/FromInput
-  (validate [this]
-    (when-some [ed (s/explain-data ::personae this)]
-      (errs/explain-to-map-coll ::personae ed)))
+(s/def ::personae-array
+  (s/and (s/every ::personae :min-count 1 :into [])
+         distinct-member-ids?))
 
-  p/JSONRepresentable
-  (read-key-fn [this k]
-    (keyword nil (name k)))
-  (read-body-fn [this json-result]
-    (map->Personae
-     json-result))
-  (write-key-fn [this k]
-    (name k))
-  (write-body-fn [this]
-    (u/remove-nil-vals this)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Validation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn validate-personae
+  [personae]
+  (some->> (s/explain-data ::personae personae)
+           (errs/explain-to-map-coll ::personae)))
+
+(defn validate-personae-array
+  [personae-array]
+  (some->> (s/explain-data ::personae-array personae-array)
+           (errs/explain-to-map-coll ::personae-array)))

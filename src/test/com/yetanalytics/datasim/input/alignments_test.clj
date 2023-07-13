@@ -1,8 +1,11 @@
 (ns com.yetanalytics.datasim.input.alignments-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
-            [com.yetanalytics.datasim.protocols :as p]
             [com.yetanalytics.datasim.input.alignments :as a]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def alignment1 {:component "http://www.whateveer.com/activity1"
                  :weight 0.9})
@@ -17,7 +20,7 @@
 (def actor-alignment2 {:id "mbox::mailto:cliff1@yetanalytics.com"
                        :type "Agent"
                        :alignments [alignment1 alignment2]})
-  
+
 (def alignments-example [actor-alignment1 actor-alignment2])
 
 (def object-override-example
@@ -26,6 +29,10 @@
    :definition {:name {:en-US "Course 1"}
                 :description {:en-US "Course Description 1"}
                 :type "http://adlnet.gov/expapi/activities/course"}})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftest alignments-test
   (testing "valid alignments"
@@ -52,18 +59,8 @@
                   (assoc-in actor-alignment1
                             [:alignments 0 :objectOverride]
                             object-override-example)))
-    (is (not
-         (s/valid? ::a/actor-alignment
-                   (assoc-in actor-alignment1
-                             [:alignments 0 :objectOverride]
-                             (assoc-in object-override-example
-                                       [:definition :extensions]
-                                       {(keyword "https://foo.org") true})))))))
-
-(deftest protocols-test
-  (testing "alignment protocols"
-    (is (satisfies? p/FromInput (a/map->Alignments alignments-example)))
-    (is (satisfies? p/FromInput (a/map->Alignments
-                                 (assoc-in alignments-example
-                                           [0 :alignments 0 :objectOverride]
-                                           object-override-example))))))
+    (is (not (s/valid?
+              ::a/actor-alignment
+              (->> {(keyword "https://foo.org") true}
+                   (assoc-in object-override-example [:definition :extensions])
+                   (assoc-in actor-alignment1 [:alignments 0 :objectOverride])))))))
