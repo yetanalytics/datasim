@@ -20,7 +20,7 @@
   - Fix a bug where ARMA squences, which form the basis of statement generation, were incorrectly generated
   - Precompile Statement Template properties and rules before statement generation, as an optimization measure.
 
-For more information on all changes, see Pull Requests #89, #93 to #97, #98 to #103, and #106 to #108.
+For more information on all changes, see Pull Requests #89, #93 to #97, #98 to #103, and #106 to #109.
 
 ## [0.2.0] - 2023-07-07
 - Update the following dependencies:
