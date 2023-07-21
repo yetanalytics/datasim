@@ -477,34 +477,35 @@
   (if (and distinct-vals?
            (>= (count value-set) num-locations))
     ;; Distinct values (e.g. IDs)
-    (vec (take num-locations (random/shuffle rng value-set)))
+    (let [values   (random/shuffle rng value-set)]
+      (vec (take num-locations values)))
     ;; Either values are not distinct or there are not enough distinct
     ;; values for every location (violating the Pigenhole Principle)
-    (loop [n-values num-locations
-           val-set  value-set
-           val-coll []]
+    (loop [n-locs   num-locations
+           values   (random/shuffle rng value-set)
+           selected []]
       (cond
-        (zero? n-values)
-        (vec (random/shuffle rng val-coll))
+        (zero? n-locs)
+        selected
         ;; n-values is nearly exhausted - choose one of each remaining value
-        (<= n-values (count val-set))
-        (let [x (first val-set)]
-          (recur (dec n-values)
-                 (disj val-set x)
-                 (conj val-coll x)))
+        (<= n-locs (count values))
+        (let [x (first values)]
+          (recur (dec n-locs)
+                 (rest values)
+                 (conj selected x)))
         ;; val-set is nearly exhausted - repeat last value to fill locations
-        (= 1 (count val-set))
-        (let [x (first val-set)]
+        (= 1 (count values))
+        (let [x (first values)]
           (recur 0
-                 (disj val-set x)
-                 (into val-coll (repeat n-values x))))
+                 (rest values)
+                 (into selected (repeat n-locs x))))
         ;; choose a value and repeat it between 0 (inclusive) and n-values (exclusive) times
         :else
-        (let [x (first val-set)
-              n (random/rand-int rng n-values)]
-          (recur (- n-values n)
-                 (disj val-set x)
-                 (into val-coll (repeat n x))))))))
+        (let [x (first values)
+              n (random/rand-int rng n-locs)]
+          (recur (- n-locs n)
+                 (rest values)
+                 (into selected (repeat n x))))))))
 
 ;; Rule Application
 
