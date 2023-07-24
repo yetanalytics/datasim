@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.3.1] - 2023-07-24
+- Fix bug where the same `any` and `all` values are chosen within the same generated sequence.
+
 ## [0.3.0] - 2023-07-13
 - Major reworking and refactoring of internal namespaces; some notable changes:
   - Completely reworked the structure of the `datasim.xapi` directory
