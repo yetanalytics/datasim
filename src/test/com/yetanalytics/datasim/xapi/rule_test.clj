@@ -788,13 +788,16 @@
 ;; Rule Application Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- apply-rules [statement rules]
-  (let [parsed-rules (r/parse-rules rules)
-        parsed-rules (map (partial r/add-rule-valuegen
-                                   valuegen-extension-specs
-                                   valuegen-valuesets)
-                          parsed-rules)]
-    (r/apply-rules statement parsed-rules (random/seed-rng 100))))
+(defn- apply-rules
+  ([statement rule]
+   (apply-rules statement rule (random/seed-rng 100)))
+  ([statement rules rng]
+   (let [parsed-rules (r/parse-rules rules)
+         parsed-rules (map (partial r/add-rule-valuegen
+                                    valuegen-extension-specs
+                                    valuegen-valuesets)
+                           parsed-rules)]
+     (r/apply-rules statement parsed-rules rng))))
 
 (defmacro is-actor [expected & rules]
   `(is (= ~expected
@@ -1060,13 +1063,13 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
+         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-2"}}
-        {"definition" {"type" "http://www.example.com/activity-type-2"}}
-        {"definition" {"type" "http://www.example.com/activity-type-2"}}
-        {"definition" {"type" "http://www.example.com/activity-type-3"}}]
+         "definition" {"type" "http://www.example.com/activity-type-1"}}
+        {"definition" {"type" "http://www.example.com/activity-type-1"}}
+        {"definition" {"type" "http://www.example.com/activity-type-3"}}
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}]
        {:location "$.context.contextActivities.other[0,1,2,3,4].definition.type"
         :all      ["http://www.example.com/activity-type-1"
                    "http://www.example.com/activity-type-2"
@@ -1135,13 +1138,13 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
+         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-2"}}
-        {"definition" {"type" "http://www.example.com/activity-type-2"}}
-        {"definition" {"type" "http://www.example.com/activity-type-2"}}
-        {"definition" {"type" "http://www.example.com/activity-type-3"}}]
+         "definition" {"type" "http://www.example.com/activity-type-1"}}
+        {"definition" {"type" "http://www.example.com/activity-type-1"}}
+        {"definition" {"type" "http://www.example.com/activity-type-3"}}
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}]
        {:location "$.context.contextActivities.other[0,1,2,3,4]"
         :selector "$.definition.type"
         :all      ["http://www.example.com/activity-type-1"
@@ -1157,7 +1160,7 @@
          "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}}]
+         "definition" {"type" "http://www.example.com/activity-type-2"}}]
        {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
         :selector "$.definition.type"
         :all      ["http://www.example.com/activity-type-1"
@@ -1171,7 +1174,7 @@
          "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}}]
+         "definition" {"type" "http://www.example.com/activity-type-2"}}]
        {:location "$.context.contextActivities"
         :selector "$.other[0].definition.type | $.other[1].definition.type"
         :all      ["http://www.example.com/activity-type-1"
@@ -1306,6 +1309,34 @@
                         set)
           actuals  (repeatedly 30 apply-fn)]
       (is (every? #(#{expect-1 expect-2 expect-3} %) actuals)))))
+
+(deftest apply-rules-repeatedly
+  (testing "Apply the same rule repeatedly with the same seed -"
+    (testing "any values only"
+      (let [the-rng  (random/seed-rng 200)
+            any-rule {:location "$.context.extensions['http://example.com/extension']"
+                      :presence "included"
+                      :any      [1 2 3 4 5]}]
+        (is (= [2 3 5 3 5 5 1 1 1 2]
+               (->> (repeatedly 10 #(apply-rules {} [any-rule] the-rng))
+                    (map #(get-in % ["context" "extensions" "http://example.com/extension"])))))))
+    (testing "all values only"
+      (let [the-rng  (random/seed-rng 300)
+            all-rule {:location "$.result.extensions['http://example.com/extension']"
+                      :presence "included"
+                      :all      ["A" "B" "C" "D" "E"]}]
+        (is (= ["C" "B" "B" "A" "B" "A" "E" "D" "D" "E"]
+               (->> (repeatedly 10 #(apply-rules {} [all-rule] the-rng))
+                    (map #(get-in % ["result" "extensions" "http://example.com/extension"])))))))
+    (testing "both any and all values"
+      (let [the-rng   (random/seed-rng 400)
+            both-rule {:location "$.object.definition.extensions['http://example.com/extension']"
+                       :presence "included"
+                       :any      [true false 1 2 3]
+                       :all      [true false "A" "B" "C"]}]
+        (is (= [true false false true false false true true false false]
+               (->> (repeatedly 10 #(apply-rules {} [both-rule] the-rng))
+                    (map #(get-in % ["object" "definition" "extensions" "http://example.com/extension"])))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CMI5 Rule Tests
