@@ -16,17 +16,17 @@
 ;; Interval
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- range? [{:keys [start end]}]
+(defn- interval? [{:keys [start end]}]
   (or (nil? start)
       (nil? end)
       (< start end)))
 
 (defmacro guard-spec [scalar-spec interval-spec]
-  `(s/or :scalar ~scalar-spec
-         :range  ~interval-spec
-         :steps  (s/every (s/or :scalar ~scalar-spec
-                                :range  ~interval-spec)
-                          :kind vector?)))
+  `(s/or :scalar   ~scalar-spec
+         :interval ~interval-spec
+         :steps    (s/every (s/or :scalar  ~scalar-spec
+                                  :interval ~interval-spec)
+                            :kind vector?)))
 
 ;; Second
 
@@ -37,7 +37,7 @@
 
 (def second-interval
   (s/and (s/keys :opt-un [::second/start ::second/end])
-         range?))
+         interval?))
 
 (s/def ::guard/second (guard-spec second-scalar second-interval))
 
@@ -50,7 +50,7 @@
 
 (def minute-interval
   (s/and (s/keys :opt-un [::minute/start ::minute/end])
-         range?))
+         interval?))
 
 (s/def ::guard/minute (guard-spec minute-scalar minute-interval))
 
@@ -63,7 +63,7 @@
 
 (def hour-interval
   (s/and (s/keys :opt-un [::hour/start ::hour/end])
-         range?))
+         interval?))
 
 (s/def ::guard/hour (guard-spec hour-scalar hour-interval))
 
@@ -76,7 +76,7 @@
 
 (def dow-interval
   (s/and (s/keys :opt-un [::dow/start ::dow/end])
-         range?))
+         interval?))
 
 (s/def ::guard/day-of-week (guard-spec dow-scalar dow-interval))
 
@@ -89,7 +89,7 @@
 
 (def dom-interval
   (s/and (s/keys :opt-un [::dom/start ::dom/end])
-         range?))
+         interval?))
 
 (s/def ::guard/day-of-month (guard-spec dom-scalar dom-interval))
 
@@ -102,7 +102,7 @@
 
 (def month-interval
   (s/and (s/keys :opt-un [::month/start ::month/end])
-         range?))
+         interval?))
 
 (s/def ::guard/month (guard-spec month-scalar month-interval))
 
@@ -115,7 +115,7 @@
 
 (def year-interval
   (s/and (s/keys :opt-un [::year/start ::year/end])
-         range?))
+         interval?))
 
 (s/def ::guard/year (guard-spec year-scalar year-interval))
 
