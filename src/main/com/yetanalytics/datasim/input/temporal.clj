@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.input.temporal
   (:require
-   [clojure.spec.alpha :as s]
-   ;; For specs
+   [clojure.spec.alpha          :as s]
+   [com.yetanalytics.pan.axioms :as ax]
    [com.yetanalytics.datasim.input.temporal.delay :as-alias delay]
    [com.yetanalytics.datasim.input.temporal.guard :as-alias guard]
    [com.yetanalytics.datasim.input.temporal.guard.second       :as-alias second]
@@ -147,6 +147,9 @@
 ;; Temporal Spec
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::id ::ax/iri)
+
 (s/def ::temporal
-  (s/keys :req-un [::guard
+  (s/keys :req-un [::id]
+          :opt-un [::guard
                    ::delay]))
