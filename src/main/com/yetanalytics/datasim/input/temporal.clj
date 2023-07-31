@@ -1,16 +1,8 @@
 (ns com.yetanalytics.datasim.input.temporal
-  (:require
-   [clojure.spec.alpha          :as s]
-   [com.yetanalytics.pan.axioms :as ax]
-   [com.yetanalytics.datasim.input.temporal.delay :as-alias delay]
-   [com.yetanalytics.datasim.input.temporal.guard :as-alias guard]
-   [com.yetanalytics.datasim.input.temporal.guard.second       :as-alias second]
-   [com.yetanalytics.datasim.input.temporal.guard.minute       :as-alias minute]
-   [com.yetanalytics.datasim.input.temporal.guard.hour         :as-alias hour]
-   [com.yetanalytics.datasim.input.temporal.guard.day-of-week  :as-alias dow]
-   [com.yetanalytics.datasim.input.temporal.guard.day-of-month :as-alias dom]
-   [com.yetanalytics.datasim.input.temporal.guard.month        :as-alias month]
-   [com.yetanalytics.datasim.input.temporal.guard.year         :as-alias year]))
+  (:require [clojure.spec.alpha          :as s]
+            [com.yetanalytics.pan.axioms :as ax]
+            [com.yetanalytics.datasim.input.temporal.delay :as-alias delay]
+            [com.yetanalytics.datasim.input.temporal.guard :as-alias guard]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interval
@@ -21,105 +13,27 @@
       (nil? end)
       (< start end)))
 
-(defmacro guard-spec [scalar-spec interval-spec]
-  `(s/or :scalar   ~scalar-spec
-         :interval ~interval-spec
-         :steps    (s/every (s/or :scalar  ~scalar-spec
-                                  :interval ~interval-spec)
-                            :kind vector?)))
+(defmacro guard-spec [scalar-spec]
+  `(s/every (s/or :scalar   ~scalar-spec
+                  :interval (s/and (s/tuple ~scalar-spec ~scalar-spec)
+                                   interval?))
+            :kind vector?))
 
-;; Second
+(s/def ::guard/second (guard-spec (s/int-in 0 60)))
 
-(def second-scalar (s/int-in 0 60))
+(s/def ::guard/minute (guard-spec (s/int-in 0 60)))
 
-(s/def ::second/start second-scalar)
-(s/def ::second/end second-scalar)
+(s/def ::guard/hour (guard-spec (s/int-in 0 24)))
 
-(def second-interval
-  (s/and (s/keys :opt-un [::second/start ::second/end])
-         interval?))
+(s/def ::guard/day-of-week (guard-spec (s/int-in 0 7)))
 
-(s/def ::guard/second (guard-spec second-scalar second-interval))
+(s/def ::guard/day-of-month (guard-spec (s/int-in 0 31)))
 
-;; Minute
+(s/def ::guard/month (guard-spec (s/int-in 0 12)))
 
-(def minute-scalar (s/int-in 0 60))
+(s/def ::guard/year (guard-spec nat-int?))
 
-(s/def ::minute/start minute-scalar)
-(s/def ::minute/end minute-scalar)
-
-(def minute-interval
-  (s/and (s/keys :opt-un [::minute/start ::minute/end])
-         interval?))
-
-(s/def ::guard/minute (guard-spec minute-scalar minute-interval))
-
-;; Hour
-
-(def hour-scalar (s/int-in 0 24))
-
-(s/def ::hour/start hour-scalar)
-(s/def ::hour/end hour-scalar)
-
-(def hour-interval
-  (s/and (s/keys :opt-un [::hour/start ::hour/end])
-         interval?))
-
-(s/def ::guard/hour (guard-spec hour-scalar hour-interval))
-
-;; Day of Week
-
-(def dow-scalar (s/int-in 0 7))
-
-(s/def ::dow/start dow-scalar)
-(s/def ::dow/end dow-scalar)
-
-(def dow-interval
-  (s/and (s/keys :opt-un [::dow/start ::dow/end])
-         interval?))
-
-(s/def ::guard/day-of-week (guard-spec dow-scalar dow-interval))
-
-;; Day of Month
-
-(def dom-scalar (s/int-in 0 31))
-
-(s/def ::dom/start dom-scalar)
-(s/def ::dom/end dom-scalar)
-
-(def dom-interval
-  (s/and (s/keys :opt-un [::dom/start ::dom/end])
-         interval?))
-
-(s/def ::guard/day-of-month (guard-spec dom-scalar dom-interval))
-
-;; Month
-
-(def month-scalar (s/int-in 0 12))
-
-(s/def ::month/start month-scalar)
-(s/def ::month/end month-scalar)
-
-(def month-interval
-  (s/and (s/keys :opt-un [::month/start ::month/end])
-         interval?))
-
-(s/def ::guard/month (guard-spec month-scalar month-interval))
-
-;; Year
-
-(def year-scalar nat-int?)
-
-(s/def ::year/start year-scalar)
-(s/def ::year/end year-scalar)
-
-(def year-interval
-  (s/and (s/keys :opt-un [::year/start ::year/end])
-         interval?))
-
-(s/def ::guard/year (guard-spec year-scalar year-interval))
-
-(s/def ::guard
+(s/def ::guards
   (s/keys :opt-un [::guard/second
                    ::guard/minute
                    ::guard/hour
@@ -151,5 +65,5 @@
 
 (s/def ::temporal
   (s/keys :req-un [::id]
-          :opt-un [::guard
+          :opt-un [::guards
                    ::delay]))
