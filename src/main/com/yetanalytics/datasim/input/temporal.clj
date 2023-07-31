@@ -8,10 +8,8 @@
 ;; Interval
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- interval? [{:keys [start end]}]
-  (or (nil? start)
-      (nil? end)
-      (< start end)))
+(defn- interval? [[start end]]
+  (< start end))
 
 (defmacro guard-spec [scalar-spec]
   `(s/every (s/or :scalar   ~scalar-spec
