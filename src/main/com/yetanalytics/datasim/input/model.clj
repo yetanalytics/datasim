@@ -59,20 +59,26 @@
 (def day-of-week-spec* (s/int-in 0 7))
 
 (def day-of-week-spec
-  (s/or :integer day-of-week-spec*
-        :string  (s/and (s/conformer day-of-week-map
-                                     (cset/map-invert day-of-week-map))
-                        day-of-week-spec*)))
+  (s/and
+   (s/or :integer day-of-week-spec*
+         :string  (s/and (s/conformer day-of-week-map
+                                      (cset/map-invert day-of-week-map))
+                         day-of-week-spec*))
+   ;; Remove s/or tags
+   (s/conformer second)))
 
 (def day-of-month-spec (s/int-in 0 31))
 
 (def month-of-year-spec* (s/int-in 0 12))
 
 (def month-of-year-spec
-  (s/or :integer month-of-year-spec*
-        :string  (s/and (s/conformer month-of-year-map
-                                     (cset/map-invert month-of-year-map))
-                        month-of-year-spec*)))
+  (s/and
+   (s/or :integer month-of-year-spec*
+         :string  (s/and (s/conformer month-of-year-map
+                                      (cset/map-invert month-of-year-map))
+                         month-of-year-spec*))
+   ;; Remove s/or tags
+   (s/conformer second)))
 
 (def year-spec pos-int?)
 
