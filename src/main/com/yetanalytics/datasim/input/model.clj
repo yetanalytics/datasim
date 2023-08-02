@@ -149,16 +149,36 @@
 ;; Component Delay
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::delay/mean (s/double-in :min 0 :infinite? false :NaN? false))
+(def ^:private double-spec
+  (s/double-in :min 0 :infinite? false :NaN? false))
 
-(s/def ::delay/sd (s/double-in :min 0 :infinite? false :NaN? false))
+(s/def ::delay/min double-spec)
+
+(s/def ::delay/mean double-spec)
+
+(s/def ::delay/max double-spec)
+
+(s/def ::delay/sd double-spec)
 
 (s/def ::delay/unit #{"ms" "second" "minute" "hour" "day" "week" "month"})
 
+(defn- ordered-delay-values?
+  [{:keys [min mean max]}]
+  (cond
+    (and min mean max) (<= min mean max)
+    (and min mean)     (<= min mean)
+    (and mean max)     (<= mean max)
+    (and min max)      (<= min max)
+    mean  true ; cannot have only min or only max
+    :else false))
+
 (s/def ::delay
-  (s/keys :req-un [::delay/mean
-                   ::delay/unit]
-          :opt-un [::delay/sd]))
+  (s/and (s/keys :req-un [::delay/unit]
+                 :opt-un [::delay/min
+                          ::delay/mean
+                          ::delay/max
+                          ::delay/sd])
+         ordered-delay-values?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component Properties
