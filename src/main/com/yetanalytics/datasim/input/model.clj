@@ -4,8 +4,40 @@
             [clojure.spec.gen.alpha      :as sgen]
             [clojure.walk                :as w]
             [com.yetanalytics.pan.axioms :as ax]
+            [com.yetanalytics.datasim.xapi.actor :as actor]
+            [com.yetanalytics.datasim.input.model.agent :as-alias agent]
+            [com.yetanalytics.datasim.input.model.group :as-alias group]
+            [com.yetanalytics.datasim.input.model.role  :as-alias role]
             [com.yetanalytics.datasim.input.model.delay :as-alias delay]
             [com.yetanalytics.datasim.input.model.guard :as-alias guard]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Personae
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmulti personae-spec :type)
+
+(s/def ::agent/id ::actor/actor-ifi)
+(s/def ::agent/type #{"Agent"})
+
+(defmethod personae-spec "Actor" [_]
+  (s/keys :req-un [::agent/id ::agent/type]))
+
+(s/def ::group/id ::actor/actor-ifi)
+(s/def ::group/type #{"Group"})
+
+(defmethod personae-spec "Group" [_]
+  (s/keys :req-un [::group/id ::group/type]))
+
+(s/def ::role/id (s/and string? not-empty))
+(s/def ::role/type #{"Role"})
+
+(defmethod personae-spec "Role" [_]
+  (s/keys :req-un [::role/id ::role/type]))
+
+(s/def ::personae
+  (s/every (s/multi-spec personae-spec :type)
+           :kind vector?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component/Object Override Weight
@@ -177,7 +209,7 @@
 (s/def ::id (s/nilable string?))
 
 (def model-map-spec
-  (s/keys :req-un [::id
+  (s/keys :opt-un [::personae
                    ::componentProperties
                    ::objectOverrides]))
 
