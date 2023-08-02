@@ -1,19 +1,36 @@
 (ns com.yetanalytics.datasim.xapi.actor
   "Utilities for Agents and Groups (collectively known as Actors)."
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.string         :as cstr]
+            [clojure.spec.alpha     :as s]
+            [clojure.spec.gen.alpha :as sgen]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private ifi-prefix-gen
+  (sgen/elements ["mbox::" "mbox_sha1sum::" "account::" "openid::"]))
+
+(def ^:private ifi-body-gen
+  (sgen/such-that not-empty (sgen/string-ascii)))
+
 (s/def ::actor-ifi
-  (s/and string?
-         not-empty
-         (fn [^String s]
-           (or (.startsWith s "mbox::")
-               (.startsWith s "account::")
-               (.startsWith s "mbox_sha1sum::")
-               (.startsWith s "openid::")))))
+  (s/with-gen
+    (s/and string?
+           not-empty
+           (fn [s]
+             (or (cstr/starts-with? s "mbox::")
+                 (cstr/starts-with? s "account::")
+                 (cstr/starts-with? s "mbox_sha1sum::")
+                 (cstr/starts-with? s "openid::"))))
+    ;; Monads are fun!
+    ;; This composes a the two IFI generators together to create a
+    ;; (str ifi-prefix ifi-body) generator
+    #(sgen/bind ifi-prefix-gen
+                (fn [ifi-prefix]
+                  (sgen/bind ifi-body-gen
+                             (fn [ifi-body]
+                               (sgen/return (str ifi-prefix ifi-body))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
