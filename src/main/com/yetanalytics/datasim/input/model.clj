@@ -9,7 +9,7 @@
             [com.yetanalytics.datasim.input.model.group :as-alias group]
             [com.yetanalytics.datasim.input.model.role  :as-alias role]
             [com.yetanalytics.datasim.input.model.delay :as-alias delay]
-            [com.yetanalytics.datasim.input.model.guard :as-alias guard]))
+            [com.yetanalytics.datasim.input.model.bound :as-alias bound]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Personae
@@ -61,7 +61,7 @@
 (defn- interval? [[start end]]
   (< start end))
 
-(defmacro guard-spec [scalar-spec]
+(defmacro bound-spec [scalar-spec]
   `(s/every (s/or :scalar   ~scalar-spec
                   :interval (s/and (s/tuple ~scalar-spec ~scalar-spec)
                                    interval?))
@@ -122,28 +122,30 @@
 
 (def year-spec pos-int?)
 
-(s/def ::guard/second (guard-spec second-spec))
+(s/def ::bound/second (bound-spec second-spec))
 
-(s/def ::guard/minute (guard-spec minute-spec))
+(s/def ::bound/minute (bound-spec minute-spec))
 
-(s/def ::guard/hour (guard-spec hour-spec))
+(s/def ::bound/hour (bound-spec hour-spec))
 
-(s/def ::guard/day-of-week (guard-spec day-of-week-spec))
+(s/def ::bound/day-of-week (bound-spec day-of-week-spec))
 
-(s/def ::guard/day-of-month (guard-spec day-of-month-spec))
+(s/def ::bound/day-of-month (bound-spec day-of-month-spec))
 
-(s/def ::guard/month (guard-spec month-of-year-spec))
+(s/def ::bound/month (bound-spec month-of-year-spec))
 
-(s/def ::guard/year (guard-spec year-spec))
+(s/def ::bound/year (bound-spec year-spec))
 
-(s/def ::guards
-  (s/keys :opt-un [::guard/second
-                   ::guard/minute
-                   ::guard/hour
-                   ::guard/day-of-week
-                   ::guard/day-of-month
-                   ::guard/month
-                   ::guard/year]))
+(s/def ::timeBounds
+  (s/every (s/keys :opt-un [::bound/second
+                            ::bound/minute
+                            ::bound/hour
+                            ::bound/day-of-week
+                            ::bound/day-of-month
+                            ::bound/month
+                            ::bound/year])
+           :kind vector?
+           :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component Delay
@@ -172,7 +174,7 @@
     mean  true ; cannot have only min or only max
     :else false))
 
-(s/def ::delay
+(s/def ::timeDelay
   (s/and (s/keys :req-un [::delay/unit]
                  :opt-un [::delay/min
                           ::delay/mean
@@ -189,8 +191,8 @@
 (def alignments-spec
   (s/keys :req-un [::id]
           :opt-un [::weight
-                   ::guards
-                   ::delay]))
+                   ::timeBounds
+                   ::timeDelay]))
 
 (s/def ::alignments
   (s/every alignments-spec))
