@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.0] - TBD
+- Some wibbly wobbly timey wimey stuff
+
 ## [0.3.1] - 2023-07-24
 - Fix bug where the same `any` and `all` values are chosen within the same generated sequence.
 
