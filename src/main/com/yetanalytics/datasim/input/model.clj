@@ -186,14 +186,14 @@
 
 (s/def ::id ::ax/iri)
 
-(def component-property-spec
+(def alignments-spec
   (s/keys :req-un [::id]
           :opt-un [::weight
                    ::guards
                    ::delay]))
 
-(s/def ::componentProperties
-  (s/every component-property-spec))
+(s/def ::alignments
+  (s/every alignments-spec))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object Override
@@ -236,7 +236,7 @@
 
 (def model-map-spec
   (s/keys :opt-un [::personae
-                   ::componentProperties
+                   ::alignments
                    ::objectOverrides]))
 
 (s/def ::model
