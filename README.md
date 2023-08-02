@@ -17,7 +17,7 @@ This documentation and repository refer to the simulation engine of DATASIM, whi
 To use the core DATASIM library in your project, use the following dependency in your `deps.edn` file:
 
 ```clojure
-com.yetanalytics/datasim {:mvn/version "0.3.1"}
+com.yetanalytics/datasim {:mvn/version "0.4.0"}
 ```
 
 If you wish to install DATASIM as an application with features such as CLI or the webserver, perform the following steps:
