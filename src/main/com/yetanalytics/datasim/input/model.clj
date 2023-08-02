@@ -41,20 +41,11 @@
 
 ;; Top-level personae predicates
 
-(defn- single-default-personae?
-  "Is there only one `nil` personae vec in `model-maps`?"
+(defn- distinct-personae?
   [model-maps]
-  (let [personae-maps (map :personae model-maps)
-        personae-nils (count (filter nil? personae-maps))]
-    (= 1 personae-nils)))
-
-(defn- disjoint-personae?
-  "Is every Agent, Group, or Role only found once across all personae vecs?"
-  [model-maps]
-  (let [personae-maps (map :personae model-maps)
-        personae-vec  (reduce into [] personae-maps)]
-    (= (-> personae-vec count)
-       (-> personae-vec distinct count))))
+  (let [personaes (map :personae model-maps)]
+    (= (-> personaes count)
+       (-> personaes distinct count))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Component/Object Override Weight
@@ -230,5 +221,4 @@
 
 (s/def ::model
   (s/and (s/every model-map-spec)
-         single-default-personae?
-         disjoint-personae?))
+         distinct-personae?))
