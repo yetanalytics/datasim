@@ -62,37 +62,26 @@
    "November"  10
    "December"  11})
 
-(def second-spec (s/int-in 0 60))
+(s/def ::bound/second
+  (bound-spec (s/int-in 0 60)))
 
-(def minute-spec (s/int-in 0 60))
+(s/def ::bound/minute
+  (bound-spec (s/int-in 0 60)))
 
-(def hour-spec (s/int-in 0 24))
+(s/def ::bound/hour
+  (bound-spec (s/int-in 0 24)))
 
-(def day-of-week-spec* (s/int-in 0 7))
+(s/def ::bound/day-of-week
+  (bound-spec (named-time-spec (s/int-in 0 7) day-of-week-map)))
 
-(def day-of-week-spec (named-time-spec day-of-week-spec* day-of-week-map))
+(s/def ::bound/day-of-month
+  (bound-spec (s/int-in 0 31)))
 
-(def day-of-month-spec (s/int-in 0 31))
+(s/def ::bound/month
+  (bound-spec (named-time-spec (s/int-in 0 12) month-of-year-map)))
 
-(def month-of-year-spec* (s/int-in 0 12))
-
-(def month-of-year-spec (named-time-spec month-of-year-spec* month-of-year-map))
-
-(def year-spec pos-int?)
-
-(s/def ::bound/second (bound-spec second-spec))
-
-(s/def ::bound/minute (bound-spec minute-spec))
-
-(s/def ::bound/hour (bound-spec hour-spec))
-
-(s/def ::bound/day-of-week (bound-spec day-of-week-spec))
-
-(s/def ::bound/day-of-month (bound-spec day-of-month-spec))
-
-(s/def ::bound/month (bound-spec month-of-year-spec))
-
-(s/def ::bound/year (bound-spec year-spec))
+(s/def ::bound/year
+  (bound-spec pos-int?))
 
 (s/def ::timeBounds
   (s/every (s/keys :opt-un [::bound/second
