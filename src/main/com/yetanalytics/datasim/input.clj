@@ -24,12 +24,6 @@
 (s/def ::personae-array
   ::personae/personae-array)
 
-;; TODO: `::alignments` is the name of two separate things: the top-level
-;; alignments input vector, and the inner vector associated with each actor.
-;; Find separate names for each.
-(s/def ::alignments
-  ::alignments/alignment-vector)
-
 (s/def ::models
   ::models/models)
 
@@ -39,7 +33,6 @@
 (s/def ::datasim/input
   (s/keys :req-un [::profiles
                    ::personae-array
-                   ::alignments ; TODO: Remove
                    ::models
                    ::parameters]))
 
@@ -154,10 +147,10 @@
   (throw-unknown-key type-k))
 
 (defmethod validate :input
-  [_ {:keys [profiles personae-array alignments parameters] :as input}]
+  [_ {:keys [profiles personae-array models parameters] :as input}]
   (-> (concat (profile/validate-profiles profiles)
               (personae/validate-personae-array personae-array)
-              (alignments/validate-alignments alignments)
+              (models/validate-models models)
               (params/validate-parameters parameters)
               (validate-pattern-filters input))
       vec

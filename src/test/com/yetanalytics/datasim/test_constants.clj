@@ -39,15 +39,6 @@
 (def tc3-personae-filepath
   "dev-resources/personae/tccc_dev.json")
 
-;; Alignments
-
-(def simple-alignments-filepath
-  "dev-resources/alignments/simple.json")
-(def overrides-alignments-filepath
-  "dev-resources/alignments/simple_with_overrides.json")
-(def tc3-alignments-filepath
-  "dev-resources/alignments/tccc_dev.json")
-
 ;; Models
 
 (def simple-models-filepath
@@ -66,10 +57,6 @@
 
 (def simple-input-filepath
   "dev-resources/input/simple.json")
-(def overrides-input-filepath
-  "dev-resources/alignments/simple_with_overrides.json")
-(def mom-input-filepath
-  "dev-resources/input/mom64.json")
 
 ;; Miscellaneous
 
@@ -125,10 +112,10 @@
 (def tc3-personae
   (input/from-location :personae :json tc3-personae-filepath))
 
-;; Alignments
+;; Models
 
-(def override-alignments
-  (input/from-location :alignments :json overrides-input-filepath))
+(def overrides-models
+  (input/from-location :models :json overrides-models-filepath))
 
 ;; Combined Input
 

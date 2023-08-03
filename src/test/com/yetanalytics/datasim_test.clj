@@ -170,7 +170,7 @@
            (->> const/simple-input generate-seq (map get-actor-mbox) set))))
   (testing "Can apply object override"
     (let [ret (generate-seq (assoc const/simple-input
-                                   :alignments const/override-alignments)
+                                   :models const/overrides-models)
                             :select-agents [bob-mbox])]
       (is (every? #(or (= override-activity-1 %)
                        (= override-activity-2 %))
