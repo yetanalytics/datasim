@@ -16,7 +16,7 @@
 
 ;; TODO: Temporal properties
 (s/def ::alignments
-  (s/keys :req-un [::alignment/weights]))
+  (s/keys :opt-un [::alignment/weights]))
 
 (s/def ::obj-override/weights
   (s/map-of :statement/object ::random/weight))
@@ -25,8 +25,8 @@
   (s/coll-of :statement/object :kind vector? :min-count 1))
 
 (s/def ::object-overrides
-  (s/keys :req-un [::obj-override/weights
-                   ::obj-override/objects]))
+  (s/keys :req-un [::obj-override/objects]
+          :opt-un [::obj-override/weights]))
 
 (s/def ::model
   (s/keys :opt-un [::alignments
