@@ -93,7 +93,8 @@
                                         ::statement/statement-base-map
                                         ::statement/parsed-rules-map
                                         ::statement/actor
-                                        ::statement/alignment])
+                                        ::statement/alignments]
+                               :opt-un [::statement/object-overrides])
                :probability-seq  ::probability-seq
                :registration-seq ::registration-seq
                :seed             ::seed)

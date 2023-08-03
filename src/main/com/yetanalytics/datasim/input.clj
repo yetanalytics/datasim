@@ -4,7 +4,6 @@
             [com.yetanalytics.datasim :as-alias datasim]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.personae   :as personae]
-            [com.yetanalytics.datasim.input.alignments :as alignments]
             [com.yetanalytics.datasim.input.model      :as models]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.util.io          :as dio]))
@@ -91,10 +90,6 @@
   (->> (dio/read-json-location location)
        vec))
 
-(defmethod from-location [:alignments :json] [_ _ location] ; TODO: Remove
-  (->> (dio/read-json-location location)
-       vec))
-
 (defmethod from-location [:models :json] [_ _ location]
   (->> (dio/read-json-location location)
        vec))
@@ -161,9 +156,6 @@
 
 (defmethod validate :personae [_ personae]
   (personae/validate-personae personae))
-
-(defmethod validate :alignments [_ alignments] ; TODO: Remove
-  (alignments/validate-alignments alignments))
 
 (defmethod validate :models [_ models]
   (models/validate-models models))

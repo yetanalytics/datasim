@@ -42,8 +42,6 @@
                                         (get-stream input "profiles"))
    :personae-array (input/from-location :personae-array :json
                                         (get-stream input "personae-array"))
-   :alignments     (input/from-location :alignments :json
-                                        (get-stream input "alignments"))
    :models         (input/from-location :models :json
                                         (get-stream input "models"))
    :parameters     (input/from-location :parameters :json

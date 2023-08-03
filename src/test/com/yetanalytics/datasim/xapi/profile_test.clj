@@ -294,14 +294,15 @@
   :ret cmi5-general-pattern?)
 
 (defn walk-pattern [seed]
-  (let [{:keys [profiles alignments]} const/simple-input
-        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
-                         (reduce (fn [m {:keys [component] :as align}]
-                                   (assoc m component align))
-                                 {}))
+  (let [{:keys [profiles models]} const/simple-input
+        alignments (->> (get-in models [0 :alignments])
+                        (reduce (fn [m {:keys [id weights]}]
+                                  (assoc m id weights))
+                                {})
+                        (assoc {} :weights))
         {:keys [pattern-walk-fn]}
         (profile/profiles->profile-map profiles {} 100)]
-    (pattern-walk-fn alignment (random/seed-rng seed))))
+    (pattern-walk-fn alignments (random/seed-rng seed))))
 
 (deftest walk-pattern-test
   (testing "Walk and generate seq for a single pattern"

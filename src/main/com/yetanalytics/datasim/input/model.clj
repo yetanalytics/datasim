@@ -1,4 +1,5 @@
 (ns com.yetanalytics.datasim.input.model
+  "Model input specs and parsing."
   (:require [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.util.errors                  :as errs]
             [com.yetanalytics.datasim.input.model.alignments       :as alignments]

@@ -12,13 +12,14 @@
                 :kind #(instance? clojure.lang.LazySeq %)))
 
 (defn- gen-registration-seq [seed limit]
-  (let [{:keys [profiles alignments]} const/simple-input
-        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
-                         (reduce (fn [m {:keys [component] :as align}]
-                                   (assoc m component align))
-                                 {}))
+  (let [{:keys [profiles models]} const/simple-input
+        alignments (->> (get-in models [0 :alignments])
+                        (reduce (fn [m {:keys [id weight]}]
+                                  (assoc m id weight))
+                                {})
+                        (assoc {} :weights))
         profile-map (profile/profiles->profile-map profiles {} seed)]
-    (->> (reg/registration-seq profile-map alignment seed)
+    (->> (reg/registration-seq profile-map alignments seed)
          (take limit))))
 
 (deftest registration-seq-test

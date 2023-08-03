@@ -1,5 +1,5 @@
 (ns com.yetanalytics.datasim.test-constants
-  "Constants for input items, i.e. profiles, personae, alignments, and
+  "Constants for input items, i.e. profiles, personae, models, and
    parameters."
   (:require [com.yetanalytics.datasim.input :as input]))
 
