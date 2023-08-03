@@ -10,7 +10,7 @@
 (s/def ::agent/id ::actor/actor-ifi)
 (s/def ::agent/type #{"Agent"})
 
-(defmethod persona-spec* "Actor" [_]
+(defmethod persona-spec* "Agent" [_]
   (s/keys :req-un [::agent/id ::agent/type]))
 
 (s/def ::group/id ::actor/actor-ifi)
