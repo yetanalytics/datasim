@@ -12,7 +12,7 @@
 ;; See also: ::object-override/weight
 
 (s/def ::weight
-  (s/double-in :min -1.0 :max 1.0 :infinite? false :NaN? false))
+  (s/double-in :min 0.0 :max 1.0 :infinite? false :NaN? false))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Bounds
