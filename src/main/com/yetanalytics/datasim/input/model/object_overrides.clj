@@ -37,10 +37,9 @@
   (s/with-gen (s/and (s/conformer w/stringify-keys w/keywordize-keys)
                      no-iri-keys?
                      :statement/object) ; from xapi-schema
-    (fn [] ; TODO: More comprehensive gen
-      (sgen/return
-       {"id" "http://example.com/object-override"
-        "objectType" "Activity"}))))
+    #(->> (s/gen :statement/object)
+          (sgen/such-that no-iri-keys?)
+          (sgen/fmap w/keywordize-keys))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object Override
