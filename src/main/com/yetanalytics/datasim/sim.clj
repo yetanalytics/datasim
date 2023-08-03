@@ -4,6 +4,7 @@
             [clojure.core.async :as a]
             [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim                   :as-alias datasim]
             [com.yetanalytics.datasim.math.random       :as random]
             [com.yetanalytics.datasim.math.timeseries   :as ts]
             [com.yetanalytics.datasim.xapi.actor        :as actor]
@@ -246,7 +247,7 @@
        prob-mask-seq))
 
 (s/fdef build-skeleton
-  :args (s/cat :input :com.yetanalytics.datasim/input)
+  :args (s/cat :input ::datasim/input)
   :ret ::skeleton)
 
 (defn build-skeleton
@@ -254,7 +255,7 @@
    actor from `start` of sim. Should be run once (in a single thread).
   
    Spooky."
-  [{:keys [profiles personae-array parameters alignments]}]
+  [{:keys [profiles personae-array parameters alignments models]}]
   (let [;; Input parameters
         {:keys [start end timezone seed] ?from-stamp :from} parameters
         ;; RNG for generating the rest of the seeds
