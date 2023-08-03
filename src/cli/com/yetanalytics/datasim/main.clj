@@ -47,6 +47,7 @@
                  "Failed to validate personae."]
                 [])
     :assoc-fn conj-input]
+   ;; TODO: Remove
    ["-l" "--alignments URI" "Actor Alignments Location"
     :id :alignments
     :desc "The location of an Actor Alignments Document."
@@ -54,6 +55,14 @@
     :validate (if validate?
                 [(partial input/validate-throw :alignments)
                  "Failed to validate Alignments."]
+                [])]
+   ["-m" "--models URI" "Persona Model Location"
+    :id :models
+    :desc "The location of an Persona Model document, to describe alignments and overrides for the personae."
+    :parse-fn (partial input/from-location :models :json)
+    :validate (if validate?
+                [(partial input/validate-throw :models)
+                 "Failed to validate Models."]
                 [])]
    ["-o" "--parameters URI" "Sim Parameters Location"
     :id :parameters
@@ -139,7 +148,8 @@
                                           :profiles
                                           :personae-array
                                           :parameters
-                                          :alignments])
+                                          :alignments ; TODO: Remove
+                                          :models])
         {:keys [override-seed]} options]
     (cond-> (or (:input sim-options)
                 (dissoc sim-options :input))
