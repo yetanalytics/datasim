@@ -1,0 +1,1622 @@
+[
+  {
+    "personae": [
+      {
+        "id": "mbox::mailto:bob@example.org",
+        "type": "Agent"
+      }
+    ],
+    "alignments": [
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "http://id.tincanapi.com/verb/skipped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/seeked",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "weight": 1.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/paused",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "weight": 0.0
+      }
+    ]
+  },
+  {
+    "personae": [
+      {
+        "id": "mbox::mailto:phil@example.org",
+        "type": "Agent"
+      }
+    ],
+    "alignments": [
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "http://id.tincanapi.com/verb/skipped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/seeked",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/paused",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "weight": 0.5
+      }
+    ]
+  },
+  {
+    "personae": [
+      {
+        "id": "mbox::mailto:sally@example.org",
+        "type": "Agent"
+      }
+    ],
+    "alignments": [
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "http://id.tincanapi.com/verb/skipped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/seeked",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "weight": 1.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "weight": 1.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/paused",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "weight": 1.0
+      }
+    ]
+  },
+  {
+    "personae": [
+      {
+        "id": "mbox::mailto:steve@example.org",
+        "type": "Agent"
+      }
+    ],
+    "alignments": [
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "http://id.tincanapi.com/verb/skipped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/seeked",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "weight": 0.75
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/paused",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "weight": 0.75
+      }
+    ]
+  },
+  {
+    "personae": [
+      {
+        "id": "mbox::mailto:frede@example.org",
+        "type": "Agent"
+      }
+    ],
+    "alignments": [
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "http://id.tincanapi.com/verb/skipped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/seeked",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "weight": 0.75
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/paused",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "weight": 0.5
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "weight": 0.75
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "weight": 1.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "weight": 0.0
+      }
+    ]
+  },
+  {
+    "personae": [
+      {
+        "id": "mbox::mailto:alice@example.org",
+        "type": "Agent"
+      }
+    ],
+    "alignments": [
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-loop-routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-cat-soft",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_buddy_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "http://id.tincanapi.com/verb/skipped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/cc489c25-8215-4e2d-977d-8dbee098b521",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_self_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/415617fd-ce29-4de0-bc2b-dc8ae9c85c65",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/8e30b016-b97f-48e6-aece-98fd3664f380",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:soft_buddy_looped",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/0e23e6d4-6719-44eb-a935-12758a7d0a53",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-loop-routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/seeked",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/d609df52-21b4-42ce-a7af-8acf49007aa1",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/600b7164-32a3-41a3-9b4d-da32d22f10e0",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#intro-video-lifecycle",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:intro_video",
+        "weight": 0.25
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/f909929a-8fcf-472b-9732-8f1679d67529",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-loop-routed",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_buddy_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-self-routed-loop",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-self-routed-loop",
+        "weight": 0.5
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://w3id.org/xapi/video/verbs/paused",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#cat-pairs-single-double",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#survey-lifecycle",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-pairs-double-single",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#tourniquet-soft-cat",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:intro_video",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#paused:cat_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#seeked:soft_self_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://books.allogy.com/v1/tenant/8/media/1ea2e676-4efd-4a29-b526-973bef17377e",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#volumechange:cat_self_routed",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#played:cat_self_routed",
+        "weight": 0.25
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/templates#completed:soft_buddy_looped",
+        "weight": 0.0
+      },
+      {
+        "id": "https://xapinet.org/xapi/tc3/cuf/hemorrhage_control/v1/patterns#soft-buddy-routed-loop",
+        "weight": 0.0
+      }
+    ]
+  }
+]

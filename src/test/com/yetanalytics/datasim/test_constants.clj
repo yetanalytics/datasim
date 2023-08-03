@@ -48,6 +48,15 @@
 (def tc3-alignments-filepath
   "dev-resources/alignments/tccc_dev.json")
 
+;; Models
+
+(def simple-models-filepath
+  "dev-resources/models/simple.json")
+(def overrides-models-filepath
+  "dev-resources/models/simple_with_overrides.json")
+(def tc3-models-filepath
+  "dev-resources/models/tccc_dev.json")
+
 ;; Parameters
 
 (def simple-parameters-filepath
