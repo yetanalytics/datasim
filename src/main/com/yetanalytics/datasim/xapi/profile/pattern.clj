@@ -4,7 +4,7 @@
             [clojure.zip        :as z]
             [com.yetanalytics.pan.objects.template     :as template]
             [com.yetanalytics.pan.objects.pattern      :as pattern]
-            [com.yetanalytics.datasim.input.alignments :as alignment]
+            [com.yetanalytics.datasim.model            :as model]
             [com.yetanalytics.datasim.math.random      :as random]
             [com.yetanalytics.datasim.xapi.profile     :as-alias profile]))
 
@@ -18,13 +18,13 @@
 (s/def ::pattern-ancestors
   (s/every ::pattern/pattern))
 
-;; `pattern-walk-fn` has the arglist `[alignment rng {:keys [repeat-max]}]`
+;; `pattern-walk-fn` has the arglist `[alignments rng {:keys [repeat-max]}]`
 ;; and returns a template w/ `:pattern-ancestors` metadata
 (s/def ::pattern-walk-fn
   (s/fspec
-   :args (s/cat :alignment ::alignment/alignment
-                :rng ::random/rng
-                :kwargs (s/keys* :opt-un [::repeat-max]))
+   :args (s/cat :alignments ::model/alignments
+                :rng        ::random/rng
+                :kwargs     (s/keys* :opt-un [::repeat-max]))
    :ret (s/every (s/and ::template/template
                         (s/conformer meta)
                         (s/keys :req-un [::pattern-ancestors])))))
@@ -38,9 +38,9 @@
    `type-iri-map`. A special `::root` sentinel Pattern is created as an
    alternates Pattern of all the primary Patterns in the profiles.
    The zipper can then be walked; traversal will be done in a deterministic,
-   pseudorandom fashion, in which `rng` and `alignment` is used to choose
+   pseudorandom fashion, in which `rng` and `alignments` is used to choose
    the children of each node in the zipper."
-  [type-iri-map alignment rng repeat-max]
+  [type-iri-map {:keys [weights] :as _alignments} rng repeat-max]
   (let [temp-iri-map    (get type-iri-map "StatementTemplate")
         pat-iri-map     (get type-iri-map "Pattern")
         primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
@@ -56,9 +56,9 @@
                  (get pat-iri-map* node-id)]
              (cond
                sequence   sequence
-               alternates [(random/choose rng alignment alternates)]
+               alternates [(random/choose rng weights alternates)]
                optional   (or (some->> [nil optional]
-                                       (random/choose rng alignment)
+                                       (random/choose rng weights)
                                        vector)
                               [])
                oneOrMore  (repeat (inc (random/rand-int rng repeat-max))
@@ -100,11 +100,11 @@
   :ret ::pattern-walk-fn)
 
 (defn create-pattern-walk-fn
-  "Return a function that, when called with the args `alignment rng
+  "Return a function that, when called with the args `alignments rng
    & {:keys [repeat-max]}`, returns a lazy sequence of Statement Templates
    that have `:pattern-ancestors` metadata."
   [type-iri-map]
-  (fn [alignment rng & {:keys [repeat-max]
+  (fn [alignments rng & {:keys [repeat-max]
                         :or {repeat-max 5}}]
     (walk-pattern-zipper
-     (pattern-zipper type-iri-map alignment rng repeat-max))))
+     (pattern-zipper type-iri-map alignments rng repeat-max))))
