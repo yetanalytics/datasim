@@ -209,7 +209,7 @@
 
 (s/fdef choose
   :args (s/cat :rng     ::rng
-               :weights (s/map-of any? (s/keys :req-un [::weight]))
+               :weights (s/map-of any? ::weight)
                :coll    (s/every any? :min-count 1)
                :options (s/keys* :opt-un [::sd])))
 
@@ -219,8 +219,8 @@
   [rng weights coll & {:keys [sd] :or {sd 0.25}}]
   (validate-not-empty coll)
   (let [rand-gauss
-        (fn [x]
-          (let [weight (get-in weights [x :weight] 0.0)]
+        (fn [k]
+          (let [weight (get weights k 0.0)]
             (if (<= weight -1.0)
               -1.0
               (rand-gaussian rng (* sd weight) sd))))]
@@ -228,7 +228,7 @@
 
 (s/fdef choose-map
   :args (s/cat :rng     ::rng
-               :weights (s/map-of any? (s/keys :req-un [::weight]))
+               :weights (s/map-of any? ::weight)
                :coll    (s/map-of any? any? :min-count 1)
                :options (s/keys* :opt-un [::sd])))
 
