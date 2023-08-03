@@ -109,7 +109,8 @@
 
 (s/def ::delay/sd double-spec)
 
-(s/def ::delay/unit #{"ms" "second" "minute" "hour" "day" "week" "month"})
+(s/def ::delay/unit
+  #{"millisecond" "second" "minute" "hour" "day" "week" "month"})
 
 (defn- ordered-delay-values?
   [{:keys [min mean max]}]
