@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
             [clojure.walk           :as w]
+            [com.yetanalytics.datasim.math.random :as random]
             ;; For `:statement/object`
             [xapi-schema.spec]))
 
@@ -11,8 +12,7 @@
 
 ;; See also: ::alignments/weight
 
-(s/def ::weight
-  (s/double-in :min 0.0 :max 1.0 :infinite? false :NaN? false))
+(s/def ::weight ::random/weight)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object

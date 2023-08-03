@@ -2,6 +2,7 @@
   (:require [clojure.set        :as cset]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.input.model.alignments.bound :as-alias bound]
             [com.yetanalytics.datasim.input.model.alignments.delay :as-alias delay]))
 
@@ -9,10 +10,9 @@
 ;; Weight
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; See also: ::object-override/weight
+;; See also: ::object-overrides/weight
 
-(s/def ::weight
-  (s/double-in :min 0.0 :max 1.0 :infinite? false :NaN? false))
+(s/def ::weight ::random/weight)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Bounds
