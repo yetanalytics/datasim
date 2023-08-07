@@ -222,10 +222,9 @@
    Note that a weight of 0 denotes that the element can never be chosen."
   [rng weights coll]
   (validate-not-empty coll)
-  (let [zero-or-nil? (fn [w] (or (nil? w) (zero? w)))
-        get-weight   (fn [x] (get weights x))
-        gen-number   (fn [x] (rand rng (get weights x default-weight)))]
-    (if (->> coll (map get-weight) (every? zero-or-nil?))
+  (let [get-weight (fn [x] (get weights x default-weight))
+        gen-number (fn [x] (rand rng (get-weight x)))]
+    (if (->> coll (map get-weight) (every? zero?))
       (rand-nth rng coll)
       (apply max-key gen-number coll))))
 
