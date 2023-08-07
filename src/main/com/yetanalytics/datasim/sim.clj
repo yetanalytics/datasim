@@ -302,10 +302,6 @@
                                                          actor-group-id
                                                          actor-role)
                   actor-alignment (:alignments actor-model-map)
-                  #_actor-alignment #_(get-actor-alignments alignments
-                                                            actor-id
-                                                            actor-group-id
-                                                            actor-role)
                   ;; Actor probability seq
                   actor-arma-seed (random/rand-unbound-int sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
