@@ -1,5 +1,6 @@
 (ns com.yetanalytics.datasim-test
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.math       :as math]
             [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
@@ -55,7 +56,7 @@
 (def referential-completed-session-id
   "https://xapinet.org/xapi/yet/referential#completed_session")
 
-(def override-activity-1
+(def override-1
   {"objectType" "Activity"
    "id"         "https://www.whatever.com/activities#course2"
    "definition"
@@ -63,7 +64,7 @@
     "description" {"en-US" "Course Description 2"}
     "type"        "http://adlnet.gov/expapi/activities/course"}})
 
-(def override-activity-2
+(def override-2
   {"objectType" "Agent"
    "name"       "Owen Overrider"
    "mbox"       "mailto:owoverrider@example.com"})
@@ -74,6 +75,7 @@
 (def no-concepts-profile-input
   (assoc const/simple-input :profiles [const/no-concept-profile]))
 
+(get-in const/simple-input [:parameters :end])
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -118,63 +120,143 @@
   (testing "Returns statements even without concepts"
     (is (s/valid? (s/every ::xs/statement) (generate-seq no-concepts-profile-input))))
   (testing "Respects `max` param"
-    (let [ret (generate-seq (assoc-in const/simple-input [:parameters :max] 3))]
-      (is (s/valid? (s/every ::xs/statement) ret))
-      (is (= 3 (count ret)))))
+    (let [input  (assoc-in const/simple-input [:parameters :max] 3)
+          result (generate-seq input)]
+      (is (s/valid? (s/every ::xs/statement) result))
+      (is (= 3 (count result)))))
   (testing "Respects `from` param"
     (let [[s0 s1 & _] (generate-seq const/simple-input)
-          [s1' & _]   (generate-seq (assoc-in const/simple-input
-                                              [:parameters :from]
-                                              (get-timestamp s0)))]
+          from-input  (assoc-in const/simple-input
+                                [:parameters :from]
+                                (get-timestamp s0))
+          [s1' & _]   (generate-seq from-input)]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
   (testing "Respects `gen-profiles` param (w/ multiple profiles)"
-    (is (= [[{"id" cmi5-version-id}]
-            [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
-             {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
-           (-> double-profile-input
-               (update :parameters
-                       assoc
-                       :gen-profiles [cmi5-id])
-               generate-seq
-               (->> (map get-context-category-activities))
-               distinct))))
+    (let [input    (update double-profile-input
+                           :parameters
+                           assoc
+                           :gen-profiles [cmi5-id])
+          result   (generate-seq input)
+          cat-acts (map get-context-category-activities result)]
+      (is (= [[{"id" cmi5-version-id}]
+              [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
+               {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
+             (distinct cat-acts)))))
   (testing "Respects `gen-patterns` param (w/ multiple profiles)"
-    (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
-           (-> double-profile-input
-               (update :parameters
-                       assoc
-                       :gen-patterns [tla-completed-session-id])
-               generate-seq
-               (->> (map get-context-category-activities))
-               distinct))))
+    (let [input    (update double-profile-input
+                           :parameters
+                           assoc
+                           :gen-patterns [tla-completed-session-id])
+          result   (generate-seq input)
+          cat-acts (map get-context-category-activities result)]
+      (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
+             (distinct cat-acts)))))
   (testing "Allows referential use of non-gen profiles"
-    (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
-           (-> double-profile-input
-               (update :profiles conj const/referential-profile)
-               (update :parameters
-                       assoc
-                       :gen-patterns [referential-completed-session-id])
-               generate-seq
-               (->> (map get-context-category-activities))
-               distinct))))
+    (let [input    (-> double-profile-input
+                       (update :profiles conj const/referential-profile)
+                       (update :parameters
+                               assoc
+                               :gen-patterns [referential-completed-session-id]))
+          result   (generate-seq input)
+          cat-acts (map get-context-category-activities result)]
+      (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
+             (distinct cat-acts)))))
   (testing "Respects agent selection"
-    (let [ret (generate-seq (assoc-in const/simple-input [:parameters :max] 3)
-                            ;; specify we only want the given agent(s)
-                            :select-agents [bob-mbox])]
-      (is (every?
-           #(= bob-mailto (get-actor-mbox %))
-           ret))))
+    (let [input  (assoc-in const/simple-input [:parameters :max] 3)
+          result (generate-seq input
+                               ;; specify we only want the given agent(s)
+                               :select-agents [bob-mbox])]
+      (is (every? #(= bob-mailto (get-actor-mbox %))
+                  result))))
   (testing "Only actors in personae are generated"
-    (is (= #{alice-mailto bob-mailto fred-mailto}
-           (->> const/simple-input generate-seq (map get-actor-mbox) set))))
-  (testing "Can apply object override"
-    (let [ret (generate-seq (assoc const/simple-input
-                                   :models const/overrides-models)
-                            :select-agents [bob-mbox])]
-      (is (every? #(or (= override-activity-1 %)
-                       (= override-activity-2 %))
-                  (map get-object ret)))))
+    (let [result (generate-seq const/simple-input)]
+      (is (= #{alice-mailto bob-mailto fred-mailto}
+             (set (map get-actor-mbox result))))))
+  (testing "Respects pattern weights"
+    (let [alignments [{:id     "https://w3id.org/xapi/cmi5#waivedsession"
+                       :weight 1.0}
+                      {:id     "https://w3id.org/xapi/cmi5#noresultsession"
+                       :weight 0.0}
+                      {:id     "https://w3id.org/xapi/cmi5#failedsession"
+                       :weight 0.0}
+                      {:id     "https://w3id.org/xapi/cmi5#completionnosuccesssession"
+                       :weight 0.0}
+                      {:id     "https://w3id.org/xapi/cmi5#completionmaybefailedsession"
+                       :weight 0.0}
+                      {:id     "https://w3id.org/xapi/cmi5#passedsession"
+                       :weight 0.0}
+                      {:id     "https://w3id.org/xapi/cmi5#completionpassedsession"
+                       :weight 0.0}]
+          input      (update-in const/simple-input
+                                [:models 0 :alignments]
+                                into
+                                alignments)
+          result     (generate-seq input :select-agents [bob-mbox])
+          verbs      (map #(get-in % ["verb" "id"]) result)]
+      (is (every? #{"http://adlnet.gov/expapi/verbs/satisfied"
+                    "http://adlnet.gov/expapi/verbs/waived"}
+                  verbs))))
+  (testing "Respects activity weights"
+    (let [alignments [{:id "https://w3id.org/xapi/cmi5/activities/block"
+                       :weight 1.0}
+                      {:id "https://w3id.org/xapi/cmi5/activities/course"
+                       :weight 0.0}
+                      {:id "https://w3id.org/xapi/cmi5/activitytype/block"
+                       :weight 0.0}
+                      {:id "https://w3id.org/xapi/cmi5/activitytype/course"
+                       :weight 0.0}]
+          input      (update-in const/simple-input
+                                [:models 0 :alignments]
+                                into
+                                alignments)
+          result     (generate-seq input :select-agents [bob-mbox])
+          act-types  (->> result
+                            ;; "satisfied" statements define object activity
+                            ;; via rules, hence we need to exclude them
+                          (filter (fn [{{verb-id "id"} "verb"}]
+                                    (not= verb-id "http://adlnet.gov/expapi/verbs/satisfied")))
+                          (map (fn [stmt]
+                                 (get-in stmt ["object" "definition" "type"]))))]
+      (is (every? #{"https://w3id.org/xapi/cmi5/activities/block"}
+                  act-types))))
+  (testing "Can apply object override and respect weights"
+    (let [input     (assoc const/simple-input :models const/overrides-models)
+          result    (generate-seq input
+                                  :select-agents [bob-mbox])
+          objects   (map get-object result)
+          obj-count (count objects)
+          obj-freq  (frequencies objects)
+          ;; See `datasim.math.random` for math details
+          mean-1*   (- 1 (/ 0.3 (* 2 0.7)))
+          mean-2*   (- 1 mean-1*)
+          mean-1    (* obj-count mean-1*)
+          mean-2    (* obj-count mean-2*)
+          sd        (math/sqrt (* obj-count mean-1* mean-2*))]
+      (is (every? #(or (= override-1 %)
+                       (= override-2 %))
+                  objects))
+      ;; 3 standard devs from mean => 1/370 chance of failure
+      ;; (not like it matters here since gen is deterministic)
+      (is (< (- mean-1 (* 3 sd))
+             (get obj-freq override-1)
+             (+ mean-1 (* 3 sd))))
+      (is (< (- mean-2 (* 3 sd))
+             (get obj-freq override-2)
+             (+ mean-2 (* 3 sd))))))
+  (testing "Can apply object override and respect weights - only activity"
+    (let [input     (-> (assoc const/simple-input
+                               :models const/overrides-models)
+                        (update-in [:models 0 :objectOverrides 0]
+                                   assoc
+                                   :weight 1.0)
+                        (update-in [:models 0 :objectOverrides 1]
+                                   assoc
+                                   :weight 0.0))
+          ret       (generate-seq input
+                                  :select-agents [bob-mbox])
+          objects   (map get-object ret)]
+      (is (every? #(= override-1 %) objects))))
   (testing "Can apply multiple personae"
     (let [ret (generate-seq (update const/simple-input
                                     :personae-array conj const/tc3-personae))
