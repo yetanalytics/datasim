@@ -104,12 +104,12 @@
     {"id" "http://example.org/activity-with-type"
      "definition" {"type" "http://example.org/activity-type-1"}}}
    "http://example.org/activity-type-2"
-   {"https://example.org/activity/1550503926"
-    {"id"         "https://example.org/activity/1550503926"
+   {"https://example.org/activity/418707894"
+    {"id"         "https://example.org/activity/418707894"
      "definition" {"type" "http://example.org/activity-type-2"}}}
    "http://example.org/activity-type-3"
-   {"https://example.org/activity/418707894"
-    {"id" "https://example.org/activity/418707894"
+   {"https://example.org/activity/1432714272"
+    {"id" "https://example.org/activity/1432714272"
      "definition" {"type" "http://example.org/activity-type-3"}}}})
 
 (deftest activity-map-test
@@ -154,7 +154,7 @@
             :presence :included
             :path     ["object"]
             :spec     :xapi-schema.spec/activity
-            :valueset #{{"id"         "https://example.org/activity/1550503926"
+            :valueset #{{"id"         "https://example.org/activity/418707894"
                          "definition" {"type" "http://example.org/object-activity-type"}}}}]
           "http://example.org/template-object-statement-ref"
           [{:location [[["object"]]]
