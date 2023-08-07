@@ -42,56 +42,90 @@ Note that by default, any patterns with a `primary` property set to `true` in th
 
 Predefined xAPI Actors (upon whom the simulation will be based) are required to run a DATASIM simulation. This takes the form of a JSON array of xAPI Groups, each object containing an array of conformant Actor members, an example of which is below:
 
+```json
     [
-      {"name": "trainees1",
-       "objectType": "Group",
-       "member": [{"name": "Bob Fakename",
-                   "mbox": "mailto:bob@example.org"},
-                  {"name": "Alice Faux",
-                   "mbox": "mailto:alice@example.org"}},
-      {"name": "trainees2"
-       "objectType": "Group",
-       "member": [{"name": "Fred Ersatz",
-                   "mbox": "mailto:fred@example.org"}]}
+        {
+            "name": "trainees1",
+            "objectType": "Group",
+            "member": [
+                {
+                    "name": "Bob Fakename",
+                    "mbox": "mailto:bob@example.org"
+                },
+                {
+                    "name": "Alice Faux",
+                    "mbox": "mailto:alice@example.org"
+                }
+            ]
+        },
+        {
+            "name": "trainees2",
+            "objectType": "Group",
+            "member": [
+                {
+                    "name": "Fred Ersatz",
+                    "mbox": "mailto:fred@example.org"
+                }
+            ]
+        }
     ]
+```
 
-#### Alignments
+#### Models
 
-An alignment represents a way to influence the simulation by explicitly weighting an Actor's relationship to a part of the xAPI Profile. Each actor can have alignments to multiple parts of the Profile, and the weight system ranges from -1 to 1 (with 1 being an extremely high propensity for interaction in the simulation and -1 indicating that zero statements should be created for that Actor and that Profile Component). During the simulation these weights factor in but do not completely predict the outcome as there is still randomness in Actor behavior. The records are an array of objects where each object is a combination of Actor (id in IFI format), type ("Agent", "Group", or "Role") and an array of IRIs to align to, and weights for each.
+Models represents user-provided influences on xAPI simulation. Each model is a JSON object that consists of the following properties:
+- `personae`: An array of Actors, Groups, or Role objects that define who the model applies to. If this is missing, then the model serves as the default model for the simulation. Each `personae` array must be unique, though Actors, Groups, or Roles may repeat across different models.
+- `alignments`: An array of JSON objects containing component `id` and `weight` values that weight that component's relationship to others in the Profiles. Patterns and Statement Templates in an `alternates` Pattern are more likely to be chosen the higher each component's weight is, and those in an `optional` Pattern are more likely to be included Likewise, Verbs and Activity Types with higher weights are more likely to be chosen against other Concepts of the same type (if they are not explicitly set by Statement Templates). Valid `weight` values range from 0 to 1, where 0 denotes that that component will not be chosen (unless all other weights are also 0); if not present, a default weight of 0.5 will be used.
+- `objectOverrides`: An array of JSON objects containing (xAPI) `objects` and `weights`. If present, these objects will overwrite any that would have been set by the Profile. Like with `alignments`, the higher the weight value, the more likely the object will be chosen.
 
+An example of a model array with valid `personae` and `alignments` is shown below:
+
+```json
     [
       {
-        "id": "mbox::mailto:bob@example.org",
-        "type": "Agent",
+        "personae": [
+            {
+                "id": "mbox::mailto:bob@example.org",
+                "type": "Agent"
+            }
+        ],
         "alignments": [
-          {
-            "component": "https://example.org/course/1440130447",
-            "weight": -1.0
-          }
+            {
+                "component": "https://example.org/verb/did",
+                "weight": 0.8
+            }
         ]
       }
     ]
+```
 
 
 #### Simulation Parameters
 
 The simulation parameters input covers the details of the simulation not covered by other pieces. This includes Start Time, End Time, Timezone, Max (number of statements) and *seed*. When run, the simulation will create a time sequence from the Start Time to the End Time and generated xAPI statements will have corresponding dates and times. The *seed* is important as it controls the inputs to all random value generation and corresponds to repeatability. A simulation run with the same inputs and the same seed will deterministically create the same xAPI Statements, but changing the seed value will create an entirely different simulation. An example of simulation parameters is below:
 
-    {"start": "2019-11-18T11:38:39.219768Z",
-     "end": "2019-11-19T11:38:39.219768Z",
-     "max": 200,
-     "timezone": "America/New_York",
-     "seed": 42}
-
+```json
+    {
+        "start": "2019-11-18T11:38:39.219768Z",
+        "end": "2019-11-19T11:38:39.219768Z",
+        "max": 200,
+        "timezone": "America/New_York",
+        "seed": 42
+    }
+```
 
 #### (Alternatively) Simulation Specification
 
 The simulation specification is a single object containing of all of the above. This is exported during a simulation run and can serve as the sole input to another simulation.
 
-    {"profiles":[ ... ],
-     "parameters": ...,
-     "personae-array": [ ... ],
-     "alignments": ... }
+```json
+    {
+        "profiles": [ ... ],
+        "parameters": ...,
+        "personae-array": [ ... ],
+        "models": [...]
+    }
+```
 
 ### System Requirements
 
@@ -121,7 +155,7 @@ With no commands or `--help` it will give you the list of parameters:
 
     -p, --profile URI              The location of an xAPI profile, can be used multiple times.
     -a, --actor-personae URI       The location of an Actor Personae document indicating the actors in the sim, can be used multiple times.
-    -l, --alignments URI           The location of an Actor Alignments Document.
+    -m, --models URI               The location of an Personae Model Document.
     -o, --parameters URI     {...} The location of a Sim Parameters Document.
     -i, --input URI                The location of a JSON file containing a combined simulation input spec.
         --seed SEED                An integer seed to override the one in the input spec. Use -1 for random.
@@ -141,7 +175,7 @@ For a simple run, we will first create the simulation specification by combining
 
     bin/run.sh -p [profile json file] \
                -a [actors json filename] \
-               -l [alignments json filename] \
+               -m [models json filename] \
                -o [sim params json filename] \
                validate-input [desired output filename]
 
@@ -226,7 +260,7 @@ This endpoint takes a set of simulation inputs, returns a file with the output d
 
     personae-array: Array of JSON Objects containing Actors formatted as above
 
-    alignments: JSON Object containing Alignments formatted as above
+    models: Array of JSON Objects containing Models formatted as above
 
     parameters: Simulation Parameters JSON Object
 
