@@ -51,7 +51,15 @@
   "Create a seeded deterministic, pseudorandom RNG, in which two RNGs created
    using the same value of `seed` will output the same results."
   ^Random [^Long seed]
-  (Random. seed))
+  ;; We need this dummy `.nextDouble` call in order to mitigate the
+  ;; effects of potentially bad seeds. In particular, similar seeds
+  ;; (e.g. `(range 1000)` as a seed seq) will result in similar first
+  ;; values being generated; `.nextDouble` will "randomize" the seed
+  ;; stored in the RNG instance.
+  ;; See: https://stackoverflow.com/questions/27760450/first-random-number-after-setseed-in-java-always-similar
+  (let [^Random rng (Random. seed)]
+    (.nextDouble rng)
+    rng))
 
 ;; Random Number Generation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
