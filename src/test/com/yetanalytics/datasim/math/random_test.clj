@@ -24,9 +24,6 @@
                   check-passed]} (stest/summarize-results results)]
       (is (= total check-passed)))))
 
-(defn- new-seed []
-  (.getEpochSecond (java.time.Instant/now)))
-
 (def choose-total 4000)
 
 (def choose-coll [:foo :bar :baz :qux])
@@ -47,7 +44,7 @@
         sd#       (math/sqrt (* choose-total prob# (- 1 prob#)))
         lo-bound# (- mean# (* sd-limit sd#))
         hi-bound# (+ mean# (* sd-limit sd#))]
-    `(let [~'the-rng   (r/seed-rng (new-seed))
+    `(let [~'the-rng   (r/rng)
            ~'choose-fn (fn [] (r/choose ~'the-rng ~weights ~choose-coll))
            ~'results   (repeatedly ~choose-total ~'choose-fn)
            ~'freq-map  (frequencies ~'results)]
@@ -59,6 +56,7 @@
 (deftest choose-test
   (testing "choose function: equal weights"
     (test-equal-choose {})
+    (test-equal-choose {:unrelated-key-1 0.2 :unrelated-key 0.8})
     (test-equal-choose {:foo 0.5 :baz 0.5})
     (test-equal-choose {:foo 0.0 :bar 0.0 :baz 0.0 :qux 0.0})
     (test-equal-choose {:foo 0.2 :bar 0.2 :baz 0.2 :qux 0.2})
@@ -66,7 +64,7 @@
     (test-equal-choose {:foo 1.0 :bar 1.0 :baz 1.0 :qux 1.0}))
   (testing "choose function: only one non-zero weight"
     (let [weights   {:foo 0 :bar 0 :baz 1 :qux 0}
-          the-rng   (r/seed-rng (new-seed))
+          the-rng   (r/rng)
           choose-fn (fn [] (r/choose the-rng weights choose-coll))
           results   (repeatedly choose-total choose-fn)
           freq-map  (frequencies results)]
@@ -82,28 +80,29 @@
   ;; (-> (/ 1 (* t1 t2))
   ;;     (integrate 0 (max x1 t2) dx2)
   ;;     (integrate 0 t1 dx1))
+  ;; = (- 1 (/ t2 (* 2 t1))
   (testing "choose function: two different non-zero weights"
-    (let [weights  {:foo 0 :bar 0 :baz 1 :qux 0.4}
-          prob-1   0.8
-          prob-2   0.2
-          mean-1   (* choose-total prob-1)
-          mean-2   (* choose-total prob-2)
-          sd       (math/sqrt (* choose-total prob-1 prob-2))
-          lo-1     (- mean-1 (* sd-limit sd))
-          lo-2     (- mean-2 (* sd-limit sd))
-          hi-1     (+ mean-1 (* sd-limit sd))
-          hi-2     (+ mean-2 (* sd-limit sd))
-          the-rng  (r/seed-rng (new-seed))
+    (let [weights   {:foo 0 :bar 0 :baz 1 :qux 0.4}
+          prob-1    0.8
+          prob-2    0.2
+          mean-1    (* choose-total prob-1)
+          mean-2    (* choose-total prob-2)
+          sd        (math/sqrt (* choose-total prob-1 prob-2))
+          lo-1      (- mean-1 (* sd-limit sd))
+          lo-2      (- mean-2 (* sd-limit sd))
+          hi-1      (+ mean-1 (* sd-limit sd))
+          hi-2      (+ mean-2 (* sd-limit sd))
+          the-rng   (r/rng)
           choose-fn (fn [] (r/choose the-rng weights choose-coll))
-          results  (repeatedly choose-total choose-fn)
-          freq-map (frequencies results)]
+          results   (repeatedly choose-total choose-fn)
+          freq-map  (frequencies results)]
       (is (< lo-1 (:baz freq-map) hi-1))
       (is (< lo-2 (:qux freq-map) hi-2))
       (is (nil? (:foo freq-map)))
       (is (nil? (:bar freq-map)))))
   (testing "choose-map function works just like choose"
     (let [weights       {:foo 0.2 :bar 0.4 :baz 0.6 :qux 0.8}
-          seed          (new-seed)
+          seed          (r/rand-unbound-int (r/rng))
           rng-1         (r/seed-rng seed)
           rng-2         (r/seed-rng seed)
           choose-fn     (fn [] (r/choose rng-1 weights choose-coll))
