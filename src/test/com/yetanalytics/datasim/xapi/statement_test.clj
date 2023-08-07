@@ -1146,3 +1146,170 @@
              (repeatedly 100)
              (apply distinct?)
              not))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Weighted Generation Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- gen-weighted-statements
+  [weights]
+  (let [arguments*
+        (-> arguments
+            (assoc :template {:id       "https://template-1"
+                              :type     "StatementTemplate"
+                              :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
+            (assoc-in [:alignments :weights] weights))
+        init-rng
+        (random/seed-rng 1000)]
+    (->> (repeatedly 1000 #(random/rand-unbound-int init-rng))
+         (map (partial assoc arguments* :seed))
+         (map generate-statement))))
+
+(deftest generate-weighted-statement-test
+  (testing "Verb weights"
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 0.0
+                      "https://w3id.org/xapi/adl/verbs/waived"    0.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      (is (= 1000 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived"))))
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 1.0
+                      "https://w3id.org/xapi/adl/verbs/waived"    0.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      ;; The exact counts should be reasonably close to the mean of 500;
+      ;; they are deterministic given the same sequence of seeds.
+      (is (= 483 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (= 517 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived"))))
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 1.0
+                      "https://w3id.org/xapi/adl/verbs/waived"    1.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      ;; The exact counts should be reasonably close to the mean of 333;
+      ;; they are deterministic given the same sequence of seeds.
+      (is (= 337 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (= 343 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (= 320 (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived"))))
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 0.4
+                      "https://w3id.org/xapi/adl/verbs/waived"    0.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      ;; See `datasim.math.random-test` for details on how the expected means
+      ;; (800 and 200, respectively) are computed.
+      (is (= 793 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (= 207 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived")))))
+
+  (testing "Activity Type weights"
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 1000 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 520 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 480 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 353 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 328 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (= 319 (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 1.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 247 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 251 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (= 231 (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (= 271 (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   0.4
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 803 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 197 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))))
+
+(defn- gen-weighted-override-statements
+  [weights]
+  (let [arguments*
+        (-> arguments
+            (assoc :template {:id       "https://template-1"
+                              :type     "StatementTemplate"
+                              :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
+            (assoc :object-overrides {:objects (vec (keys weights))
+                                      :weights weights}))
+        init-rng
+        (random/seed-rng 1000)]
+    (->> (repeatedly 1000 #(random/rand-unbound-int init-rng))
+         (map (partial assoc arguments* :seed))
+         (map generate-statement))))
+
+(deftest generated-weighted-statement-override-test
+  (testing "Weighted Overrides"
+    (let [object-1 {:objectType "Activity"
+                    :id         "https://www.whatever.com/activities#course1"
+                    :definition {:name        {:en-US "Course 1"}
+                                 :description {:en-US "Course Description 1"}
+                                 :type        "http://adlnet.gov/expapi/activities/course"}}
+          object-2 {:objectType "Agent"
+                    :name       "My Override"
+                    :mbox       "mailto:myoverride@example.com"}]
+      (let [weights      {object-1 1.0
+                          object-2 0.0}
+            statements   (gen-weighted-override-statements weights)
+            objects      (map #(get % "object") statements)
+            object-freqs (frequencies objects)]
+        (is (= 1000 (get object-freqs (w/stringify-keys object-1))))
+        (is (nil? (get object-freqs (w/stringify-keys object-2)))))
+      (let [weights      {object-1 1.0
+                          object-2 1.0}
+            statements   (gen-weighted-override-statements weights)
+            objects      (map #(get % "object") statements)
+            object-freqs (frequencies objects)]
+        (is (= 486 (get object-freqs (w/stringify-keys object-1))))
+        (is (= 514 (get object-freqs (w/stringify-keys object-2)))))
+      (let [weights      {object-1 1.0
+                          object-2 0.4}
+            statements   (gen-weighted-override-statements weights)
+            objects      (map #(get % "object") statements)
+            object-freqs (frequencies objects)]
+        (is (= 797 (get object-freqs (w/stringify-keys object-1))))
+        (is (= 203 (get object-freqs (w/stringify-keys object-2))))))))
