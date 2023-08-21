@@ -14,6 +14,7 @@
                       r/rand-unbound-int
                       r/rand-gaussian
                       r/rand-boolean
+                      r/rand-exp
                       r/rand-uuid
                       r/rand-nth
                       r/shuffle
