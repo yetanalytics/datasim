@@ -303,3 +303,17 @@
      ;; Day-night cycle
      :minute-day-night-seq mdn-seq
      :hour-day-night-seq   hdn-seq}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Poisson Sequences
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; See:  McQuighan, P. (2010) "Simulating the Poisson Process." University of
+;; Chicago. https://www.math.uchicago.edu/~may/VIGRE/VIGRE2010/REUPapers/Mcquighan.pdf
+
+(defn poisson-seq
+  "Generate an infinite sequence of millisecond times in which each time
+   event occurs along a Poisson distribution, where `lambda` is the expected
+   amount of occurences of the event in one millisecond."
+  [rng lambda]
+  (iterate #(+ (random/rand-exp rng lambda) %) 0))
