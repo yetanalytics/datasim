@@ -104,12 +104,12 @@
     {"id" "http://example.org/activity-with-type"
      "definition" {"type" "http://example.org/activity-type-1"}}}
    "http://example.org/activity-type-2"
-   {"https://example.org/activity/1550503926"
-    {"id"         "https://example.org/activity/1550503926"
+   {"https://example.org/activity/418707894"
+    {"id"         "https://example.org/activity/418707894"
      "definition" {"type" "http://example.org/activity-type-2"}}}
    "http://example.org/activity-type-3"
-   {"https://example.org/activity/418707894"
-    {"id" "https://example.org/activity/418707894"
+   {"https://example.org/activity/1432714272"
+    {"id" "https://example.org/activity/1432714272"
      "definition" {"type" "http://example.org/activity-type-3"}}}})
 
 (deftest activity-map-test
@@ -154,7 +154,7 @@
             :presence :included
             :path     ["object"]
             :spec     :xapi-schema.spec/activity
-            :valueset #{{"id"         "https://example.org/activity/1550503926"
+            :valueset #{{"id"         "https://example.org/activity/418707894"
                          "definition" {"type" "http://example.org/object-activity-type"}}}}]
           "http://example.org/template-object-statement-ref"
           [{:location [[["object"]]]
@@ -178,8 +178,9 @@
 
 ;; TODO: Add test for max-repeats (for oneOrMore and zeroOrMore)
 
-(defn is-cmi5-id? [verb stmt] (= (str "https://w3id.org/xapi/cmi5#" verb)
-                                 (:id stmt)))
+(defn cmi5-iri [verb] (str "https://w3id.org/xapi/cmi5#" verb))
+
+(defn is-cmi5-id? [verb stmt] (= (cmi5-iri verb) (:id stmt)))
 
 (def cmi5-launched? (partial is-cmi5-id? "launched"))
 (def cmi5-initialized? (partial is-cmi5-id? "initialized"))
@@ -289,25 +290,95 @@
   (s/cat :satisfieds cmi5-satisfieds?
          :typical-sessions cmi5-typical-sessions?))
 
+(defn walk-pattern* [profiles alignments seed]
+  (let [{:keys [pattern-walk-fn]}
+        (profile/profiles->profile-map profiles {} 100)]
+    (pattern-walk-fn alignments (random/seed-rng seed))))
+
 (s/fdef walk-pattern
   :args (s/cat :seed int?)
   :ret cmi5-general-pattern?)
 
 (defn walk-pattern [seed]
-  (let [{:keys [profiles alignments]} const/simple-input
-        alignment   (->> (get-in alignments [:alignment-vector 0 :alignments])
-                         (reduce (fn [m {:keys [component] :as align}]
-                                   (assoc m component align))
-                                 {}))
-        {:keys [pattern-walk-fn]}
-        (profile/profiles->profile-map profiles {} 100)]
-    (pattern-walk-fn alignment (random/seed-rng seed))))
+  (let [{:keys [profiles models]} const/simple-input
+        alignments (->> (get-in models [0 :alignments])
+                        (reduce (fn [m {:keys [id weights]}]
+                                  (assoc m id weights))
+                                {})
+                        (assoc {} :weights))]
+    (walk-pattern* profiles alignments seed)))
 
 (deftest walk-pattern-test
   (testing "Walk and generate seq for a single pattern"
     (let [{total :total check-passed :check-passed}
           (stest/summarize-results (stest/check `walk-pattern))]
       (is (= total check-passed)))))
+
+(deftest walk-weighted-pattern-test
+  (testing "Remove abandoned template from consideration"
+    (let [{:keys [profiles]} const/simple-input
+          weights (-> {"terminated" 1.0
+                       "abandoned"  0.0}
+                      (update-keys cmi5-iri))
+          results (walk-pattern* profiles {:weights weights} 100)]
+      (is (s/valid? cmi5-general-pattern? results))
+      (is (s/valid? cmi5-terminated? (last results)))
+      (is (not (s/valid? cmi5-abandoned? (last results))))))
+  (testing "Remove terminated template from consideration"
+    (let [{:keys [profiles]} const/simple-input
+          weights (-> {"terminated" 0.0
+                       "abandoned"  1.0}
+                      (update-keys cmi5-iri))
+          results (walk-pattern* profiles {:weights weights} 100)]
+      (is (s/valid? cmi5-general-pattern? results))
+      (is (s/valid? cmi5-abandoned? (last results)))
+      (is (not (s/valid? cmi5-terminated? (last results))))))
+  (testing "Force completed pattern to appear"
+    ;; FIXME: This does not guarentee that "completed" appears, since
+    ;; the weight for `nil` is still 0.5, not 0.0
+    (let [{:keys [profiles]} const/simple-input
+          weights (-> {;; Force topmost path
+                       "completionmaybefailedsession" 1.0
+                       "completionpassedsession"      0.0
+                       "failedsession"                0.0
+                       "noresultsession"              0.0
+                       "passedsession"                0.0
+                       "completionnosuccesssession"   0.0
+                       "waivedsession"                0.0
+                       ;; Force secondary path
+                       "maybecompletedthenfailed"     1.0
+                       "failedthenmaybecompleted"     0.0
+                       ;; Encourage optional
+                       "completed"                    1.0}
+                      (update-keys cmi5-iri))
+          results (walk-pattern* profiles {:weights weights} 100)]
+      (is (s/valid? cmi5-general-pattern? results))
+      (is (s/valid? (s/cat :satisfieds cmi5-satisfieds?
+                           :typical-sessions (s/+ cmi5-completion-maybe-failed-session?))
+                    results))
+      (is (some #(s/valid? cmi5-completed? %) results))))
+  (testing "Force completed template to not appear"
+    (let [{:keys [profiles]} const/simple-input
+          weights (-> {;; Force topmost path
+                       "completionmaybefailedsession" 1.0
+                       "completionpassedsession"      0.0
+                       "failedsession"                0.0
+                       "noresultsession"              0.0
+                       "passedsession"                0.0
+                       "completionnosuccesssession"   0.0
+                       "waivedsession"                0.0
+                       ;; Force secondary path
+                       "maybecompletedthenfailed"     1.0
+                       "failedthenmaybecompleted"     0.0
+                       ;; Force no optional
+                       "completed"                    0.0}
+                      (update-keys cmi5-iri))
+          results (walk-pattern* profiles {:weights weights} 100)]
+      (is (s/valid? cmi5-general-pattern? results))
+      (is (s/valid? (s/cat :satisfieds cmi5-satisfieds?
+                           :typical-sessions (s/+ cmi5-completion-maybe-failed-session?))
+                    results))
+      (is (not (some #(s/valid? cmi5-completed? %) results))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Profile Map Test

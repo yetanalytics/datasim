@@ -880,18 +880,22 @@
             "name": "trainees"
         }
     ],
-    "alignments": [
+    "models": [
         {
-            "id": "mbox::mailto:bobfake@example.org",
-            "type": "Agent",
+            "personae": [
+                {
+                    "id": "mbox::mailto:bobfake@example.org",
+                    "type": "Agent"
+                }
+            ],
             "alignments": [
                 {
-                    "component": "https://example.org/activity/a",
+                    "id": "https://example.org/activity/a",
                     "weight": 0.5
                 },
                 {
-                    "component": "https://example.org/activity/c",
-                    "weight": -0.2
+                    "id": "https://example.org/activity/c",
+                    "weight": 0.2
                 }
             ]
         }

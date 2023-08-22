@@ -24,7 +24,9 @@
   (s/double-in :min 0.0 :max 1.0))
 
 (s/def ::weight
-  (s/double-in :min -1.0 :max 1.0))
+  (s/double-in :min 0.0 :infinite? false :NaN? false))
+
+(def default-weight 0.5)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
@@ -49,7 +51,15 @@
   "Create a seeded deterministic, pseudorandom RNG, in which two RNGs created
    using the same value of `seed` will output the same results."
   ^Random [^Long seed]
-  (Random. seed))
+  ;; We need this dummy `.nextDouble` call in order to mitigate the
+  ;; effects of potentially bad seeds. In particular, similar seeds
+  ;; (e.g. `(range 1000)` as a seed seq) will result in similar first
+  ;; values being generated; `.nextDouble` will "randomize" the seed
+  ;; stored in the RNG instance.
+  ;; See: https://stackoverflow.com/questions/27760450/first-random-number-after-setseed-in-java-always-similar
+  (let [^Random rng (Random. seed)]
+    (.nextDouble rng)
+    rng))
 
 ;; Random Number Generation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -59,7 +69,7 @@
   :ret double?)
 
 (defn rand
-  "Generate a pseudorando, uniformly distributed double value between 0 and
+  "Generate a pseudorandom, uniformly distributed double value between 0 and
    `n` (both inclusive).
    
    See also: `clojure.core/rand`"
@@ -203,37 +213,38 @@
    (filter (fn [_] (rand-boolean rng prob)) coll))
   ([rng prob coll weights]
    (filter (fn [x]
-             (let [prob* (maths/bound-probability (+ prob (get weights x 0.0)))]
+             (let [weight (get weights x default-weight)
+                   prob*  (maths/bound-probability (+ prob weight))]
                (rand-boolean rng prob*)))
            coll)))
 
 (s/fdef choose
   :args (s/cat :rng     ::rng
-               :weights (s/map-of any? (s/keys :req-un [::weight]))
-               :coll    (s/every any? :min-count 1)
-               :options (s/keys* :opt-un [::sd])))
+               :weights (s/map-of any? ::weight)
+               :coll    (s/every any? :min-count 1)))
 
 (defn choose
   "Probabilistically select one element from `coll`. The `weights` map
-   should be a map of `coll` elements to map with a `:weight` value."
-  [rng weights coll & {:keys [sd] :or {sd 0.25}}]
+   should be a map of `coll` elements numerical weights. If an element does
+   not have an associated weight, it will be assigned a default of 0.5.
+   Note that a weight of 0 denotes that the element can never be chosen."
+  [rng weights coll]
   (validate-not-empty coll)
-  (let [rand-gauss
-        (fn [x]
-          (let [weight (get-in weights [x :weight] 0.0)]
-            (if (<= weight -1.0)
-              -1.0
-              (rand-gaussian rng (* sd weight) sd))))]
-    (apply max-key rand-gauss coll)))
+  (let [get-weight (fn [x] (get weights x default-weight))
+        gen-number (fn [x] (rand rng (get-weight x)))]
+    (if (->> coll (map get-weight) (every? zero?))
+      (rand-nth rng coll)
+      (apply max-key gen-number coll))))
 
 (s/fdef choose-map
   :args (s/cat :rng     ::rng
-               :weights (s/map-of any? (s/keys :req-un [::weight]))
-               :coll    (s/map-of any? any? :min-count 1)
-               :options (s/keys* :opt-un [::sd])))
+               :weights (s/map-of any? ::weight)
+               :coll    (s/map-of any? any? :min-count 1)))
 
 (defn choose-map
   "Probabilistically select one value from the map `m`. The `weights` map
-   should be a map from the keys of `m` to their `:weight` maps."
-  [rng weights m & {:keys [sd] :or {sd 0.25}}]
-  (get m (choose rng weights (keys m) :sd sd)))
+   should be a map from the keys of `m` to numerical weights. If an
+   element does not have a weight, it will be assigned a default of 0.5.
+   Note that a weight of 0 denotes that the element can never be chosen."
+  [rng weights m]
+  (get m (choose rng weights (keys m))))

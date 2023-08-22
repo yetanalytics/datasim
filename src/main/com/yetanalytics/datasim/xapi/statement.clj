@@ -4,7 +4,7 @@
             [clojure.walk       :as w]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.math.random            :as random]
-            [com.yetanalytics.datasim.input.alignments       :as alignments]
+            [com.yetanalytics.datasim.model                  :as model]
             [com.yetanalytics.datasim.xapi.profile           :as profile]
             [com.yetanalytics.datasim.xapi.profile.template  :as t]
             [com.yetanalytics.datasim.xapi.registration      :as reg]
@@ -21,9 +21,14 @@
 ;; The actor for the statement (may have to stringify keys?)
 (s/def ::actor ::xs/actor)
 
-;; The alignment, a map of IRI to a map of `:weights` from -1.0 to 1.0 and
-;; a nilable `:object-override` object.
-(s/def ::alignment ::alignments/alignment)
+;; The alignments, which includes a map of IRI to a map of `:weights` from 0 to 1.0
+(s/def ::alignments
+  ::model/alignments)
+
+;; The object overrides, which include an `objects` coll and an optional
+;; `weights` coll
+(s/def ::object-overrides
+  ::model/object-overrides)
 
 ;; Simulation time, in ms since epoch.
 (s/def ::sim-t pos-int?)
@@ -42,8 +47,9 @@
 (s/def ::inputs
   (s/merge ::profile/profile-map
            ::reg/registration-map
-           (s/keys :req-un [::actor ::alignment ::sim-t ::seed]
-                   :opt-un [::sub-registration])))
+           (s/keys :req-un [::actor ::alignments ::sim-t ::seed]
+                   :opt-un [::object-overrides
+                            ::sub-registration])))
 
 ;; Metadata
 
@@ -79,11 +85,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- select-object-override
-  [rng alignment]
-  (some->> alignment
+  [rng {:keys [weights objects]}]
+  (some->> objects
            not-empty
-           (random/choose-map rng alignment)
-           :object-override
+           (random/choose rng weights)
            w/stringify-keys))
 
 (defn- remove-object-rules
@@ -135,7 +140,8 @@
    | `statement-base-map` | A map from Template IDs to the Statement base created using `template->statement-base`.
    | `parsed-rules-map`   | A map from Template IDs to its parsed rules parsed using `template->parsed-rules`.
    | `actor`              | The Actor used in the Statement.
-   | `alignment`          | The alignment map used for choosing Statement elements.
+   | `alignments`         | The alignments map used for choosing Statement elements.
+   | `object-overrides`   | The map of objects that override Template-specified objects.
    | `template`           | The Template used to generate this Statement.
    | `registration`       | The registration UUID for the overall generated Statement sequence.
    | `seed`               | The seed used to generate random numbers during generation.
@@ -158,7 +164,8 @@
            statement-base-map
            parsed-rules-map
            actor
-           alignment
+           alignments
+           object-overrides
            template
            seed
            pattern-ancestors
@@ -179,7 +186,7 @@
                  (rule/add-rules-valuegen inputs)))
         ;; Basics
         rng             (random/seed-rng seed)
-        object-override (select-object-override rng alignment)
+        object-override (select-object-override rng object-overrides)
         template-rules* (remove-object-rules template-rules object-override)]
     (-> template-base
         (base-statement inputs rng)

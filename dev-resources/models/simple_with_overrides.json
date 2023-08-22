@@ -1,0 +1,48 @@
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bobfake@example.org",
+                "type": "Agent"
+            }
+        ],
+        "alignments": [
+            {
+                "id": "https://example.org/activity/a",
+                "weight": 0.5
+            },
+            {
+                "id": "https://example.org/activity/c",
+                "weight": 0.2
+            }
+        ],
+        "objectOverrides": [
+            {
+                "weight": 0.7,
+                "object": {
+                    "objectType": "Activity",
+                    "id": "https://www.whatever.com/activities#course2",
+                    "definition": {
+                        "name": {
+                            "en-US": "Course 2"
+                        },
+                        "description": {
+                            "en-US": "Course Description 2"
+                        },
+                        "type": "http://adlnet.gov/expapi/activities/course"
+                    }
+                }
+
+            },
+            {
+                "weight": 0.3,
+                "object": {
+                    "objectType": "Agent",
+                    "name": "Owen Overrider",
+                    "mbox": "mailto:owoverrider@example.com"
+                }
+
+            }
+        ]
+    }
+]

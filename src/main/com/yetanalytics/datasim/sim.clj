@@ -4,6 +4,8 @@
             [clojure.core.async :as a]
             [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim                   :as-alias datasim]
+            [com.yetanalytics.datasim.model             :as model]
             [com.yetanalytics.datasim.math.random       :as random]
             [com.yetanalytics.datasim.math.timeseries   :as ts]
             [com.yetanalytics.datasim.xapi.actor        :as actor]
@@ -91,7 +93,8 @@
                                         ::statement/statement-base-map
                                         ::statement/parsed-rules-map
                                         ::statement/actor
-                                        ::statement/alignment])
+                                        ::statement/alignments]
+                               :opt-un [::statement/object-overrides])
                :probability-seq  ::probability-seq
                :registration-seq ::registration-seq
                :seed             ::seed)
@@ -246,7 +249,7 @@
        prob-mask-seq))
 
 (s/fdef build-skeleton
-  :args (s/cat :input :com.yetanalytics.datasim/input)
+  :args (s/cat :input ::datasim/input)
   :ret ::skeleton)
 
 (defn build-skeleton
@@ -254,7 +257,7 @@
    actor from `start` of sim. Should be run once (in a single thread).
   
    Spooky."
-  [{:keys [profiles personae-array parameters alignments]}]
+  [{:keys [profiles personae-array models parameters]}]
   (let [;; Input parameters
         {:keys [start end timezone seed] ?from-stamp :from} parameters
         ;; RNG for generating the rest of the seeds
@@ -282,7 +285,9 @@
         actor-group-map (personaes->group-actor-id-map personae-array)
         ;; Derive profiles map
         activity-seed   (random/rand-unbound-int sim-rng)
-        profiles-map    (p/profiles->profile-map profiles parameters activity-seed)]
+        profiles-map    (p/profiles->profile-map profiles parameters activity-seed)
+        ;; Derive model alignments + object overrides
+        models-map      (model/models->map models)]
     ;; Now, for each actor we initialize what is needed for the sim
     (->> actor-seq
          (sort-by actor/actor-ifi)
@@ -292,10 +297,11 @@
                   actor-id        (actor/actor-ifi actor)
                   actor-role      (:role actor)
                   actor-group-id  (get actor-group-map actor-id)
-                  actor-alignment (get-actor-alignments alignments
-                                                        actor-id
-                                                        actor-group-id
-                                                        actor-role)
+                  actor-model-map (model/get-actor-model models-map
+                                                         actor-id
+                                                         actor-group-id
+                                                         actor-role)
+                  actor-alignment (:alignments actor-model-map)
                   ;; Actor probability seq
                   actor-arma-seed (random/rand-unbound-int sim-rng)
                   actor-arma-seq  (arma-seq actor-arma-seed)
@@ -311,10 +317,11 @@
                   actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
                   actor-xapi      (dissoc actor :role)
+                  actor-xapi-map  {:actor actor-xapi}
                   ;; Statement seq
                   actor-input     (merge profiles-map
-                                         {:actor     actor-xapi
-                                          :alignment actor-alignment})
+                                         actor-model-map
+                                         actor-xapi-map)
                   actor-stmt-seq  (cond->> (statement-seq
                                             actor-input
                                             actor-prob-seq

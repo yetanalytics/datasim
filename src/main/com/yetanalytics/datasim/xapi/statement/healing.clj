@@ -7,7 +7,7 @@
             [clojure.walk                  :as w]
             [xapi-schema.spec              :as xs]
             [com.yetanalytics.datasim.math.random           :as random]
-            [com.yetanalytics.datasim.input.alignments      :as alignments]
+            [com.yetanalytics.datasim.model                 :as model]
             [com.yetanalytics.datasim.xapi.path             :as xp]
             [com.yetanalytics.datasim.xapi.profile          :as profile]
             [com.yetanalytics.datasim.xapi.profile.activity :as activity]
@@ -34,8 +34,8 @@
 (s/def ::verb-map
   ::verb/verb-map)
 
-(s/def ::alignment
-  ::alignments/alignment)
+(s/def ::alignments
+  ::model/alignments)
 
 (s/def ::registration
   ::reg/registration)
@@ -67,14 +67,15 @@
 
 (s/fdef complete-verb
   :args (s/cat :verb   (s/nilable map?)
-               :inputs (s/keys :req-un [::verb-map ::alignment])
+               :inputs (s/keys :req-un [::verb-map ::alignments])
                :rng    ::random/rng)
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{verb-id "id" :as verb} {:keys [verb-map alignment]} rng]
-  (let [return-verb (fn [_] verb)
-        merge-verb  (fn [v] (merge-nested v verb))]
+  [{verb-id "id" :as verb} {:keys [verb-map alignments]} rng]
+  (let [return-verb   (fn [_] verb)
+        merge-verb    (fn [v] (merge-nested v verb))
+        align-weights (:weights alignments)]
     (or
      ;; Verb found by ID
      (some->> verb-id
@@ -90,7 +91,7 @@
      ;; Choose random verb
      (some->> verb-map
               not-empty
-              (random/choose-map rng alignment))
+              (random/choose-map rng align-weights))
      ;; Generate random verb as verb map is empty
      (some->> {}
               (generate-verb rng)))))
@@ -107,16 +108,17 @@
 
 (s/fdef complete-activity
   :args (s/cat :activity (s/nilable map?)
-               :inputs   (s/keys :req-un [::activity-map ::alignment])
+               :inputs   (s/keys :req-un [::activity-map ::alignments])
                :rng      ::random/rng)
   :ret ::xs/activity)
 
 (defn complete-activity
   [{activity-id "id" {activity-type "type"} "definition" :as activity}
-   {:keys [activity-map alignment]}
+   {:keys [activity-map alignments]}
    rng]
-  (let [return-activity (fn [_] activity)
-        merge-activity  (fn [a] (merge-nested a activity))]
+  (let [return-activity   (fn [_] activity)
+        merge-activity    (fn [a] (merge-nested a activity))
+        alignment-weights (:weights alignments)]
     (or
      ;; Get activity by ID
      (some->> activity-id
@@ -126,7 +128,7 @@
      (some->> activity-type
               (get activity-map)
               not-empty
-              (random/choose-map rng alignment)
+              (random/choose-map rng alignment-weights)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
      (some->> activity-id
@@ -138,8 +140,8 @@
      ;; Choose random activity
      (some->> activity-map
               not-empty
-              (random/choose-map rng alignment)
-              (random/choose-map rng alignment))
+              (random/choose-map rng alignment-weights)
+              (random/choose-map rng alignment-weights))
      ;; Generate random activity as activity map is empty
      (some->> {}
               (generate-activity rng)))))
@@ -240,7 +242,7 @@
 (s/fdef complete-context
   :args (s/cat :context (s/nilable map?)
                :inputs  (s/keys :req-un [::activity-map
-                                         ::alignment
+                                         ::alignments
                                          ::template
                                          ::registration])
                :rng     ::random/rng)
@@ -350,7 +352,7 @@
   :args (s/cat :sub-statement map?
                :inputs (s/keys :req-un [::type-iri-map
                                         ::activity-map
-                                        ::alignment
+                                        ::alignments
                                         ::template
                                         ::registration])
                :rng ::random/rng)
@@ -404,7 +406,7 @@
   :args (s/cat :statement map?
                :inputs (s/keys :req-un [::verb-map
                                         ::activity-map
-                                        ::alignment
+                                        ::alignments
                                         ::registration
                                         ::template])
                :rng ::random/rng)

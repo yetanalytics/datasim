@@ -1,0 +1,20 @@
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bobfake@example.org",
+                "type": "Agent"
+            }
+        ],
+        "alignments": [
+            {
+                "id": "https://example.org/activity/a",
+                "weight": 0.5
+            },
+            {
+                "id": "https://example.org/activity/c",
+                "weight": 0.2
+            }
+        ]
+    }
+]

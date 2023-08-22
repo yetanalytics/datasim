@@ -44,7 +44,7 @@ test-unit-onyx:
 	clojure -Adev:cli:onyx:run-onyx-tests
 
 test-cli:
-	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -l dev-resources/alignments/simple.json -o dev-resources/parameters/simple.json validate-input dev-resources/input/simple.json
+	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json validate-input dev-resources/input/simple.json
 
 test-cli-comprehensive:
 	clojure -A:cli:run -i dev-resources/input/simple.json validate-input dev-resources/input/simple.json

@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha :as s]))
 
 (defn explain-to-map-coll
-  "Convert spec error data for personae, alignments, and parameters
+  "Convert spec error data for personae, models, and parameters
    into a map coll acceptable to the Datasim UI."
   [spec-kw spec-ed]
   (->> (::s/problems spec-ed)

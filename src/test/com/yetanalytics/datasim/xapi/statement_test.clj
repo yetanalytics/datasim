@@ -24,11 +24,10 @@
 
 (def alignments
   (reduce
-   (fn [acc {:keys [component weight objectOverride]}]
-     (assoc acc component {:weight          weight
-                           :object-override objectOverride}))
-   {}
-   (get-in const/simple-input [:alignments 0 :alignments])))
+   (fn [acc {:keys [id weight]}]
+     (assoc-in acc [:weights id] weight))
+   {:weights {}}
+   (get-in const/simple-input [:models 0 :alignments])))
 
 (def profiles-map
   (profile/profiles->profile-map (:profiles const/simple-input)
@@ -52,7 +51,7 @@
 (def arguments
   (merge profiles-map
          {:actor             actor
-          :alignment         alignments
+          :alignments        alignments
           :sim-t             0
           :seed              top-seed
           :template          default-template
@@ -88,8 +87,8 @@
     (let [statement (gen-statement {})]
       (is (s/valid? ::xs/statement statement))
       (is (statement-inputs? statement))
-      ;; This UUID should be generated deterministically via rng
-      (is (= "4f083ce3-f12b-4b4b-86ee-9d82b52c856d"
+      ;; The statement ID should be generated deterministically via rng
+      (is (= "aee7bbe1-0c45-4028-8f08-3ce3f12bbb4b"
              (get statement "id")))))
   
   (testing "Template specifies ID"
@@ -97,7 +96,8 @@
                                              :presence "included"}]})]
       (is (s/valid? ::xs/statement statement))
       (is (statement-inputs? statement))
-      (is (= "4f083ce3-f12b-4b4b-86ee-9d82b52c856d"
+      ;; The statement ID should be generated deterministically via rng
+      (is (= "aee7bbe1-0c45-4028-8f08-3ce3f12bbb4b"
              (get statement "id")))))
 
   ;; Actor
@@ -180,8 +180,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"      "https://w3id.org/xapi/adl/verbs/satisfied"
-                "display" {"en" "satisfied"}}
+        (is (= {"id"      "https://w3id.org/xapi/adl/verbs/abandoned"
+                "display" {"en" "abandoned"}}
                (get statement "verb")))))
     
     (testing "ID inclusion only"
@@ -191,8 +191,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"      "https://w3id.org/xapi/adl/verbs/abandoned"
-                "display" {"en" "abandoned"}}
+        (is (= {"id"      "https://w3id.org/xapi/adl/verbs/satisfied"
+                "display" {"en" "satisfied"}}
                (get statement "verb")))))
     
     (testing "display rule only - spec generation"
@@ -203,7 +203,7 @@
                                    "en-uk" "Verb that is Custom"}]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id" "vmpe://hiato.zvt.emzk/ahlqn" ; ID is randomly generated
+        (is (= {"id" "lctlar://lyubpwtqn.pqzkisi.lku/szcokfsgupq" ; ID is randomly generated
                 "display" {"en-us" "Custom Verb"
                            "en-uk" "Verb that is Custom"}}
                (get statement "verb")))))
@@ -240,7 +240,7 @@
              {:objectActivityType "https://w3id.org/xapi/cmi5/activitytype/course"})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1432714272"
+        (is (= {"id"         "https://example.org/course/1671689032"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
@@ -251,7 +251,7 @@
                        :all      ["https://w3id.org/xapi/cmi5/activitytype/course"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1432714272"
+        (is (= {"id"         "https://example.org/course/1671689032"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
@@ -264,7 +264,7 @@
                        :any      ["Activity"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1432714272"
+        (is (= {"id"         "https://example.org/course/1671689032"
                 "objectType" "Activity"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
@@ -273,10 +273,10 @@
       (let [statement
             (gen-statement
              {:rules [{:location "$.object.id"
-                       :all      ["https://example.org/course/1432714272"]}]})]
+                       :all      ["https://example.org/course/1671689032"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1432714272"
+        (is (= {"id"         "https://example.org/course/1671689032"
                 "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
                (get statement "object")))))
 
@@ -291,7 +291,7 @@
                        :all      ["http://example.org/more-activity-info"]}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "poprhf://ddm.jbanfdcu.unx/hvfqllxhbpwpsypb" ; The ID is randomly generated
+        (is (= {"id"         "dmnc://wkjfbiuz.vxxlao.duj/bepzenzgmci" ; The ID is randomly generated
                 "objectType" "Activity"
                 "definition" {"name"        {"en" "Custom Activity"}
                               "description" {"en" "This is a custom activity used to test statement generation"}
@@ -321,7 +321,7 @@
         (is (statement-inputs? statement))
         (is (= {"id"         "https://example.org/course/1432714272"
                 "objectType" "Activity"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}
                (get statement "object")))))
 
     (testing "inclusion only"
@@ -331,8 +331,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1432714272"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+        (is (= {"id"         "https://example.org/block/1328449717"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}
                (get statement "object")))))
 
     (testing "ID inclusion only"
@@ -342,8 +342,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/course/1432714272"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+        (is (= {"id"         "https://example.org/block/418707894"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}
                (get statement "object")))))
 
     (testing "activity type inclusion only"
@@ -353,8 +353,8 @@
                        :presence "included"}]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"id"         "https://example.org/block/1550503926"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}
+        (is (= {"id"         "https://example.org/block/1328449717"
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}
                (get statement "object"))))))
 
   ;; Agent/Group Object
@@ -370,9 +370,10 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         ;; objectType, name, and IFI were chosen + generated by rng
-        (is (= {"name"       "Andrew Downes"
-                "objectType" "Agent"
-                "mbox"       "mailto:luu@koczjqfl.hwb"}
+        (is (= {"objectType" "Agent"
+                "name"       "Ena Hills"
+                "account"    {"name"     "9"
+                              "homePage" "xvijclmo://jlfhg.rdkqfjq.hodx/emmpg"}}
                (get statement "object")))))
 
     (testing "objectType rule"
@@ -390,12 +391,14 @@
         (is (statement-inputs? statement-2))
         ;; objectType, name, and IFI were chosen + generated by rng
         (is (= {"objectType" "Agent"
-                "openid"     "https://osnb.drokqem.obx/bgdmtnrvblgu"}
+                "name"       "Z"
+                "openid"     "http://ngfx.ibfoget.qpin/jyrpvftharj"}
                (get statement-1 "object")))
         (is (= {"objectType" "Group"
-                "name"       "i"
+                "name"       "Z"
                 "member"     [] ; FIXME: This is a generation flaw in xapi-schema...
-                "openid"     "http://uqqqwki.qkhf.anqj/pkxndpkngky"}
+                "account"    {"name"     "9J"
+                              "homePage" "olwhn://niv.zsyugxjy.jgto/syyeoigztbu"}}
                (get statement-2 "object")))))
 
     (testing "name rule"
@@ -407,9 +410,9 @@
         (is (statement-inputs? statement))
         ;; objectType, name, and IFI were chosen + generated by rng
         ;; Agent is chosen first since that's the default for objects w/ "name"
-        (is (= {"name"       "Andrew Downes"
-                "objectType" "Agent"
-                "openid"     "https://osnb.drokqem.obx/bgdmtnrvblgu"}
+        (is (= {"objectType" "Agent"
+                "name"       "Ena Hills"
+                "openid"     "http://ngfx.ibfoget.qpin/jyrpvftharj"}
                (get statement "object")))))
 
     (testing "mbox rule"
@@ -418,7 +421,7 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (= {"objectType" "Agent"
-                "mbox"       "mailto:lctlaqxlfg@lyubpwtqpm.txj"}
+                "mbox"       "mailto:dgykibt@scade.ppiq"}
                (get statement "object")))))
 
     (testing "mbox_sha1sum rule"
@@ -427,7 +430,7 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (= {"objectType"   "Agent"
-                "mbox_sha1sum" "7E86B6E11F478B874ED1F87C450EA644FA508662"}
+                "mbox_sha1sum" "43657A3CB4AFAF7B2874E3EE7EA90E45BE31E740"}
                (get statement "object")))))
 
     (testing "openid rule"
@@ -436,7 +439,7 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (= {"objectType" "Agent"
-                "openid"     "https://lyubpwtqn.pqzkisi.lku/szcokfsgupq"}
+                "openid"     "https://scan.wzkahpj.ropx/yidyiuaofrug"}
                (get statement "object")))))
 
     (testing "account rule"
@@ -445,8 +448,8 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (= {"objectType" "Agent"
-                "account"    {"name"     "40FcY0"
-                              "homePage" "lzxisjwd://yptumdyz.zzm.uip/wnhbntxrmumwh"}}
+                "account"    {"name"     "N46CD51RXVjD"
+                              "homePage" "zrderkyg://ndig.mcgovvox.dzvo/svagnafrrphkcf"}}
                (get statement "object")))))
 
     (testing "objectType + account name rule"
@@ -464,11 +467,11 @@
         (is (statement-inputs? statement-2))
         (is (= {"objectType" "Agent"
                 "account"    {"name"     "Agent Account Name" ; homePage is randomly generated
-                              "homePage" "mhqttko://mfyvhxsgxj.wpl.gnll/xlumwozhnvx"}}
+                              "homePage" "dguy://gqaxtmpji.lsnzq.gdyj/baicdpq"}}
                (get statement-1 "object")))
         (is (= {"objectType" "Group"
                 "account"    {"name"     "Group Account Name" ; homePage is randomly generated
-                              "homePage" "kpwkefqm://ttz.ebiclv.zyl/qfvgbycmul"}}
+                              "homePage" "mhqttko://mfyvhxsgxj.wpl.gnll/xlumwozhnvx"}}
                (get statement-2 "object")))))
 
     (testing "account homePage rule"
@@ -485,11 +488,11 @@
         (is (statement-inputs? statement-1))
         (is (statement-inputs? statement-2))
         (is (= {"objectType" "Agent"
-                "account"    {"name"     "0" ; name is randomly generated
+                "account"    {"name"     "75" ; name is randomly generated
                               "homePage" "http://example.org/agent"}}
                (get statement-1 "object")))
         (is (= {"objectType" "Group"
-                "account"    {"name"     "9" ; name is randomly generated
+                "account"    {"name"     "0" ; name is randomly generated
                               "homePage" "http://example.org/group"}}
                (get statement-2 "object")))))
 
@@ -520,9 +523,7 @@
         ;; cannot be repeated
         (is (= {"objectType" "Group"
                 "member"
-                [{"mbox"       "mailto:one@example.com"
-                  "objectType" "Agent"}
-                 {"mbox"       "mailto:three@example.com"
+                [{"mbox"       "mailto:two@example.com"
                   "objectType" "Agent"}]}
                (get statement "object")))))
 
@@ -539,12 +540,8 @@
         (is (= {"objectType" "Group"
                 "member"
                 [{"objectType" "Agent"
-                  "name"       "Number Three"
-                  "openid"     "https://ijw.rbizkif.xgt/etjgqieuegeywj"}
-                 {"objectType" "Agent"
-                  "account"    {"name"     "Z"
-                                "homePage" "hfzs://lulqixugpx.ckpsmcqvrd.aff/ausyu"}
-                  "name"       "Number Two"}]}
+                  "name"       "Number One"
+                  "openid"     "http://ngfx.ibfoget.qpin/jyrpvftharj"}]}
                (get statement "object")))))
 
     (testing "member account name rules"
@@ -559,11 +556,8 @@
         ;; chosen, as is the number of names
         (is (= {"objectType" "Group"
                 "member"
-                [{"account"    {"name"     "Number Three"
-                                "homePage" "hns://spghsbae.uxicymfw.qnnv/murnjkiu"}
-                  "objectType" "Agent"}
-                 {"account"    {"name"     "Number Two"
-                                "homePage" "ush://auatma.csdjjuzs.lncv/gmfqcsupnrl"}
+                [{"account"    {"name"     "Number One"
+                                "homePage" "dguy://gqaxtmpji.lsnzq.gdyj/baicdpq"}
                   "objectType" "Agent"}]}
                (get statement "object"))))))
 
@@ -594,7 +588,7 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (= {; ID is randomly generated
-                "id"         "b22038ce-a747-4e0f-a4d4-7b34d816253e"
+                "id"         "b13fc9e2-20ba-4a54-9d6d-5906e60a620a"
                 "objectType" "StatementRef"}
                (get statement "object")))))
 
@@ -611,7 +605,7 @@
         ;; chosen (since "Activity" is present in `any`) but the objectType
         ;; was separately and randomly chosen from `any`
         (is (not (s/valid? ::xs/statement statement)))
-        (is (= {"id"         "https://example.org/course/1432714272"
+        (is (= {"id"         "https://example.org/block/418707894"
                 "objectType" "StatementRef"}
                (get statement "object")))))
 
@@ -643,10 +637,10 @@
         (is (= {"objectType" "SubStatement"
                 "actor"      {"name" "Bob Fakename"
                               "mbox" "mailto:bobfake@example.org"}
-                "verb"       {"id" "https://w3id.org/xapi/adl/verbs/abandoned"
-                              "display" {"en" "abandoned"}}
-                "object"     {"id"         "https://example.org/block/1550503926"
-                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}}
+                "verb"       {"id"      "https://w3id.org/xapi/adl/verbs/waived"
+                              "display" {"en" "waived"}}
+                "object"     {"id"         "https://example.org/course/1432714272"
+                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}}
                (get statement "object")))))
 
     (testing "objectType + Activity object"
@@ -667,7 +661,7 @@
                (get-in statement ["object" "objectType"])))
         (is (= {"id"         "https://example.org/course/1432714272"
                 "objectType" "Activity"
-                "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+                "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}
                (get-in statement ["object" "object"])))))
 
     (testing "Agent object"
@@ -682,10 +676,9 @@
         (is (statement-inputs? statement))
         (is (= "SubStatement"
                (get-in statement ["object" "objectType"])))
-        (is (= {"name"       "Toby Nichols"
+        (is (= {"name"       "Ena Hills"
                 "objectType" "Agent"
-                "account"    {"name"     "Z"
-                              "homePage" "hfzs://lulqixugpx.ckpsmcqvrd.aff/ausyu"}}
+                "openid"     "https://ijw.rbizkif.xgt/etjgqieuegeywj"}
                (get-in statement ["object" "object"])))))
 
     (testing "Group object"
@@ -734,9 +727,10 @@
         (is (= "SubStatement"
                (get-in statement ["object" "objectType"])))
         ;; Properties are all spec generated
-        (is (= {"objectType"   "Agent"
-                "mbox_sha1sum" "A2856240185B0DF7B04B7F6B6A2B12D970DF7513"
-                "name"         "AN0rXE9qvu36cCDOPUQPcCna0"}
+        (is (= {"objectType" "Agent"
+                "name"       "9ushxJMzhBbYBf93yGO9K1Wk5"
+                "account"    {"name"     "9"
+                              "homePage" "xvijclmo://jlfhg.rdkqfjq.hodx/emmpg"}}
                (get-in statement ["object" "object"])))))
 
     (testing "StatementRef object"
@@ -767,11 +761,12 @@
                (get-in statement ["object" "context"])))
         ;; attachment is randomly generated
         (is (= [{"usageType"   "http://example.com/substatement-usage-type"
-                 "description" {"en-GB" "L53l" "en-US" "o"}
-                 "display"     {"en-US" "N"}
-                 "contentType" "1"
-                 "length"      0
-                 "sha2"        "39E3969BCDED0A6362E4EDBFC2DABD7A6D3F78E74971B98EC466C7988541FB0C"}]
+                 "description" {"en-US" "V"}
+                 "display"     {"en-GB" "Qv"
+                                "en-US" "H"}
+                 "contentType" ""
+                 "length"      -1
+                 "sha2"        "1EC7A364BCE5081975A21AA62956908FC62EAA7D33EC942DDE349F6E4D1BBDB0"}]
                (get-in statement ["object" "attachments"]))))))
 
   ;; Context
@@ -790,13 +785,14 @@
               ["https://w3id.org/xapi/cmi5/activities/block"]})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= {"category" [{"id" "https://example.org/course/1432714272"
-                             "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}} {"id" "https://w3id.org/xapi/cmi5/v1.0"}]
-                "grouping" [{"id" "https://example.org/course/418707894"
+        (is (= {"category" [{"id"         "https://example.org/course/1671689032"
+                             "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/course"}}
+                            {"id" "https://w3id.org/xapi/cmi5/v1.0"}]
+                "grouping" [{"id"         "https://example.org/course/1432714272"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/course"}}]
-                "parent"   [{"id" "https://example.org/block/1671689032"
+                "parent"   [{"id"         "https://example.org/block/1328449717"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activitytype/block"}}]
-                "other"    [{"id" "https://example.org/block/1550503926"
+                "other"    [{"id"         "https://example.org/block/418707894"
                              "definition" {"type" "https://w3id.org/xapi/cmi5/activities/block"}}]}
                (get-in statement ["context" "contextActivities"])))))
 
@@ -857,28 +853,10 @@
         (is (statement-inputs? statement))
         ;; Both instructor and team are completely spec-generated
         (is (= {"objectType" "Group"
-                "name"       "7G"
-                "openid"     "http://yfzygv.ppktocltom.rvx/tmweii"
-                "member"
-                [{"objectType" "Agent"
-                  "openid"     "https://szkenjsa.pplhlfxtml.gvcv/hqjajyomdhkm"}
-                 {"objectType" "Agent"
-                  "name"       "ch0LZ9Tb"
-                  "mbox"       "mailto:xmx@tcln.yqsr"}]}
+                "mbox"       "mailto:lnbb@iyevnm.dplk"}
                (get-in statement ["context" "instructor"])))
-        (is (= {"objectType"   "Group"
-                "mbox_sha1sum" "F93A8918A5B7A2163C2C30767A2196B674E7E563"
-                "member"
-                [{"name"         "4wyym75I1KyfmAloAss8En"
-                  "mbox_sha1sum" "13A48E290619240465477D6EA1C12D1049547D32"
-                  "objectType"   "Agent"}
-                 {"objectType"   "Agent"
-                  "name"         ""
-                  "mbox_sha1sum" "F35DC021BDE81815E35C3738BBE30BC2EBFD4D99"}
-                 {"name"       "jFEO6RV0nvN2XKT0aRgm"
-                  "account"    {"name"     "eMbZXJRWzzDr03sEa7F5kFDf9qZpl2x"
-                                "homePage" "xqddl://yqvg.cwnvurfjm.egv/foaahwnmnssgwbz"}
-                  "objectType" "Agent"}]}
+        (is (= {"objectType" "Group"
+                "openid"     "https://elwskid.ppur.kkz/qtpcyyrres"}
                (get-in statement ["context" "team"])))))
 
     (testing "agent instructor"
@@ -889,9 +867,8 @@
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         ;; The instructor is completely spec-generated
-        (is (= {"objectType" "Agent"
-                "account"    {"name"     "Z"
-                              "homePage" "hfzs://lulqixugpx.ckpsmcqvrd.aff/ausyu"}}
+        (is (= {"objectType"   "Agent"
+                "mbox_sha1sum" "A2856240185B0DF7B04B7F6B6A2B12D970DF7513"}
                (get-in statement ["context" "instructor"]))))))
 
   ;; Extensions
@@ -968,17 +945,17 @@
       (is (statement-inputs? statement))
       ;; Spec-generated attachment properties should be the same given
       ;; the same seed/rng
-      (is (= [{"usageType" "http://example.org/attachment-type-1"
-               "display" {"en-GB" "Ik"}
+      (is (= [{"usageType"   "http://example.org/attachment-type-1"
+               "display"     {"en" "SH5"}
                "contentType" ""
-               "length" 0
-               "sha2" "EBD14C60DCDCC8D3FA248367F8601D28F2838BBAB6160F79A346261F86B0DEEC"}
-              {"usageType" "http://example.org/attachment-type-2"
-               "description" {"en-US" "o2Sf", "fr" "L"}
-               "display" {"en-US" "p6" "en-GB" "T" "en" "7"}
+               "length"      0
+               "sha2"        "9163CAA018D41EF373179A1B4DE448C877DBCFF8A26D0F841914A7FC21DAF6C1"}
+              {"usageType"   "http://example.org/attachment-type-2"
+               "display"     {"en"    "j"
+                              "en-US" "1"}
                "contentType" ""
-               "length" 0
-               "sha2" "7E77EC5BC52256B5F8804ED073E39B3371518AF9E62EA42007E8222A9D1A96C4"}]
+               "length"      0
+               "sha2"        "AC3C4A4BE6A759BF56B874A60770BF3E4A9891B4B7DFC32529B0EF7451BCEE9A"}]
              (get statement "attachments")))))
 
   ;; TODO: WARNING if authority is set by non-LRS
@@ -992,13 +969,12 @@
       ;; Spec-generated authority properties should be the same given
       ;; the same seed/rng
       (is (= {"objectType" "Group"
-              "member"     [{"name"       "P5ia8r1379ZDUMyJ0ZkR7HPj6060vb"
-                             "objectType" "Agent"
-                             "account"    {"name"     "YQ26WGI7MILRKxuZ5oIiv1n0laGY"
-                                           "homePage" "bal://wjimefp.aiuohxb.gxiz/wtd"}}
-                            {"account"    {"name"     "i1VMk4"
-                                           "homePage" "hizkf://lcdssef.ljjdknrxt.gmkz/yoha"}
-                             "objectType" "Agent"}]}
+              "member"     [{"objectType" "Agent"
+                             "account"    {"name"     "NpF26FAHxGJq8V89165U4OZ0G"
+                                           "homePage" "cvdemv://vgttxdimtn.cszd.jyr/wkfapvby"}}
+                            {"objectType"   "Agent"
+                             "name"         "1v5vXOnr4fcG8B88I6"
+                             "mbox_sha1sum" "9E8BC7156717957496372598626CDB0776B6BD2F"}]}
              (get statement "authority"))))
     
     (let [statement
@@ -1007,9 +983,8 @@
                      :all      ["Agent"]}]})]
       (is (s/valid? ::xs/statement statement))
       (is (statement-inputs? statement))
-      (is (= {"objectType" "Agent"
-              "account"    {"name"     "Z"
-                            "homePage" "hfzs://lulqixugpx.ckpsmcqvrd.aff/ausyu"}}
+      (is (= {"objectType"   "Agent"
+              "mbox_sha1sum" "A2856240185B0DF7B04B7F6B6A2B12D970DF7513"}
              (get statement "authority")))))
   
   (testing "Template specifies authority rules - invalid"
@@ -1020,15 +995,14 @@
       (is (not (s/valid? ::xs/statement statement))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Object Override Tests Tests
+;; Object Override Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- gen-statement-override [object-override partial-template]
+(defn- gen-statement-override
+  [object-override partial-template]
   (let [arguments*
         (-> arguments
-            (assoc-in [:alignment "https://example.org/activity/a" :object-override]
-                      object-override)
-            (update-in [:alignment] dissoc "https://example.org/activity/c"))]
+            (assoc :object-overrides {:objects [object-override]}))]
     (->> partial-template
          (merge {:id       "https://template-1"
                  :type     "StatementTemplate"
@@ -1036,7 +1010,7 @@
          (assoc arguments* :template)
          generate-statement)))
 
-(deftest generate-statemnet-override-test
+(deftest generate-statement-override-test
   (testing "Override with Activity"
     (testing "with no Template properties or rules"
       (let [override  {:objectType "Activity"
@@ -1116,17 +1090,15 @@
             {:objectType "Agent"
              :name       "My Override"
              :mbox       "mailto:myoverride@example.com"}
-            alignments
-            {"https://example.org/activity/a"
-             {:weight 0.5, :object-override override-1}
-             "https://example.org/activity/c"
-             {:weight 0.5, :object-override override-2}}
+            overrides
+            {:weights {override-1 0.5 override-2 0.5}
+             :objects [override-1 override-2]}
             statement
             (generate-statement (assoc arguments
-                                       :alignment alignments
-                                       :template  {:id       "https://template-1"
-                                                   :type     "StatementTemplate"
-                                                   :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
+                                       :object-overrides overrides
+                                       :template {:id       "https://template-1"
+                                                  :type     "StatementTemplate"
+                                                  :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (or (= (w/stringify-keys override-1)
@@ -1144,17 +1116,15 @@
             {:objectType "Agent"
              :name       "My Override"
              :mbox       "mailto:myoverride@example.com"}
-            alignments
-            {"https://example.org/activity/a"
-             {:weight -1.0, :object-override override-1}
-             "https://example.org/activity/c"
-             {:weight 1.0, :object-override override-2}}
+            overrides
+            {:weights {override-1 0.0 override-2 1.0}
+             :objects [override-1 override-2]}
             statement
             (generate-statement (assoc arguments
-                                       :alignment alignments
-                                       :template  {:id       "https://template-1"
-                                                   :type     "StatementTemplate"
-                                                   :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
+                                       :object-overrides overrides
+                                       :template {:id       "https://template-1"
+                                                  :type     "StatementTemplate"
+                                                  :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
         (is (= (w/stringify-keys override-2)
@@ -1176,3 +1146,170 @@
              (repeatedly 100)
              (apply distinct?)
              not))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Weighted Generation Tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- gen-weighted-statements
+  [weights]
+  (let [arguments*
+        (-> arguments
+            (assoc :template {:id       "https://template-1"
+                              :type     "StatementTemplate"
+                              :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
+            (assoc-in [:alignments :weights] weights))
+        init-rng
+        (random/seed-rng 1000)]
+    (->> (repeatedly 1000 #(random/rand-unbound-int init-rng))
+         (map (partial assoc arguments* :seed))
+         (map generate-statement))))
+
+(deftest generate-weighted-statement-test
+  (testing "Verb weights"
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 0.0
+                      "https://w3id.org/xapi/adl/verbs/waived"    0.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      (is (= 1000 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived"))))
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 1.0
+                      "https://w3id.org/xapi/adl/verbs/waived"    0.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      ;; The exact counts should be reasonably close to the mean of 500;
+      ;; they are deterministic given the same sequence of seeds.
+      (is (= 483 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (= 517 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived"))))
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 1.0
+                      "https://w3id.org/xapi/adl/verbs/waived"    1.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      ;; The exact counts should be reasonably close to the mean of 333;
+      ;; they are deterministic given the same sequence of seeds.
+      (is (= 337 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (= 343 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (= 320 (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived"))))
+    (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
+                      "https://w3id.org/xapi/adl/verbs/satisfied" 0.4
+                      "https://w3id.org/xapi/adl/verbs/waived"    0.0}
+          statements (gen-weighted-statements weights)
+          verb-ids   (map #(get-in % ["verb" "id"]) statements)
+          verb-freqs (frequencies verb-ids)]
+      ;; See `datasim.math.random-test` for details on how the expected means
+      ;; (800 and 200, respectively) are computed.
+      (is (= 793 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
+      (is (= 207 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
+      (is (nil? (get verb-freqs "https://w3id.org/xapi/adl/verbs/waived")))))
+
+  (testing "Activity Type weights"
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 1000 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 520 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 480 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 353 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 328 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (= 319 (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  1.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 1.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 247 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 251 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (= 231 (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (= 271 (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))
+    (let [weights    {"https://w3id.org/xapi/cmi5/activities/block"    1.0
+                      "https://w3id.org/xapi/cmi5/activities/course"   0.4
+                      "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
+                      "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
+          statements (gen-weighted-statements weights)
+          act-types  (map #(get-in % ["object" "definition" "type"]) statements)
+          act-freqs  (frequencies act-types)]
+      (is (= 803 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
+      (is (= 197 (get act-freqs "https://w3id.org/xapi/cmi5/activities/course")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/block")))
+      (is (nil? (get act-freqs "https://w3id.org/xapi/cmi5/activitytype/course"))))))
+
+(defn- gen-weighted-override-statements
+  [weights]
+  (let [arguments*
+        (-> arguments
+            (assoc :template {:id       "https://template-1"
+                              :type     "StatementTemplate"
+                              :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
+            (assoc :object-overrides {:objects (vec (keys weights))
+                                      :weights weights}))
+        init-rng
+        (random/seed-rng 1000)]
+    (->> (repeatedly 1000 #(random/rand-unbound-int init-rng))
+         (map (partial assoc arguments* :seed))
+         (map generate-statement))))
+
+(deftest generated-weighted-statement-override-test
+  (testing "Weighted Overrides"
+    (let [object-1 {:objectType "Activity"
+                    :id         "https://www.whatever.com/activities#course1"
+                    :definition {:name        {:en-US "Course 1"}
+                                 :description {:en-US "Course Description 1"}
+                                 :type        "http://adlnet.gov/expapi/activities/course"}}
+          object-2 {:objectType "Agent"
+                    :name       "My Override"
+                    :mbox       "mailto:myoverride@example.com"}]
+      (let [weights      {object-1 1.0
+                          object-2 0.0}
+            statements   (gen-weighted-override-statements weights)
+            objects      (map #(get % "object") statements)
+            object-freqs (frequencies objects)]
+        (is (= 1000 (get object-freqs (w/stringify-keys object-1))))
+        (is (nil? (get object-freqs (w/stringify-keys object-2)))))
+      (let [weights      {object-1 1.0
+                          object-2 1.0}
+            statements   (gen-weighted-override-statements weights)
+            objects      (map #(get % "object") statements)
+            object-freqs (frequencies objects)]
+        (is (= 486 (get object-freqs (w/stringify-keys object-1))))
+        (is (= 514 (get object-freqs (w/stringify-keys object-2)))))
+      (let [weights      {object-1 1.0
+                          object-2 0.4}
+            statements   (gen-weighted-override-statements weights)
+            objects      (map #(get % "object") statements)
+            object-freqs (frequencies objects)]
+        (is (= 797 (get object-freqs (w/stringify-keys object-1))))
+        (is (= 203 (get object-freqs (w/stringify-keys object-2))))))))
