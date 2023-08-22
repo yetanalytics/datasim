@@ -33,27 +33,6 @@
 ;; Pattern Walker
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- pattern-children
-  [{:keys [id sequence alternates optional oneOrMore zeroOrMore]}
-   {:keys [weights time-delays]}
-   rng
-   repeat-max]
-  (->> (cond
-         sequence   sequence
-         alternates [(random/choose rng weights alternates)]
-         optional   (or (some->> [nil optional]
-                                 (random/choose rng weights)
-                                 vector)
-                        [])
-         oneOrMore  (repeat (inc (random/rand-int rng repeat-max))
-                            oneOrMore)
-         zeroOrMore (repeat (random/rand-int rng repeat-max)
-                            zeroOrMore))
-       (map (fn [{child-id :id :as child}]
-              (let [time-delay (or (get time-delays child-id)
-                                   (get time-delays id))]
-                (with-meta child {:time-delay time-delay}))))))
-
 (defn- pattern-zipper
   "Create a zipper over the Patterns and Statement Templates found in
    `type-iri-map`. A special `::root` sentinel Pattern is created as an
