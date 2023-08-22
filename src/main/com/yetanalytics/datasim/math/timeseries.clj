@@ -311,20 +311,19 @@
 ;; See:  McQuighan, P. (2010) "Simulating the Poisson Process." University of
 ;; Chicago. https://www.math.uchicago.edu/~may/VIGRE/VIGRE2010/REUPapers/Mcquighan.pdf
 
-(defn- poisson-seq*
-  [rand-exp]
-  (iterate (fn [prev] (+ prev (rand-exp))) 0))
-
 (defn poisson-seq
   "Generate an infinite sequence of millisecond times in which each time
    event occurs along a Poisson distribution, where `lambda` is the expected
    amount of occurences of the event in one millisecond. The optional
    `min-delay` parameter can be provided to add a minimum amount of delay
-   between each event (which is separate from the `lambda` rate)."
+   between each event (which is separate from the `lambda` rate), and the
+   optional `start` parameter provides the initial time in ms."
   ([rng lambda]
-   (poisson-seq* #(random/rand-exp rng lambda)))
+   (poisson-seq rng lambda 0.0 0.0))
   ([rng lambda min-delay]
-   (poisson-seq* #(+ (random/rand-exp rng lambda) min-delay))))
+   (poisson-seq rng lambda min-delay 0.0))
+  ([rng lambda min-delay start]
+   (iterate (fn [prev] (+ (random/rand-exp rng lambda) min-delay prev)) start)))
 
 (comment
   (def the-rng (random/seed-rng 1234))
