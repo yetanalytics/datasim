@@ -66,6 +66,8 @@
   :ret model-map-spec)
 
 (defn models->map
+  "Given `models`, return a map of maps from agent, group, and role IDs to
+   models, as well as the singular `:default-model`."
   [models]
   (let [init-map       {:default-model nil
                         :agent-models  {}
@@ -103,11 +105,13 @@
   :ret ::model)
 
 (defn get-actor-model
+  "Get the appropriate model associated with the actor described by
+   the various IDs, with `agent-id`, `group-id`, and `role-id` going
+   from greatest to least precedence."
   [{:keys [default-model agent-models group-models role-models]}
    agent-id
    group-id
    role-id]
-  ;; TODO: Figure out personae precedence
   (or (get agent-models agent-id)
       (get group-models group-id)
       (get role-models role-id)
