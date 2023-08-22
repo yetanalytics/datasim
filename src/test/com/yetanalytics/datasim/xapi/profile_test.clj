@@ -4,7 +4,8 @@
             [clojure.spec.test.alpha :as stest]
             [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.xapi.profile :as profile]
-            [com.yetanalytics.datasim.test-constants :as const]))
+            [com.yetanalytics.datasim.test-constants :as const]
+            [com.yetanalytics.datasim.xapi.profile.pattern :as pattern]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ID Constants
@@ -307,6 +308,20 @@
                                 {})
                         (assoc {} :weights))]
     (walk-pattern* profiles alignments seed)))
+
+(comment
+  (let [{:keys [profiles]} const/simple-input
+        time-delays (-> {"terminated" {:rate 2.0}
+                         "abandoned"  {:rate 1.0}
+                        ;;  "typicalsessions" {:rate 1.1}
+                         }
+                        (update-keys cmi5-iri))]
+    (-> (walk-pattern* profiles {:time-delays time-delays} 102)
+        last
+        meta
+        (dissoc :pattern-ancestors)))
+  
+  (:time-delay (meta (last (walk-pattern 20)))))
 
 (deftest walk-pattern-test
   (testing "Walk and generate seq for a single pattern"

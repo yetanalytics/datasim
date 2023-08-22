@@ -33,6 +33,27 @@
 ;; Pattern Walker
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- pattern-children
+  [{:keys [id sequence alternates optional oneOrMore zeroOrMore]}
+   {:keys [weights time-delays]}
+   rng
+   repeat-max]
+  (->> (cond
+         sequence   sequence
+         alternates [(random/choose rng weights alternates)]
+         optional   (or (some->> [nil optional]
+                                 (random/choose rng weights)
+                                 vector)
+                        [])
+         oneOrMore  (repeat (inc (random/rand-int rng repeat-max))
+                            oneOrMore)
+         zeroOrMore (repeat (random/rand-int rng repeat-max)
+                            zeroOrMore))
+       (map (fn [{child-id :id :as child}]
+              (let [time-delay (or (get time-delays child-id)
+                                   (get time-delays id))]
+                (with-meta child {:time-delay time-delay}))))))
+
 (defn- pattern-zipper
   "Create a zipper over the Patterns and Statement Templates found in
    `type-iri-map`. A special `::root` sentinel Pattern is created as an
@@ -40,7 +61,7 @@
    The zipper can then be walked; traversal will be done in a deterministic,
    pseudorandom fashion, in which `rng` and `alignments` is used to choose
    the children of each node in the zipper."
-  [type-iri-map {:keys [weights] :as _alignments} rng repeat-max]
+  [type-iri-map {:keys [weights time-delays] :as _alignments} rng repeat-max]
   (let [temp-iri-map    (get type-iri-map "StatementTemplate")
         pat-iri-map     (get type-iri-map "Pattern")
         primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
@@ -70,17 +91,31 @@
          ::root)
         (vary-meta assoc
                    ::template-map temp-iri-map
-                   ::pattern-map  pat-iri-map))))
+                   ::pattern-map  pat-iri-map
+                   ::time-delays  time-delays))))
 
 (defn- pattern-loc->template
-  [{template-m ::template-map pattern-m ::pattern-map} pattern-loc]
+  [{template-m  ::template-map
+    pattern-m   ::pattern-map
+    time-delays ::time-delays}
+   pattern-loc]
   (let [node->template #(get template-m %)
         node->pattern  #(get pattern-m %)]
     (when-some [template (->> pattern-loc z/node node->template)]
-      (vary-meta template
-                 assoc
-                 :pattern-ancestors
-                 (->> pattern-loc z/path rest (keep node->pattern) vec)))))
+      (let [ancestors  (->> pattern-loc
+                            z/path
+                            rest
+                            (keep node->pattern)
+                            vec)
+            time-delay (reduce (fn [time-delay {:keys [id]}]
+                                 (or (get time-delays id)
+                                     time-delay))
+                               {}
+                               (conj ancestors template))]
+        (vary-meta template
+                   assoc
+                   :pattern-ancestors ancestors
+                   :time-delay time-delay)))))
 
 (defn- walk-pattern-zipper
   "From the root of `pattern-zip`, perform a single walk of a primary Pattern,
