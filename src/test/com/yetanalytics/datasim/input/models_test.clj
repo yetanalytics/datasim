@@ -8,10 +8,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def alignment-1 {:id "http://www.whateveer.com/activity1"
-                 :weight 0.9})
+                  :weight 0.9
+                  :timeDelay {:min  2.1
+                              :mean 3
+                              :unit "week"}})
 
 (def alignment-2 {:id "http://www.whateveer.com/activity2"
-                 :weight 0.8})
+                  :weight 0.8
+                  :timeDelay {:min  2
+                              :mean 3.2
+                              :unit "hour"}})
 
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
                 :type "Agent"})
@@ -21,7 +27,7 @@
 
 (def model-1 {:personae   [persona-1]
               :alignments [alignment-1 alignment-2]})
-  
+
 (def model-2 {:personae   [persona-2]
               :alignments [alignment-1 alignment-2]})
 
@@ -53,6 +59,19 @@
                        [(assoc persona-1 :type "FooBar")])))
     (is (not (s/valid? ::model/personae
                        [(assoc persona-1 :type "FooBar" :id "qux")]))))
+  (testing "invalid temporal properties"
+    (is (not (s/valid? ::model/alignments
+                       [(assoc-in alignment-1 [:timeDelay :mean] 0)])))
+    (is (not (s/valid? ::model/alignments
+                       [(assoc-in alignment-1 [:timeDelay :mean] -3)])))
+    (is (not (s/valid? ::model/alignments
+                       [(assoc-in alignment-1 [:timeDelay :mean] "4")])))
+    (is (not (s/valid? ::model/alignments
+                       [(assoc-in alignment-1 [:timeDelay :min] -1.2)])))
+    (is (not (s/valid? ::model/alignments
+                       [(assoc-in alignment-1 [:timeDelay :min] "3")])))
+    (is (not (s/valid? ::model/alignments
+                       [(assoc-in alignment-1 [:timeDelay :unit] "month")]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))
@@ -61,4 +80,4 @@
     (is (not (s/valid?
               ::model/objectOverrides
               [(->> {(keyword "https://foo.org") true}
-                     (assoc-in object-override-example [:object :definition :extensions]))])))))
+                    (assoc-in object-override-example [:object :definition :extensions]))])))))
