@@ -15,8 +15,8 @@
 (s/def ::alignment/weights
   (s/map-of ::xs/iri ::random/weight))
 
-(s/def ::alignment-delay/min number?)
-(s/def ::alignment-delay/mean (s/and number? pos?))
+(s/def ::alignment-delay/min int?)
+(s/def ::alignment-delay/mean pos-int?)
 
 (s/def ::alignment/time-delays
   (s/map-of ::xs/iri (s/keys :req-un [::alignment-delay/min
@@ -71,21 +71,22 @@
   604800000)
 
 (defn- convert-time
-  "Convert time `t` into milliseconds based on the time `unit`."
+  "Convert time `t` into milliseconds based on the time `unit`. Coerces
+   any doubles into integers."
   [t unit]
-  (case unit
-    :millisecond t
-    :second (* t ms-per-second)
-    :minute (* t ms-per-minute)
-    :hour   (* t ms-per-hour)
-    :day    (* t ms-per-day)
-    :week   (* t ms-per-week)))
+  (long (case unit
+          :millisecond t
+          :second (* t ms-per-second)
+          :minute (* t ms-per-minute)
+          :hour   (* t ms-per-hour)
+          :day    (* t ms-per-day)
+          :week   (* t ms-per-week))))
 
 (defn- convert-time-delay
   [{:keys [min mean unit]}]
   (let [unit* (or (some-> unit keyword) :minute)
         mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
-        min*  (or (some-> min (convert-time unit*)) 0.0)]
+        min*  (or (some-> min (convert-time unit*)) 0)]
     {:min  min*
      :mean mean*}))
 

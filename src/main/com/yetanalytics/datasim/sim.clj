@@ -72,12 +72,13 @@
    The time difference is an exponentially-distributed random variable
    with `mean`; the `min` paramter also adds a fixed minimum
    time to the value, for a new mean `mean + min`. This ensures that the
-   events occur as a Poisson random process."
+   events occur as a Poisson random process. Note that this assumes the
+   millisecond as the basic unit of time."
   [rng prev-time {:keys [mean min]
                   :or {mean min-ms
-                       min  0.0}}]
+                       min  0}}]
   (let [rate  (/ 1.0 mean)
-        delay (random/rand-exp rng rate)]
+        delay (long (random/rand-exp rng rate))]
     (+ prev-time min delay)))
 
 (defn- statement-seq
