@@ -1,0 +1,28 @@
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bobfake@example.org",
+                "type": "Agent"
+            }
+        ],
+        "alignments": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "timeDelay": {
+                    "min": 1,
+                    "mean": 1.0,
+                    "unit": "hour"
+                }
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfied",
+                "timeDelay": {
+                    "min": 2.0,
+                    "mean": 1.0,
+                    "unit": "second"
+                }
+            }
+        ]
+    }
+]

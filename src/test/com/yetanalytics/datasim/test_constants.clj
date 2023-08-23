@@ -45,6 +45,8 @@
   "dev-resources/models/simple.json")
 (def overrides-models-filepath
   "dev-resources/models/simple_with_overrides.json")
+(def temporal-models-filepath
+  "dev-resources/models/simple_with_temporal.json")
 (def tc3-models-filepath
   "dev-resources/models/tccc_dev.json")
 
@@ -116,6 +118,9 @@
 
 (def overrides-models
   (input/from-location :models :json overrides-models-filepath))
+
+(def temporal-models
+  (input/from-location :models :json temporal-models-filepath))
 
 ;; Combined Input
 

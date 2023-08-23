@@ -3,6 +3,7 @@
             [clojure.math       :as math]
             [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
+            [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.test-constants :as const]
             [com.yetanalytics.datasim.sim :as sim]
@@ -111,51 +112,40 @@
                       (assoc-in [:parameters :end] nil)
                       generate-map
                       (get bob-mbox)
-                      (nth 10000))))))
-
-(comment
-  (require '[java-time.api :as t])
-  (defn- timestamp->millis [ts]
-    (.toEpochMilli (t/instant ts)))
-
-  (:parameters const/simple-input)
-  (let [times (->> (generate-seq const/simple-input)
-                   (take 100)
-                   (map #(get % "timestamp"))
-                   (map timestamp->millis))]
-    (/ (reduce + (rest (map - times (cons 0.0 times))))
-       100.0))
-  
-  (generate-map (assoc-in const/simple-input
-                          [:parameters :end]
-                          nil))
-  
-  (dissoc const/simple-input)
-  (->> (generate-seq (assoc-in const/simple-input
-                               [:parameters :end]
-                               nil)
-                     :select-agents ["mbox::mailto:alicefaux@example.org"])
-       (take 10)
-       (map #(get % "timestamp")))
-  
-  (- 1574077206799 1574077329658)
-
-  (+ 245297 1574077391359)
-  (/ (reduce + [210439
-                87580
-                126145
-                110533
-                17082
-                16966
-                48665
-                77721
-                24860
-                102744
-                38422
-                245297
-                18063])
-     10.0)
-  )
+                      (nth 10000)))))
+  (testing "We respect temporal properties for different actors"
+    (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
+          ms-in-hr  3600000
+          start-t   (-> const/simple-input
+                        (get-in [:parameters :start]))
+          input     (-> const/simple-input
+                        (assoc :models const/temporal-models)
+                        (assoc-in [:parameters :end] nil))
+          result    (generate-map input)
+          ->diffs   (fn [result-seq]
+                      (map (fn [{t1 "timestamp"}
+                                {t2 "timestamp" {verb "id"} "verb"}]
+                             {:verb verb
+                              :diff (t/time-between
+                                     (t/instant t1)
+                                     (t/instant t2)
+                                     :millis)})
+                           (cons {"timestamp" start-t} result-seq)
+                           result-seq))]
+      (testing "- Bob: satisfieds happen on the order of seconds, other verbs on the order of hours"
+        (is (->> (get result bob-mbox)
+                 (take 100)
+                 ->diffs
+                 (every? (fn [{:keys [verb diff]}]
+                           (or (and (= verb satisfied)
+                                    (< diff ms-in-hr))
+                               (< ms-in-hr diff)))))))
+      (testing "- Alice: all verbs happen on the order of minutes"
+        (is (->> (get result alice-mbox)
+                 (take 100)
+                 ->diffs
+                 (every? (fn [{:keys [diff]}]
+                           (< diff ms-in-hr)))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
@@ -288,22 +278,23 @@
              (get obj-freq override-2)
              (+ mean-2 (* 3 sd))))))
   (testing "Can apply object override and respect weights - only activity"
-    (let [input     (-> (assoc const/simple-input
-                               :models const/overrides-models)
+    (let [input     (-> const/simple-input
+                        (assoc :models const/overrides-models)
                         (update-in [:models 0 :objectOverrides 0]
                                    assoc
                                    :weight 1.0)
                         (update-in [:models 0 :objectOverrides 1]
                                    assoc
                                    :weight 0.0))
-          ret       (generate-seq input
+          result    (generate-seq input
                                   :select-agents [bob-mbox])
-          objects   (map get-object ret)]
+          objects   (map get-object result)]
       (is (every? #(= override-1 %) objects))))
   (testing "Can apply multiple personae"
-    (let [ret (generate-seq (update const/simple-input
-                                    :personae-array conj const/tc3-personae))
-          ids (map get-actor-mbox ret)]
+    (let [input  (update const/simple-input
+                         :personae-array conj const/tc3-personae)
+          result (generate-seq input)
+          ids    (map get-actor-mbox result)]
       (is (= #{;; simple personae
                alice-mailto
                bob-mailto
@@ -315,7 +306,36 @@
                "mailto:phil@example.org"
                "mailto:sally@example.org"
                "mailto:steve@example.org"}
-             (set ids))))))
+             (set ids)))))
+  (testing "Respects temporal parameters"
+    (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
+          ms-in-hr  3600000
+          start-t   (-> const/simple-input
+                        (get-in [:parameters :start])
+                        t/instant
+                        .toEpochMilli)
+          input     (-> const/simple-input
+                        (assoc :models const/temporal-models)
+                        (assoc-in [:parameters :end] nil))
+          result    (generate-seq
+                     input
+                     :select-agents ["mbox::mailto:bobfake@example.org"])
+          result*   (take 100 result)
+          ts-maps   (map (fn [{{verb "id"} "verb" ts "timestamp"}]
+                           {:verb verb
+                            :time (.toEpochMilli (t/instant ts))})
+                         result*)
+          ts-diffs  (map (fn [{t1 :time} {verb :verb t2 :time}]
+                           {:verb verb
+                            :diff (- t2 t1)})
+                         (cons {:time start-t} ts-maps)
+                         ts-maps)]
+      (is (every? (fn [{:keys [verb diff]}]
+                    (or (and (= verb satisfied)
+                             (< diff ms-in-hr))
+                        (< ms-in-hr diff)))
+                  ts-diffs))))
+  (testing "Respects temporal parameters when not applied"))
 
 (deftest generate-async-test
   (testing "Async statement gen produces valid statements"

@@ -98,12 +98,11 @@
 ;; Time Delay
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private double-spec
-  (s/double-in :min 0 :infinite? false :NaN? false))
+(s/def ::delay/min
+  (s/and number? pos?))
 
-(s/def ::delay/min double-spec)
-
-(s/def ::delay/mean double-spec)
+(s/def ::delay/mean
+  (s/and number? pos? (comp not zero?)))
 
 (s/def ::delay/unit
   #{"millisecond" "second" "minute" "hour" "day" "week"})
