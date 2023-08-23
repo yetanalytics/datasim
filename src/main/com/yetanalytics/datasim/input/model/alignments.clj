@@ -105,30 +105,13 @@
 
 (s/def ::delay/mean double-spec)
 
-(s/def ::delay/max double-spec)
-
-(s/def ::delay/sd double-spec)
-
 (s/def ::delay/unit
   #{"millisecond" "second" "minute" "hour" "day" "week" "month"})
 
-(defn- ordered-delay-values?
-  [{:keys [min mean max]}]
-  (cond
-    (and min mean max) (<= min mean max)
-    (and min mean)     (<= min mean)
-    (and mean max)     (<= mean max)
-    (and min max)      (<= min max)
-    mean  true ; cannot have only min or only max
-    :else false))
-
 (s/def ::timeDelay
-  (s/and (s/keys :req-un [::delay/unit]
-                 :opt-un [::delay/min
-                          ::delay/mean
-                          ::delay/max
-                          ::delay/sd])
-         ordered-delay-values?))
+  (s/keys :opt-un [::delay/min
+                   ::delay/mean
+                   ::delay/unit]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Alignment
