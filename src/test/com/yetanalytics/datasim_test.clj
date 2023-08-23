@@ -3,7 +3,6 @@
             [clojure.math       :as math]
             [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
-            [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.test-constants :as const]
             [com.yetanalytics.datasim.sim :as sim]
@@ -116,36 +115,25 @@
   (testing "We respect temporal properties for different actors"
     (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
           ms-in-hr  3600000
-          start-t   (-> const/simple-input
-                        (get-in [:parameters :start]))
           input     (-> const/simple-input
                         (assoc :models const/temporal-models)
                         (assoc-in [:parameters :end] nil))
-          result    (generate-map input)
-          ->diffs   (fn [result-seq]
-                      (map (fn [{t1 "timestamp"}
-                                {t2 "timestamp" {verb "id"} "verb"}]
-                             {:verb verb
-                              :diff (t/time-between
-                                     (t/instant t1)
-                                     (t/instant t2)
-                                     :millis)})
-                           (cons {"timestamp" start-t} result-seq)
-                           result-seq))]
+          result    (generate-map input)]
       (testing "- Bob: satisfieds happen on the order of seconds, other verbs on the order of hours"
         (is (->> (get result bob-mbox)
                  (take 100)
-                 ->diffs
-                 (every? (fn [{:keys [verb diff]}]
-                           (or (and (= verb satisfied)
-                                    (< diff ms-in-hr))
-                               (< ms-in-hr diff)))))))
+                 (every? (fn [statement]
+                           (let [verb (get-in statement ["verb" "id"])
+                                 diff (:duration-ms (meta statement))]
+                             (or (and (= verb satisfied)
+                                      (< diff ms-in-hr))
+                                 (< ms-in-hr diff))))))))
       (testing "- Alice: all verbs happen on the order of minutes"
         (is (->> (get result alice-mbox)
                  (take 100)
-                 ->diffs
-                 (every? (fn [{:keys [diff]}]
-                           (< diff ms-in-hr)))))))))
+                 (every? (fn [statement]
+                           (let [diff (:duration-ms (meta statement))]
+                             (< diff ms-in-hr))))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"

@@ -67,19 +67,19 @@
                :seed             ::seed)
   :ret :skeleton/statement-seq)
 
-(defn- next-time
-  "Generate a new millisecond time value that is added upon `prev-time`.
+(defn- generate-duration
+  "Generate a new millisecond time value that to be added upon the prev time.
    The time difference is an exponentially-distributed random variable
    with `mean`; the `min` paramter also adds a fixed minimum
    time to the value, for a new mean `mean + min`. This ensures that the
    events occur as a Poisson random process. Note that this assumes the
    millisecond as the basic unit of time."
-  [rng prev-time {:keys [mean min]
-                  :or {mean min-ms
-                       min  0}}]
+  [rng {:keys [mean min]
+        :or {mean min-ms
+             min  0}}]
   (let [rate  (/ 1.0 mean)
         delay (long (random/rand-exp rng rate))]
-    (+ prev-time min delay)))
+    (+ min delay)))
 
 (defn- statement-seq
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
@@ -90,18 +90,20 @@
   [inputs registration-seq seed start-time ?end-time]
   (let [time-rng (random/seed-rng seed)
         end-cmp  (if (some? ?end-time)
-                   (fn [sim-t] (< sim-t ?end-time))
+                   (fn [time-ms] (< time-ms ?end-time))
                    (constantly true))
         statement-seq*
-        (fn statement-seq* [sim-time registration-seq]
+        (fn statement-seq* [prev-time registration-seq]
           (lazy-seq
-           (let [reg-map    (first registration-seq)
-                 time-delay (:time-delay reg-map)
-                 sim-t      (next-time time-rng sim-time time-delay)
-                 input-map  (merge inputs reg-map {:sim-t sim-t})]
-             (if (end-cmp sim-t)
+           (let [reg-map     (first registration-seq)
+                 time-delay  (:time-delay reg-map)
+                 duration-ms (generate-duration time-rng time-delay)
+                 time-ms     (+ prev-time duration-ms)
+                 input-map   (merge inputs reg-map {:time-ms     time-ms
+                                                    :duration-ms duration-ms})]
+             (if (end-cmp time-ms)
                (cons (statement/generate-statement input-map)
-                     (statement-seq* sim-t (rest registration-seq)))
+                     (statement-seq* time-ms (rest registration-seq)))
                '()))))]
     (statement-seq* start-time registration-seq)))
 
@@ -135,12 +137,12 @@
   (.toEpochMilli (t/instant ts)))
 
 (defn- drop-statements-from-time
-  "Drop any `statements` whose `:timestamp-ms` metadata comes after
+  "Drop any `statements` whose `:time-ms` metadata comes after
    `from-ms`."
   [from-ms statements]
   (drop-while
    (fn [statement]
-     (>= from-ms (-> statement meta :timestamp-ms)))
+     (>= from-ms (-> statement meta :time-ms)))
    statements))
 
 ;; Time/probability sequence helpers
@@ -232,7 +234,7 @@
   (let [skeleton (cond-> (build-skeleton input)
                    select-agents
                    (select-keys select-agents))]
-    (cond->> (->> skeleton vals (su/seq-sort (comp :timestamp-ms meta)))
+    (cond->> (->> skeleton vals (su/seq-sort (comp :time-ms meta)))
       ?max-statements (take ?max-statements))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -284,11 +286,11 @@
 
 ;; simulate single channel
 
-(defn- compare-timestamp-ms-meta
+(defn- compare-time-ms-meta
   [stmt-1 stmt-2]
   (compare
-   (-> stmt-1 meta :timestamp-ms)
-   (-> stmt-2 meta :timestamp-ms)))
+   (-> stmt-1 meta :time-ms)
+   (-> stmt-2 meta :time-ms)))
 
 (s/def ::sort boolean?)
 (s/def ::buffer-size pos-int?)
@@ -314,6 +316,6 @@
     (if sort
       (->> chans
            (au/sequence-messages (a/chan buffer-size)
-                                 compare-timestamp-ms-meta))
+                                 compare-time-ms-meta))
       (-> chans
           (a/merge buffer-size)))))

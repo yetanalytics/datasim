@@ -200,7 +200,7 @@
         sim/sim-seq))
   
   (def timestamp-seq
-    (map (comp :timestamp-ms meta) statement-seq))
+    (map (comp :time-ms meta) statement-seq))
   
   (view
    (histogram
