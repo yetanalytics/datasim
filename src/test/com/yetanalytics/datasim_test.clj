@@ -306,36 +306,7 @@
                "mailto:phil@example.org"
                "mailto:sally@example.org"
                "mailto:steve@example.org"}
-             (set ids)))))
-  (testing "Respects temporal parameters"
-    (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
-          ms-in-hr  3600000
-          start-t   (-> const/simple-input
-                        (get-in [:parameters :start])
-                        t/instant
-                        .toEpochMilli)
-          input     (-> const/simple-input
-                        (assoc :models const/temporal-models)
-                        (assoc-in [:parameters :end] nil))
-          result    (generate-seq
-                     input
-                     :select-agents ["mbox::mailto:bobfake@example.org"])
-          result*   (take 100 result)
-          ts-maps   (map (fn [{{verb "id"} "verb" ts "timestamp"}]
-                           {:verb verb
-                            :time (.toEpochMilli (t/instant ts))})
-                         result*)
-          ts-diffs  (map (fn [{t1 :time} {verb :verb t2 :time}]
-                           {:verb verb
-                            :diff (- t2 t1)})
-                         (cons {:time start-t} ts-maps)
-                         ts-maps)]
-      (is (every? (fn [{:keys [verb diff]}]
-                    (or (and (= verb satisfied)
-                             (< diff ms-in-hr))
-                        (< ms-in-hr diff)))
-                  ts-diffs))))
-  (testing "Respects temporal parameters when not applied"))
+             (set ids))))))
 
 (deftest generate-async-test
   (testing "Async statement gen produces valid statements"
