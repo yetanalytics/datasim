@@ -7,12 +7,10 @@
             [com.yetanalytics.datasim                   :as-alias datasim]
             [com.yetanalytics.datasim.model             :as model]
             [com.yetanalytics.datasim.math.random       :as random]
-            [com.yetanalytics.datasim.math.timeseries   :as ts]
             [com.yetanalytics.datasim.xapi.actor        :as actor]
             [com.yetanalytics.datasim.xapi.profile      :as p]
             [com.yetanalytics.datasim.xapi.registration :as reg]
             [com.yetanalytics.datasim.xapi.statement    :as statement]
-            [com.yetanalytics.datasim.util.maths        :as maths]
             [com.yetanalytics.datasim.util.sequence     :as su]
             [com.yetanalytics.datasim.util.async        :as au])
   (:import [java.time ZoneRegion]))
@@ -56,37 +54,6 @@
 
 (def min-ms 60000) ; The amount of milliseconds in one minute
 
-(defn- actual-start-time
-  "Set the actual time of the generated Statement to a time somwhere between
-   `time-ms` and `time-ms + 1 min`, rather than always at `time-ms`.
-   
-   This is for additional spiciness :)"
-  [time-ms rng]
-  (long (+ time-ms (random/rand-int rng min-ms))))
-
-(defn- drop-time-probs
-  "Given `prob-seq` consisting of `[time-ms prob]` pairs, drop the first couple
-   of pairs; `prob` is the probability that on a given pair the dropping
-   stops and `[[time-ms prob] & rest]` is returned."
-  [prob-seq rng]
-  (->> prob-seq
-       (drop-while
-        (fn [[_time-ms prob]]
-          (or
-           ;; micro-optimization - don't bother with rng if `prob` is 0
-           (zero? prob)
-           ;; choose `minutes` with probability `prob`
-           ;; in other words, drop with probability `1 - prob`
-           (random/rand-boolean rng (- 1.0 prob)))))
-       not-empty))
-
-(defn- drop-past-time-probs
-  "Drop all `[time prob]` pairs where `time` occurs before `end-ms`."
-  [prob-seq end-ms]
-  (drop-while
-   (fn [[time-ms _prob]] (< time-ms end-ms))
-   prob-seq))
-
 (s/fdef statement-seq
   :args (s/cat :inputs (s/keys :req-un [::statement/type-iri-map
                                         ::statement/activity-map
@@ -100,46 +67,32 @@
                :seed             ::seed)
   :ret :skeleton/statement-seq)
 
-(defn- statement-seq
-  "Return a lazy sequence of generated Statements; generation ends once
-   `probability-seq` is exhausted."
-  [inputs probability-seq registration-seq seed]
-  (let [time-rng (random/seed-rng seed)
-        ;; time-ms -> start-ms -> <statement generator> -> end-ms
-        ;; the sequence should resume after end-ms
-        statement-seq*
-        (fn statement-seq* [prob-seq reg-seq]
-          (lazy-seq
-           (when-some [[[time-ms _] & rest-prob-seq]
-                       (drop-time-probs prob-seq time-rng)]
-             (let [start-ms  (actual-start-time time-ms time-rng)
-                   input-map (merge inputs
-                                    (first reg-seq)
-                                    {:sim-t start-ms})
-                   statement (statement/generate-statement input-map)
-                   end-ms    (:end-ms (meta statement))]
-               (cons statement
-                     (statement-seq*
-                      (drop-past-time-probs rest-prob-seq end-ms)
-                      (rest reg-seq)))))))]
-    (statement-seq* probability-seq registration-seq)))
-
 (defn- next-time
+  "Generate a new millisecond time value that is added upon `prev-time`.
+   The time difference is an exponentially-distributed random variable
+   with mean `avg-delay`; the `min-delay` paramter also adds a fixed minimum
+   time to the value, for a mean `min-delay + avg-delay`. This ensures that the
+   events occur as a Poisson random process."
   [rng prev-time {:keys [avg-delay min-delay]
-                  :or {avg-delay 60000 ; ms in one minute
+                  :or {avg-delay min-ms
                        min-delay 0}}]
   (let [rate  (/ 1.0 avg-delay)
         delay (long (random/rand-exp rng rate))]
     (+ prev-time min-delay delay)))
 
-(defn- statement-seq-2
+(defn- statement-seq
+  "Generate a lazy sequence of xAPI Statements occuring as a Poisson
+   process. Accepts a `registration-seq` where each entry includes the
+   Statement Template and the temporal properties of each generated
+   Statement. The sequence will either end at `?end-time` or, if `nil`,
+   be infinite."
   [inputs registration-seq seed start-time ?end-time]
   (let [time-rng (random/seed-rng seed)
         end-cmp  (if (some? ?end-time)
                    (fn [sim-t] (< sim-t ?end-time))
                    (constantly true))
-        statement-seq-2*
-        (fn statement-seq-2* [sim-time registration-seq]
+        statement-seq*
+        (fn statement-seq* [sim-time registration-seq]
           (lazy-seq
            (let [reg-map    (first registration-seq)
                  time-delay (:time-delay reg-map)
@@ -147,9 +100,9 @@
                  input-map  (merge inputs reg-map {:sim-t sim-t})]
              (if (end-cmp sim-t)
                (cons (statement/generate-statement input-map)
-                     (statement-seq-2* sim-t (rest registration-seq)))
+                     (statement-seq* sim-t (rest registration-seq)))
                '()))))]
-    (statement-seq-2* start-time registration-seq)))
+    (statement-seq* start-time registration-seq)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
@@ -224,57 +177,6 @@
 
 ;; Time/probability sequence helpers
 
-;; Right now we are using common ARMA settings, this may change
-(def common-arma
-  {:phi   [0.5 0.2]
-   :theta []
-   :std   0.25
-   :c     0.0})
-
-(defn- arma-seq [seed]
-  (ts/arma-seq (assoc common-arma :seed seed)))
-
-(defn- lunch-hour-seq
-  "Map `minute-of-day-seq` into a sequence of `1.0`, if the corresponding
-   minute of the day is between 12:00 and 13:00 (the \"lunch hour\"),
-   and `-1.0`, if it is any other time."
-  [minute-of-day-seq]
-  (map (fn [min-of-day]
-         (if (<= 720 min-of-day 780) 1.0 -1.0))
-       minute-of-day-seq))
-
-(defn- arma-time-seqs->prob-mask-seq
-  "Derive a lazy sequence of probability mask values for actor events.
-   
-   The mask seq can be plotted as a time series. One will see a
-   generally-sinusoidal value, as `day-night-seq` is sinusoidal,
-   with the highest y-value during the night and lowest during the day;
-   random variation is introduced by `group-arma-seq` and the y-value is
-   fixed at `1.0` during the \"lunch hour\" (12:00 to 13:00)
-   thanks to `(lunch-hour-seq min-of-day-seq)`.
-   
-   These values will be inverted since each mask value will be subtracted
-   from each value in `actor-arma-seq` in order to form each actor
-   event probability."
-  [arma-seq day-night-seq min-of-day-seq]
-  (map max
-       arma-seq
-       day-night-seq
-       (lunch-hour-seq min-of-day-seq)))
-
-(defn- arma-mask-seqs->prob-seq
-  "Subtract each value of `arma-seq` by its respective `prob-mask-seq`
-   value, then use that value to derive a probability value in `[0,1]`.
-   Note that a higher `prob-mask-seq` value will result in a lower probability."
-  [arma-seq prob-mask-seq]
-  (map (fn [arma-val prob-mask-val]
-         (-> (- arma-val prob-mask-val) ; higher mask val -> lower prob
-             (/ 2) ; decrease general range from [-1, 1] to [-0.5, 0.5]
-             maths/bound-probability
-             double))
-       arma-seq
-       prob-mask-seq))
-
 (s/fdef build-skeleton
   :args (s/cat :input ::datasim/input)
   :ret ::skeleton)
@@ -295,18 +197,6 @@
         ?t-from     (some-> ?from-stamp timestamp->millis)
         ?t-end      (some-> end timestamp->millis)
         ?sample-ms  (some-> ?t-end (- t-start))
-        ;; Derive the actor event probability mask sequence.
-        {:keys
-         [minute-ms-seq
-          minute-of-day-seq
-          minute-day-night-seq]} (ts/time-seqs :t-zero t-start
-                                               :sample-ms ?sample-ms
-                                               :zone zone-region)
-        mask-arma-seed  (random/rand-unbound-int sim-rng)
-        mask-arma-seq   (arma-seq mask-arma-seed)
-        prob-mask-seq   (arma-time-seqs->prob-mask-seq mask-arma-seq
-                                                       minute-day-night-seq
-                                                       minute-of-day-seq)
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
@@ -329,12 +219,6 @@
                                                          actor-group-id
                                                          actor-role)
                   actor-alignment (:alignments actor-model-map)
-                  ;; Actor probability seq
-                  actor-arma-seed (random/rand-unbound-int sim-rng)
-                  actor-arma-seq  (arma-seq actor-arma-seed)
-                  actor-prob-seq* (arma-mask-seqs->prob-seq actor-arma-seq
-                                                            prob-mask-seq)
-                  actor-prob-seq  (map vector minute-ms-seq actor-prob-seq*)
                   ;; Actor registration seq
                   actor-reg-seed  (random/rand-unbound-int sim-rng)
                   actor-reg-seq   (reg/registration-seq profiles-map
@@ -349,14 +233,7 @@
                   actor-input     (merge profiles-map
                                          actor-model-map
                                          actor-xapi-map)
-                  ;; actor-stmt-seq  (cond->> (statement-seq
-                  ;;                           actor-input
-                  ;;                           actor-prob-seq
-                  ;;                           actor-reg-seq
-                  ;;                           actor-seed)
-                  ;;                   ?t-from
-                  ;;                   (drop-statements-from-time ?t-from))
-                  actor-stmt-seq* (statement-seq-2
+                  actor-stmt-seq* (statement-seq
                                    actor-input
                                    actor-reg-seq
                                    actor-seed
