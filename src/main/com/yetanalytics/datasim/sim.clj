@@ -133,8 +133,11 @@
     (+ prev-time min-delay delay)))
 
 (defn- statement-seq-2
-  [inputs registration-seq seed start-time end-time]
+  [inputs registration-seq seed start-time ?end-time]
   (let [time-rng (random/seed-rng seed)
+        end-cmp  (if (some? ?end-time)
+                   (fn [sim-t] (< sim-t ?end-time))
+                   (constantly true))
         statement-seq-2*
         (fn statement-seq-2* [sim-time registration-seq]
           (lazy-seq
@@ -142,7 +145,7 @@
                  time-delay (:time-delay reg-map)
                  sim-t      (next-time time-rng sim-time time-delay)
                  input-map  (merge inputs reg-map {:sim-t sim-t})]
-             (if (< sim-t end-time)
+             (if (end-cmp sim-t)
                (cons (statement/generate-statement input-map)
                      (statement-seq-2* sim-t (rest registration-seq)))
                '()))))]
@@ -353,12 +356,15 @@
                   ;;                           actor-seed)
                   ;;                   ?t-from
                   ;;                   (drop-statements-from-time ?t-from))
-                  actor-stmt-seq  (statement-seq-2
+                  actor-stmt-seq* (statement-seq-2
                                    actor-input
                                    actor-reg-seq
                                    actor-seed
                                    t-start
-                                   (or ?t-end Integer/MAX_VALUE))]
+                                   ?t-end)
+                  actor-stmt-seq  (cond->> actor-stmt-seq*
+                                    ?t-from
+                                    (drop-statements-from-time ?t-from))]
               (assoc m actor-id actor-stmt-seq)))
           {}))))
 

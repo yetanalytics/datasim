@@ -127,13 +127,13 @@
        100.0))
   
   (generate-map (assoc-in const/simple-input
-                          [:parameters :seed]
-                          101))
+                          [:parameters :end]
+                          nil))
   
   (dissoc const/simple-input)
   (->> (generate-seq (assoc-in const/simple-input
-                               [:parameters :seed]
-                               101)
+                               [:parameters :end]
+                               nil)
                      :select-agents ["mbox::mailto:alicefaux@example.org"])
        (take 10)
        (map #(get % "timestamp")))
@@ -255,8 +255,8 @@
                                 alignments)
           result     (generate-seq input :select-agents [bob-mbox])
           act-types  (->> result
-                            ;; "satisfied" statements define object activity
-                            ;; via rules, hence we need to exclude them
+                          ;; "satisfied" statements define object activity
+                          ;; via rules, hence we need to exclude them
                           (filter (fn [{{verb-id "id"} "verb"}]
                                     (not= verb-id "http://adlnet.gov/expapi/verbs/satisfied")))
                           (map (fn [stmt]
