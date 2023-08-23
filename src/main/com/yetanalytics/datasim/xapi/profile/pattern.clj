@@ -119,6 +119,6 @@
    that have `:pattern-ancestors` metadata."
   [type-iri-map]
   (fn [alignments rng & {:keys [repeat-max]
-                        :or {repeat-max 5}}]
+                         :or {repeat-max 5}}]
     (walk-pattern-zipper
      (pattern-zipper type-iri-map alignments rng repeat-max))))

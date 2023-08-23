@@ -124,6 +124,30 @@
                       (rest reg-seq)))))))]
     (statement-seq* probability-seq registration-seq)))
 
+(defn- next-time
+  [rng prev-time {:keys [avg-delay min-delay]
+                  :or {avg-delay 60000 ; ms in one minute
+                       min-delay 0}}]
+  (let [rate  (/ 1.0 avg-delay)
+        delay (long (random/rand-exp rng rate))]
+    (+ prev-time min-delay delay)))
+
+(defn- statement-seq-2
+  [inputs registration-seq seed start-time end-time]
+  (let [time-rng (random/seed-rng seed)
+        statement-seq-2*
+        (fn statement-seq-2* [sim-time registration-seq]
+          (lazy-seq
+           (let [reg-map    (first registration-seq)
+                 time-delay (:time-delay reg-map)
+                 sim-t      (next-time time-rng sim-time time-delay)
+                 input-map  (merge inputs reg-map {:sim-t sim-t})]
+             (if (< sim-t end-time)
+               (cons (statement/generate-statement input-map)
+                     (statement-seq-2* sim-t (rest registration-seq)))
+               '()))))]
+    (statement-seq-2* start-time registration-seq)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -322,13 +346,19 @@
                   actor-input     (merge profiles-map
                                          actor-model-map
                                          actor-xapi-map)
-                  actor-stmt-seq  (cond->> (statement-seq
-                                            actor-input
-                                            actor-prob-seq
-                                            actor-reg-seq
-                                            actor-seed)
-                                    ?t-from
-                                    (drop-statements-from-time ?t-from))]
+                  ;; actor-stmt-seq  (cond->> (statement-seq
+                  ;;                           actor-input
+                  ;;                           actor-prob-seq
+                  ;;                           actor-reg-seq
+                  ;;                           actor-seed)
+                  ;;                   ?t-from
+                  ;;                   (drop-statements-from-time ?t-from))
+                  actor-stmt-seq  (statement-seq-2
+                                   actor-input
+                                   actor-reg-seq
+                                   actor-seed
+                                   t-start
+                                   (or ?t-end Integer/MAX_VALUE))]
               (assoc m actor-id actor-stmt-seq)))
           {}))))
 

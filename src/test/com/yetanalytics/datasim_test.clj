@@ -75,7 +75,6 @@
 (def no-concepts-profile-input
   (assoc const/simple-input :profiles [const/no-concept-profile]))
 
-(get-in const/simple-input [:parameters :end])
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,6 +112,50 @@
                       generate-map
                       (get bob-mbox)
                       (nth 10000))))))
+
+(comment
+  (require '[java-time.api :as t])
+  (defn- timestamp->millis [ts]
+    (.toEpochMilli (t/instant ts)))
+
+  (:parameters const/simple-input)
+  (let [times (->> (generate-seq const/simple-input)
+                   (take 100)
+                   (map #(get % "timestamp"))
+                   (map timestamp->millis))]
+    (/ (reduce + (rest (map - times (cons 0.0 times))))
+       100.0))
+  
+  (generate-map (assoc-in const/simple-input
+                          [:parameters :seed]
+                          101))
+  
+  (dissoc const/simple-input)
+  (->> (generate-seq (assoc-in const/simple-input
+                               [:parameters :seed]
+                               101)
+                     :select-agents ["mbox::mailto:alicefaux@example.org"])
+       (take 10)
+       (map #(get % "timestamp")))
+  
+  (- 1574077206799 1574077329658)
+
+  (+ 245297 1574077391359)
+  (/ (reduce + [210439
+                87580
+                126145
+                110533
+                17082
+                16966
+                48665
+                77721
+                24860
+                102744
+                38422
+                245297
+                18063])
+     10.0)
+  )
 
 (deftest generate-seq-test
   (testing "Returns statements"
