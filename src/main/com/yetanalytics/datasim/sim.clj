@@ -52,7 +52,7 @@
 ;; Statement Sequence
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def min-ms 60000) ; The amount of milliseconds in one minute
+(def min-ms 60000.0) ; The amount of milliseconds in one minute
 
 (s/fdef statement-seq
   :args (s/cat :inputs (s/keys :req-un [::statement/type-iri-map
@@ -70,15 +70,15 @@
 (defn- next-time
   "Generate a new millisecond time value that is added upon `prev-time`.
    The time difference is an exponentially-distributed random variable
-   with mean `avg-delay`; the `min-delay` paramter also adds a fixed minimum
-   time to the value, for a mean `min-delay + avg-delay`. This ensures that the
+   with `mean`; the `min` paramter also adds a fixed minimum
+   time to the value, for a new mean `mean + min`. This ensures that the
    events occur as a Poisson random process."
-  [rng prev-time {:keys [avg-delay min-delay]
-                  :or {avg-delay min-ms
-                       min-delay 0}}]
-  (let [rate  (/ 1.0 avg-delay)
-        delay (long (random/rand-exp rng rate))]
-    (+ prev-time min-delay delay)))
+  [rng prev-time {:keys [mean min]
+                  :or {mean min-ms
+                       min  0.0}}]
+  (let [rate  (/ 1.0 mean)
+        delay (random/rand-exp rng rate)]
+    (+ prev-time min delay)))
 
 (defn- statement-seq
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
@@ -233,12 +233,11 @@
                   actor-input     (merge profiles-map
                                          actor-model-map
                                          actor-xapi-map)
-                  actor-stmt-seq* (statement-seq
-                                   actor-input
-                                   actor-reg-seq
-                                   actor-seed
-                                   t-start
-                                   ?t-end)
+                  actor-stmt-seq* (statement-seq actor-input
+                                                 actor-reg-seq
+                                                 actor-seed
+                                                 t-start
+                                                 ?t-end)
                   actor-stmt-seq  (cond->> actor-stmt-seq*
                                     ?t-from
                                     (drop-statements-from-time ?t-from))]

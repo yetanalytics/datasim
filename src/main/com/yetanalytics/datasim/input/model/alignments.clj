@@ -106,7 +106,7 @@
 (s/def ::delay/mean double-spec)
 
 (s/def ::delay/unit
-  #{"millisecond" "second" "minute" "hour" "day" "week" "month"})
+  #{"millisecond" "second" "minute" "hour" "day" "week"})
 
 (s/def ::timeDelay
   (s/keys :opt-un [::delay/min

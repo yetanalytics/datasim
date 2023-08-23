@@ -4,6 +4,7 @@
             [com.yetanalytics.datasim.input.model           :as model]
             [com.yetanalytics.datasim.math.random           :as random]
             [com.yetanalytics.datasim.model.alignment       :as-alias alignment]
+            [com.yetanalytics.datasim.model.alignment.delay :as-alias alignment-delay]
             [com.yetanalytics.datasim.model.object-override :as-alias obj-override]
             [com.yetanalytics.datasim.xapi.actor            :as actor]))
 
@@ -14,9 +15,16 @@
 (s/def ::alignment/weights
   (s/map-of ::xs/iri ::random/weight))
 
-;; TODO: Temporal properties
+(s/def ::alignment-delay/min number?)
+(s/def ::alignment-delay/mean (s/and number? pos?))
+
+(s/def ::alignment/time-delays
+  (s/map-of ::xs/iri (s/keys :req-un [::alignment-delay/min
+                                      ::alignment-delay/mean])))
+
 (s/def ::alignments
-  (s/keys :opt-un [::alignment/weights]))
+  (s/keys :opt-un [::alignment/weights
+                   ::alignment/time-delays]))
 
 (s/def ::obj-override/weights
   (s/map-of :statement/object ::random/weight))
@@ -47,16 +55,57 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Temporal properties
+(def ms-per-second
+  1000)
+
+(def ms-per-minute
+  60000)
+
+(def ms-per-hour
+  3600000)
+
+(def ms-per-day
+  86400000)
+
+(def ms-per-week
+  604800000)
+
+(defn- convert-time
+  "Convert time `t` into milliseconds based on the time `unit`."
+  [t unit]
+  (case unit
+    :millisecond t
+    :second (* t ms-per-second)
+    :minute (* t ms-per-minute)
+    :hour   (* t ms-per-hour)
+    :day    (* t ms-per-day)
+    :week   (* t ms-per-week)))
+
+(defn- convert-time-delay
+  [{:keys [min mean unit]}]
+  (let [unit* (or (some-> unit keyword) :minute)
+        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
+        min*  (or (some-> min (convert-time unit*)) 0.0)]
+    {:min  min*
+     :mean mean*}))
+
 (defn- mapify-alignments
   [alignments]
-  {:weights (reduce (fn [m {:keys [id weight]}] (assoc m id weight))
-                    {}
-                    alignments)})
+  {:weights     (reduce (fn [acc {:keys [id weight]}]
+                          (if (some? weight)
+                            (assoc acc id weight)
+                            acc))
+                        {}
+                        alignments)
+   :time-delays (reduce (fn [acc {:keys [id timeDelay]}]
+                          (assoc acc id (convert-time-delay timeDelay)))
+                        {}
+                        alignments)})
 
 (defn- mapify-object-overrides
   [object-overrides]
-  {:weights (reduce (fn [m {:keys [weight object]}] (assoc m object weight))
+  {:weights (reduce (fn [m {:keys [weight object]}]
+                      (assoc m object weight))
                     {}
                     object-overrides)
    :objects (map :object object-overrides)})
