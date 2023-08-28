@@ -95,12 +95,14 @@
         statement-seq*
         (fn statement-seq* [prev-time registration-seq]
           (lazy-seq
-           (let [reg-map     (first registration-seq)
-                 period      (:period reg-map)
-                 duration-ms (increment-period time-rng period)
-                 time-ms     (+ prev-time duration-ms)
-                 input-map   (merge inputs reg-map {:time-ms     time-ms
-                                                    :duration-ms duration-ms})]
+           (let [{:keys [bounds
+                         period]
+                  :as reg-map} (first registration-seq)
+                 duration-ms   (increment-period time-rng period)
+                 time-ms       (+ prev-time duration-ms)
+                 time-map      {:time-ms     time-ms
+                                :duration-ms duration-ms}
+                 input-map     (merge inputs reg-map time-map)]
              (if (end-cmp time-ms)
                (cons (statement/generate-statement input-map)
                      (statement-seq* time-ms (rest registration-seq)))

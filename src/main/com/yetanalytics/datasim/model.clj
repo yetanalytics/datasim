@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.input.model            :as model]
+            [com.yetanalytics.datasim.input.model.alignments :refer [day-of-week-map month-of-year-map]]
             [com.yetanalytics.datasim.math.random            :as random]
             [com.yetanalytics.datasim.model.alignment        :as-alias alignment]
             [com.yetanalytics.datasim.model.alignment.period :as-alias alignment.period]
@@ -90,12 +91,44 @@
     {:min  min*
      :mean mean*}))
 
+(defn- convert-time-bound-unit
+  [unit v]
+  (let [convert-dow   (fn [d]
+                        (if (string? d) (get day-of-week-map d) d))
+        convert-month (fn [m]
+                        (if (string? m) (get month-of-year-map m) m))]
+    (case unit
+      :day-of-week
+      (if (coll? v)
+        (->> v (mapv convert-dow))
+        (->> v convert-dow (repeat 2) vec))
+      :month
+      (if (coll? v)
+        (->> v (mapv convert-month))
+        (->> v convert-month (repeat 2) vec))
+      (if (coll? v)
+        v
+        [v v]))))
+
+(defn- convert-time-bounds
+  [bounds]
+  (mapv (fn [bound]
+          (reduce-kv (fn [bound* unit v]
+                       (assoc bound* unit (mapv (partial convert-time-bound-unit unit) v)))
+                     {}
+                     bound))
+        bounds))
+
 (defn- mapify-alignments
   [alignments]
   {:weights (reduce (fn [acc {:keys [id weight]}]
                       (if (some? weight)
                         (assoc acc id weight)
                         acc))
+                    {}
+                    alignments)
+   :bounds  (reduce (fn [acc {:keys [id bounds]}]
+                      (assoc acc id (convert-time-bounds bounds)))
                     {}
                     alignments)
    :periods (reduce (fn [acc {:keys [id period]}]

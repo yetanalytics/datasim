@@ -38,11 +38,12 @@
   (let [registration (random/rand-uuid rng)]
     (->> (pattern-walk-fn alignments rng)
          (map (fn [template]
-                {:registration      registration
-                 :seed              (random/rand-unbound-int rng)
-                 :template          template
-                 :pattern-ancestors (-> template meta :pattern-ancestors)
-                 :period            (-> template meta :period)})))))
+                (merge
+                 {:registration      registration
+                  :seed              (random/rand-unbound-int rng)
+                  :template          template}
+                 (select-keys (meta template)
+                              [:pattern-ancestors :bounds :period])))))))
 
 (defn- registration-seq*
   [pattern-walk-fn alignments rng]

@@ -40,7 +40,7 @@
    The zipper can then be walked; traversal will be done in a deterministic,
    pseudorandom fashion, in which `rng` and `alignments` is used to choose
    the children of each node in the zipper."
-  [type-iri-map {:keys [weights periods] :as _alignments} rng repeat-max]
+  [type-iri-map {:keys [weights bounds periods] :as _alignments} rng repeat-max]
   (let [temp-iri-map    (get type-iri-map "StatementTemplate")
         pat-iri-map     (get type-iri-map "Pattern")
         primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
@@ -71,11 +71,13 @@
         (vary-meta assoc
                    ::template-map temp-iri-map
                    ::pattern-map  pat-iri-map
+                   ::bounds       bounds
                    ::periods      periods))))
 
 (defn- pattern-loc->template
   [{template-m  ::template-map
     pattern-m   ::pattern-map
+    bounds      ::bounds
     periods     ::periods}
    pattern-loc]
   (let [node->template #(get template-m %)
@@ -94,6 +96,7 @@
         (vary-meta template
                    assoc
                    :pattern-ancestors ancestors
+                   :bounds bounds
                    :period period)))))
 
 (defn- walk-pattern-zipper
