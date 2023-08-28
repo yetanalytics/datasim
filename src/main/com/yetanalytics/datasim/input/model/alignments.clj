@@ -4,7 +4,7 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.input.model.alignments.bound :as-alias bound]
-            [com.yetanalytics.datasim.input.model.alignments.delay :as-alias delay]))
+            [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Weight
@@ -95,22 +95,22 @@
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Time Delay
+;; Time Period
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::delay/min
+(s/def ::period/min
   (s/and number? pos?))
 
-(s/def ::delay/mean
+(s/def ::period/mean
   (s/and number? pos? (comp not zero?)))
 
-(s/def ::delay/unit
+(s/def ::period/unit
   #{"millisecond" "second" "minute" "hour" "day" "week"})
 
-(s/def ::timeDelay
-  (s/keys :opt-un [::delay/min
-                   ::delay/mean
-                   ::delay/unit]))
+(s/def ::period
+  (s/keys :opt-un [::period/min
+                   ::period/mean
+                   ::period/unit]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Alignment
@@ -123,7 +123,7 @@
   (s/keys :req-un [::id]
           :opt-un [::weight
                    ::timeBounds
-                   ::timeDelay]))
+                   ::period]))
 
 (def alignments-spec
   (s/every alignment-spec :kind vector? :min-count 1))

@@ -9,15 +9,15 @@
 
 (def alignment-1 {:id "http://www.whateveer.com/activity1"
                   :weight 0.9
-                  :timeDelay {:min  2.1
-                              :mean 3
-                              :unit "week"}})
+                  :period {:min  2.1
+                           :mean 3
+                           :unit "week"}})
 
 (def alignment-2 {:id "http://www.whateveer.com/activity2"
                   :weight 0.8
-                  :timeDelay {:min  2
-                              :mean 3.2
-                              :unit "hour"}})
+                  :period {:min  2
+                           :mean 3.2
+                           :unit "hour"}})
 
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
                 :type "Agent"})
@@ -61,17 +61,17 @@
                        [(assoc persona-1 :type "FooBar" :id "qux")]))))
   (testing "invalid temporal properties"
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:timeDelay :mean] 0)])))
+                       [(assoc-in alignment-1 [:period :mean] 0)])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:timeDelay :mean] -3)])))
+                       [(assoc-in alignment-1 [:period :mean] -3)])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:timeDelay :mean] "4")])))
+                       [(assoc-in alignment-1 [:period :mean] "4")])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:timeDelay :min] -1.2)])))
+                       [(assoc-in alignment-1 [:period :min] -1.2)])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:timeDelay :min] "3")])))
+                       [(assoc-in alignment-1 [:period :min] "3")])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:timeDelay :unit] "month")]))))
+                       [(assoc-in alignment-1 [:period :unit] "month")]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))

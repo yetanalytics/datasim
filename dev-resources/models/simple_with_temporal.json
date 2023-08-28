@@ -9,7 +9,7 @@
         "alignments": [
             {
                 "id": "https://w3id.org/xapi/cmi5#typicalsessions",
-                "timeDelay": {
+                "period": {
                     "min": 1,
                     "mean": 1.0,
                     "unit": "hour"
@@ -17,7 +17,7 @@
             },
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfied",
-                "timeDelay": {
+                "period": {
                     "min": 2.0,
                     "mean": 1.0,
                     "unit": "second"

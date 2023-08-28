@@ -1,12 +1,12 @@
 (ns com.yetanalytics.datasim.model
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.input.model           :as model]
-            [com.yetanalytics.datasim.math.random           :as random]
-            [com.yetanalytics.datasim.model.alignment       :as-alias alignment]
-            [com.yetanalytics.datasim.model.alignment.delay :as-alias alignment-delay]
-            [com.yetanalytics.datasim.model.object-override :as-alias obj-override]
-            [com.yetanalytics.datasim.xapi.actor            :as actor]))
+            [com.yetanalytics.datasim.input.model            :as model]
+            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.model.alignment        :as-alias alignment]
+            [com.yetanalytics.datasim.model.alignment.period :as-alias alignment.period]
+            [com.yetanalytics.datasim.model.object-override  :as-alias obj-override]
+            [com.yetanalytics.datasim.xapi.actor             :as actor]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -15,16 +15,16 @@
 (s/def ::alignment/weights
   (s/map-of ::xs/iri ::random/weight))
 
-(s/def ::alignment-delay/min int?)
-(s/def ::alignment-delay/mean pos-int?)
+(s/def ::alignment.period/min int?)
+(s/def ::alignment.period/mean pos-int?)
 
-(s/def ::alignment/time-delays
-  (s/map-of ::xs/iri (s/keys :req-un [::alignment-delay/min
-                                      ::alignment-delay/mean])))
+(s/def ::alignment/periods
+  (s/map-of ::xs/iri (s/keys :req-un [::alignment.period/min
+                                      ::alignment.period/mean])))
 
 (s/def ::alignments
   (s/keys :opt-un [::alignment/weights
-                   ::alignment/time-delays]))
+                   ::alignment/periods]))
 
 (s/def ::obj-override/weights
   (s/map-of :statement/object ::random/weight))
@@ -82,7 +82,7 @@
           :day    (* t ms-per-day)
           :week   (* t ms-per-week))))
 
-(defn- convert-time-delay
+(defn- convert-time-period
   [{:keys [min mean unit]}]
   (let [unit* (or (some-> unit keyword) :minute)
         mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
@@ -92,16 +92,16 @@
 
 (defn- mapify-alignments
   [alignments]
-  {:weights     (reduce (fn [acc {:keys [id weight]}]
-                          (if (some? weight)
-                            (assoc acc id weight)
-                            acc))
-                        {}
-                        alignments)
-   :time-delays (reduce (fn [acc {:keys [id timeDelay]}]
-                          (assoc acc id (convert-time-delay timeDelay)))
-                        {}
-                        alignments)})
+  {:weights (reduce (fn [acc {:keys [id weight]}]
+                      (if (some? weight)
+                        (assoc acc id weight)
+                        acc))
+                    {}
+                    alignments)
+   :periods (reduce (fn [acc {:keys [id period]}]
+                      (assoc acc id (convert-time-period period)))
+                    {}
+                    alignments)})
 
 (defn- mapify-object-overrides
   [object-overrides]

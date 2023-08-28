@@ -67,7 +67,7 @@
                :seed             ::seed)
   :ret :skeleton/statement-seq)
 
-(defn- generate-duration
+(defn- increment-period
   "Generate a new millisecond time value that to be added upon the prev time.
    The time difference is an exponentially-distributed random variable
    with `mean`; the `min` paramter also adds a fixed minimum
@@ -77,9 +77,9 @@
   [rng {:keys [mean min]
         :or {mean min-ms
              min  0}}]
-  (let [rate  (/ 1.0 mean)
-        delay (long (random/rand-exp rng rate))]
-    (+ min delay)))
+  (let [rate   (/ 1.0 mean)
+        t-diff (long (random/rand-exp rng rate))]
+    (+ min t-diff)))
 
 (defn- statement-seq
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
@@ -96,8 +96,8 @@
         (fn statement-seq* [prev-time registration-seq]
           (lazy-seq
            (let [reg-map     (first registration-seq)
-                 time-delay  (:time-delay reg-map)
-                 duration-ms (generate-duration time-rng time-delay)
+                 period      (:period reg-map)
+                 duration-ms (increment-period time-rng period)
                  time-ms     (+ prev-time duration-ms)
                  input-map   (merge inputs reg-map {:time-ms     time-ms
                                                     :duration-ms duration-ms})]
