@@ -67,6 +67,10 @@
                :seed             ::seed)
   :ret :skeleton/statement-seq)
 
+(defn- in-bound-interval?
+  [intervals n]
+  (boolean (some (fn [[start end]] (<= start n end)) intervals)))
+
 (defn- in-bound?
   [{:keys [year month day-of-month day-of-week hour minute]}
    timezone
@@ -79,19 +83,25 @@
               :day-of-month
               :day-of-week
               :hour-of-day
-              :minute-of-hour)]
+              :minute-of-hour
+              :second-of-minute)]
     (and (or (nil? year)
-             (<= (first year) y (second year)))
+             (in-bound-interval? year y))
          (or (nil? month)
-             (<= (first month) mo (second month)))
+             (in-bound-interval? month mo))
          (or (nil? day-of-month)
-             (<= (first day-of-month) dom (second day-of-month)))
+             (in-bound-interval? day-of-month dom))
          (or (nil? day-of-week)
-             (<= (first day-of-week) dow (second day-of-week)))
+             (in-bound-interval? day-of-week dow))
          (or (nil? hour)
-             (<= (first hour) h (second hour)))
+             (in-bound-interval? hour h))
          (or (nil? minute)
-             (<= (first minute) m (second minute))))))
+             (in-bound-interval? minute m)))))
+
+(defn- in-bounds?
+  [bounds timezone instant]
+  (or (empty? bounds)
+      (boolean (some (fn [bound] (in-bound? bound timezone instant)) bounds))))
 
 (defn- increment-period
   "Generate a new millisecond time value that to be added upon the prev time.
@@ -130,8 +140,7 @@
                                 :duration-ms duration-ms}
                  input-map     (merge inputs reg-map time-map)]
              (if (and (end-cmp time-ms)
-                      (or (nil? bounds)
-                          (in-bound? bounds timezone time-ms)))
+                      (in-bounds? bounds timezone time-ms))
                (cons (statement/generate-statement input-map)
                      (statement-seq* time-ms (rest registration-seq)))
                '()))))]
