@@ -67,6 +67,32 @@
                :seed             ::seed)
   :ret :skeleton/statement-seq)
 
+(defn- in-bound?
+  [{:keys [year month day-of-month day-of-week hour minute]}
+   timezone
+   instant]
+  (let [zdt (t/zoned-date-time instant timezone)
+        [y mo dom dow h m]
+        (t/as zdt
+              :year
+              :month-of-year
+              :day-of-month
+              :day-of-week
+              :hour-of-day
+              :minute-of-hour)]
+    (and (or (nil? year)
+             (<= (first year) y (second year)))
+         (or (nil? month)
+             (<= (first month) mo (second month)))
+         (or (nil? day-of-month)
+             (<= (first day-of-month) dom (second day-of-month)))
+         (or (nil? day-of-week)
+             (<= (first day-of-week) dow (second day-of-week)))
+         (or (nil? hour)
+             (<= (first hour) h (second hour)))
+         (or (nil? minute)
+             (<= (first minute) m (second minute))))))
+
 (defn- increment-period
   "Generate a new millisecond time value that to be added upon the prev time.
    The time difference is an exponentially-distributed random variable
@@ -87,7 +113,7 @@
    Statement Template and the temporal properties of each generated
    Statement. The sequence will either end at `?end-time` or, if `nil`,
    be infinite."
-  [inputs registration-seq seed start-time ?end-time]
+  [inputs registration-seq seed start-time ?end-time timezone]
   (let [time-rng (random/seed-rng seed)
         end-cmp  (if (some? ?end-time)
                    (fn [time-ms] (< time-ms ?end-time))
@@ -103,7 +129,9 @@
                  time-map      {:time-ms     time-ms
                                 :duration-ms duration-ms}
                  input-map     (merge inputs reg-map time-map)]
-             (if (end-cmp time-ms)
+             (if (and (end-cmp time-ms)
+                      (or (nil? bounds)
+                          (in-bound? bounds timezone time-ms)))
                (cons (statement/generate-statement input-map)
                      (statement-seq* time-ms (rest registration-seq)))
                '()))))]
@@ -168,7 +196,6 @@
         t-start     (timestamp->millis start)
         ?t-from     (some-> ?from-stamp timestamp->millis)
         ?t-end      (some-> end timestamp->millis)
-        ?sample-ms  (some-> ?t-end (- t-start))
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
@@ -209,7 +236,8 @@
                                                  actor-reg-seq
                                                  actor-seed
                                                  t-start
-                                                 ?t-end)
+                                                 ?t-end
+                                                 zone-region)
                   actor-stmt-seq  (cond->> actor-stmt-seq*
                                     ?t-from
                                     (drop-statements-from-time ?t-from))]
