@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.math.random :as random]
-            [com.yetanalytics.datasim.input.model.alignments.bound :as-alias bound]
+            [com.yetanalytics.datasim.input.model.alignments.bounds :as-alias bounds]
             [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,35 +62,35 @@
    "November"  10
    "December"  11})
 
-(s/def ::bound/second
+(s/def ::bounds/second
   (bound-spec (s/int-in 0 60)))
 
-(s/def ::bound/minute
+(s/def ::bounds/minute
   (bound-spec (s/int-in 0 60)))
 
-(s/def ::bound/hour
+(s/def ::bounds/hour
   (bound-spec (s/int-in 0 24)))
 
-(s/def ::bound/day-of-week
+(s/def ::bounds/day-of-week
   (bound-spec (named-time-spec (s/int-in 0 7) day-of-week-map)))
 
-(s/def ::bound/day-of-month
+(s/def ::bounds/day-of-month
   (bound-spec (s/int-in 0 31)))
 
-(s/def ::bound/month
+(s/def ::bounds/month
   (bound-spec (named-time-spec (s/int-in 0 12) month-of-year-map)))
 
-(s/def ::bound/year
+(s/def ::bounds/year
   (bound-spec pos-int?))
 
-(s/def ::timeBounds
-  (s/every (s/keys :opt-un [::bound/second
-                            ::bound/minute
-                            ::bound/hour
-                            ::bound/day-of-week
-                            ::bound/day-of-month
-                            ::bound/month
-                            ::bound/year])
+(s/def ::bounds
+  (s/every (s/keys :opt-un [::bounds/second
+                            ::bounds/minute
+                            ::bounds/hour
+                            ::bounds/day-of-week
+                            ::bounds/day-of-month
+                            ::bounds/month
+                            ::bounds/year])
            :kind vector?
            :min-count 1))
 
@@ -122,7 +122,7 @@
 (def alignment-spec
   (s/keys :req-un [::id]
           :opt-un [::weight
-                   ::timeBounds
+                   ::bounds
                    ::period]))
 
 (def alignments-spec
