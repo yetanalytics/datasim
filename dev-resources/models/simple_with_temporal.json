@@ -24,5 +24,32 @@
                 }
             }
         ]
+    },
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:frederstaz@example.org",
+                "type": "Agent"
+            }
+        ],
+        "alignments": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "bounds": [
+                    {
+                        "month": [["January", "October"], "December"],
+                        "year": [2019]
+                    }
+                ]
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfied",
+                "bounds": [
+                    {
+                        "minute": [[0, 35], [50, 59]]
+                    }
+                ]
+            }
+        ]
     }
 ]

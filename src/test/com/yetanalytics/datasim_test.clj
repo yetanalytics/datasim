@@ -128,12 +128,17 @@
                              (or (and (= verb satisfied)
                                       (< diff ms-in-hr))
                                  (< ms-in-hr diff))))))))
-      (testing "- Alice: all verbs happen on the order of minutes"
+      (testing "- Alice: all verbs happen on the order of minutes (the default)"
         (is (->> (get result alice-mbox)
                  (take 100)
                  (every? (fn [statement]
                            (let [diff (:duration-ms (meta statement))]
-                             (< diff ms-in-hr))))))))))
+                             (< diff ms-in-hr)))))))
+      (testing "- Fred: generation cannot occur due to bounds"
+        (is (= '()
+               (->> (get result fred-mbox)
+                    ;; Safety measure to avoid actually infinite seq
+                    (take 100))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
