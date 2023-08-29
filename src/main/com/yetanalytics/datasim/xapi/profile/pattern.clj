@@ -83,21 +83,23 @@
   (let [node->template #(get template-m %)
         node->pattern  #(get pattern-m %)]
     (when-some [template (->> pattern-loc z/node node->template)]
-      (let [ancestors  (->> pattern-loc
-                            z/path
-                            rest
-                            (keep node->pattern)
-                            vec)
-            period     (reduce (fn [period {:keys [id]}]
-                                 (or (get periods id)
-                                     period))
-                               {}
-                               (conj ancestors template))]
+      (let [ancestors   (->> pattern-loc
+                             z/path
+                             rest
+                             (keep node->pattern)
+                             vec)
+            reduce-path (conj ancestors template)
+            reduce-fn   (fn [m]
+                          (reduce (fn [res {:keys [id]}] (get m id res))
+                                  {}
+                                  reduce-path))
+            temp-bounds (reduce-fn bounds)
+            temp-period (reduce-fn periods)]
         (vary-meta template
                    assoc
                    :pattern-ancestors ancestors
-                   :bounds bounds
-                   :period period)))))
+                   :bounds temp-bounds
+                   :period temp-period)))))
 
 (defn- walk-pattern-zipper
   "From the root of `pattern-zip`, perform a single walk of a primary Pattern,
