@@ -62,31 +62,31 @@
    "November"  10
    "December"  11})
 
-(s/def ::bounds/minute
+(s/def ::bounds/minutes
   (bound-spec (s/int-in 0 60)))
 
-(s/def ::bounds/hour
+(s/def ::bounds/hours
   (bound-spec (s/int-in 0 24)))
 
-(s/def ::bounds/day-of-week
+(s/def ::bounds/daysOfWeek
   (bound-spec (named-time-spec (s/int-in 0 7) day-of-week-map)))
 
-(s/def ::bounds/day-of-month
+(s/def ::bounds/daysOfMonth
   (bound-spec (s/int-in 0 31)))
 
-(s/def ::bounds/month
+(s/def ::bounds/months
   (bound-spec (named-time-spec (s/int-in 0 12) month-of-year-map)))
 
-(s/def ::bounds/year
+(s/def ::bounds/years
   (bound-spec pos-int?))
 
 (s/def ::bounds
-  (s/every (s/keys :opt-un [::bounds/minute
-                            ::bounds/hour
-                            ::bounds/day-of-week
-                            ::bounds/day-of-month
-                            ::bounds/month
-                            ::bounds/year])
+  (s/every (s/keys :opt-un [::bounds/minutes
+                            ::bounds/hours
+                            ::bounds/daysOfWeek
+                            ::bounds/daysOfMonth
+                            ::bounds/months
+                            ::bounds/years])
            :kind vector?
            :min-count 1))
 

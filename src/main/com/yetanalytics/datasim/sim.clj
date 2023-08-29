@@ -72,7 +72,7 @@
   (boolean (some (fn [[start end]] (<= start n end)) intervals)))
 
 (defn- in-bound?
-  [{:keys [year month day-of-month day-of-week hour minute]}
+  [{:keys [years months days-of-month days-of-week hours minutes]}
    timezone
    instant]
   (let [zdt (t/zoned-date-time instant timezone)
@@ -84,18 +84,18 @@
               :day-of-week
               :hour-of-day
               :minute-of-hour)]
-    (and (or (nil? year)
-             (in-bound-interval? year y))
-         (or (nil? month)
-             (in-bound-interval? month mo))
-         (or (nil? day-of-month)
-             (in-bound-interval? day-of-month dom))
-         (or (nil? day-of-week)
-             (in-bound-interval? day-of-week dow))
-         (or (nil? hour)
-             (in-bound-interval? hour h))
-         (or (nil? minute)
-             (in-bound-interval? minute m)))))
+    (and (or (nil? years)
+             (in-bound-interval? years y))
+         (or (nil? months)
+             (in-bound-interval? months mo))
+         (or (nil? days-of-month)
+             (in-bound-interval? days-of-month dom))
+         (or (nil? days-of-week)
+             (in-bound-interval? days-of-week dow))
+         (or (nil? hours)
+             (in-bound-interval? hours h))
+         (or (nil? minutes)
+             (in-bound-interval? minutes m)))))
 
 (defn- in-bounds?
   [bounds timezone instant]

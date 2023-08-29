@@ -98,11 +98,11 @@
         convert-month (fn [m]
                         (if (string? m) (get month-of-year-map m) m))]
     (case unit
-      :day-of-week
+      :daysOfWeek
       (if (coll? v)
         (->> v (mapv convert-dow))
         (->> v convert-dow (repeat 2) vec))
-      :month
+      :months
       (if (coll? v)
         (->> v (mapv convert-month))
         (->> v convert-month (repeat 2) vec))
@@ -110,11 +110,20 @@
         v
         [v v]))))
 
+(defn- time-bound-unit-camel->kebab
+  [unit]
+  (case unit
+    :daysOfWeek :days-of-week
+    :daysOfMonth :days-of-month
+    unit))
+
 (defn- convert-time-bounds
   [bounds]
   (mapv (fn [bound]
           (reduce-kv (fn [bound* unit v]
-                       (assoc bound* unit (mapv (partial convert-time-bound-unit unit) v)))
+                       (assoc bound*
+                              (time-bound-unit-camel->kebab unit)
+                              (mapv (partial convert-time-bound-unit unit) v)))
                      {}
                      bound))
         bounds))

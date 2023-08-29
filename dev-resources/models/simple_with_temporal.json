@@ -37,8 +37,8 @@
                 "id": "https://w3id.org/xapi/cmi5#typicalsessions",
                 "bounds": [
                     {
-                        "month": [["January", "October"], "December"],
-                        "year": [2019]
+                        "months": [["January", "October"], "December"],
+                        "years": [2019]
                     }
                 ]
             },
@@ -46,7 +46,7 @@
                 "id": "https://w3id.org/xapi/cmi5#satisfied",
                 "bounds": [
                     {
-                        "minute": [[0, 35], [50, 59]]
+                        "minutes": [[0, 35], [50, 59]]
                     }
                 ]
             }

@@ -15,12 +15,12 @@
 
 (def alignment-2 {:id "http://www.whateveer.com/activity2"
                   :weight 0.8
-                  :bounds [{:minute       [1]
-                            :hour         [[8 12]]
-                            :day-of-week  ["Sunday" "Tuesday" "Thursday"]
-                            :day-of-month [[0 10] [20 30]]
-                            :month        [3 ["April" "May"]]
-                            :year         [2023]}]
+                  :bounds [{:minutes     [1]
+                            :hours       [[8 12]]
+                            :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
+                            :daysOfMonth [[0 10] [20 30]]
+                            :months      [3 ["April" "May"]]
+                            :years       [2023]}]
                   :period {:min  2
                            :mean 3.2
                            :unit "hour"}})
@@ -67,11 +67,11 @@
                        [(assoc persona-1 :type "FooBar" :id "qux")]))))
   (testing "invalid temporal properties"
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:bounds 0 :minute] 1)])))
+                       [(assoc-in alignment-1 [:bounds 0 :minutes] 1)])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:bounds 0 :minute] [[2 1]])])))
+                       [(assoc-in alignment-1 [:bounds 0 :minutes] [[2 1]])])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:bounds 0 :minute] [60])])))
+                       [(assoc-in alignment-1 [:bounds 0 :minutes] [60])])))
     (is (not (s/valid? ::model/alignments
                        [(assoc-in alignment-1 [:period :mean] 0)])))
     (is (not (s/valid? ::model/alignments
