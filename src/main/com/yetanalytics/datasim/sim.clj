@@ -83,8 +83,7 @@
               :day-of-month
               :day-of-week
               :hour-of-day
-              :minute-of-hour
-              :second-of-minute)]
+              :minute-of-hour)]
     (and (or (nil? year)
              (in-bound-interval? year y))
          (or (nil? month)

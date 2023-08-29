@@ -62,9 +62,6 @@
    "November"  10
    "December"  11})
 
-(s/def ::bounds/second
-  (bound-spec (s/int-in 0 60)))
-
 (s/def ::bounds/minute
   (bound-spec (s/int-in 0 60)))
 
@@ -84,8 +81,7 @@
   (bound-spec pos-int?))
 
 (s/def ::bounds
-  (s/every (s/keys :opt-un [::bounds/second
-                            ::bounds/minute
+  (s/every (s/keys :opt-un [::bounds/minute
                             ::bounds/hour
                             ::bounds/day-of-week
                             ::bounds/day-of-month
