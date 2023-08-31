@@ -105,7 +105,7 @@
   (s/and number? pos? (comp not zero?)))
 
 (s/def ::period/unit
-  #{"millisecond" "second" "minute" "hour" "day" "week"})
+  #{"millis" "seconds" "minutes" "hours" "days" "weeks"})
 
 (s/def ::period
   (s/keys :opt-un [::period/min

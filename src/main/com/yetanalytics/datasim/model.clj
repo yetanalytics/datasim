@@ -75,12 +75,12 @@
    any doubles into integers."
   [t unit]
   (long (case unit
-          :millisecond t
-          :second (* t ms-per-second)
-          :minute (* t ms-per-minute)
-          :hour   (* t ms-per-hour)
-          :day    (* t ms-per-day)
-          :week   (* t ms-per-week))))
+          :millis  t
+          :seconds (* t ms-per-second)
+          :minutes (* t ms-per-minute)
+          :hours   (* t ms-per-hour)
+          :days    (* t ms-per-day)
+          :weeks   (* t ms-per-week))))
 
 (defn- convert-time-period
   [{:keys [min mean unit]}]

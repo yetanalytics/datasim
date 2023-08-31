@@ -12,7 +12,7 @@
                 "period": {
                     "min": 1,
                     "mean": 1.0,
-                    "unit": "hour"
+                    "unit": "hours"
                 }
             }
         ]
