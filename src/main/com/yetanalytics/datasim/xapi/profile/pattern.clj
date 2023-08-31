@@ -92,6 +92,7 @@
                             (get template-m %))]
     (when-some [template (->> pattern-loc z/node node->template)]
       (let [ancestors  (->> pattern-loc
+                            z/up
                             pattern-loc-ancestors
                             (mapv node->object))
             period     (reduce (fn [period {:keys [id]}]
