@@ -8,19 +8,11 @@
         ],
         "alignments": [
             {
-                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "id": "https://w3id.org/xapi/cmi5#satisfieds",
                 "period": {
                     "min": 1,
                     "mean": 1.0,
                     "unit": "hour"
-                }
-            },
-            {
-                "id": "https://w3id.org/xapi/cmi5#satisfied",
-                "period": {
-                    "min": 2.0,
-                    "mean": 1.0,
-                    "unit": "second"
                 }
             }
         ]

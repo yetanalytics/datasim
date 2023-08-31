@@ -119,21 +119,21 @@
                         (assoc :models const/temporal-models)
                         (assoc-in [:parameters :end] nil))
           result    (generate-map input)]
-      (testing "- Bob: satisfieds happen on the order of seconds, other verbs on the order of hours"
-        (is (->> (get result bob-mbox)
-                 (take 100)
-                 (every? (fn [statement]
-                           (let [verb (get-in statement ["verb" "id"])
-                                 diff (:duration-ms (meta statement))]
-                             (or (and (= verb satisfied)
-                                      (< diff ms-in-hr))
-                                 (< ms-in-hr diff))))))))
       (testing "- Alice: all verbs happen on the order of minutes"
         (is (->> (get result alice-mbox)
                  (take 100)
                  (every? (fn [statement]
                            (let [diff (:duration-ms (meta statement))]
-                             (< diff ms-in-hr))))))))))
+                             (< diff ms-in-hr)))))))
+      (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
+        (is (->> (get result bob-mbox)
+                 (take 100)
+                 (every? (fn [statement]
+                           (let [verb (get-in statement ["verb" "id"])
+                                 diff (:duration-ms (meta statement))]
+                             (if (= verb satisfied)
+                               (< ms-in-hr diff)
+                               (< diff ms-in-hr)))))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
