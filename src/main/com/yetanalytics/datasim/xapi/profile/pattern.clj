@@ -74,6 +74,15 @@
                    ::bounds       bounds
                    ::periods      periods))))
 
+(defn- pattern-loc-ancestors
+  [pattern-loc]
+  (loop [pattern-loc pattern-loc
+         ancestors   []]
+    (let [node (z/node pattern-loc)]
+      (if (not= ::root node)
+        (recur (z/up pattern-loc) (conj ancestors node))
+        ancestors))))
+
 (defn- pattern-loc->template
   [{template-m  ::template-map
     pattern-m   ::pattern-map
@@ -81,13 +90,13 @@
     periods     ::periods}
    pattern-loc]
   (let [node->template #(get template-m %)
-        node->pattern  #(get pattern-m %)]
+        node->object   #(or (get pattern-m %)
+                            (get template-m %))]
     (when-some [template (->> pattern-loc z/node node->template)]
       (let [ancestors   (->> pattern-loc
-                             z/path
-                             rest
-                             (keep node->pattern)
-                             vec)
+                             z/up
+                             pattern-loc-ancestors
+                             (mapv node->object))
             reduce-path (conj ancestors template)
             reduce-fn   (fn [m]
                           (reduce (fn [res {:keys [id]}] (get m id res))

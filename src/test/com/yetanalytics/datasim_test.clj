@@ -119,7 +119,13 @@
                         (assoc :models const/temporal-models)
                         (assoc-in [:parameters :end] nil))
           result    (generate-map input)]
-      (testing "- Bob: satisfieds happen on the order of seconds, other verbs on the order of hours"
+      (testing "- Alice: all verbs happen on the order of minutes (the default)"
+        (is (->> (get result alice-mbox)
+                 (take 100)
+                 (every? (fn [statement]
+                           (let [diff (:duration-ms (meta statement))]
+                             (< diff ms-in-hr)))))))
+      (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
         (is (->> (get result bob-mbox)
                  (take 100)
                  (every? (fn [statement]
@@ -128,12 +134,6 @@
                              (or (and (= verb satisfied)
                                       (< diff ms-in-hr))
                                  (< ms-in-hr diff))))))))
-      (testing "- Alice: all verbs happen on the order of minutes (the default)"
-        (is (->> (get result alice-mbox)
-                 (take 100)
-                 (every? (fn [statement]
-                           (let [diff (:duration-ms (meta statement))]
-                             (< diff ms-in-hr)))))))
       (testing "- Fred: generation cannot occur due to bounds"
         (is (= '()
                (->> (get result fred-mbox)

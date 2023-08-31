@@ -11,7 +11,7 @@
                   :weight 0.9
                   :period {:min  2.1
                            :mean 3
-                           :unit "week"}})
+                           :unit "weeks"}})
 
 (def alignment-2 {:id "http://www.whateveer.com/activity2"
                   :weight 0.8
@@ -23,7 +23,7 @@
                             :years       [2023]}]
                   :period {:min  2
                            :mean 3.2
-                           :unit "hour"}})
+                           :unit "millis"}})
 
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
                 :type "Agent"})
@@ -83,7 +83,7 @@
     (is (not (s/valid? ::model/alignments
                        [(assoc-in alignment-1 [:period :min] "3")])))
     (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :unit] "month")]))))
+                       [(assoc-in alignment-1 [:period :unit] "months")]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))
