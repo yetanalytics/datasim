@@ -1,7 +1,9 @@
 (ns com.yetanalytics.datasim.model.temporal
   (:require [clojure.spec.alpha :as s]
             [java-time.api      :as t]
-            [com.yetanalytics.datasim.math.random :as random]))
+            [java-time.core     :as tc]
+            [com.yetanalytics.datasim.math.random :as random])
+  (:import [java.time LocalDateTime]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -53,27 +55,48 @@
 (s/def ::minute (s/int-in 0 60))
 
 (s/def ::years
-  (s/and (s/coll-of ::year :distinct true)
-         sorted-entries?))
+  (s/coll-of ::year :distinct true))
 
 (s/def ::months
-  (s/and (s/coll-of ::month :distinct true)
-         sorted-entries?))
+  (s/coll-of ::month :distinct true))
 
 (s/def ::days
-  (s/and (s/coll-of ::day :distinct true)
-         sorted-entries?))
+  (s/coll-of ::day :distinct true))
+
+(s/def ::days-of-month
+  (s/coll-of ::day :distinct true))
 
 (s/def ::days-of-week
   (s/coll-of ::hour :distinct true))
 
 (s/def ::hours
-  (s/and (s/coll-of ::hour :distinct true)
-         sorted-entries?))
+  (s/coll-of ::hour :distinct true))
 
 (s/def ::minutes
-  (s/and (s/coll-of ::minute :distinct true)
-         sorted-entries?))
+  (s/coll-of ::minute :distinct true))
+
+(s/def ::ranges
+  (s/and (s/keys :req-un [::years]
+                 :opt-un [::months
+                          ::days
+                          ::hours
+                          ::minutes])
+         (s/map-of keyword? (s/and seq? sorted-entries?))))
+
+(s/def ::sets
+  (s/and (s/keys :req-un [::years]
+                 :opt-un [::months
+                          ::days-of-month
+                          ::days-of-week
+                          ::hours
+                          ::minutes])
+         (s/map-of keyword? set?)))
+
+(s/def ::bounds
+  (s/keys :req-un [::ranges ::sets]))
+
+(s/def ::date-time
+  #(instance? LocalDateTime %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -209,12 +232,11 @@
 ;; Runtime
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn time-map
-  "Return a map of different times from the Instant `timestamp` and a
-   `timezone` string."
-  [timestamp timezone]
+(defn- time-map
+  "Return a map of different times from the LocalDateTime `date-time`."
+  [date-time]
   (let [[year month day-month day-week hour minute]
-        (t/as (t/zoned-date-time timestamp timezone)
+        (t/as date-time
               :year
               :month-of-year
               :day-of-month
@@ -228,6 +250,8 @@
      :hour         hour
      :minute       minute}))
 
+;; Bounded Time?
+
 (defn- in-bound-unit?
   [unit-set unit]
   (or (nil? unit-set)
@@ -237,13 +261,7 @@
   [{{:keys [years months days-of-month days-of-week hours minutes]} :sets}
    date-time]
   (let [{:keys [year month day-of-month day-of-week hour minute]}
-        (t/as date-time
-              :year
-              :month-of-year
-              :day-of-month
-              :day-of-week
-              :hour-of-day
-              :minute-of-hour)]
+        (time-map date-time)]
     (and (in-bound-unit? years year)
          (in-bound-unit? months month)
          (in-bound-unit? days-of-month day-of-month)
@@ -251,12 +269,19 @@
          (in-bound-unit? hours hour)
          (in-bound-unit? minutes minute))))
 
+(s/fdef bounded-time?
+  :args (s/cat :bounds    ::bounds
+               :date-time ::date-time)
+  :ret boolean?)
+
 (defn bounded-time?
   "Is `date-time` within any of the `bounds`? Returns vacuously `true` if
    `bounds` is empty."
   [bounds date-time]
   (or (empty? bounds)
       (boolean (some (fn [bound] (in-bound? bound date-time)) bounds))))
+
+;; Next Bounded Time
 
 (defn- current-t?
   [inst-time t current-interval?]
@@ -269,7 +294,7 @@
       (and current-interval?
            (< inst-time t))))
 
-(defn next-bounded-times
+(defn- next-bounded-times
   "Returns a sequence of the next LocalDateTime that are within `bounds`."
   [{{:keys [years months days-of-month hours minutes]
      :or {months        (range 1 13)
@@ -280,17 +305,12 @@
     {:keys [days-of-week]}
     :sets}
    date-time]
-  (let [[inst-yr
-         inst-mon
-         inst-day
-         inst-hr
-         inst-min]
-        (t/as date-time
-              :year
-              :month-of-year
-              :day-of-month
-              :hour-of-day
-              :minute-of-hour)
+  (let [{inst-yr :year
+         inst-mon :month
+         inst-day :day-of-month
+         inst-hr :hour
+         inst-min :minute}
+        (time-map date-time)
         day-of-week?
         (if (empty? days-of-week)
           (constantly true)
@@ -326,18 +346,49 @@
           :when (or current-min? future-min?)]
       (t/local-date-time year month day hour min))))
 
+(s/fdef next-bounded-time
+  :args (s/cat :bound     ::bounds
+               :date-time ::date-time)
+  :ret ::date-time)
+
+(defn next-bounded-time
+  [bounds date-time]
+  (first (next-bounded-times bounds date-time)))
+
+;; Next Time
+
 (def min-ms 60000.0) ; The amount of milliseconds in one minute
 
-(defn increment-period
-  "Generate a new millisecond time value that to be added upon the prev time.
-   The time difference is an exponentially-distributed random variable
-   with `mean`; the `min` paramter also adds a fixed minimum
-   time to the value, for a new mean `mean + min`. This ensures that the
-   events occur as a Poisson random process. Note that this assumes the
-   millisecond as the basic unit of time."
+(defn- generate-period
   [rng {:keys [mean min]
         :or {mean min-ms
              min  0}}]
   (let [rate   (/ 1.0 mean)
         t-diff (long (random/rand-exp rng rate))]
     (+ min t-diff)))
+
+(s/fdef add-period
+  :args (s/cat :date-time ::date-time
+               :rng       ::rng
+               :period    ::period)
+  :ret ::date-time)
+
+(defn add-period
+  "Add a random amount of milliseonds `date-time` based on the parameters
+   in `period`. The millis amount is an exponential-distributed random var
+   with `period` parameters `:mean` and `:min`. The generated sequence
+   that uses these periodic date-times will thus occur as a Poisson random
+   process."
+  [date-time rng period]
+  (t/plus date-time (t/millis (generate-period rng period))))
+
+(s/fdef add-jitter
+  :args (s/cat :date-time #(satisfies? tc/Plusable %)
+               :rng       ::random/rng))
+
+(defn add-jitter
+  "Add a random amount of milliseconds to `date-time`, up to a max of 1
+   minute. Because of this maximum, this will not affect time bounds,
+   which has a granularity fo miutes."
+  [date-time rng]
+  (t/plus date-time (t/millis (random/rand-int rng 60000))))
