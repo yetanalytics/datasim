@@ -12,7 +12,8 @@
             [com.yetanalytics.datasim.xapi.registration :as reg]
             [com.yetanalytics.datasim.xapi.statement    :as statement]
             [com.yetanalytics.datasim.util.sequence     :as su]
-            [com.yetanalytics.datasim.util.async        :as au])
+            [com.yetanalytics.datasim.util.async        :as au]
+            [com.yetanalytics.datasim.model.temporal    :as temporal])
   (:import [java.time ZoneRegion]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -144,6 +145,81 @@
                      (statement-seq* time-ms (rest registration-seq)))
                '()))))]
     (statement-seq* start-time registration-seq)))
+
+;; NEW
+
+(defn init-simulation-seq
+  [pattern-walk-fn rng alignments]
+  (for [registration (repeatedly (partial random/rand-uuid rng))]
+    [registration (pattern-walk-fn alignments rng)]))
+
+(defn- time-simulation-seq*
+  [rng {:keys [timestamp time-since-last registration-seq]}]
+  (let [;; Destructuring
+        [registration & rest-regs]     registration-seq
+        [registration-id template-seq] registration
+        [template & rest-templates]    template-seq
+        {:keys [period bounds retry?]} (meta template)]
+    (if (temporal/bounded-time? bounds timestamp)
+      ;; Timestamp is in bound; valid statement gen
+      (let [next-timestamp (temporal/add-period timestamp rng period)
+            next-time-diff (t/plus time-since-last
+                                   (t/duration timestamp next-timestamp))
+            next-reg-seq   (cond->> rest-regs
+                             (not-empty rest-templates)
+                             (cons [registration-id rest-templates]))]
+        {:result           {:timestamp       timestamp
+                            :time-since-last time-since-last
+                            :template        template
+                            :registration    registration-id}
+         :timestamp        next-timestamp
+         :time-since-last  next-time-diff
+         :registration-seq next-reg-seq})
+      ;; Timestamp is not in bound; skip to next bounded time
+      ;; (and either retry this template or skip to next registration)
+      (when-some [next-timestamp (temporal/next-bounded-time bounds timestamp)]
+        (let [next-time-diff (t/plus time-since-last
+                                     (t/duration timestamp next-timestamp))
+              next-reg-seq   (cond->> rest-regs
+                               (and retry? (not-empty rest-templates))
+                               (cons [registration-id rest-templates]))]
+          {:timestamp        next-timestamp
+           :time-since-last  next-time-diff
+           :registration-seq next-reg-seq})))))
+
+(defn- time-simulation-seq
+  [rng start-time registration-seq]
+  (->> (iterate (partial time-simulation-seq* rng)
+                {:timestamp        start-time
+                 :registration-seq registration-seq})
+       (take-while some?)
+       (keep :result)))
+
+(defn drop-simulation-seq
+  [?end-time ?from-time simulation-seq]
+  (let [before-from?
+        (if (some? ?from-time)
+          (fn [{:keys [timestamp]}] (t/before? timestamp ?from-time))
+          (constantly false))
+        before-end?
+        (if (some? ?end-time)
+          (fn [{:keys [timestamp]}] (t/before? timestamp ?end-time))
+          (constantly true))]
+    (->> simulation-seq
+         (drop-while before-from?)
+         (take-while before-end?))))
+
+(defn gens-simulation-seq
+  [input simulation-seq]
+  (map #(statement/generate-statement (merge input %))
+       simulation-seq))
+
+(defn simulation-seq
+  [{:keys [pattern-walk-fn] :as input} rng alignments start-time ?end-time ?from-time]
+  (->> (init-simulation-seq pattern-walk-fn rng alignments)
+       (time-simulation-seq rng start-time)
+       (drop-simulation-seq ?end-time ?from-time)
+       (gens-simulation-seq input)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
