@@ -416,14 +416,3 @@
    process."
   [date-time rng period]
   (t/plus date-time (t/millis (generate-period rng period))))
-
-(s/fdef add-jitter
-  :args (s/cat :date-time ::date-time
-               :rng       ::random/rng))
-
-(defn add-jitter
-  "Add a random amount of milliseconds to `date-time`, up to a max of 1
-   minute. Because of this maximum, this will not affect time bounds,
-   which has a granularity fo miutes."
-  [date-time rng]
-  (t/plus date-time (t/millis (random/rand-int rng 60000))))
