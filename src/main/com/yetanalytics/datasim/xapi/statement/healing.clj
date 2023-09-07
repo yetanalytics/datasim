@@ -12,8 +12,7 @@
             [com.yetanalytics.datasim.xapi.profile          :as profile]
             [com.yetanalytics.datasim.xapi.profile.activity :as activity]
             [com.yetanalytics.datasim.xapi.profile.verb     :as verb]
-            [com.yetanalytics.datasim.xapi.profile.template :as template]
-            [com.yetanalytics.datasim.xapi.registration     :as reg]))
+            [com.yetanalytics.datasim.xapi.profile.template :as template]))
 
 ;; Statement healing is currently limited to inserting missing required
 ;; properties; it does not fix properties that are not included but have
@@ -37,11 +36,11 @@
 (s/def ::alignments
   ::model/alignments)
 
-(s/def ::registration
-  ::reg/registration)
-
 (s/def ::template
   ::template/template)
+
+(s/def ::registration
+  uuid?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
