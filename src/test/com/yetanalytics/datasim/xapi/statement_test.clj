@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
             [clojure.walk :as w]
+            [java-time.api :as t]
             [xapi-schema.spec :as xs]
             [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.xapi.statement :refer [generate-statement]]
@@ -52,8 +53,9 @@
   (merge profiles-map
          {:actor             actor
           :alignments        alignments
-          :time-ms           0
-          :duration-ms       0
+          :timestamp         (t/instant 0)
+          :timezone          "UTC"
+          :time-since-last   (t/duration 60000)
           :seed              top-seed
           :template          default-template
           :pattern-ancestors pattern-ancestors

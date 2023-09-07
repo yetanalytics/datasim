@@ -123,17 +123,17 @@
         (is (->> (get result alice-mbox)
                  (take 100)
                  (every? (fn [statement]
-                           (let [diff (:duration-ms (meta statement))]
-                             (< diff ms-in-hr)))))))
+                           (let [diff (:time-since-ms (meta statement))]
+                             (> ms-in-hr diff)))))))
       (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
         (is (->> (get result bob-mbox)
                  (take 100)
                  (every? (fn [statement]
                            (let [verb (get-in statement ["verb" "id"])
-                                 diff (:duration-ms (meta statement))]
-                             (or (and (= verb satisfied)
-                                      (< diff ms-in-hr))
-                                 (< ms-in-hr diff))))))))
+                                 diff (:time-since-ms (meta statement))]
+                             (if (= verb satisfied)
+                               (< ms-in-hr diff)
+                               (> ms-in-hr diff))))))))
       (testing "- Fred: generation cannot occur due to bounds"
         (is (= '()
                (->> (get result fred-mbox)
@@ -151,11 +151,13 @@
       (is (s/valid? (s/every ::xs/statement) result))
       (is (= 3 (count result)))))
   (testing "Respects `from` param"
-    (let [[s0 s1 & _] (generate-seq const/simple-input)
+    (let [[s0 s1 & _] (generate-seq const/simple-input
+                                             :select-agents [fred-mbox])
           from-input  (assoc-in const/simple-input
                                 [:parameters :from]
                                 (get-timestamp s0))
-          [s1' & _]   (generate-seq from-input)]
+          [s1' & _]   (generate-seq from-input
+                                             :select-agents [fred-mbox])]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
   (testing "Respects `gen-profiles` param (w/ multiple profiles)"
