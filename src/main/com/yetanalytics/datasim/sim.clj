@@ -3,6 +3,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.core.async :as a]
             [java-time.api      :as t]
+            [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim                   :as-alias datasim]
             [com.yetanalytics.datasim.model             :as model]
             [com.yetanalytics.datasim.math.random       :as random]
@@ -12,6 +13,16 @@
             [com.yetanalytics.datasim.util.sequence     :as su]
             [com.yetanalytics.datasim.util.async        :as au]
             [com.yetanalytics.datasim.model.temporal    :as temporal]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specs
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::statement-seq
+  (s/coll-of ::xs/statement))
+
+(s/def ::skeleton
+  (s/map-of ::actor/actor-ifi ::statement-seq))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence
@@ -32,14 +43,14 @@
                :?end-time  ::temporal/date-time
                :?from-time ::temporal/date-time
                :zone-region string?)
-  :ret :skeleton/statement-seq)
+  :ret ::statement-seq)
 
-(defn- init-simulation-seq
+(defn- init-statement-seq
   [pattern-walk-fn rng alignments]
   (for [registration (repeatedly (partial random/rand-uuid rng))]
     [registration (pattern-walk-fn alignments rng)]))
 
-(defn- time-simulation-seq*
+(defn- time-statement-seq*
   [rng {prev-timestamp     :timestamp
         prev-timestamp-gen :timestamp-gen
         registration-seq   :registration-seq}]
@@ -73,16 +84,16 @@
            :timestamp-gen    prev-timestamp-gen
            :registration-seq registration-seq*})))))
 
-(defn- time-simulation-seq
+(defn- time-statement-seq
   [rng start-time registration-seq]
-  (->> (iterate (partial time-simulation-seq* rng)
+  (->> (iterate (partial time-statement-seq* rng)
                 {:timestamp        start-time
                  :timestamp-gen    start-time
                  :registration-seq registration-seq})
        (take-while some?)
        (keep :result)))
 
-(defn- drop-simulation-seq
+(defn- drop-statement-seq
   [?end-time simulation-seq]
   (let [before-end?
         (if (some? ?end-time)
@@ -91,12 +102,12 @@
           (constantly true))]
     (take-while before-end? simulation-seq)))
 
-(defn- seed-simulation-seq
+(defn- seed-statement-seq
   [rng simulation-seq]
   (map #(assoc % :seed (random/rand-unbound-int rng))
        simulation-seq))
 
-(defn- from-simulation-seq
+(defn- from-statement-seq
   [?from-time simulation-seq]
   (let [before-from?
         (if (some? ?from-time)
@@ -106,26 +117,26 @@
           (constantly false))]
     (drop-while before-from? simulation-seq)))
 
-(defn- gens-simulation-seq
+(defn- gens-statement-seq
   [input simulation-seq]
   (map #(statement/generate-statement (merge input %))
        simulation-seq))
 
-(defn simulation-seq
+(defn statement-seq
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
    process. The sequence will either end at `?end-time` or, if `nil`,
    be infinite."
   [{:keys [pattern-walk-fn] :as input} seed alignments start-time ?end-time ?from-time zone-region]
   (let [sim-rng  (random/seed-rng seed)
-        temp-rng (random/rand-unbound-int sim-rng)
-        time-rng (random/rand-unbound-int sim-rng)
-        stmt-rng (random/rand-unbound-int sim-rng)]
-    (->> (init-simulation-seq pattern-walk-fn temp-rng alignments)
-         (time-simulation-seq time-rng start-time)
-         (drop-simulation-seq ?end-time)
-         (seed-simulation-seq stmt-rng)
-         (from-simulation-seq ?from-time)
-         (gens-simulation-seq (assoc input :timezone zone-region)))))
+        temp-rng (random/seed-rng (random/rand-unbound-int sim-rng))
+        time-rng (random/seed-rng (random/rand-unbound-int sim-rng))
+        stmt-rng (random/seed-rng (random/rand-unbound-int sim-rng))]
+    (->> (init-statement-seq pattern-walk-fn temp-rng alignments)
+         (time-statement-seq time-rng start-time)
+         (drop-statement-seq ?end-time)
+         (seed-statement-seq stmt-rng)
+         (from-statement-seq ?from-time)
+         (gens-statement-seq (assoc input :timezone zone-region)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
@@ -198,13 +209,13 @@
                   actor-input     (merge profiles-map
                                          actor-model-map
                                          actor-xapi-map)
-                  actor-stmt-seq  (simulation-seq actor-input
-                                                  actor-seed
-                                                  actor-alignment
-                                                  start-time
-                                                  ?end-time
-                                                  ?from-time
-                                                  zone-region)]
+                  actor-stmt-seq  (statement-seq actor-input
+                                                 actor-seed
+                                                 actor-alignment
+                                                 start-time
+                                                 ?end-time
+                                                 ?from-time
+                                                 zone-region)]
               (assoc m actor-id actor-stmt-seq)))
           {}))))
 
@@ -219,7 +230,7 @@
   :args (s/cat :input :com.yetanalytics.datasim/input
                :options (s/keys*
                          :opt-un [::select-agents]))
-  :ret :skeleton/statement-seq)
+  :ret ::statement-seq)
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
