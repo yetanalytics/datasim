@@ -33,6 +33,8 @@
 
 (s/def ::minute (s/int-in 0 60))
 
+(s/def ::second (s/int-in 0 60))
+
 (s/def ::years
   (s/coll-of ::year :distinct true))
 
@@ -54,12 +56,16 @@
 (s/def ::minutes
   (s/coll-of ::minute :distinct true))
 
+(s/def ::seconds
+  (s/coll-of ::second :distinct true))
+
 (s/def ::ranges
   (s/and (s/keys :req-un [::years]
                  :opt-un [::months
                           ::days
                           ::hours
-                          ::minutes])
+                          ::minutes
+                          ::seconds])
          (s/map-of keyword? (s/and seq? sorted-entries?))))
 
 (s/def ::sets
@@ -68,7 +74,8 @@
                           ::days-of-month
                           ::days-of-week
                           ::hours
-                          ::minutes])
+                          ::minutes
+                          ::seconds])
          (s/map-of keyword? set?)))
 
 (s/def ::bounds
@@ -95,25 +102,28 @@
                         ::day-of-month
                         ::day-of-week
                         ::hour
-                        ::minute]))
+                        ::minute
+                        ::second]))
 
 (defn time-map
   "Return a map of different times from the LocalDateTime `date-time`."
   [date-time]
-  (let [[year month day-month day-week hour minute]
+  (let [[year month day-month day-week hour minute second]
         (t/as date-time
               :year
               :month-of-year
               :day-of-month
               :day-of-week
               :hour-of-day
-              :minute-of-hour)]
+              :minute-of-hour
+              :second-of-minute)]
     {:year         year
      :month        month
      :day-of-month day-month
      :day-of-week  day-week
      :hour         hour
-     :minute       minute}))
+     :minute       minute
+     :second       second}))
 
 (s/fdef leap-year?
   :args (s/cat :year ::year)
@@ -331,20 +341,22 @@
 
 (defn- next-bounded-times
   "Returns a sequence of the next LocalDateTime that are within `bounds`."
-  [{{:keys [years months days-of-month hours minutes]
+  [{{:keys [years months days-of-month hours minutes seconds]
      :or {months        (range 1 13)
           days-of-month (range 1 32)
           hours         (range 0 24)
-          minutes       (range 0 60)}}
+          minutes       (range 0 60)
+          seconds       (range 0 60)}}
     :ranges
     {:keys [days-of-week]}
     :sets}
    date-time]
-  (let [{inst-yr :year
+  (let [{inst-yr  :year
          inst-mon :month
          inst-day :day-of-month
-         inst-hr :hour
-         inst-min :minute}
+         inst-hr  :hour
+         inst-min :minute
+         inst-sec :second}
         (time-map date-time)
         day-of-week?
         (if (empty? days-of-week)
@@ -378,8 +390,13 @@
           min   minutes
           :let  [current-min? (current-t? inst-min min current-hr?)
                  future-min?  (future-t? inst-min min future-hr? current-hr?)]
-          :when (or current-min? future-min?)]
-      (t/local-date-time year month day hour min))))
+          :when (or current-min? future-min?)
+          ;; Seconds
+          sec   seconds
+          :let  [current-sec? (current-t? inst-sec sec current-min?)
+                 future-sec?  (future-t? inst-sec sec future-min? current-min?)]
+          :when (or current-sec? future-sec?)]
+      (t/local-date-time year month day hour min sec))))
 
 (s/fdef next-bounded-time
   :args (s/cat :bound     ::bounds

@@ -15,7 +15,8 @@
 
 (def alignment-2 {:id "http://www.whateveer.com/activity2"
                   :weight 0.8
-                  :bounds [{:minutes     [1]
+                  :bounds [{:seconds     [1 2 3]
+                            :minutes     [1]
                             :hours       [[8 12]]
                             :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
                             :daysOfMonth [[1 10] [21 30]]
