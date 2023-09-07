@@ -364,8 +364,8 @@
           (fn [y m d] (contains? days-of-week (day-of-week y m d))))]
     (for [;; Years
           year  years
-          :let  [current-yr? (current-t? inst-yr year true)
-                 future-yr?  (future-t? inst-yr year true true)]
+          :let  [current-yr? (= inst-yr year)
+                 future-yr?  (< inst-yr year)]
           :when (or current-yr? future-yr?)
           ;; Months
           month months
