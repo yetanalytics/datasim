@@ -2,11 +2,11 @@
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.input.model            :as model]
-            [com.yetanalytics.datasim.input.model.alignments :refer [day-of-week-map month-of-year-map]]
             [com.yetanalytics.datasim.math.random            :as random]
             [com.yetanalytics.datasim.model.alignment        :as-alias alignment]
             [com.yetanalytics.datasim.model.alignment.period :as-alias alignment.period]
             [com.yetanalytics.datasim.model.object-override  :as-alias obj-override]
+            [com.yetanalytics.datasim.model.temporal         :as temporal]
             [com.yetanalytics.datasim.xapi.actor             :as actor]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,78 +56,6 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ms-per-second
-  1000)
-
-(def ms-per-minute
-  60000)
-
-(def ms-per-hour
-  3600000)
-
-(def ms-per-day
-  86400000)
-
-(def ms-per-week
-  604800000)
-
-(defn- convert-time
-  "Convert time `t` into milliseconds based on the time `unit`. Coerces
-   any doubles into integers."
-  [t unit]
-  (long (case unit
-          :millis  t
-          :seconds (* t ms-per-second)
-          :minutes (* t ms-per-minute)
-          :hours   (* t ms-per-hour)
-          :days    (* t ms-per-day)
-          :weeks   (* t ms-per-week))))
-
-(defn- convert-time-period
-  [{:keys [min mean unit]}]
-  (let [unit* (or (some-> unit keyword) :minute)
-        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
-        min*  (or (some-> min (convert-time unit*)) 0)]
-    {:min  min*
-     :mean mean*}))
-
-(defn- convert-time-bound-unit
-  [unit v]
-  (let [convert-dow   (fn [d]
-                        (if (string? d) (get day-of-week-map d) d))
-        convert-month (fn [m]
-                        (if (string? m) (get month-of-year-map m) m))]
-    (case unit
-      :daysOfWeek
-      (if (coll? v)
-        (->> v (mapv convert-dow))
-        (->> v convert-dow (repeat 2) vec))
-      :months
-      (if (coll? v)
-        (->> v (mapv convert-month))
-        (->> v convert-month (repeat 2) vec))
-      (if (coll? v)
-        v
-        [v v]))))
-
-(defn- time-bound-unit-camel->kebab
-  [unit]
-  (case unit
-    :daysOfWeek :days-of-week
-    :daysOfMonth :days-of-month
-    unit))
-
-(defn- convert-time-bounds
-  [bounds]
-  (mapv (fn [bound]
-          (reduce-kv (fn [bound* unit v]
-                       (assoc bound*
-                              (time-bound-unit-camel->kebab unit)
-                              (mapv (partial convert-time-bound-unit unit) v)))
-                     {}
-                     bound))
-        bounds))
-
 (defn- mapify-alignments
   [alignments]
   {:weights (reduce (fn [acc {:keys [id weight]}]
@@ -137,11 +65,11 @@
                     {}
                     alignments)
    :bounds  (reduce (fn [acc {:keys [id bounds]}]
-                      (assoc acc id (convert-time-bounds bounds)))
+                      (assoc acc id (temporal/convert-bounds bounds)))
                     {}
                     alignments)
    :periods (reduce (fn [acc {:keys [id period]}]
-                      (assoc acc id (convert-time-period period)))
+                      (assoc acc id (temporal/convert-period period)))
                     {}
                     alignments)})
 

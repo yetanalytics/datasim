@@ -18,8 +18,8 @@
                   :bounds [{:minutes     [1]
                             :hours       [[8 12]]
                             :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
-                            :daysOfMonth [[0 10] [20 30]]
-                            :months      [3 ["April" "May"]]
+                            :daysOfMonth [[1 10] [21 30]]
+                            :months      [1 ["April" "May"]]
                             :years       [2023]}]
                   :period {:min  2
                            :mean 3.2

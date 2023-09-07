@@ -1,36 +1,13 @@
 (ns com.yetanalytics.datasim.model.temporal
   (:require [clojure.spec.alpha :as s]
             [java-time.api      :as t]
-            [java-time.core     :as tc]
-            [com.yetanalytics.datasim.math.random :as random])
+            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.input.model.alignments :as align])
   (:import [java.time LocalDateTime]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def day-of-week-map
-  {"Sunday"    0
-   "Monday"    1
-   "Tuesday"   2
-   "Wednesday" 3
-   "Thursday"  4
-   "Friday"    5
-   "Saturday"  6})
-
-(def month-of-year-map
-  {"January"   1
-   "February"  2
-   "March"     3
-   "April"     4
-   "May"       5
-   "June"      6
-   "July"      7
-   "August"    8
-   "September" 9
-   "October"   10
-   "November"  11
-   "December"  12})
 
 (defn- sorted-entries?
   [coll]
@@ -48,6 +25,8 @@
 
 (s/def ::day (s/int-in 1 32))
 
+(s/def ::day-of-month ::day)
+
 (s/def ::day-of-week (s/int-in 0 6))
 
 (s/def ::hour (s/int-in 0 24))
@@ -64,7 +43,7 @@
   (s/coll-of ::day :distinct true))
 
 (s/def ::days-of-month
-  (s/coll-of ::day :distinct true))
+  (s/coll-of ::day-of-month :distinct true))
 
 (s/def ::days-of-week
   (s/coll-of ::hour :distinct true))
@@ -95,12 +74,46 @@
 (s/def ::bounds
   (s/keys :req-un [::ranges ::sets]))
 
+(s/def ::min nat-int?)
+
+(s/def ::mean pos-int?)
+
+(s/def ::period
+  (s/keys :req-un [::min ::mean]))
+
 (s/def ::date-time
   #(instance? LocalDateTime %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/fdef time-map
+  :args (s/cat :date-time ::date-time)
+  :ret (s/keys :req-un [::year
+                        ::month
+                        ::day-of-month
+                        ::day-of-week
+                        ::hour
+                        ::minute]))
+
+(defn time-map
+  "Return a map of different times from the LocalDateTime `date-time`."
+  [date-time]
+  (let [[year month day-month day-week hour minute]
+        (t/as date-time
+              :year
+              :month-of-year
+              :day-of-month
+              :day-of-week
+              :hour-of-day
+              :minute-of-hour)]
+    {:year         year
+     :month        month
+     :day-of-month day-month
+     :day-of-week  day-week
+     :hour         hour
+     :minute       minute}))
 
 (s/fdef leap-year?
   :args (s/cat :year ::year)
@@ -112,7 +125,6 @@
   (and (zero? ^long (mod year 4))
        (not (and (zero? ^long (mod year 100))
                  (not (zero? ^long (mod year 400)))))))
-
 
 (s/fdef day-of-month?
   :args (s/cat :year  ::year
@@ -177,78 +189,101 @@
 ;; Compilation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- convert-day-of-week
-  [d]
-  (if (string? d) (get day-of-week-map d) d))
+;; Temporal Bounds
 
-(defn- convert-month
-  [m]
-  (if (string? m) (get month-of-year-map m) m))
+(def string->int-map
+  (merge align/day-of-week-map align/month-of-year-map))
+
+(defn- string->int
+  [s]
+  (get string->int-map s s))
+
+(defn- csk-unit
+  [unit]
+  (case unit
+    :daysOfWeek  :days-of-week
+    :daysOfMonth :day-of-month
+    unit))
 
 (defn- reduce-values
   [vs* v]
   (if (coll? v)
     (let [[start end] v
-          vrange (range start (inc end))]
+          start* (string->int start)
+          end*   (string->int end)
+          vrange (range start* (inc end*))]
       (into vs* vrange))
-    (conj vs* v)))
+    (let [v* (string->int v)]
+      (conj vs* v*))))
 
 (defn- convert-values [vs]
   (reduce reduce-values [] vs))
 
 (defn- convert-unit
   [[unit vs]]
-  (let [unit*
-        (case unit
-          :daysOfWeek :days-of-week
-          :daysOfMonth :day-of-month
-          unit)
-        vs*
-        (case unit
-          :daysOfWeek
-          (->> vs convert-values (map convert-day-of-week))
-          :months
-          (->> vs convert-values (map convert-month))
-          ;; else
-          (->> vs convert-values))]
-    [unit* vs*]))
+  [(csk-unit unit) (convert-values vs)])
 
 (defn- convert-bound
   [bound]
-  (let [bound* (map convert-unit bound)]
-    (reduce (fn [bound** [unit vs]]
-              (-> bound**
-                  (assoc-in [:sets unit] (set vs))
-                  (assoc-in [:ranges unit] (sort (distinct vs)))))
-            {:sets {} :ranges {}}
-            bound*))
-  (->> bound (map convert-unit) (into {})))
+  (reduce (fn [bound* [unit vs]]
+            (-> bound*
+                (assoc-in [:sets unit] (set vs))
+                (assoc-in [:ranges unit] (sort (distinct vs)))))
+          {:sets {} :ranges {}}
+          (map convert-unit bound)))
+
+(s/fdef convert-bounds
+  :args (s/cat :bounds ::align/bounds)
+  :ret ::bounds)
 
 (defn convert-bounds
   [bounds]
   (mapv convert-bound bounds))
 
+;; Temporal Periods
+
+(def ms-per-second
+  1000)
+
+(def ms-per-minute
+  60000)
+
+(def ms-per-hour
+  3600000)
+
+(def ms-per-day
+  86400000)
+
+(def ms-per-week
+  604800000)
+
+(defn- convert-time
+  "Convert time `t` into milliseconds based on the time `unit`. Coerces
+   any doubles into integers."
+  [t unit]
+  (long (case unit
+          :millis  t
+          :seconds (* t ms-per-second)
+          :minutes (* t ms-per-minute)
+          :hours   (* t ms-per-hour)
+          :days    (* t ms-per-day)
+          :weeks   (* t ms-per-week))))
+
+(s/fdef convert-period
+  :args (s/cat :period ::align/period)
+  :ret ::period)
+
+(defn convert-period
+  [{:keys [min mean unit]}]
+  (let [unit* (or (some-> unit keyword) :minute)
+        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
+        min*  (or (some-> min (convert-time unit*)) 0)]
+    {:min  min*
+     :mean mean*}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Runtime
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- time-map
-  "Return a map of different times from the LocalDateTime `date-time`."
-  [date-time]
-  (let [[year month day-month day-week hour minute]
-        (t/as date-time
-              :year
-              :month-of-year
-              :day-of-month
-              :day-of-week
-              :hour-of-day
-              :minute-of-hour)]
-    {:year         year
-     :month        month
-     :day-of-month day-month
-     :day-of-week  day-week
-     :hour         hour
-     :minute       minute}))
 
 ;; Bounded Time?
 
@@ -383,7 +418,7 @@
   (t/plus date-time (t/millis (generate-period rng period))))
 
 (s/fdef add-jitter
-  :args (s/cat :date-time #(satisfies? tc/Plusable %)
+  :args (s/cat :date-time ::date-time
                :rng       ::random/rng))
 
 (defn add-jitter
