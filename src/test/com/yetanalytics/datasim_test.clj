@@ -151,13 +151,11 @@
       (is (s/valid? (s/every ::xs/statement) result))
       (is (= 3 (count result)))))
   (testing "Respects `from` param"
-    (let [[s0 s1 & _] (generate-seq const/simple-input
-                                             :select-agents [fred-mbox])
+    (let [[s0 s1 & _] (generate-seq const/simple-input)
           from-input  (assoc-in const/simple-input
                                 [:parameters :from]
                                 (get-timestamp s0))
-          [s1' & _]   (generate-seq from-input
-                                             :select-agents [fred-mbox])]
+          [s1' & _]   (generate-seq from-input)]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
   (testing "Respects `gen-profiles` param (w/ multiple profiles)"
