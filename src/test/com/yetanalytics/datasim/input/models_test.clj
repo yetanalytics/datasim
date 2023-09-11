@@ -24,7 +24,8 @@
                             :years       [2023]}]
                   :period {:min  2
                            :mean 3.2
-                           :unit "millis"}})
+                           :unit "millis"}
+                  :repeat-max 10})
 
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
                 :type "Agent"})

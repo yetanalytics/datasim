@@ -23,9 +23,13 @@
   (s/map-of ::xs/iri (s/keys :req-un [::alignment.period/min
                                       ::alignment.period/mean])))
 
+(s/def ::alignment/repeat-maxes
+  (s/map-of ::xs/iri pos-int?))
+
 (s/def ::alignments
   (s/keys :opt-un [::alignment/weights
-                   ::alignment/periods]))
+                   ::alignment/periods
+                   ::alignment/repeat-maxes]))
 
 (s/def ::obj-override/weights
   (s/map-of :statement/object ::random/weight))
@@ -58,20 +62,24 @@
 
 (defn- mapify-alignments
   [alignments]
-  {:weights (reduce (fn [acc {:keys [id weight]}]
-                      (if (some? weight)
-                        (assoc acc id weight)
-                        acc))
-                    {}
-                    alignments)
-   :bounds  (reduce (fn [acc {:keys [id bounds]}]
-                      (assoc acc id (temporal/convert-bounds bounds)))
-                    {}
-                    alignments)
-   :periods (reduce (fn [acc {:keys [id period]}]
-                      (assoc acc id (temporal/convert-period period)))
-                    {}
-                    alignments)})
+  {:weights      (reduce (fn [acc {:keys [id weight]}]
+                           (if (some? weight)
+                             (assoc acc id weight)
+                             acc))
+                         {}
+                         alignments)
+   :bounds       (reduce (fn [acc {:keys [id bounds]}]
+                           (assoc acc id (temporal/convert-bounds bounds)))
+                         {}
+                         alignments)
+   :periods      (reduce (fn [acc {:keys [id period]}]
+                           (assoc acc id (temporal/convert-period period)))
+                         {}
+                         alignments)
+   :repeat-maxes (reduce (fn [acc {:keys [id repeat-max]}]
+                           (assoc acc id repeat-max))
+                         {}
+                         alignments)})
 
 (defn- mapify-object-overrides
   [object-overrides]

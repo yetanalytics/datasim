@@ -33,6 +33,8 @@
 ;; Pattern Walker
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def default-repeat-max 5)
+
 (defn- pattern-zipper
   "Create a zipper over the Patterns and Statement Templates found in
    `type-iri-map`. A special `::root` sentinel Pattern is created as an
@@ -40,7 +42,7 @@
    The zipper can then be walked; traversal will be done in a deterministic,
    pseudorandom fashion, in which `rng` and `alignments` is used to choose
    the children of each node in the zipper."
-  [type-iri-map {:keys [weights bounds periods] :as _alignments} rng repeat-max]
+  [type-iri-map {:keys [weights bounds periods repeat-maxes] :as _alignments} rng]
   (let [temp-iri-map    (get type-iri-map "StatementTemplate")
         pat-iri-map     (get type-iri-map "Pattern")
         primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
@@ -53,7 +55,10 @@
            (contains? pat-iri-map* node-id))
          (fn children [node-id] ; choose children using rng
            (let [{:keys [sequence alternates optional oneOrMore zeroOrMore]}
-                 (get pat-iri-map* node-id)]
+                 (get pat-iri-map* node-id)
+                 repeat-max
+                 (or (get repeat-maxes node-id)
+                     default-repeat-max)]
              (cond
                sequence   sequence
                alternates [(random/choose rng weights alternates)]
