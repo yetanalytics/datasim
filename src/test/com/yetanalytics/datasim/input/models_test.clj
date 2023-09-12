@@ -7,21 +7,33 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def alignment-1
-  {:id      "http://www.whatever.com/activity1"
+(def verb-alignment
+  {:id     "http://www.whatever.com/verb"
+   :weight 0.99})
+
+(def activity-alignment
+  {:id     "http://www.whatever.com/activity"
+   :weight 0.12})
+
+(def activity-type-alignment
+  {:id     "http://www.whatever.com/activity-type"
+   :weight 0.31})
+
+(def pat-alignment-1
+  {:id      "http://www.whatever.com/pattern1"
    :weights [{:id     nil
               :weight 0.1}
-             {:id     "http://www.whatever.com/activity1/child"
+             {:id     "http://www.whatever.com/pattern1/child"
               :weight 0.9}]
    :period  {:min  2.1
              :mean 3
              :unit "weeks"}})
 
-(def alignment-2
-  {:id         "http://www.whatever.com/activity2"
-   :weights    [{:id     "http://www.whatever.com/activity2/child1"
+(def pat-alignment-2
+  {:id         "http://www.whatever.com/pattern2"
+   :weights    [{:id     "http://www.whatever.com/pattern2/child1"
                  :weight 0.8}
-                {:id     "http://www.whatever.com/activity2/child2"
+                {:id     "http://www.whatever.com/pattern2/child2"
                  :weight 0.2}]
    :bounds     [{:seconds     [1 2 3]
                  :minutes     [1]
@@ -36,17 +48,27 @@
    :retry      "template"
    :repeat-max 10})
 
+(def template-alignment
+  {:id     "http://www.whatever.com/template"
+   :period {:mean 30
+            :unit "days"}})
+
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
                 :type "Agent"})
 
 (def persona-2 {:id   "mbox::mailto:milt@yetanalytics.com"
                 :type "Agent"})
 
-(def model-1 {:personae   [persona-1]
-              :alignments [alignment-1 alignment-2]})
+(def model-1 {:personae      [persona-1]
+              :verbs         [verb-alignment]
+              :activities    [activity-alignment]
+              :activityTypes [activity-type-alignment]
+              :patterns      [pat-alignment-1 pat-alignment-2]
+              :templates     [template-alignment]})
 
-(def model-2 {:personae   [persona-2]
-              :alignments [alignment-1 alignment-2]})
+(def model-2 {:personae [persona-2]
+              :verbs    [verb-alignment]
+              :patterns [pat-alignment-1 pat-alignment-2]})
 
 (def object-override-example
   {:object {:objectType "Activity"
@@ -62,7 +84,11 @@
 (deftest alignments-test
   (testing "valid personae and alignments"
     (is (s/valid? ::model/personae [persona-1 persona-2]))
-    (is (s/valid? ::model/alignments [alignment-1 alignment-2]))
+    (is (s/valid? ::model/verbs [verb-alignment]))
+    (is (s/valid? ::model/activities [activity-alignment]))
+    (is (s/valid? ::model/activityTypes [activity-type-alignment]))
+    (is (s/valid? ::model/patterns [pat-alignment-1 pat-alignment-2]))
+    (is (s/valid? ::model/templates [template-alignment]))
     (is (s/valid? ::model/models [model-1 model-2])))
   (testing "invalid persona ids"
     (is (not (s/valid? ::model/personae
@@ -77,24 +103,24 @@
     (is (not (s/valid? ::model/personae
                        [(assoc persona-1 :type "FooBar" :id "qux")]))))
   (testing "invalid temporal properties"
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:bounds 0 :minutes] 1)])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:bounds 0 :minutes] [[2 1]])])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:bounds 0 :minutes] [60])])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :mean] 0)])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :mean] -3)])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :mean] "4")])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :min] -1.2)])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :min] "3")])))
-    (is (not (s/valid? ::model/alignments
-                       [(assoc-in alignment-1 [:period :unit] "months")]))))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:bounds 0 :minutes] 1)])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:bounds 0 :minutes] [[2 1]])])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:bounds 0 :minutes] [60])])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:period :mean] 0)])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:period :mean] -3)])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:period :mean] "4")])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:period :min] -1.2)])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:period :min] "3")])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-1 [:period :unit] "months")]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))
