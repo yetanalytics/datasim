@@ -33,7 +33,7 @@
    :period     {:min  2
                 :mean 3.2
                 :unit "millis"}
-   :retry      :template
+   :retry      "template"
    :repeat-max 10})
 
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
