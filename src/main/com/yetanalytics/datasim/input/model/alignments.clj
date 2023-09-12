@@ -131,11 +131,18 @@
                    ::period/unit]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Retry Options
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: More options for retry
+(s/def ::retry
+  #{"template"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Max Repeat
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::repeat-max
-  pos-int?)
+(s/def ::repeat-max pos-int?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object
@@ -185,12 +192,14 @@
           :opt-un [::weights    ; for alternate and optional patterns 
                    ::repeat-max ; for oneOrMore and zeroOrMore patterns
                    ::bounds
-                   ::period]))
+                   ::period
+                   ::retry]))
 
 (def template-spec
   (s/keys :req-un [::id]
           :opt-un [::bounds
-                   ::period]))
+                   ::period
+                   ::retry]))
 
 (def object-override-spec
   (s/keys :req-un [::object]
