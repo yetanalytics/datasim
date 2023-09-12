@@ -168,16 +168,6 @@
 ;; Alignment
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def alignment-spec
-  (s/keys :req-un [::id]
-          :opt-un [::weight
-                   ::bounds
-                   ::period
-                   ::repeat-max]))
-
-(def alignments-spec
-  (s/every alignment-spec :kind vector? :min-count 1))
-
 (def verb-spec
   (s/keys :req-un [::id
                    ::weight]))

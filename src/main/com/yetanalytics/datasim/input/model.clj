@@ -9,12 +9,6 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- distinct-personae?
-  [model-maps]
-  (let [personaes (map :personae model-maps)]
-    (= (-> personaes count)
-       (-> personaes distinct count))))
-
 (s/def ::personae
   (s/every personae/persona-spec :kind vector? :min-count 1))
 
@@ -47,7 +41,7 @@
 
 (s/def ::models
   (s/and (s/every model-spec)
-         distinct-personae?))
+         personae/distinct-personae?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Validation
