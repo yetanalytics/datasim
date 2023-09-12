@@ -137,7 +137,6 @@
    & {:keys [repeat-max]}`, returns a lazy sequence of Statement Templates
    that have `:pattern-ancestors` metadata."
   [type-iri-map]
-  (fn [alignments rng & {:keys [repeat-max]
-                         :or {repeat-max 5}}]
+  (fn [alignments rng]
     (walk-pattern-zipper
-     (pattern-zipper type-iri-map alignments rng repeat-max))))
+     (pattern-zipper type-iri-map alignments rng))))
