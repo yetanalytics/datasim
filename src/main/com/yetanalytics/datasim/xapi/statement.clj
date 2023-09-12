@@ -22,8 +22,6 @@
 
 (s/def ::alignments ::model/alignments)
 
-(s/def ::object-overrides ::model/object-overrides)
-
 (s/def ::seed ::random/seed)
 
 ;; TODO: subregistration from :pattern-ancestors logic
@@ -43,16 +41,15 @@
 
 (s/def ::inputs
   (s/merge ::profile/profile-map
+           ::model/alignments
            (s/keys :req-un [::actor
-                            ::alignments
                             ::seed
                             ::timestamp
                             ::timezone
                             ::time-since-last
                             ::template
                             ::registration]
-                   :opt-un [::object-overrides
-                            ::sub-registration])))
+                   :opt-un [::sub-registration])))
 
 ;; Metadata
 
@@ -71,7 +68,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- select-object-override
-  [rng {:keys [weights objects]}]
+  [rng objects {weights :object-overrides}]
   (some->> objects
            not-empty
            (random/choose rng weights)
@@ -119,7 +116,8 @@
    | `statement-base-map` | A map from Template IDs to the Statement base created using `template->statement-base`.
    | `parsed-rules-map`   | A map from Template IDs to its parsed rules parsed using `template->parsed-rules`.
    | `actor`              | The Actor used in the Statement.
-   | `alignments`         | The alignments map used for choosing Statement elements.
+   | `objects`            | The vector of object overrides.
+   | `weights`            | The map of verb, activity, activity-type, and object-override weights.
    | `object-overrides`   | The map of objects that override Template-specified objects.
    | `template`           | The Template used to generate this Statement.
    | `registration`       | The registration UUID for the overall generated Statement sequence.
@@ -139,8 +137,8 @@
            statement-base-map
            parsed-rules-map
            actor
-           alignments
-           object-overrides
+           weights
+           objects
            template
            seed
            pattern-ancestors
@@ -163,7 +161,7 @@
                  (rule/add-rules-valuegen inputs)))
         ;; Basics
         rng             (random/seed-rng seed)
-        object-override (select-object-override rng object-overrides)
+        object-override (select-object-override rng objects weights)
         template-rules* (remove-object-rules template-rules object-override)
         timestamp-inst  (jt/instant timestamp timezone)
         statement-meta  {:timestamp       timestamp-inst

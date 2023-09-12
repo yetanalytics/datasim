@@ -12,9 +12,6 @@
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::repeat-max
-  pos-int?)
-
 (s/def ::pattern-ancestors
   (s/every ::pattern/pattern))
 
@@ -23,8 +20,7 @@
 (s/def ::pattern-walk-fn
   (s/fspec
    :args (s/cat :alignments ::model/alignments
-                :rng        ::random/rng
-                :kwargs     (s/keys* :opt-un [::repeat-max]))
+                :rng        ::random/rng)
    :ret (s/every (s/and ::template/template
                         (s/conformer meta)
                         (s/keys :req-un [::pattern-ancestors])))))
@@ -42,7 +38,7 @@
    The zipper can then be walked; traversal will be done in a deterministic,
    pseudorandom fashion, in which `rng` and `alignments` is used to choose
    the children of each node in the zipper."
-  [type-iri-map {:keys [weights bounds periods repeat-maxes] :as _alignments} rng]
+  [type-iri-map {:keys [patterns] :as _alignments} rng]
   (let [temp-iri-map    (get type-iri-map "StatementTemplate")
         pat-iri-map     (get type-iri-map "Pattern")
         primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
@@ -56,9 +52,10 @@
          (fn children [node-id] ; choose children using rng
            (let [{:keys [sequence alternates optional oneOrMore zeroOrMore]}
                  (get pat-iri-map* node-id)
-                 repeat-max
-                 (or (get repeat-maxes node-id)
-                     default-repeat-max)]
+                 {:keys [weights repeat-max]
+                  :or   {weights    {}
+                         repeat-max default-repeat-max}}
+                 (get patterns node-id)]
              (cond
                sequence   sequence
                alternates [(random/choose rng weights alternates)]
@@ -74,10 +71,9 @@
            node-id)
          ::root)
         (vary-meta assoc
-                   ::template-map temp-iri-map
-                   ::pattern-map  pat-iri-map
-                   ::bounds       bounds
-                   ::periods      periods))))
+                   ::template-map   temp-iri-map
+                   ::pattern-map    pat-iri-map
+                   ::alignments-map patterns))))
 
 (defn- pattern-loc-ancestors
   [pattern-loc]
@@ -89,10 +85,9 @@
         ancestors))))
 
 (defn- pattern-loc->template
-  [{template-m  ::template-map
-    pattern-m   ::pattern-map
-    bounds      ::bounds
-    periods     ::periods}
+  [{template-m   ::template-map
+    pattern-m    ::pattern-map
+    alignments-m ::alignments-map}
    pattern-loc]
   (let [node->template #(get template-m %)
         node->object   #(or (get pattern-m %)
@@ -102,18 +97,18 @@
                              z/up
                              pattern-loc-ancestors
                              (mapv node->object))
-            reduce-path (conj ancestors template)
-            reduce-fn   (fn [m]
-                          (reduce (fn [res {:keys [id]}] (get m id res))
-                                  {}
-                                  reduce-path))
-            temp-bounds (reduce-fn bounds)
-            temp-period (reduce-fn periods)]
+            reduce-path (reverse (conj ancestors template))
+            bounds      (some (fn [{:keys [id]}]
+                                (get-in alignments-m [id :bounds]))
+                              reduce-path)
+            period      (some (fn [{:keys [id]}]
+                                (get-in alignments-m [id :period]))
+                              reduce-path)]
         (vary-meta template
                    assoc
                    :pattern-ancestors ancestors
-                   :bounds temp-bounds
-                   :period temp-period)))))
+                   :bounds bounds
+                   :period period)))))
 
 (defn- walk-pattern-zipper
   "From the root of `pattern-zip`, perform a single walk of a primary Pattern,

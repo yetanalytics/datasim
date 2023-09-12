@@ -300,13 +300,8 @@
   :ret cmi5-general-pattern?)
 
 (defn walk-pattern [seed]
-  (let [{:keys [profiles models]} const/simple-input
-        alignments (->> (get-in models [0 :alignments])
-                        (reduce (fn [m {:keys [id weights]}]
-                                  (assoc m id weights))
-                                {})
-                        (assoc {} :weights))]
-    (walk-pattern* profiles alignments seed)))
+  (let [{:keys [profiles]} const/simple-input]
+    (walk-pattern* profiles {} seed)))
 
 (deftest walk-pattern-test
   (testing "Walk and generate seq for a single pattern"
@@ -317,19 +312,23 @@
 (deftest walk-weighted-pattern-test
   (testing "Remove abandoned template from consideration"
     (let [{:keys [profiles]} const/simple-input
-          weights (-> {"terminated" 1.0
-                       "abandoned"  0.0}
-                      (update-keys cmi5-iri))
-          results (walk-pattern* profiles {:weights weights} 100)]
+          pat-weights {(cmi5-iri "terminated") 1.0
+                       (cmi5-iri "abandoned")  0.0}
+          pat-align   {(cmi5-iri "terminatedorabandoned")
+                       {:weights pat-weights}}
+          alignments  {:patterns pat-align}
+          results     (walk-pattern* profiles alignments 100)]
       (is (s/valid? cmi5-general-pattern? results))
       (is (s/valid? cmi5-terminated? (last results)))
       (is (not (s/valid? cmi5-abandoned? (last results))))))
   (testing "Remove terminated template from consideration"
     (let [{:keys [profiles]} const/simple-input
-          weights (-> {"terminated" 0.0
-                       "abandoned"  1.0}
-                      (update-keys cmi5-iri))
-          results (walk-pattern* profiles {:weights weights} 100)]
+          pat-weights {(cmi5-iri "terminated") 0.0
+                       (cmi5-iri "abandoned")  1.0}
+          pat-align   {(cmi5-iri "terminatedorabandoned")
+                       {:weights pat-weights}}
+          alignments  {:patterns pat-align}
+          results     (walk-pattern* profiles alignments 100)]
       (is (s/valid? cmi5-general-pattern? results))
       (is (s/valid? cmi5-abandoned? (last results)))
       (is (not (s/valid? cmi5-terminated? (last results))))))
@@ -337,21 +336,27 @@
     ;; FIXME: This does not guarentee that "completed" appears, since
     ;; the weight for `nil` is still 0.5, not 0.0
     (let [{:keys [profiles]} const/simple-input
-          weights (-> {;; Force topmost path
-                       "completionmaybefailedsession" 1.0
-                       "completionpassedsession"      0.0
-                       "failedsession"                0.0
-                       "noresultsession"              0.0
-                       "passedsession"                0.0
-                       "completionnosuccesssession"   0.0
-                       "waivedsession"                0.0
-                       ;; Force secondary path
-                       "maybecompletedthenfailed"     1.0
-                       "failedthenmaybecompleted"     0.0
-                       ;; Encourage optional
-                       "completed"                    1.0}
-                      (update-keys cmi5-iri))
-          results (walk-pattern* profiles {:weights weights} 100)]
+          ;; Force topmost path
+          pat-weights-1 {(cmi5-iri "completionmaybefailedsession") 1.0
+                         (cmi5-iri "completionpassedsession")      0.0
+                         (cmi5-iri "failedsession")                0.0
+                         (cmi5-iri "noresultsession")              0.0
+                         (cmi5-iri "passedsession")                0.0
+                         (cmi5-iri "completionnosuccesssession")   0.0
+                         (cmi5-iri "waivedsession")                0.0}
+          pat-align-1   {(cmi5-iri "typicalsession")
+                         {:weights pat-weights-1}}
+          ;; Force secondary path
+          pat-weights-2 {(cmi5-iri "maybecompletedthenfailed") 1.0
+                         (cmi5-iri "failedthenmaybecompleted") 0.0}
+          pat-align-2   {(cmi5-iri "completedandmaybefailed")
+                         {:weights pat-weights-2}}
+          ;; Encourage optional
+          pat-weights-3 {(cmi5-iri "completed") 1.0}
+          pat-align-3   {(cmi5-iri "maybecompleted")
+                         {:weights pat-weights-3}}
+          alignments    {:patterns (merge pat-align-1 pat-align-2 pat-align-3)}
+          results       (walk-pattern* profiles alignments 100)]
       (is (s/valid? cmi5-general-pattern? results))
       (is (s/valid? (s/cat :satisfieds cmi5-satisfieds?
                            :typical-sessions (s/+ cmi5-completion-maybe-failed-session?))
@@ -359,21 +364,27 @@
       (is (some #(s/valid? cmi5-completed? %) results))))
   (testing "Force completed template to not appear"
     (let [{:keys [profiles]} const/simple-input
-          weights (-> {;; Force topmost path
-                       "completionmaybefailedsession" 1.0
-                       "completionpassedsession"      0.0
-                       "failedsession"                0.0
-                       "noresultsession"              0.0
-                       "passedsession"                0.0
-                       "completionnosuccesssession"   0.0
-                       "waivedsession"                0.0
-                       ;; Force secondary path
-                       "maybecompletedthenfailed"     1.0
-                       "failedthenmaybecompleted"     0.0
-                       ;; Force no optional
-                       "completed"                    0.0}
-                      (update-keys cmi5-iri))
-          results (walk-pattern* profiles {:weights weights} 100)]
+          ;; Force topmost path
+          pat-weights-1 {(cmi5-iri "completionmaybefailedsession") 1.0
+                         (cmi5-iri "completionpassedsession")      0.0
+                         (cmi5-iri "failedsession")                0.0
+                         (cmi5-iri "noresultsession")              0.0
+                         (cmi5-iri "passedsession")                0.0
+                         (cmi5-iri "completionnosuccesssession")   0.0
+                         (cmi5-iri "waivedsession")                0.0}
+          pat-align-1   {(cmi5-iri "typicalsession")
+                         {:weights pat-weights-1}}
+          ;; Force secondary path
+          pat-weights-2 {(cmi5-iri "maybecompletedthenfailed") 1.0
+                         (cmi5-iri "failedthenmaybecompleted") 0.0}
+          pat-align-2   {(cmi5-iri "completedandmaybefailed")
+                         {:weights pat-weights-2}}
+          ;; Force no optional
+          pat-weights-3 {(cmi5-iri "completed") 0.0}
+          pat-align-3   {(cmi5-iri "maybecompleted")
+                         {:weights pat-weights-3}}
+          alignments    {:patterns (merge pat-align-1 pat-align-2 pat-align-3)}
+          results       (walk-pattern* profiles alignments 100)]
       (is (s/valid? cmi5-general-pattern? results))
       (is (s/valid? (s/cat :satisfieds cmi5-satisfieds?
                            :typical-sessions (s/+ cmi5-completion-maybe-failed-session?))

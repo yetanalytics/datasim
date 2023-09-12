@@ -7,25 +7,33 @@
 ;; Constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def alignment-1 {:id "http://www.whateveer.com/activity1"
-                  :weight 0.9
-                  :period {:min  2.1
-                           :mean 3
-                           :unit "weeks"}})
+(def alignment-1
+  {:id      "http://www.whatever.com/activity1"
+   :weights [{:id     nil
+              :weight 0.1}
+             {:id     "http://www.whatever.com/activity1/child"
+              :weight 0.9}]
+   :period  {:min  2.1
+             :mean 3
+             :unit "weeks"}})
 
-(def alignment-2 {:id "http://www.whateveer.com/activity2"
-                  :weight 0.8
-                  :bounds [{:seconds     [1 2 3]
-                            :minutes     [1]
-                            :hours       [[8 12]]
-                            :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
-                            :daysOfMonth [[1 10] [21 30]]
-                            :months      [1 ["April" "May"]]
-                            :years       [2023]}]
-                  :period {:min  2
-                           :mean 3.2
-                           :unit "millis"}
-                  :repeat-max 10})
+(def alignment-2
+  {:id         "http://www.whatever.com/activity2"
+   :weights    [{:id     "http://www.whatever.com/activity2/child1"
+                 :weight 0.8}
+                {:id     "http://www.whatever.com/activity2/child2"
+                 :weight 0.2}]
+   :bounds     [{:seconds     [1 2 3]
+                 :minutes     [1]
+                 :hours       [[8 12]]
+                 :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
+                 :daysOfMonth [[1 10] [21 30]]
+                 :months      [1 ["April" "May"]]
+                 :years       [2023]}]
+   :period     {:min  2
+                :mean 3.2
+                :unit "millis"}
+   :repeat-max 10})
 
 (def persona-1 {:id   "mbox::mailto:cliff@yetanalytics.com"
                 :type "Agent"})

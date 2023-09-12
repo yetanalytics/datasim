@@ -23,12 +23,12 @@
 (def actor
   (-> const/simple-input :personae-array first :member first (dissoc :role)))
 
-(def alignments
-  (reduce
-   (fn [acc {:keys [id weight]}]
-     (assoc-in acc [:weights id] weight))
-   {:weights {}}
-   (get-in const/simple-input [:models 0 :alignments])))
+(def weights
+  {:activities
+   (reduce
+    (fn [acc {:keys [id weight]}] (assoc acc id weight))
+    {}
+    (get-in const/simple-input [:models 0 :activities]))})
 
 (def profiles-map
   (profile/profiles->profile-map (:profiles const/simple-input)
@@ -52,7 +52,7 @@
 (def arguments
   (merge profiles-map
          {:actor             actor
-          :alignments        alignments
+          :weights           weights
           :timestamp         (t/instant 0)
           :timezone          "UTC"
           :time-since-last   (t/duration 60000)
@@ -1002,33 +1002,37 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- gen-statement-override
-  [object-override partial-template]
-  (let [arguments*
-        (-> arguments
-            (assoc :object-overrides {:objects [object-override]}))]
-    (->> partial-template
-         (merge {:id       "https://template-1"
-                 :type     "StatementTemplate"
-                 :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
-         (assoc arguments* :template)
-         generate-statement)))
+  ([objects partial-template]
+   (gen-statement-override objects {} partial-template))
+  ([objects weights partial-template]
+   (let [arguments*
+         (-> arguments
+             (assoc-in [:objects] objects)
+             (assoc-in [:weights :object-overrides] weights)
+             #_(assoc :object-overrides {:objects [object-override]}))]
+     (->> partial-template
+          (merge {:id       "https://template-1"
+                  :type     "StatementTemplate"
+                  :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
+          (assoc arguments* :template)
+          generate-statement))))
 
 (deftest generate-statement-override-test
   (testing "Override with Activity"
     (testing "with no Template properties or rules"
-      (let [override  {:objectType "Activity"
+      (let [object    {:objectType "Activity"
                        :id         "https://www.whatever.com/activities#course1"
                        :definition {:name        {:en-US "Course 1"}
                                     :description {:en-US "Course Description 1"}
                                     :type        "http://adlnet.gov/expapi/activities/course"}}
-            statement (gen-statement-override override {})]
+            statement (gen-statement-override [object] {})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= (w/stringify-keys override)
+        (is (= (w/stringify-keys object)
                (get statement "object")))))
 
     (testing "with Agent/Group object rules"
-      (let [override  {:objectType "Activity"
+      (let [object    {:objectType "Activity"
                        :id         "https://www.whatever.com/activities#course1"
                        :definition {:name        {:en-US "Course 1"}
                                     :description {:en-US "Course Description 1"}
@@ -1037,37 +1041,37 @@
                                 :all      ["Agent" "Group"]}
                                {:location "$.object.mbox"
                                 :presence "included"}]}
-            statement (gen-statement-override override template)]
+            statement (gen-statement-override [object] template)]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= (w/stringify-keys override)
+        (is (= (w/stringify-keys object)
                (get statement "object"))))))
 
   (testing "Override with Agent"
     (testing "with no Template properties or rules"
-      (let [override  {:objectType "Agent"
+      (let [object    {:objectType "Agent"
                        :name       "My Override"
                        :mbox       "mailto:myoverride@example.com"}
-            statement (gen-statement-override override {})]
+            statement (gen-statement-override [object] {})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= (w/stringify-keys override)
+        (is (= (w/stringify-keys object)
                (get statement "object")))))
     
     (testing "with objectActivityType property"
-      (let [override  {:objectType "Agent"
+      (let [object    {:objectType "Agent"
                        :name       "My Override"
                        :mbox       "mailto:myoverride@example.com"}
             template  {:objectActivityType
                        "https://w3id.org/xapi/cmi5/activitytype/course"}
-            statement (gen-statement-override override template)]
+            statement (gen-statement-override [object] template)]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= (w/stringify-keys override)
+        (is (= (w/stringify-keys object)
                (get statement "object")))))
     
     (testing "with Activity object rules"
-      (let [override  {:objectType "Agent"
+      (let [object    {:objectType "Agent"
                        :name       "My Override"
                        :mbox       "mailto:myoverride@example.com"}
             template  {:rules
@@ -1075,62 +1079,60 @@
                          :all      ["Activity"]}
                         {:location "$.object.id"
                          :all      ["https://example.org/course/1550503926"]}]}
-            statement (gen-statement-override override template)]
+            statement (gen-statement-override [object] template)]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= (w/stringify-keys override)
+        (is (= (w/stringify-keys object)
                (get statement "object"))))))
 
   (testing "Override with Activity or Agent"
     (testing "with equal probability"
-      (let [override-1
+      (let [object-1
             {:objectType "Activity"
              :id         "https://www.whatever.com/activities#course1"
              :definition {:name        {:en-US "Course 1"}
                           :description {:en-US "Course Description 1"}
                           :type        "http://adlnet.gov/expapi/activities/course"}}
-            override-2
+            object-2
             {:objectType "Agent"
              :name       "My Override"
              :mbox       "mailto:myoverride@example.com"}
-            overrides
-            {:weights {override-1 0.5 override-2 0.5}
-             :objects [override-1 override-2]}
+            weights
+            {object-1 0.5 object-2 0.5}
             statement
-            (generate-statement (assoc arguments
-                                       :object-overrides overrides
-                                       :template {:id       "https://template-1"
-                                                  :type     "StatementTemplate"
-                                                  :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
+            (gen-statement-override [object-1 object-2]
+                                    weights
+                                    {:id       "https://template-1"
+                                     :type     "StatementTemplate"
+                                     :inScheme "https://w3id.org/xapi/cmi5/v1.0"})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (or (= (w/stringify-keys override-1)
+        (is (or (= (w/stringify-keys object-1)
                    (get statement "object"))
-                (= (w/stringify-keys override-2)
+                (= (w/stringify-keys object-2)
                    (get statement "object"))))))
     (testing "with only Agent with nonzero probability"
-      (let [override-1
+      (let [object-1
             {:objectType "Activity"
              :id         "https://www.whatever.com/activities#course1"
              :definition {:name        {:en-US "Course 1"}
                           :description {:en-US "Course Description 1"}
                           :type        "http://adlnet.gov/expapi/activities/course"}}
-            override-2
+            object-2
             {:objectType "Agent"
              :name       "My Override"
              :mbox       "mailto:myoverride@example.com"}
-            overrides
-            {:weights {override-1 0.0 override-2 1.0}
-             :objects [override-1 override-2]}
+            weights
+            {object-1 0.0 object-2 1.0}
             statement
-            (generate-statement (assoc arguments
-                                       :object-overrides overrides
-                                       :template {:id       "https://template-1"
-                                                  :type     "StatementTemplate"
-                                                  :inScheme "https://w3id.org/xapi/cmi5/v1.0"}))]
+            (gen-statement-override [object-1 object-2]
+                                    weights
+                                    {:id       "https://template-1"
+                                     :type     "StatementTemplate"
+                                     :inScheme "https://w3id.org/xapi/cmi5/v1.0"})]
         (is (s/valid? ::xs/statement statement))
         (is (statement-inputs? statement))
-        (is (= (w/stringify-keys override-2)
+        (is (= (w/stringify-keys object-2)
                (get statement "object")))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1161,7 +1163,7 @@
             (assoc :template {:id       "https://template-1"
                               :type     "StatementTemplate"
                               :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
-            (assoc-in [:alignments :weights] weights))
+            (assoc :weights weights))
         init-rng
         (random/seed-rng 1000)]
     (->> (repeatedly 1000 #(random/rand-unbound-int init-rng))
@@ -1173,7 +1175,7 @@
     (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
                       "https://w3id.org/xapi/adl/verbs/satisfied" 0.0
                       "https://w3id.org/xapi/adl/verbs/waived"    0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:verbs weights})
           verb-ids   (map #(get-in % ["verb" "id"]) statements)
           verb-freqs (frequencies verb-ids)]
       (is (= 1000 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
@@ -1182,7 +1184,7 @@
     (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
                       "https://w3id.org/xapi/adl/verbs/satisfied" 1.0
                       "https://w3id.org/xapi/adl/verbs/waived"    0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:verbs weights})
           verb-ids   (map #(get-in % ["verb" "id"]) statements)
           verb-freqs (frequencies verb-ids)]
       ;; The exact counts should be reasonably close to the mean of 500;
@@ -1193,7 +1195,7 @@
     (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
                       "https://w3id.org/xapi/adl/verbs/satisfied" 1.0
                       "https://w3id.org/xapi/adl/verbs/waived"    1.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:verbs weights})
           verb-ids   (map #(get-in % ["verb" "id"]) statements)
           verb-freqs (frequencies verb-ids)]
       ;; The exact counts should be reasonably close to the mean of 333;
@@ -1204,7 +1206,7 @@
     (let [weights    {"https://w3id.org/xapi/adl/verbs/abandoned" 1.0
                       "https://w3id.org/xapi/adl/verbs/satisfied" 0.4
                       "https://w3id.org/xapi/adl/verbs/waived"    0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:verbs weights})
           verb-ids   (map #(get-in % ["verb" "id"]) statements)
           verb-freqs (frequencies verb-ids)]
       ;; See `datasim.math.random-test` for details on how the expected means
@@ -1218,7 +1220,7 @@
                       "https://w3id.org/xapi/cmi5/activities/course"   0.0
                       "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
                       "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:activity-types weights})
           act-types  (map #(get-in % ["object" "definition" "type"]) statements)
           act-freqs  (frequencies act-types)]
       (is (= 1000 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
@@ -1229,7 +1231,7 @@
                       "https://w3id.org/xapi/cmi5/activities/course"   1.0
                       "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
                       "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:activity-types weights})
           act-types  (map #(get-in % ["object" "definition" "type"]) statements)
           act-freqs  (frequencies act-types)]
       (is (= 520 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
@@ -1240,7 +1242,7 @@
                       "https://w3id.org/xapi/cmi5/activities/course"   1.0
                       "https://w3id.org/xapi/cmi5/activitytype/block"  1.0
                       "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:activity-types weights})
           act-types  (map #(get-in % ["object" "definition" "type"]) statements)
           act-freqs  (frequencies act-types)]
       (is (= 353 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
@@ -1251,7 +1253,7 @@
                       "https://w3id.org/xapi/cmi5/activities/course"   1.0
                       "https://w3id.org/xapi/cmi5/activitytype/block"  1.0
                       "https://w3id.org/xapi/cmi5/activitytype/course" 1.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:activity-types weights})
           act-types  (map #(get-in % ["object" "definition" "type"]) statements)
           act-freqs  (frequencies act-types)]
       (is (= 247 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
@@ -1262,7 +1264,7 @@
                       "https://w3id.org/xapi/cmi5/activities/course"   0.4
                       "https://w3id.org/xapi/cmi5/activitytype/block"  0.0
                       "https://w3id.org/xapi/cmi5/activitytype/course" 0.0}
-          statements (gen-weighted-statements weights)
+          statements (gen-weighted-statements {:activity-types weights})
           act-types  (map #(get-in % ["object" "definition" "type"]) statements)
           act-freqs  (frequencies act-types)]
       (is (= 803 (get act-freqs "https://w3id.org/xapi/cmi5/activities/block")))
@@ -1276,9 +1278,9 @@
         (-> arguments
             (assoc :template {:id       "https://template-1"
                               :type     "StatementTemplate"
-                              :inScheme "https://w3id.org/xapi/cmi5/v1.0"})
-            (assoc :object-overrides {:objects (vec (keys weights))
-                                      :weights weights}))
+                              :inScheme "https://w3id.org/xapi/cmi5/v1.0"}
+                   :objects (vec (keys weights))
+                   :weights {:object-overrides weights}))
         init-rng
         (random/seed-rng 1000)]
     (->> (repeatedly 1000 #(random/rand-unbound-int init-rng))

@@ -1,10 +1,25 @@
 (ns com.yetanalytics.datasim.input.model.alignments
-  (:require [clojure.set        :as cset]
-            [clojure.spec.alpha :as s]
-            [xapi-schema.spec   :as xs]
+  "Models for individual Concepts, Templates, Patterns, and Object
+   Overrides. The term \"alignments\" is largely historical, as it was used
+   to refer to models, before model personae were added."
+  (:require [clojure.set            :as cset]
+            [clojure.spec.alpha     :as s]
+            [clojure.spec.gen.alpha :as sgen]
+            [clojure.walk           :as w]
+            [xapi-schema.spec       :as xs]
             [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.input.model.alignments.weight :as-alias weight]
             [com.yetanalytics.datasim.input.model.alignments.bounds :as-alias bounds]
             [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ID
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: Use pan.axioms/iri once that has its own generator
+
+;; nilable so that optional patterns can specify weight for `null` option
+(s/def ::id (s/nilable ::xs/iri))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Weight
@@ -13,6 +28,9 @@
 ;; See also: ::object-overrides/weight
 
 (s/def ::weight ::random/weight)
+
+(s/def ::weights
+  (s/every (s/keys :req-un [::id ::weight]) :kind vector?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Bounds
@@ -120,11 +138,35 @@
   pos-int?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Alignment
+;; Object
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Use pan.axioms/iri once that has its own generator
-(s/def ::id ::xs/iri)
+;; Due to limitations of keywords, we cannot have IRI keys, limiting extensions
+(defn- no-iri-keys?
+  "Returns false if there exists a key made from an IRI, e.g.
+   (name :https://foo.org) => \"/foo.org\""
+  [obj]
+  (cond
+    (map? obj)
+    (if-not (->> obj vals (map no-iri-keys?) (some false?))
+      (->> obj keys (some (partial re-matches #".*/.*")) not)
+      false)
+    (vector? obj)
+    (every? no-iri-keys? obj)
+    :else
+    true))
+
+(s/def ::object
+  (s/with-gen (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+                     no-iri-keys?
+                     :statement/object) ; from xapi-schema
+    #(->> (s/gen :statement/object)
+          (sgen/such-that no-iri-keys?)
+          (sgen/fmap w/keywordize-keys))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Alignment
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def alignment-spec
   (s/keys :req-un [::id]
@@ -135,3 +177,31 @@
 
 (def alignments-spec
   (s/every alignment-spec :kind vector? :min-count 1))
+
+(def verb-spec
+  (s/keys :req-un [::id
+                   ::weight]))
+
+(def activity-spec
+  (s/keys :req-un [::id]
+          :opt-un [::weight]))
+
+(def activity-type-spec
+  (s/keys :req-un [::id]
+          :opt-un [::weight]))
+
+(def pattern-spec
+  (s/keys :req-un [::id]
+          :opt-un [::weights    ; for alternate and optional patterns 
+                   ::repeat-max ; for oneOrMore and zeroOrMore patterns
+                   ::bounds
+                   ::period]))
+
+(def template-spec
+  (s/keys :req-un [::id]
+          :opt-un [::bounds
+                   ::period]))
+
+(def object-override-spec
+  (s/keys :req-un [::object]
+          :opt-un [::weight]))

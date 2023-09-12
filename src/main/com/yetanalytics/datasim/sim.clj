@@ -199,7 +199,7 @@
                                                          actor-id
                                                          actor-group-id
                                                          actor-role)
-                  actor-alignment (:alignments actor-model-map)
+                  actor-alignment (dissoc actor-model-map :personae)
                   ;; Additional seed for further gen
                   actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property

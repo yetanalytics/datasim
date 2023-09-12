@@ -6,7 +6,7 @@
                 "type": "Agent"
             }
         ],
-        "alignments": [
+        "patterns": [
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfieds",
                 "period": {
@@ -24,7 +24,7 @@
                 "type": "Agent"
             }
         ],
-        "alignments": [
+        "patterns": [
             {
                 "id": "https://w3id.org/xapi/cmi5#typicalsessions",
                 "bounds": [
@@ -33,7 +33,9 @@
                         "years": [2019]
                     }
                 ]
-            },
+            }
+        ],
+        "templates": [
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfied",
                 "bounds": [
