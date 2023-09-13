@@ -1,6 +1,7 @@
 (ns com.yetanalytics.datasim.model.temporal
-  (:require [clojure.spec.alpha :as s]
-            [java-time.api      :as t]
+  (:require [clojure.spec.alpha     :as s]
+            [clojure.spec.gen.alpha :as sgen]
+            [java-time.api          :as t]
             [com.yetanalytics.datasim.math.random            :as random]
             [com.yetanalytics.datasim.input.model.alignments :as align])
   (:import [java.time LocalDateTime]))
@@ -36,47 +37,57 @@
 (s/def ::second (s/int-in 0 60))
 
 (s/def ::years
-  (s/coll-of ::year :distinct true))
+  (s/coll-of ::year :distinct true :min-count 1))
 
 (s/def ::months
-  (s/coll-of ::month :distinct true))
+  (s/coll-of ::month :distinct true :min-count 1))
 
 (s/def ::days
-  (s/coll-of ::day :distinct true))
+  (s/coll-of ::day :distinct true :min-count 1))
 
 (s/def ::days-of-month
-  (s/coll-of ::day-of-month :distinct true))
+  (s/coll-of ::day-of-month :distinct true :min-count 1))
 
 (s/def ::days-of-week
-  (s/coll-of ::hour :distinct true))
+  (s/coll-of ::hour :distinct true :min-count 1))
 
 (s/def ::hours
-  (s/coll-of ::hour :distinct true))
+  (s/coll-of ::hour :distinct true :min-count 1))
 
 (s/def ::minutes
-  (s/coll-of ::minute :distinct true))
+  (s/coll-of ::minute :distinct true :min-count 1))
 
 (s/def ::seconds
-  (s/coll-of ::second :distinct true))
+  (s/coll-of ::second :distinct true :min-count 1))
+
+(def ^:private ranges-spec
+  (s/keys :opt-un [::years
+                   ::months
+                   ::days
+                   ::hours
+                   ::minutes
+                   ::seconds]))
 
 (s/def ::ranges
-  (s/and (s/keys :req-un [::years]
-                 :opt-un [::months
-                          ::days
-                          ::hours
-                          ::minutes
-                          ::seconds])
-         (s/map-of keyword? (s/and seq? sorted-entries?))))
+  (s/with-gen (s/and ranges-spec
+                     (s/map-of keyword? (s/and seq? sorted-entries?)))
+    (fn [] (sgen/fmap #(update-vals % sort)
+                      (s/gen ranges-spec)))))
+
+(def ^:private sets-spec
+  (s/keys :opt-un [::years
+                   ::months
+                   ::days-of-month
+                   ::days-of-week
+                   ::hours
+                   ::minutes
+                   ::seconds]))
 
 (s/def ::sets
-  (s/and (s/keys :req-un [::years]
-                 :opt-un [::months
-                          ::days-of-month
-                          ::days-of-week
-                          ::hours
-                          ::minutes
-                          ::seconds])
-         (s/map-of keyword? set?)))
+  (s/with-gen (s/and sets-spec
+                     (s/map-of keyword? set?))
+    (fn [] (sgen/fmap #(update-vals % set)
+                      (s/gen sets-spec)))))
 
 (s/def ::bounds
   (s/keys :req-un [::ranges ::sets]))

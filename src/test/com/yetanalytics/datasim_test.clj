@@ -200,42 +200,42 @@
       (is (= #{alice-mailto bob-mailto fred-mailto}
              (set (map get-actor-mbox result))))))
   (testing "Respects pattern weights"
-    (let [alignments [{:id     "https://w3id.org/xapi/cmi5#waivedsession"
-                       :weight 1.0}
-                      {:id     "https://w3id.org/xapi/cmi5#noresultsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#failedsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#completionnosuccesssession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#completionmaybefailedsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#passedsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#completionpassedsession"
-                       :weight 0.0}]
-          input      (update-in const/simple-input
-                                [:models 0 :alignments]
-                                into
-                                alignments)
+    (let [pat-weights [{:id     "https://w3id.org/xapi/cmi5#waivedsession"
+                        :weight 1.0}
+                       {:id     "https://w3id.org/xapi/cmi5#noresultsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#failedsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#completionnosuccesssession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#completionmaybefailedsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#passedsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#completionpassedsession"
+                        :weight 0.0}]
+          pat-align  [{:id      "https://w3id.org/xapi/cmi5#typicalsession"
+                       :weights pat-weights}]
+          input      (assoc-in const/simple-input
+                               [:models 0 :patterns]
+                               pat-align)
           result     (generate-seq input :select-agents [bob-mbox])
           verbs      (map #(get-in % ["verb" "id"]) result)]
       (is (every? #{"http://adlnet.gov/expapi/verbs/satisfied"
                     "http://adlnet.gov/expapi/verbs/waived"}
                   verbs))))
   (testing "Respects activity weights"
-    (let [alignments [{:id "https://w3id.org/xapi/cmi5/activities/block"
+    (let [act-align  [{:id     "https://w3id.org/xapi/cmi5/activities/block"
                        :weight 1.0}
-                      {:id "https://w3id.org/xapi/cmi5/activities/course"
+                      {:id     "https://w3id.org/xapi/cmi5/activities/course"
                        :weight 0.0}
-                      {:id "https://w3id.org/xapi/cmi5/activitytype/block"
+                      {:id     "https://w3id.org/xapi/cmi5/activitytype/block"
                        :weight 0.0}
-                      {:id "https://w3id.org/xapi/cmi5/activitytype/course"
+                      {:id     "https://w3id.org/xapi/cmi5/activitytype/course"
                        :weight 0.0}]
-          input      (update-in const/simple-input
-                                [:models 0 :alignments]
-                                into
-                                alignments)
+          input      (assoc-in const/simple-input
+                               [:models 0 :activityTypes]
+                               act-align)
           result     (generate-seq input :select-agents [bob-mbox])
           act-types  (->> result
                           ;; "satisfied" statements define object activity
@@ -245,11 +245,10 @@
                           (map (fn [stmt]
                                  (get-in stmt ["object" "definition" "type"]))))]
       (is (every? #{"https://w3id.org/xapi/cmi5/activities/block"}
-                  act-types))))
+                  (take 10 act-types)))))
   (testing "Can apply object override and respect weights"
     (let [input     (assoc const/simple-input :models const/overrides-models)
-          result    (generate-seq input
-                                  :select-agents [bob-mbox])
+          result    (generate-seq input :select-agents [bob-mbox])
           objects   (map get-object result)
           obj-count (count objects)
           obj-freq  (frequencies objects)

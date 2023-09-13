@@ -71,10 +71,10 @@
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{verb-id "id" :as verb} {:keys [verb-map alignments]} rng]
+  [{verb-id "id" :as verb} {:keys [verb-map weights]} rng]
   (let [return-verb   (fn [_] verb)
         merge-verb    (fn [v] (merge-nested v verb))
-        align-weights (:weights alignments)]
+        verb-weights  (:verbs weights)]
     (or
      ;; Verb found by ID
      (some->> verb-id
@@ -90,7 +90,7 @@
      ;; Choose random verb
      (some->> verb-map
               not-empty
-              (random/choose-map rng align-weights))
+              (random/choose-map rng verb-weights))
      ;; Generate random verb as verb map is empty
      (some->> {}
               (generate-verb rng)))))
@@ -113,11 +113,12 @@
 
 (defn complete-activity
   [{activity-id "id" {activity-type "type"} "definition" :as activity}
-   {:keys [activity-map alignments]}
+   {:keys [activity-map weights]}
    rng]
   (let [return-activity   (fn [_] activity)
         merge-activity    (fn [a] (merge-nested a activity))
-        alignment-weights (:weights alignments)]
+        activity-weights  (get weights :activities)
+        act-type-weights  (get weights :activity-types)]
     (or
      ;; Get activity by ID
      (some->> activity-id
@@ -127,7 +128,7 @@
      (some->> activity-type
               (get activity-map)
               not-empty
-              (random/choose-map rng alignment-weights)
+              (random/choose-map rng activity-weights)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
      (some->> activity-id
@@ -139,8 +140,8 @@
      ;; Choose random activity
      (some->> activity-map
               not-empty
-              (random/choose-map rng alignment-weights)
-              (random/choose-map rng alignment-weights))
+              (random/choose-map rng act-type-weights)
+              (random/choose-map rng activity-weights))
      ;; Generate random activity as activity map is empty
      (some->> {}
               (generate-activity rng)))))

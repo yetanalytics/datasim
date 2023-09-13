@@ -58,7 +58,7 @@
         [registration & rest-regs]     registration-seq
         [registration-id template-seq] registration
         [template & rest-templates]    template-seq
-        {:keys [period bounds retry?]} (meta template)
+        {:keys [period bounds retry]} (meta template)
         ;; New
         timestamp (temporal/add-period prev-timestamp rng period)]
     (if (temporal/bounded-time? bounds timestamp)
@@ -78,7 +78,8 @@
       ;; (and either retry this template or skip to next registration)
       (when-some [timestamp (temporal/next-bounded-time bounds timestamp)]
         (let [registration-seq* (cond->> rest-regs
-                                  (and retry? (not-empty rest-templates))
+                                  (and (= :template retry)
+                                       (not-empty rest-templates))
                                   (cons [registration-id rest-templates]))]
           {:timestamp        timestamp
            :timestamp-gen    prev-timestamp-gen
@@ -199,7 +200,7 @@
                                                          actor-id
                                                          actor-group-id
                                                          actor-role)
-                  actor-alignment (:alignments actor-model-map)
+                  actor-alignment (dissoc actor-model-map :personae)
                   ;; Additional seed for further gen
                   actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property

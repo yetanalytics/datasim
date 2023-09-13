@@ -37,17 +37,17 @@
     
     "Actor Models" "invalid due to invalid alignments"
     :models const/simple-models-filepath
-    #(conj % {:personae   [{:id   "notanid"
-                            :type "notatype"}]
-              :alignments [{:component "notaniri"
-                            :weight    "bar"}]})
+    #(conj % {:personae [{:id   "notanid"
+                          :type "notatype"}]
+              :verbs    [{:component "notaniri"
+                          :weight    "bar"}]})
     
     "Actor Models, Long" "invalid alignments"
     :models const/tc3-models-filepath
-    #(conj % {:personae   [{:id   "notanid"
-                            :type "notatype"}]
-              :alignments [{:component "notaniri"
-                            :weight    "bar"}]})
+    #(conj % {:personae [{:id   "notanid"
+                          :type "notatype"}]
+              :verbs    [{:component "notaniri"
+                          :weight    "bar"}]})
     
     "Actor Models w/ Overrides" "invalid alignments"
     :models const/overrides-models-filepath
