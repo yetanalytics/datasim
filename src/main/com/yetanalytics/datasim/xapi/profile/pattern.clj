@@ -134,6 +134,8 @@
 ;;   not outer bound
 ;; - When generated timestamp ALWAYS exceeds the containing bound,
 ;;   causing gen to hang; need to solve w/ max-retries parameter
+;; - Different `retry` cases: "template", "child", and "pattern"
+;;   (in addition to nil)
 
 (defn- iterate-patterns
   [{:keys [pattern-map alignments-map] :as ctx}
