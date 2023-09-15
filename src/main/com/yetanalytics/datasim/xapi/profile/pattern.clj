@@ -128,8 +128,13 @@
   (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
       (repeat one-or-more)))
 
-;; TODO: Nested bounds, e.g. if timestamp satisfies inner bound but
-;; not outer bound
+;; Test case TODOs:
+;; - Different combos of time bounds and periods in general
+;; - Nested bounds, e.g. if timestamp satisfies inner bound but
+;;   not outer bound
+;; - When generated timestamp ALWAYS exceeds the containing bound,
+;;   causing gen to hang; need to solve w/ max-retries parameter
+
 (defn- iterate-patterns
   [{:keys [pattern-map alignments-map] :as ctx}
    {:keys [retry] :as alignments}
