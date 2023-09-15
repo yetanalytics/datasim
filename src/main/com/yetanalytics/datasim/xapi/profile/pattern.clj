@@ -1,137 +1,280 @@
 (ns com.yetanalytics.datasim.xapi.profile.pattern
   "Creation of `pattern-walk-fn` for Profile compilation."
   (:require [clojure.spec.alpha :as s]
-            [clojure.zip        :as z]
-            [com.yetanalytics.pan.objects.template     :as template]
-            [com.yetanalytics.pan.objects.pattern      :as pattern]
-            [com.yetanalytics.datasim.model            :as model]
-            [com.yetanalytics.datasim.math.random      :as random]
-            [com.yetanalytics.datasim.xapi.profile     :as-alias profile]))
+            [java-time.api      :as t]
+            [com.yetanalytics.pan.objects.template   :as template]
+            [com.yetanalytics.pan.objects.pattern    :as pattern]
+            [com.yetanalytics.datasim.model          :as model]
+            [com.yetanalytics.datasim.model.temporal :as temporal]
+            [com.yetanalytics.datasim.math.random    :as random]
+            [com.yetanalytics.datasim.xapi.profile   :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Specs
+;; Pattern Map Compilation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::pattern-ancestors
-  (s/every ::pattern/pattern))
+(defn- root-pattern? [{:keys [id type alternates]}]
+  (and (= ::root id)
+       (= "Pattern" type)
+       (not-empty alternates)))
 
-;; `pattern-walk-fn` has the arglist `[alignments rng {:keys [repeat-max]}]`
-;; and returns a template w/ `:pattern-ancestors` metadata
-(s/def ::pattern-walk-fn
-  (s/fspec
-   :args (s/cat :alignments ::model/alignments
-                :rng        ::random/rng)
-   :ret (s/every (s/and ::template/template
-                        (s/conformer meta)
-                        (s/keys :req-un [::pattern-ancestors])))))
+(s/def ::pattern-map-id
+  (s/or :root     #{::root}
+        :pattern  ::pattern/id
+        :template ::template/id))
+
+(s/def ::pattern-map
+  (s/map-of (s/or :root     #{::root}
+                  :pattern  ::pattern/id
+                  :template ::template/id)
+            (s/or :root     root-pattern?
+                  :pattern  ::pattern/pattern
+                  :template ::template/template)))
+
+(def ^:private root-pattern-base
+  {:id         ::root
+   :type       "Pattern"
+   :prefLabel  {:en "Root Pattern"}
+   :definition {:en "Dummy pattern to alternate primary patterns on."}})
+
+(defn create-pattern-map
+  [type-iri-map]
+  (let [template-iri-map (get type-iri-map "StatementTemplate")
+        pattern-iri-map  (get type-iri-map "Pattern")
+        primary-ids      (->> pattern-iri-map
+                              vals
+                              (filter :primary)
+                              (mapv :id))
+        root-pattern     (assoc root-pattern-base
+                                :alternates primary-ids)]
+    (-> (merge template-iri-map pattern-iri-map)
+        (assoc ::root root-pattern))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Pattern Walker
+;; Pattern Walk
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def default-repeat-max 5)
 
-(defn- pattern-zipper
-  "Create a zipper over the Patterns and Statement Templates found in
-   `type-iri-map`. A special `::root` sentinel Pattern is created as an
-   alternates Pattern of all the primary Patterns in the profiles.
-   The zipper can then be walked; traversal will be done in a deterministic,
-   pseudorandom fashion, in which `rng` and `alignments` is used to choose
-   the children of each node in the zipper."
-  [type-iri-map {:keys [patterns] :as _alignments} rng]
-  (let [temp-iri-map    (get type-iri-map "StatementTemplate")
-        pat-iri-map     (get type-iri-map "Pattern")
-        primary-pat-ids (->> pat-iri-map vals (filter :primary) (mapv :id))
-        root-pattern    {:id         ::root
-                         :type       "Pattern"
-                         :alternates primary-pat-ids}
-        pat-iri-map*    (assoc pat-iri-map ::root root-pattern)]
-    (-> (z/zipper
-         (fn branch? [node-id] ; it is a branch if it's a pattern
-           (contains? pat-iri-map* node-id))
-         (fn children [node-id] ; choose children using rng
-           (let [{:keys [sequence alternates optional oneOrMore zeroOrMore]}
-                 (get pat-iri-map* node-id)
-                 {:keys [weights repeat-max]
-                  :or   {weights    {}
-                         repeat-max default-repeat-max}}
-                 (get patterns node-id)]
-             (cond
-               sequence   sequence
-               alternates [(random/choose rng weights alternates)]
-               optional   (or (some->> [nil optional]
-                                       (random/choose rng weights)
-                                       vector)
-                              [])
-               oneOrMore  (repeat (inc (random/rand-int rng repeat-max))
-                                  oneOrMore)
-               zeroOrMore (repeat (random/rand-int rng repeat-max)
-                                  zeroOrMore))))
-         (fn make-node [node-id _child-ids] ; this is a no-op
-           node-id)
-         ::root)
-        (vary-meta assoc
-                   ::template-map   temp-iri-map
-                   ::pattern-map    pat-iri-map
-                   ::alignments-map patterns))))
+(s/def ::alignments-map
+  (s/map-of ::pattern-map-id ::model/pattern))
 
-(defn- pattern-loc-ancestors
-  [pattern-loc]
-  (loop [pattern-loc pattern-loc
-         ancestors   []]
-    (let [node (z/node pattern-loc)]
-      (if (not= ::root node)
-        (recur (z/up pattern-loc) (conj ancestors node))
-        ancestors))))
+(s/def ::retry-id ::pattern-map-id)
 
-(defn- pattern-loc->template
-  [{template-m   ::template-map
-    pattern-m    ::pattern-map
-    alignments-m ::alignments-map}
-   pattern-loc]
-  (let [node->template #(get template-m %)
-        node->object   #(or (get pattern-m %)
-                            (get template-m %))]
-    (when-some [template (->> pattern-loc z/node node->template)]
-      (let [ancestors   (->> pattern-loc
-                             z/up
-                             pattern-loc-ancestors
-                             (mapv node->object))
-            reduce-path (reverse (conj ancestors template))
-            bounds      (some (fn [{:keys [id]}]
-                                (get-in alignments-m [id :bounds]))
-                              reduce-path)
-            period      (some (fn [{:keys [id]}]
-                                (get-in alignments-m [id :period]))
-                              reduce-path)]
-        (vary-meta template
-                   assoc
-                   :pattern-ancestors ancestors
-                   :bounds bounds
-                   :period period)))))
+(s/def ::alignments
+  (s/merge ::model/pattern
+           (s/keys :opt-un [::retry-id])))
 
-(defn- walk-pattern-zipper
-  "From the root of `pattern-zip`, perform a single walk of a primary Pattern,
-   returning a sequence of Templates. Which primary Pattern is walked will be
-   chosen in a pseudorandom, deterministic fashion (see how the root node is
-   constructed in `pattern-zipper`)."
-  [pattern-zip]
-  (->> pattern-zip
-       (iterate z/next)
-       (take-while (complement z/end?))
-       rest            ; cut the root node off the top
-       (filter z/node) ; empty seq nodes will be `nil`, so filter them out
-       (keep (partial pattern-loc->template (meta pattern-zip)))))
+(s/def ::template ::template/template)
+(s/def ::timestamp ::temporal/date-time)
+(s/def ::time-since-last t/duration?)
+(s/def ::failure? boolean?)
 
-(s/fdef create-pattern-walk-fn
-  :args (s/cat :type-iri-map ::profile/type-iri-map)
-  :ret ::pattern-walk-fn)
+(s/def ::template-map
+  (s/keys :req-un [::template
+                   ::timestamp
+                   ::time-since-last]))
 
-(defn create-pattern-walk-fn
-  "Return a function that, when called with the args `alignments rng
-   & {:keys [repeat-max]}`, returns a lazy sequence of Statement Templates
-   that have `:pattern-ancestors` metadata."
-  [type-iri-map]
-  (fn [alignments rng]
-    (walk-pattern-zipper
-     (pattern-zipper type-iri-map alignments rng))))
+(s/def ::template-seq-meta
+  (s/keys :req-un [::timestamp]
+          :opt-un [::failure?
+                   ::retry-id]))
+
+(s/fdef walk-pattern
+  :args (s/cat :context            (s/keys :req-un [::pattern-map
+                                                    ::alignments-map
+                                                    ::random/rng])
+               :alignments         ::alignments
+               :prev-timestamp     ::temporal/date-time
+               :prev-timestamp-gen ::temporal/date-time
+               :pattern            (s/or :pattern  ::pattern/pattern
+                                         :template ::template/template))
+  :ret (s/and (s/coll-of ::template-map)
+              (s/conformer meta)
+              ::template-seq-meta))
+
+(defn- walk-pattern-dispatch
+  [_ _ _ _ {:keys [sequence alternates optional oneOrMore zeroOrMore]}]
+  (cond
+    sequence   :sequence
+    alternates :alternates
+    optional   :optional
+    oneOrMore  :one-or-more
+    zeroOrMore :zero-or-more
+    :else      :template))
+
+(defmulti
+  ^{:arglists '([ctx alignments prev-timestamp prev-timestamp-gen pattern])}
+  walk-pattern
+  walk-pattern-dispatch)
+
+(defn- alternates->seq
+  [{:keys [rng]} {:keys [weights]} alternates]
+  (list (random/choose rng weights alternates)))
+
+(defn- optional->seq
+  [{:keys [rng]} {:keys [weights]} optional]
+  (->> (random/choose rng weights [nil optional])
+       list
+       (filter some?)))
+
+(defn- zero-or-more->seq
+  [{:keys [rng]} {:keys [repeat-max]} zero-or-more]
+  (-> (random/rand-int rng (inc (or repeat-max default-repeat-max)))
+      (repeat zero-or-more)))
+
+(defn- one-or-more->seq
+  [{:keys [rng]} {:keys [repeat-max]} one-or-more]
+  (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
+      (repeat one-or-more)))
+
+;; TODO: Nested bounds, e.g. if timestamp satisfies inner bound but
+;; not outer bound
+(defn- iterate-patterns
+  [{:keys [pattern-map alignments-map] :as ctx}
+   {:keys [retry] :as alignments}
+   init-timestamp
+   init-timestamp-gen
+   pattern-id
+   child-ids]
+  (loop [prev-templates     (list)
+         prev-timestamp     init-timestamp
+         prev-timestamp-gen init-timestamp-gen
+         child-ids          child-ids]
+    (if-some [child-id (first child-ids)]
+      (let [pattern    (get pattern-map child-id)
+            pat-align  (get alignments-map child-id)
+            pat-align* (cond-> (merge alignments pat-align)
+                         retry (assoc :retry-id child-id))
+            templates  (walk-pattern ctx
+                                     pat-align*
+                                     prev-timestamp
+                                     prev-timestamp-gen
+                                     pattern)
+            {:keys [timestamp timestamp-gen failure? retry-id] :as temp-meta}
+            (meta templates)]
+        (cond
+          (and failure?
+               timestamp
+               (= retry-id pattern-id))
+          (case retry
+            :template
+            (throw (IllegalArgumentException. "No `:template` allowed"))
+            :child
+            (recur prev-templates timestamp prev-timestamp-gen child-ids)
+            :pattern
+            (recur (list) timestamp init-timestamp-gen child-ids)
+            nil ; no alignments, no `retry`, or not the pattern w/ bound
+            (with-meta (concat prev-templates templates)
+              temp-meta))
+          failure?
+          (with-meta (concat prev-templates templates)
+            temp-meta)
+          :else
+          (recur (concat prev-templates templates)
+                 timestamp
+                 timestamp-gen
+                 (rest child-ids))))
+      (with-meta prev-templates
+        {:timestamp     prev-timestamp
+         :timestamp-gen prev-timestamp-gen}))))
+
+(defn- visit-template
+  [{:keys [rng] :as ctx}
+   {:keys [period bounds retry retry-id] :as alignments}
+   prev-timestamp
+   prev-timestamp-gen
+   template]
+  (let [timestamp (temporal/add-period prev-timestamp rng period)]
+    (if (temporal/bounded-time? bounds timestamp)
+      (with-meta (list {:template        template
+                        :timestamp       timestamp
+                        :time-since-last (t/duration prev-timestamp-gen timestamp)})
+        {:timestamp     timestamp
+         :timestamp-gen timestamp})
+      (if-some [next-time (temporal/next-bounded-time bounds timestamp)]
+        (if (or (= :template retry)
+                (and (= :pattern retry) (nil? retry-id)))
+          (visit-template ctx alignments next-time prev-timestamp-gen template)
+          (with-meta (list)
+            {:timestamp     next-time
+             :timestamp-gen prev-timestamp-gen
+             :failure?      true
+             :retry-id      retry-id}))
+        (with-meta (list)
+          {:failure?      true
+           :timestamp-gen prev-timestamp-gen
+           :retry-id      retry-id})))))
+
+(defmethod walk-pattern :sequence
+  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id sequence]}]
+  (->> sequence
+       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+
+(defmethod walk-pattern :alternates
+  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id alternates]}]
+  (->> alternates
+       (alternates->seq ctx alignments)
+       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+
+(defmethod walk-pattern :optional
+  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id optional]}]
+  (->> optional
+       (optional->seq ctx alignments)
+       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+
+(defmethod walk-pattern :zero-or-more
+  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id zeroOrMore]}]
+  (->> zeroOrMore
+       (zero-or-more->seq ctx alignments)
+       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+
+(defmethod walk-pattern :one-or-more
+  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id oneOrMore]}]
+  (->> oneOrMore
+       (one-or-more->seq ctx alignments)
+       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+
+(defmethod walk-pattern :template
+  [ctx alignments prev-timestamp prev-timestamp-gen template]
+  (visit-template ctx alignments prev-timestamp prev-timestamp-gen template))
+
+(comment
+  (def the-rng (random/seed-rng 1000))
+
+  (def the-instant (t/instant "2023-09-11T15:00:00Z"))
+
+  (->> (walk-pattern
+        {:rng the-rng
+         :pattern-map {::root {:alternates [:pattern-A #_:pattern-B]}
+                       :pattern-A {:id :pattern-A
+                                   :primary true
+                                   :sequence [:template-A1 :template-A2]}
+                       :pattern-B {:id :pattern-B
+                                   :primary true
+                                   :sequence [:template-B1]}
+                       :template-A1 {:id "Template A1"}
+                       :template-A2 {:id "Template A2"}
+                       :template-B1 {:id "Template B1"}}
+         :alignments-map
+         {}
+         #_{:pattern-A {:bounds
+                        (temporal/convert-bounds
+                         [{:years [2023 2024]
+                           :minutes [[10 14]]}])
+                        :retry :child}
+            :pattern-B {:bounds
+                        (temporal/convert-bounds
+                         [{:years [2023 2024]
+                           :minutes [[0 4]]}])
+                        :retry :template}}}
+        nil
+        (t/local-date-time the-instant "UTC")
+        {:alternates [:pattern-A #_:pattern-B]})
+       (take 8))
+  
+  (temporal/next-bounded-time
+   (temporal/convert-bounds [{:years [2023 2024]
+                              :minutes [0]}])
+   (t/local-date-time the-instant "UTC"))
+  )

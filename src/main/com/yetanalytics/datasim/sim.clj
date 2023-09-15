@@ -19,7 +19,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::statement-seq
-  (s/coll-of ::xs/statement))
+  (s/every ::xs/statement))
 
 (s/def ::skeleton
   (s/map-of ::actor/actor-ifi ::statement-seq))
@@ -31,9 +31,9 @@
 (s/fdef statement-seq
   :args (s/cat :inputs     (s/keys :req-un [::statement/type-iri-map
                                             ::statement/activity-map
+                                            ::statement/pattern-map
                                             ::statement/statement-base-map
                                             ::statement/parsed-rules-map
-                                            ::statement/pattern-walk-fn
                                             ::statement/actor
                                             ::statement/alignments]
                                    :opt-un [::statement/object-overrides])
@@ -46,55 +46,33 @@
   :ret ::statement-seq)
 
 (defn- init-statement-seq
-  [pattern-walk-fn rng alignments]
-  (for [registration (repeatedly (partial random/rand-uuid rng))]
-    [registration (pattern-walk-fn alignments rng)]))
+  "Init sequence of registration IDs"
+  [seed]
+  (let [rng (random/seed-rng seed)]
+    (repeatedly (partial random/rand-uuid rng))))
 
-(defn- time-statement-seq*
-  [rng {prev-timestamp     :timestamp
-        prev-timestamp-gen :timestamp-gen
-        registration-seq   :registration-seq}]
-  (let [;; Destructuring
-        [registration & rest-regs]     registration-seq
-        [registration-id template-seq] registration
-        [template & rest-templates]    template-seq
-        {:keys [period bounds retry]} (meta template)
-        ;; New
-        timestamp (temporal/add-period prev-timestamp rng period)]
-    (if (temporal/bounded-time? bounds timestamp)
-      ;; Timestamp is in bound; valid statement gen
-      (let [time-since-last   (t/duration prev-timestamp-gen timestamp)
-            registration-seq* (cond->> rest-regs
-                                (not-empty rest-templates)
-                                (cons [registration-id rest-templates]))]
-        {:result           {:timestamp       timestamp
-                            :time-since-last time-since-last
-                            :template        template
-                            :registration    registration-id}
-         :timestamp        timestamp
-         :timestamp-gen    timestamp
-         :registration-seq registration-seq*})
-      ;; Timestamp is not in bound; skip to next bounded time
-      ;; (and either retry this template or skip to next registration)
-      (when-some [timestamp (temporal/next-bounded-time bounds timestamp)]
-        (let [registration-seq* (cond->> rest-regs
-                                  (and (= :template retry)
-                                       (not-empty rest-templates))
-                                  (cons [registration-id rest-templates]))]
-          {:timestamp        timestamp
-           :timestamp-gen    prev-timestamp-gen
-           :registration-seq registration-seq*})))))
-
-(defn- time-statement-seq
-  [rng start-time registration-seq]
-  (->> (iterate (partial time-statement-seq* rng)
-                {:timestamp        start-time
-                 :timestamp-gen    start-time
-                 :registration-seq registration-seq})
-       (take-while some?)
-       (keep :result)))
+(defn- temp-statement-seq
+  "Generate sequence of maps of `:template`, `:timestamp`, `:time-since-last`,
+   and `:registration` values."
+  [inputs alignments seed timestamp registration-seq]
+  (let [profile-rng
+        (random/seed-rng seed)
+        fill-statement-seq*
+        (fn fill-statement-seq* [timestamp [registration & rest-regs]]
+          (lazy-seq
+           (let [profile-seed
+                 (random/rand-unbound-int profile-rng)
+                 template-maps
+                 (p/walk-profile-patterns inputs alignments profile-seed timestamp)
+                 ?next-timestamp
+                 (:timestamp (meta template-maps))]
+             (cond-> (map #(assoc % :registration registration) template-maps)
+               ?next-timestamp
+               (concat (fill-statement-seq* ?next-timestamp rest-regs))))))]
+    (fill-statement-seq* timestamp registration-seq)))
 
 (defn- drop-statement-seq
+  "Drop sequence entries after `?end-time` (or none if `?end-time` is `nil`)."
   [?end-time simulation-seq]
   (let [before-end?
         (if (some? ?end-time)
@@ -104,11 +82,16 @@
     (take-while before-end? simulation-seq)))
 
 (defn- seed-statement-seq
+  "Generate seeds for each sequence generation. (We do this so that if
+   `from-statement-seq` drops entries, we wouldn't have wasted time generating
+   dropped statements)."
   [rng simulation-seq]
   (map #(assoc % :seed (random/rand-unbound-int rng))
        simulation-seq))
 
 (defn- from-statement-seq
+  "Drop seeded simulation entries before `?from-time` (or none if
+   `?from-time` is `nil`)."
   [?from-time simulation-seq]
   (let [before-from?
         (if (some? ?from-time)
@@ -119,6 +102,7 @@
     (drop-while before-from? simulation-seq)))
 
 (defn- gens-statement-seq
+  "Generate the actual statements from the entries in `simulation-seq`."
   [input simulation-seq]
   (map #(statement/generate-statement (merge input %))
        simulation-seq))
@@ -127,13 +111,13 @@
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
    process. The sequence will either end at `?end-time` or, if `nil`,
    be infinite."
-  [{:keys [pattern-walk-fn] :as input} seed alignments start-time ?end-time ?from-time zone-region]
-  (let [sim-rng  (random/seed-rng seed)
-        temp-rng (random/seed-rng (random/rand-unbound-int sim-rng))
-        time-rng (random/seed-rng (random/rand-unbound-int sim-rng))
-        stmt-rng (random/seed-rng (random/rand-unbound-int sim-rng))]
-    (->> (init-statement-seq pattern-walk-fn temp-rng alignments)
-         (time-statement-seq time-rng start-time)
+  [input seed alignments start-time ?end-time ?from-time zone-region]
+  (let [sim-rng   (random/seed-rng seed)
+        reg-seed  (random/rand-unbound-int sim-rng)
+        temp-seed (random/rand-unbound-int sim-rng)
+        stmt-rng  (random/seed-rng (random/rand-unbound-int sim-rng))]
+    (->> (init-statement-seq reg-seed)
+         (temp-statement-seq input alignments temp-seed start-time)
          (drop-statement-seq ?end-time)
          (seed-statement-seq stmt-rng)
          (from-statement-seq ?from-time)

@@ -88,8 +88,7 @@
     (let [skeleton (generate-map (assoc-in const/simple-input
                                            [:parameters :end]
                                            nil))]
-      (are [actor-id] (let [statement-seq (get skeleton
-                                               actor-id)
+      (are [actor-id] (let [statement-seq (get skeleton actor-id)
                             f1 (future (nth statement-seq 1000))
                             f2 (future (nth statement-seq 1000))]
                         (= @f1 @f2))
