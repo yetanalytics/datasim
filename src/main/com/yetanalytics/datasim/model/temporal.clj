@@ -294,13 +294,15 @@
           :weeks   (* t ms-per-week))))
 
 (defn- convert-period
-  [{:keys [min mean unit bounds]}]
+  [{:keys [min mean fixed unit bounds]}]
   (let [unit*   (or (some-> unit keyword) :minute)
         mean*   (or (some-> mean (convert-time unit*)) ms-per-minute)
         min*    (or (some-> min (convert-time unit*)) 0)
-        bounds* (or (some-> bounds convert-bounds) [])]
+        fixed*  (some-> fixed (convert-time unit*))
+        bounds* (some-> bounds convert-bounds)]
     {:min    min*
      :mean   mean*
+     :fixed  fixed*
      :bounds bounds*}))
 
 (s/fdef convert-periods
@@ -432,12 +434,13 @@
 (def min-ms 60000.0) ; The amount of milliseconds in one minute
 
 (defn- generate-period
-  [rng {:keys [mean min]
+  [rng {:keys [mean min fixed]
         :or {mean min-ms
              min  0}}]
-  (let [rate   (/ 1.0 mean)
-        t-diff (long (random/rand-exp rng rate))]
-    (+ min t-diff)))
+  (or fixed
+      (let [rate   (/ 1.0 mean)
+            t-diff (long (random/rand-exp rng rate))]
+        (+ min t-diff))))
 
 (defn- add-period
   [date-time rng period]
@@ -468,10 +471,10 @@
   (def the-rng (random/seed-rng 100))
   (def converted-periods
     (convert-periods
-     [{:mean 1
+     [{:fixed 1
        :unit "hours"
        :bounds [{:years [2020 #_2023]}]}
-      {:mean 1
+      {:min 1
        :unit "seconds"}]))
   
   (bounded-time? (get-in converted-periods [0 :bounds])

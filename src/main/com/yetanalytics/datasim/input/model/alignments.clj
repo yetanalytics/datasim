@@ -122,6 +122,9 @@
 (s/def ::period/mean
   (s/and number? pos? (comp not zero?)))
 
+(s/def ::period/fixed
+  (s/and number? pos? (comp not zero?)))
+
 (s/def ::period/unit
   #{"millis" "seconds" "minutes" "hours" "days" "weeks"})
 
@@ -131,6 +134,7 @@
 (s/def ::periods
   (s/every (s/keys :opt-un [::period/min
                             ::period/mean
+                            ::period/fixed
                             ::period/unit
                             ::period/bounds])
            :kind vector?

@@ -49,6 +49,10 @@
                 {:min    8
                  :mean   1.1
                  :unit   "millis"
+                 :bounds [{:years [2024]}]}
+                {:fixed  2
+                 :mean   3.1 ; would be ignored
+                 :unit   "millis"
                  :bounds [{:years [2024]}]}]
    :retry      "template"
    :repeat-max 10})
