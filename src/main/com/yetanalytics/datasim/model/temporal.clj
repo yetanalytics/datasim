@@ -99,6 +99,9 @@
 (s/def ::period
   (s/keys :req-un [::min ::mean]))
 
+(s/def ::periods
+  (s/every ::period))
+
 (s/def ::date-time
   #(instance? LocalDateTime %))
 
@@ -290,17 +293,21 @@
           :days    (* t ms-per-day)
           :weeks   (* t ms-per-week))))
 
-(s/fdef convert-period
-  :args (s/cat :period ::align/period)
-  :ret ::period)
-
-(defn convert-period
+(defn- convert-period
   [{:keys [min mean unit]}]
   (let [unit* (or (some-> unit keyword) :minute)
         mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
         min*  (or (some-> min (convert-time unit*)) 0)]
     {:min  min*
      :mean mean*}))
+
+(s/fdef convert-periods
+  :args (s/cat :periods ::align/periods)
+  :ret ::periods)
+
+(defn convert-periods
+  [periods]
+  (mapv convert-period periods))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Runtime
@@ -430,17 +437,23 @@
         t-diff (long (random/rand-exp rng rate))]
     (+ min t-diff)))
 
-(s/fdef add-period
-  :args (s/cat :date-time ::date-time
-               :rng       ::rng
-               :period    ::period)
-  :ret ::date-time)
-
-(defn add-period
-  "Add a random amount of milliseonds `date-time` based on the parameters
-   in `period`. The millis amount is an exponential-distributed random var
-   with `period` parameters `:mean` and `:min`. The generated sequence
-   that uses these periodic date-times will thus occur as a Poisson random
-   process."
+(defn- add-period
   [date-time rng period]
   (t/plus date-time (t/millis (generate-period rng period))))
+
+(s/fdef add-periods
+  :args (s/cat :date-time ::date-time
+               :rng       ::rng
+               :periods   ::periods)
+  :ret ::date-time)
+
+(defn add-periods
+  "Add a random amount of milliseonds `date-time` based on the first map of
+   valid parameters in `periods`. The millis amount is an exponentially-
+   distributed random variable with `period` parameters `:mean` and `:min`.
+   The generated sequence that uses these periodic date-times will thus occur
+   as a Poisson random process."
+  [date-time rng periods]
+  (->> periods
+       first
+       (add-period date-time rng)))

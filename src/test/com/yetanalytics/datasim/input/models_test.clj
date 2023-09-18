@@ -25,9 +25,9 @@
               :weight 0.1}
              {:id     "http://www.whatever.com/pattern1/child"
               :weight 0.9}]
-   :period  {:min  2.1
-             :mean 3
-             :unit "weeks"}})
+   :periods [{:min  2.1
+              :mean 3
+              :unit "weeks"}]})
 
 (def pat-alignment-2
   {:id         "http://www.whatever.com/pattern2"
@@ -42,9 +42,9 @@
                  :daysOfMonth [[1 10] [21 30]]
                  :months      [1 ["April" "May"]]
                  :years       [2023]}]
-   :period     {:min  2
-                :mean 3.2
-                :unit "millis"}
+   :periods    [{:min  2
+                 :mean 3.2
+                 :unit "millis"}]
    :retry      "template"
    :repeat-max 10})
 
@@ -110,17 +110,17 @@
     (is (not (s/valid? ::model/patterns
                        [(assoc-in pat-alignment-1 [:bounds 0 :minutes] [60])])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :mean] 0)])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :mean] 0)])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :mean] -3)])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :mean] -3)])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :mean] "4")])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :mean] "4")])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :min] -1.2)])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :min] -1.2)])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :min] "3")])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :min] "3")])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :unit] "months")]))))
+                       [(assoc-in pat-alignment-1 [:periods 0 :unit] "months")]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))

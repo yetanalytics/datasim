@@ -188,11 +188,11 @@
 
 (defn- visit-template
   [{:keys [rng] :as ctx}
-   {:keys [period bounds retry retry-id] :as alignments}
+   {:keys [periods bounds retry retry-id] :as alignments}
    prev-timestamp
    prev-timestamp-gen
    template]
-  (let [timestamp (temporal/add-period prev-timestamp rng period)]
+  (let [timestamp (temporal/add-periods prev-timestamp rng periods)]
     (if (temporal/bounded-time? bounds timestamp)
       (with-meta (list {:template        template
                         :timestamp       timestamp

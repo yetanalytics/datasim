@@ -125,10 +125,12 @@
 (s/def ::period/unit
   #{"millis" "seconds" "minutes" "hours" "days" "weeks"})
 
-(s/def ::period
-  (s/keys :opt-un [::period/min
-                   ::period/mean
-                   ::period/unit]))
+(s/def ::periods
+  (s/every (s/keys :opt-un [::period/min
+                            ::period/mean
+                            ::period/unit])
+           :kind vector?
+           :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Retry Options
@@ -191,13 +193,13 @@
           :opt-un [::weights    ; for alternate and optional patterns 
                    ::repeat-max ; for oneOrMore and zeroOrMore patterns
                    ::bounds
-                   ::period
+                   ::periods
                    ::retry]))
 
 (def template-spec
   (s/keys :req-un [::id]
           :opt-un [::bounds
-                   ::period
+                   ::periods
                    ::retry]))
 
 (def object-override-spec

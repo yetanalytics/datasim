@@ -9,11 +9,13 @@
         "patterns": [
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfieds",
-                "period": {
-                    "min": 1,
-                    "mean": 1.0,
-                    "unit": "hours"
-                }
+                "periods": [
+                    {
+                        "min": 1,
+                        "mean": 1.0,
+                        "unit": "hours"
+                    }
+                ]
             }
         ]
     },
