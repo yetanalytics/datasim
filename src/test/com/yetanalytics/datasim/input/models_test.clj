@@ -41,10 +41,15 @@
                  :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
                  :daysOfMonth [[1 10] [21 30]]
                  :months      [1 ["April" "May"]]
-                 :years       [2023]}]
-   :periods    [{:min  2
-                 :mean 3.2
-                 :unit "millis"}]
+                 :years       [2023 2024]}]
+   :periods    [{:min    2
+                 :mean   3.2
+                 :unit   "millis"
+                 :bounds [{:years [2023]}]}
+                {:min    8
+                 :mean   1.1
+                 :unit   "millis"
+                 :bounds [{:years [2024]}]}]
    :retry      "template"
    :repeat-max 10})
 

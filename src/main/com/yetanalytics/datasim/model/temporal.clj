@@ -294,12 +294,14 @@
           :weeks   (* t ms-per-week))))
 
 (defn- convert-period
-  [{:keys [min mean unit]}]
-  (let [unit* (or (some-> unit keyword) :minute)
-        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
-        min*  (or (some-> min (convert-time unit*)) 0)]
-    {:min  min*
-     :mean mean*}))
+  [{:keys [min mean unit bounds]}]
+  (let [unit*   (or (some-> unit keyword) :minute)
+        mean*   (or (some-> mean (convert-time unit*)) ms-per-minute)
+        min*    (or (some-> min (convert-time unit*)) 0)
+        bounds* (or (some-> bounds convert-bounds) [])]
+    {:min    min*
+     :mean   mean*
+     :bounds bounds*}))
 
 (s/fdef convert-periods
   :args (s/cat :periods ::align/periods)
@@ -448,12 +450,35 @@
   :ret ::date-time)
 
 (defn add-periods
-  "Add a random amount of milliseonds `date-time` based on the first map of
-   valid parameters in `periods`. The millis amount is an exponentially-
+  "Add a random amount of milliseonds to `date-time` based on the first map of
+   valid parameter map in `periods`. A valid map either has no time bounds or
+   bounds that satisfy `date-time`. The millis amount is an exponentially
    distributed random variable with `period` parameters `:mean` and `:min`.
    The generated sequence that uses these periodic date-times will thus occur
    as a Poisson random process."
   [date-time rng periods]
-  (->> periods
-       first
-       (add-period date-time rng)))
+  (let [some-bound (fn [{:keys [bounds] :as period}]
+                     (when (bounded-time? bounds date-time) period))]
+    (->> periods
+         (some some-bound)
+         (add-period date-time rng))))
+
+(comment
+  (def the-time (t/local-date-time (t/instant) "UTC"))
+  (def the-rng (random/seed-rng 100))
+  (def converted-periods
+    (convert-periods
+     [{:mean 1
+       :unit "hours"
+       :bounds [{:years [2020 #_2023]}]}
+      {:mean 1
+       :unit "seconds"}]))
+  
+  (bounded-time? (get-in converted-periods [0 :bounds])
+                 the-time)
+  
+  the-time
+  (add-periods the-time
+               the-rng
+               converted-periods)
+  )

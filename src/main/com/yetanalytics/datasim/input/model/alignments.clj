@@ -125,10 +125,14 @@
 (s/def ::period/unit
   #{"millis" "seconds" "minutes" "hours" "days" "weeks"})
 
+(s/def ::period/bounds
+  ::bounds)
+
 (s/def ::periods
   (s/every (s/keys :opt-un [::period/min
                             ::period/mean
-                            ::period/unit])
+                            ::period/unit
+                            ::period/bounds])
            :kind vector?
            :min-count 1))
 
