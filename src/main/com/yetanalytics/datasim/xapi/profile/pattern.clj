@@ -279,9 +279,4 @@
         (t/local-date-time the-instant "UTC")
         {:alternates [:pattern-A #_:pattern-B]})
        (take 8))
-  
-  (temporal/next-bounded-time
-   (temporal/convert-bounds [{:years [2023 2024]
-                              :minutes [0]}])
-   (t/local-date-time the-instant "UTC"))
   )
