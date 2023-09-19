@@ -116,6 +116,11 @@
 ;; Time Period
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- has-default-period?
+  [periods]
+  (some (fn [{:keys [bounds] :as period}] (when (not bounds) period))
+        periods))
+
 (s/def ::period/min
   (s/and number? pos?))
 
@@ -137,7 +142,7 @@
                             ::period/fixed
                             ::period/unit
                             ::period/bounds])
-           :kind vector?
+           :kind (every-pred vector? has-default-period?)
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

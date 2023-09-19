@@ -95,7 +95,7 @@ and `weight` values (as described under `verbs`).
     - `mean` the average amount of time between Statements (added on top of `min`); default is `1`
     - `fixed`: a fixed amount of time between Statements; overrides `min` and `mean`
     - `unit`: the time unit for all temporal values. Valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`; the default is `minutes`
-    - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A missing `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array.
+    - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A nonexisting `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array. At least one period must not have a `bounds` value, so it can act as the default period.
   - `retry`: One of four options that determine Statement generation retry behavior in the event where a time bound is exceeded:
     - `null` (or not present): Terminate the generation on the current Pattern immediately, and move again with the next Pattern's generation.
     - `"pattern"`: Retry generation of this Pattern if this Pattern's bound is exceeded.

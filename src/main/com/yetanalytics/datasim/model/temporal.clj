@@ -462,9 +462,12 @@
   [date-time rng periods]
   (let [some-bound (fn [{:keys [bounds] :as period}]
                      (when (bounded-time? bounds date-time) period))]
-    (->> periods
-         (some some-bound)
-         (add-period date-time rng))))
+    (if-some [period (some some-bound periods)]
+      (add-period date-time rng period)
+      (throw (ex-info "Timestamp does not satisfy any period `bounds`; no default period present."
+                      {:type      ::outside-period-bound
+                       :periods   periods
+                       :date-time date-time})))))
 
 (comment
   (def the-time (t/local-date-time (t/instant) "UTC"))

@@ -52,8 +52,7 @@
                  :bounds [{:years [2024]}]}
                 {:fixed  2
                  :mean   3.1 ; would be ignored
-                 :unit   "millis"
-                 :bounds [{:years [2024]}]}]
+                 :unit   "millis"}]
    :retry      "template"
    :repeat-max 10})
 
@@ -129,7 +128,9 @@
     (is (not (s/valid? ::model/patterns
                        [(assoc-in pat-alignment-1 [:periods 0 :min] "3")])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:periods 0 :unit] "months")]))))
+                       [(assoc-in pat-alignment-1 [:periods 0 :unit] "months")])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-2 [:periods 2 :bounds] [{:years [2024]}])]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))
