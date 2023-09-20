@@ -36,7 +36,7 @@
                 {:id     "http://www.whatever.com/pattern2/child2"
                  :weight 0.2}]
    :bounds     [{:seconds     [1 2 3]
-                 :minutes     [1]
+                 :minutes     [[0 59 2]]
                  :hours       [[8 12]]
                  :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
                  :daysOfMonth [[1 10] [21 30]]

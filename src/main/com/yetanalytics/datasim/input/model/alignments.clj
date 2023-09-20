@@ -40,9 +40,14 @@
   (< start end))
 
 (defmacro bound-spec [scalar-spec]
-  `(s/every (s/or :scalar   ~scalar-spec
-                  :interval (s/and (s/tuple ~scalar-spec ~scalar-spec)
-                                   interval?))
+  `(s/every (s/or :scalar
+                  ~scalar-spec
+                  :interval
+                  (s/and (s/tuple ~scalar-spec ~scalar-spec)
+                         interval?)
+                  :step-interval
+                  (s/and (s/tuple ~scalar-spec ~scalar-spec pos-int?)
+                         interval?))
             :kind vector?
             :min-count 1
             :gen-max 3))
