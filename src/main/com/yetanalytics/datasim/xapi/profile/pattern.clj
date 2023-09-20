@@ -1,5 +1,6 @@
 (ns com.yetanalytics.datasim.xapi.profile.pattern
-  "Creation of `pattern-walk-fn` for Profile compilation."
+  "Pattern map compilation and walking. This is where the magic of
+   profile simulation happens."
   (:require [clojure.spec.alpha :as s]
             [java-time.api      :as t]
             [com.yetanalytics.pan.objects.template   :as template]
