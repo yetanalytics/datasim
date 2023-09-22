@@ -45,8 +45,8 @@
 (s/def ::pattern/period
   ::temporal/period)
 
-(s/def ::pattern/retry
-  #{:template})
+(s/def ::pattern/retry?
+  boolean?)
 
 (s/def ::pattern/repeat-max
   pos-int?)
@@ -55,7 +55,7 @@
   (s/keys :opt-un [::pattern/weights
                    ::pattern/bounds
                    ::pattern/period
-                   ::pattern/retry
+                   ::pattern/retry?
                    ::pattern/repeat-max]))
 
 (s/def ::patterns
@@ -101,7 +101,7 @@
                weights    (assoc :weights (reduce-weights weights))
                bounds     (assoc :bounds  (temporal/convert-bounds bounds))
                periods    (assoc :periods (temporal/convert-periods periods))
-               retry      (assoc :retry   (keyword retry))
+               retry      (assoc :retry?  (keyword retry))
                repeat-max (assoc :repeat-max repeat-max))]
        (assoc acc id m)))
    {}

@@ -96,12 +96,8 @@ and `weight` values (as described under `verbs`).
     - `fixed`: a fixed amount of time between Statements; overrides `min` and `mean`
     - `unit`: the time unit for all temporal values. Valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`; the default is `minutes`
     - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A nonexisting `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array. At least one period must not have a `bounds` value, so it can act as the default period.
-  - `retry`: One of four options that determine Statement generation retry behavior in the event where a time bound is exceeded:
-    - `null` (or not present): Terminate the generation on the current Pattern immediately, and move again with the next Pattern's generation.
-    - `"pattern"`: Retry generation of this Pattern if this Pattern's bound is exceeded.
-    - `"child"`: Retry generation of whichever child Pattern or Statement Template in which this Pattern's bound is exceeded.
-    - `"template"`: Retry generation of the Statement Template that exceeded this Pattern's bound.
-- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `period`, and `retry` values, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
+  - `retry`: Designates the Pattern as a "retry anchor" in which if `bounds` in the same or a higher-level Pattern are violated, then the entirety of this Pattern is repeated at the next available in-bound time. Otherwise, the current generation continues at that next time, without any redo of the Pattern.
+- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `period`, and `retry` properties, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
 - `objectOverrides`: An array of objects containing (xAPI) `object` and `weight`. If present, these objects will overwrite any that would have been set by the Profile.
 
 An example of a model array with valid `personae`, `verbs`, and `templates` is shown below:

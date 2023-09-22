@@ -53,7 +53,7 @@
                 {:fixed  2
                  :mean   3.1 ; would be ignored
                  :unit   "millis"}]
-   :retry      "template"
+   :retry      true
    :repeat-max 10})
 
 (def template-alignment

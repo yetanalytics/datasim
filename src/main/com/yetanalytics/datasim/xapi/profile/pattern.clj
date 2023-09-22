@@ -63,8 +63,7 @@
 (s/def ::retry-id ::pattern-map-id)
 
 (s/def ::alignments
-  (s/merge ::model/pattern
-           (s/keys :opt-un [::retry-id])))
+  ::model/pattern)
 
 (s/def ::template ::template/template)
 (s/def ::timestamp ::temporal/date-time)
@@ -85,7 +84,7 @@
   :args (s/cat :context            (s/keys :req-un [::pattern-map
                                                     ::alignments-map
                                                     ::random/rng])
-               :alignments         ::alignments
+               :alignments-stack   (s/every ::alignments :kind vector?)
                :prev-timestamp     ::temporal/date-time
                :prev-timestamp-gen ::temporal/date-time
                :pattern            (s/or :pattern  ::pattern/pattern
@@ -105,29 +104,33 @@
     :else      :template))
 
 (defmulti
-  ^{:arglists '([ctx alignments prev-timestamp prev-timestamp-gen pattern])}
+  ^{:arglists '([ctx alignments-stack prev-timestamp prev-timestamp-gen pattern])}
   walk-pattern
   walk-pattern-dispatch)
 
 (defn- alternates->seq
-  [{:keys [rng]} {:keys [weights]} alternates]
-  (list (random/choose rng weights alternates)))
+  [{:keys [rng]} alignments-stack alternates]
+  (let [{:keys [weights]} (peek alignments-stack)]
+    (list (random/choose rng weights alternates))))
 
 (defn- optional->seq
-  [{:keys [rng]} {:keys [weights]} optional]
-  (->> (random/choose rng weights [nil optional])
-       list
-       (filter some?)))
+  [{:keys [rng]} alignments-stack optional]
+  (let [{:keys [weights]} (peek alignments-stack)]
+    (->> (random/choose rng weights [nil optional])
+         list
+         (filter some?))))
 
 (defn- zero-or-more->seq
-  [{:keys [rng]} {:keys [repeat-max]} zero-or-more]
-  (-> (random/rand-int rng (inc (or repeat-max default-repeat-max)))
-      (repeat zero-or-more)))
+  [{:keys [rng]} alignments-stack zero-or-more]
+  (let [{:keys [repeat-max]} (peek alignments-stack)]
+    (-> (random/rand-int rng (inc (or repeat-max default-repeat-max)))
+        (repeat zero-or-more))))
 
 (defn- one-or-more->seq
-  [{:keys [rng]} {:keys [repeat-max]} one-or-more]
-  (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
-      (repeat one-or-more)))
+  [{:keys [rng]} alignments-stack one-or-more]
+  (let [{:keys [repeat-max]} (peek alignments-stack)]
+    (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
+        (repeat one-or-more))))
 
 ;; Test case TODOs:
 ;; - Different combos of time bounds and periods in general
@@ -140,7 +143,7 @@
 
 (defn- iterate-patterns
   [{:keys [pattern-map alignments-map] :as ctx}
-   {:keys [retry] :as alignments}
+   alignments-stack
    init-timestamp
    init-timestamp-gen
    pattern-id
@@ -150,31 +153,21 @@
          prev-timestamp-gen init-timestamp-gen
          child-ids          child-ids]
     (if-some [child-id (first child-ids)]
-      (let [pattern    (get pattern-map child-id)
-            pat-align  (get alignments-map child-id)
-            pat-align* (cond-> (merge alignments pat-align)
-                         retry (assoc :retry-id child-id))
-            templates  (walk-pattern ctx
-                                     pat-align*
-                                     prev-timestamp
-                                     prev-timestamp-gen
-                                     pattern)
+      (let [pattern     (get pattern-map child-id)
+            pat-align   (-> (get alignments-map child-id) (assoc :id child-id))
+            align-stack (conj alignments-stack pat-align)
+            templates   (walk-pattern ctx
+                                      align-stack
+                                      prev-timestamp
+                                      prev-timestamp-gen
+                                      pattern)
             {:keys [timestamp timestamp-gen failure? retry-id] :as temp-meta}
             (meta templates)]
         (cond
           (and failure?
                timestamp
                (= retry-id pattern-id))
-          (case retry
-            :template
-            (throw (IllegalArgumentException. "No `:template` allowed"))
-            :child
-            (recur prev-templates timestamp prev-timestamp-gen child-ids)
-            :pattern
-            (recur (list) timestamp init-timestamp-gen child-ids)
-            nil ; no alignments, no `retry`, or not the pattern w/ bound
-            (with-meta (concat prev-templates templates)
-              temp-meta))
+          (recur (list) timestamp init-timestamp-gen child-ids)
           failure?
           (with-meta (concat prev-templates templates)
             temp-meta)
@@ -187,65 +180,76 @@
         {:timestamp     prev-timestamp
          :timestamp-gen prev-timestamp-gen}))))
 
+;; Repeat at the LOWEST repeatable pattern BELOW a violated bound
+(defn- repeat-at
+  [alignments-stack timestamp]
+  (loop [[alignments & rest-stack] alignments-stack]
+    (if-some [{:keys [bounds]} alignments]
+      (if (temporal/bounded-time? bounds timestamp)
+        (recur rest-stack)
+        [bounds (->> rest-stack (filter #(contains? % :retry?)) last :id)])
+      [nil nil])))
+
 (defn- visit-template
   [{:keys [rng] :as ctx}
-   {:keys [periods bounds retry retry-id] :as alignments}
+   alignments-stack
    prev-timestamp
    prev-timestamp-gen
    template]
-  (let [timestamp (temporal/add-periods prev-timestamp rng periods)]
-    (if (temporal/bounded-time? bounds timestamp)
+  (let [periods   (some :periods alignments-stack)
+        timestamp (temporal/add-periods prev-timestamp rng periods)
+        [?bounds ?retry-id] (repeat-at alignments-stack timestamp)]
+    (if-not ?bounds
       (with-meta (list {:template        template
                         :timestamp       timestamp
                         :time-since-last (t/duration prev-timestamp-gen timestamp)})
         {:timestamp     timestamp
          :timestamp-gen timestamp})
-      (if-some [next-time (temporal/next-bounded-time bounds timestamp)]
-        (if (or (= :template retry)
-                (and (= :pattern retry) (nil? retry-id)))
-          (visit-template ctx alignments next-time prev-timestamp-gen template)
-          (with-meta (list)
-            {:timestamp     next-time
-             :timestamp-gen prev-timestamp-gen
-             :failure?      true
-             :retry-id      retry-id}))
-        (with-meta (list)
-          {:failure?      true
-           :timestamp-gen prev-timestamp-gen
-           :retry-id      retry-id})))))
+     (if-some [next-time (temporal/next-bounded-time ?bounds timestamp)]
+       (if-not ?retry-id
+         (visit-template ctx alignments-stack next-time prev-timestamp-gen template)
+         (with-meta (list)
+           {:timestamp     next-time
+            :timestamp-gen prev-timestamp-gen
+            :failure?      true
+            :retry-id      ?retry-id}))
+       (with-meta (list)
+         {:failure?      true
+          :timestamp-gen prev-timestamp-gen
+          :retry-id      ?retry-id})))))
 
 (defmethod walk-pattern :sequence
-  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id sequence]}]
+  [ctx alignments-stack prev-timestamp prev-timestamp-gen {:keys [id sequence]}]
   (->> sequence
-       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+       (iterate-patterns ctx alignments-stack prev-timestamp prev-timestamp-gen id)))
 
 (defmethod walk-pattern :alternates
-  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id alternates]}]
+  [ctx alignments-stack prev-timestamp prev-timestamp-gen {:keys [id alternates]}]
   (->> alternates
-       (alternates->seq ctx alignments)
-       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+       (alternates->seq ctx alignments-stack)
+       (iterate-patterns ctx alignments-stack prev-timestamp prev-timestamp-gen id)))
 
 (defmethod walk-pattern :optional
-  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id optional]}]
+  [ctx alignments-stack prev-timestamp prev-timestamp-gen {:keys [id optional]}]
   (->> optional
-       (optional->seq ctx alignments)
-       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+       (optional->seq ctx alignments-stack)
+       (iterate-patterns ctx alignments-stack prev-timestamp prev-timestamp-gen id)))
 
 (defmethod walk-pattern :zero-or-more
-  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id zeroOrMore]}]
+  [ctx alignments-stack prev-timestamp prev-timestamp-gen {:keys [id zeroOrMore]}]
   (->> zeroOrMore
-       (zero-or-more->seq ctx alignments)
-       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+       (zero-or-more->seq ctx alignments-stack)
+       (iterate-patterns ctx alignments-stack prev-timestamp prev-timestamp-gen id)))
 
 (defmethod walk-pattern :one-or-more
-  [ctx alignments prev-timestamp prev-timestamp-gen {:keys [id oneOrMore]}]
+  [ctx alignments-stack prev-timestamp prev-timestamp-gen {:keys [id oneOrMore]}]
   (->> oneOrMore
-       (one-or-more->seq ctx alignments)
-       (iterate-patterns ctx alignments prev-timestamp prev-timestamp-gen id)))
+       (one-or-more->seq ctx alignments-stack)
+       (iterate-patterns ctx alignments-stack prev-timestamp prev-timestamp-gen id)))
 
 (defmethod walk-pattern :template
-  [ctx alignments prev-timestamp prev-timestamp-gen template]
-  (visit-template ctx alignments prev-timestamp prev-timestamp-gen template))
+  [ctx alignments-stack prev-timestamp prev-timestamp-gen template]
+  (visit-template ctx alignments-stack prev-timestamp prev-timestamp-gen template))
 
 (comment
   (def the-rng (random/seed-rng 1000))
