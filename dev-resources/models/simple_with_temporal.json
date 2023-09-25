@@ -33,24 +33,15 @@
                     {
                         "months": [["January", "October"], "December"]
                     }
-                ],
-                "retry": true
+                ]
             }
         ],
         "templates": [
             {
-                "id": "https://w3id.org/xapi/cmi5#launched",
+                "id": "https://w3id.org/xapi/cmi5#satisfied",
                 "bounds": [
                     {
                         "minutes": [[0, 10]]
-                    }
-                ]
-            },
-            {
-                "id": "https://w3id.org/xapi/cmi5#initialized",
-                "bounds": [
-                    {
-                        "minutes": [[10, 59, 5]]
                     }
                 ]
             }

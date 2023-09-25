@@ -80,12 +80,6 @@
 (def satisfied-verb
   "http://adlnet.gov/expapi/verbs/satisfied")
 
-(def launched-verb
-  "http://adlnet.gov/expapi/verbs/launched")
-
-(def initialized-verb
-  "http://adlnet.gov/expapi/verbs/initialized")
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -158,16 +152,11 @@
                                      (t/local-date-time "America/New_York"))
                           ts-min (t/as ts-ldt :minute-of-hour)
                           ts-mon (t/as ts-ldt :month-of-year)]
-                      (and
-                       (or (= verb satisfied-verb)
-                           (not= 11 ts-mon))
-                       (cond
-                         (= verb launched-verb)
-                         (<= 0 ts-min 10)
-                         (= verb initialized-verb)
-                         (and (<= 10 ts-min 59)
-                              (zero? (mod ts-min 5)))
-                         :else true)))))))))))
+                      (if (= verb satisfied-verb)
+                        ;; Satisfied bound: {"minutes": [[0, 10]]}
+                        (<= 0 ts-min 10)
+                        ;; Typical Sessions bound: {"months": [[1, 10], 12]}
+                        (not= 11 ts-mon)))))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
