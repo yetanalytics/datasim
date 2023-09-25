@@ -82,6 +82,7 @@
            :opt-un [::end
                     ::from
                     ::max
+                    ::max-retries
                     ::gen-profiles
                     ::gen-patterns])
    ordered-timestamps?))
@@ -104,11 +105,12 @@
    If `params` is not provided simply return the default parameters."
   ([]
    (apply-defaults {}))
-  ([{:keys [start from timezone seed] :as params}]
+  ([{:keys [start from timezone seed max-retries] :as params}]
    (merge
     params
     (let [start (or start (.toString (Instant/now)))]
-      {:start    start
-       :from     (or from start)
-       :timezone (or timezone "UTC")
-       :seed     (or seed (random/rand-unbound-int (random/rng)))}))))
+      {:start       start
+       :from        (or from start)
+       :timezone    (or timezone "UTC")
+       :seed        (or seed (random/rand-unbound-int (random/rng)))
+       :max-retries (or max-retries 5)}))))

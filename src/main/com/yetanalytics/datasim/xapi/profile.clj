@@ -178,6 +178,7 @@
   :args (s/cat :profile-map ::profile-map
                :alignments  ::model/alignments
                :seed        ::random/seed
+               :max-retries pos-int?
                :start-time  ::temporal/date-time)
   :ret (s/every ::pat/template-map))
 
@@ -186,10 +187,12 @@
   [{pattern-iri-map :pattern-map}
    {pattern-alignments :patterns}
    seed
+   max-retries
    start-time]
   (let [pattern-rng  (random/seed-rng seed)
         root-pattern (get pattern-iri-map ::pat/root)
         context      {:pattern-map    pattern-iri-map
                       :alignments-map pattern-alignments
+                      :max-retries    max-retries
                       :rng            pattern-rng}]
     (pat/walk-pattern context [] start-time start-time root-pattern)))

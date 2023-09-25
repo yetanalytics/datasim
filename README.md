@@ -150,9 +150,11 @@ The simulation parameters input covers the details of the simulation not covered
         "end": "2019-11-19T11:38:39.219768Z",
         "max": 200,
         "timezone": "America/New_York",
-        "seed": 42
+        "seed": 42,
+        "max-retries": 10
     }
 ```
+Note the `max-retries` parameter; this is to limit the amount of times a particular Pattern is repeated when a `bounds` is violated.
 
 #### (Alternatively) Simulation Specification
 

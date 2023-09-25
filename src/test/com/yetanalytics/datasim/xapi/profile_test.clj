@@ -310,7 +310,7 @@
   ([seed]
    (walk-pattern {} seed))
   ([alignments seed]
-   (->> (profile/walk-profile-patterns profile-map alignments seed start-time)
+   (->> (profile/walk-profile-patterns profile-map alignments seed 5 start-time)
         (map :template))))
 
 (deftest walk-pattern-test
