@@ -184,10 +184,16 @@
 (defn- repeat-at
   [alignments-stack timestamp]
   (loop [[alignments & rest-stack] alignments-stack]
-    (if-some [{:keys [bounds]} alignments]
+    (if-some [{:keys [bounds boundRetries]} alignments]
       (if (temporal/bounded-time? bounds timestamp)
+        ;; Bound is satisfied
         (recur rest-stack)
-        [bounds (->> rest-stack (filter #(contains? % :retry?)) last :id)])
+        ;; Bound is NOT satisfied, find the highest-level pattern to retry
+        ;; `some` works as alignments-stack vector goes from highest -> lowest
+        (let [retry-id (when (not-empty boundRetries)
+                         (->> alignments-stack (map :id) (some boundRetries)))]
+          [bounds retry-id]))
+      ;; All bounds are satisfied
       [nil nil])))
 
 (defn- visit-template
@@ -195,7 +201,7 @@
    alignments-stack
    prev-timestamp
    prev-timestamp-gen
-   template]
+   {template-id :id :as template}]
   (let [periods   (some :periods alignments-stack)
         timestamp (temporal/add-periods prev-timestamp rng periods)
         [?bounds ?retry-id] (repeat-at alignments-stack timestamp)]
@@ -206,7 +212,8 @@
         {:timestamp     timestamp
          :timestamp-gen timestamp})
      (if-some [next-time (temporal/next-bounded-time ?bounds timestamp)]
-       (if-not ?retry-id
+       (if (or (not ?retry-id)
+               (= template-id ?retry-id))
          (visit-template ctx alignments-stack next-time prev-timestamp-gen template)
          (with-meta (list)
            {:timestamp     next-time

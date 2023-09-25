@@ -192,4 +192,4 @@
         context      {:pattern-map    pattern-iri-map
                       :alignments-map pattern-alignments
                       :rng            pattern-rng}]
-    (pat/walk-pattern context nil start-time start-time root-pattern)))
+    (pat/walk-pattern context [] start-time start-time root-pattern)))

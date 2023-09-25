@@ -33,8 +33,7 @@
                     {
                         "months": [["January", "October"], "December"]
                     }
-                ],
-                "retry": true
+                ]
             }
         ],
         "templates": [
@@ -44,6 +43,9 @@
                     {
                         "minutes": [[0, 10]]
                     }
+                ],
+                "boundRetries": [
+                    "https://w3id.org/xapi/cmi5#typicalsessions"
                 ]
             },
             {
