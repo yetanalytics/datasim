@@ -1,5 +1,6 @@
 (ns com.yetanalytics.datasim.model
   (:require [clojure.spec.alpha :as s]
+            [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.input.model            :as model]
             [com.yetanalytics.datasim.input.model.alignments :as model.alignments]
             [com.yetanalytics.datasim.math.random            :as random]
@@ -42,11 +43,11 @@
 (s/def ::pattern/bounds
   ::temporal/bounds)
 
+(s/def ::pattern/bound-retries
+  (s/every ::xs/iri :kind set?))
+
 (s/def ::pattern/period
   ::temporal/period)
-
-(s/def ::pattern/retry?
-  boolean?)
 
 (s/def ::pattern/repeat-max
   pos-int?)
@@ -54,8 +55,8 @@
 (s/def ::pattern
   (s/keys :opt-un [::pattern/weights
                    ::pattern/bounds
+                   ::pattern/bound-retries
                    ::pattern/period
-                   ::pattern/retry?
                    ::pattern/repeat-max]))
 
 (s/def ::patterns
@@ -96,13 +97,13 @@
 (defn- reduce-patterns
   [patterns]
   (reduce
-   (fn [acc {:keys [id weights repeatMax bounds periods retry]}]
+   (fn [acc {:keys [id weights repeatMax bounds boundRetries periods]}]
      (let [m (cond-> {}
-               weights   (assoc :weights (reduce-weights weights))
-               bounds    (assoc :bounds  (temporal/convert-bounds bounds))
-               periods   (assoc :periods (temporal/convert-periods periods))
-               retry     (assoc :retry?  (keyword retry))
-               repeatMax (assoc :repeat-max repeatMax))]
+               weights      (assoc :weights (reduce-weights weights))
+               bounds       (assoc :bounds (temporal/convert-bounds bounds))
+               boundRetries (assoc :bound-retries (set boundRetries))
+               periods      (assoc :periods (temporal/convert-periods periods))
+               repeatMax    (assoc :repeat-max repeatMax))]
        (assoc acc id m)))
    {}
    patterns))

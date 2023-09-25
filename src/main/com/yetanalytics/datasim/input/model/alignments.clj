@@ -118,6 +118,13 @@
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Time Bound Retries
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::boundRetries
+  (s/every ::xs/iri :kind vector?))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Period
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -149,12 +156,6 @@
                             ::period/bounds])
            :kind (every-pred vector? has-default-period?)
            :min-count 1))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Retry Options
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::retry boolean?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Max Repeat
@@ -207,17 +208,17 @@
 
 (def pattern-spec
   (s/keys :req-un [::id]
-          :opt-un [::weights    ; for alternate and optional patterns 
+          :opt-un [::weights   ; for alternate and optional patterns 
                    ::repeatMax ; for oneOrMore and zeroOrMore patterns
                    ::bounds
-                   ::periods
-                   ::retry]))
+                   ::boundRetries
+                   ::periods]))
 
 (def template-spec
   (s/keys :req-un [::id]
           :opt-un [::bounds
-                   ::periods
-                   ::retry]))
+                   ::boundRetries
+                   ::periods]))
 
 (def object-override-spec
   (s/keys :req-un [::object]
