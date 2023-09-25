@@ -96,13 +96,13 @@
 (defn- reduce-patterns
   [patterns]
   (reduce
-   (fn [acc {:keys [id weights repeat-max bounds periods retry]}]
+   (fn [acc {:keys [id weights repeatMax bounds periods retry]}]
      (let [m (cond-> {}
-               weights    (assoc :weights (reduce-weights weights))
-               bounds     (assoc :bounds  (temporal/convert-bounds bounds))
-               periods    (assoc :periods (temporal/convert-periods periods))
-               retry      (assoc :retry?  (keyword retry))
-               repeat-max (assoc :repeat-max repeat-max))]
+               weights   (assoc :weights (reduce-weights weights))
+               bounds    (assoc :bounds  (temporal/convert-bounds bounds))
+               periods   (assoc :periods (temporal/convert-periods periods))
+               retry     (assoc :retry?  (keyword retry))
+               repeatMax (assoc :repeat-max repeatMax))]
        (assoc acc id m)))
    {}
    patterns))

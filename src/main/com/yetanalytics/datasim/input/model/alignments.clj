@@ -160,7 +160,7 @@
 ;; Max Repeat
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::repeat-max pos-int?)
+(s/def ::repeatMax pos-int?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object
@@ -208,7 +208,7 @@
 (def pattern-spec
   (s/keys :req-un [::id]
           :opt-un [::weights    ; for alternate and optional patterns 
-                   ::repeat-max ; for oneOrMore and zeroOrMore patterns
+                   ::repeatMax ; for oneOrMore and zeroOrMore patterns
                    ::bounds
                    ::periods
                    ::retry]))
