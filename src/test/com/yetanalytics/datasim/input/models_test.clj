@@ -30,31 +30,31 @@
               :unit "weeks"}]})
 
 (def pat-alignment-2
-  {:id           "http://www.whatever.com/pattern2"
-   :weights      [{:id     "http://www.whatever.com/pattern2/child1"
-                   :weight 0.8}
-                  {:id     "http://www.whatever.com/pattern2/child2"
-                   :weight 0.2}]
-   :bounds       [{:seconds     [1 2 3]
-                   :minutes     [[0 59 2]]
-                   :hours       [[8 12]]
-                   :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
-                   :daysOfMonth [[1 10] [21 30]]
-                   :months      [1 ["April" "May"]]
-                   :years       [2023 2024]}]
-   :boundRetries ["http://www.whatever.com/pattern1"]
-   :periods      [{:min    2
-                   :mean   3.2
-                   :unit   "millis"
-                   :bounds [{:years [2023]}]}
-                  {:min    8
-                   :mean   1.1
-                   :unit   "millis"
-                   :bounds [{:years [2024]}]}
-                  {:fixed 2
-                   :mean  3.1 ; would be ignored
-                   :unit  "millis"}]
-   :repeatMax    10})
+  {:id            "http://www.whatever.com/pattern2"
+   :weights       [{:id     "http://www.whatever.com/pattern2/child1"
+                    :weight 0.8}
+                   {:id     "http://www.whatever.com/pattern2/child2"
+                    :weight 0.2}]
+   :bounds        [{:seconds     [1 2 3]
+                    :minutes     [[0 59 2]]
+                    :hours       [[8 12]]
+                    :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
+                    :daysOfMonth [[1 10] [21 30]]
+                    :months      [1 ["April" "May"]]
+                    :years       [2023 2024]}]
+   :boundRestarts ["http://www.whatever.com/pattern1"]
+   :periods       [{:min    2
+                    :mean   3.2
+                    :unit   "millis"
+                    :bounds [{:years [2023]}]}
+                   {:min    8
+                    :mean   1.1
+                    :unit   "millis"
+                    :bounds [{:years [2024]}]}
+                   {:fixed 2
+                    :mean  3.1 ; would be ignored
+                    :unit  "millis"}]
+   :repeatMax     10})
 
 (def template-alignment
   {:id     "http://www.whatever.com/template"

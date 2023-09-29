@@ -121,7 +121,7 @@
 ;; Time Bound Retries
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::boundRetries
+(s/def ::boundRestarts
   (s/every ::xs/iri :kind vector?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -211,13 +211,13 @@
           :opt-un [::weights   ; for alternate and optional patterns 
                    ::repeatMax ; for oneOrMore and zeroOrMore patterns
                    ::bounds
-                   ::boundRetries
+                   ::boundRestarts
                    ::periods]))
 
 (def template-spec
   (s/keys :req-un [::id]
           :opt-un [::bounds
-                   ::boundRetries
+                   ::boundRestarts
                    ::periods]))
 
 (def object-override-spec

@@ -194,14 +194,14 @@
 (defn- repeat-at
   [alignments-stack timestamp]
   (loop [[alignments & rest-stack] alignments-stack]
-    (if-some [{:keys [bounds boundRetries]} alignments]
+    (if-some [{:keys [bounds boundRestarts]} alignments]
       (if (temporal/bounded-time? bounds timestamp)
         ;; Bound is satisfied
         (recur rest-stack)
         ;; Bound is NOT satisfied, find the highest-level pattern to retry
         ;; `some` works as alignments-stack vector goes from highest -> lowest
-        (let [retry-id (when (not-empty boundRetries)
-                         (->> alignments-stack (map :id) (some boundRetries)))]
+        (let [retry-id (when (not-empty boundRestarts)
+                         (->> alignments-stack (map :id) (some boundRestarts)))]
           [bounds retry-id]))
       ;; All bounds are satisfied
       [nil nil])))
