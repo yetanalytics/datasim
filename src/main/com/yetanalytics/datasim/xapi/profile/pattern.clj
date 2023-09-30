@@ -135,15 +135,6 @@
     (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
         (repeat one-or-more))))
 
-;; Test case TODOs:
-;; - Different combos of time bounds and periods in general
-;; - Nested bounds, e.g. if timestamp satisfies inner bound but
-;;   not outer bound
-;; - When generated timestamp ALWAYS exceeds the containing bound,
-;;   causing gen to hang; need to solve w/ max-retries parameter
-;; - Different `retry` cases: "template", "child", and "pattern"
-;;   (in addition to nil)
-
 (defn- iterate-patterns
   [{:keys [pattern-map alignments-map max-retries] :as ctx}
    alignments-stack
@@ -190,7 +181,6 @@
         {:timestamp     prev-timestamp
          :timestamp-gen prev-timestamp-gen}))))
 
-;; Repeat at the LOWEST repeatable pattern BELOW a violated bound
 (defn- repeat-at
   [alignments-stack timestamp]
   (loop [[alignments & rest-stack] alignments-stack]
