@@ -154,9 +154,9 @@
   (loop [prev-templates     (list)
          prev-timestamp     init-timestamp
          prev-timestamp-gen init-timestamp-gen
-         child-ids          child-ids
+         child-ids*         child-ids
          retry-count        0]
-    (if-some [child-id (first child-ids)]
+    (if-some [child-id (first child-ids*)]
       (let [pattern     (get pattern-map child-id)
             pat-align   (-> (get alignments-map child-id) (assoc :id child-id))
             align-stack (conj alignments-stack pat-align)
@@ -184,7 +184,7 @@
           (recur (concat prev-templates templates)
                  timestamp
                  timestamp-gen
-                 (rest child-ids)
+                 (rest child-ids*)
                  retry-count)))
       (with-meta prev-templates
         {:timestamp     prev-timestamp
@@ -194,14 +194,14 @@
 (defn- repeat-at
   [alignments-stack timestamp]
   (loop [[alignments & rest-stack] alignments-stack]
-    (if-some [{:keys [bounds boundRestarts]} alignments]
+    (if-some [{:keys [bounds bound-restarts]} alignments]
       (if (temporal/bounded-time? bounds timestamp)
         ;; Bound is satisfied
         (recur rest-stack)
         ;; Bound is NOT satisfied, find the highest-level pattern to retry
         ;; `some` works as alignments-stack vector goes from highest -> lowest
-        (let [retry-id (when (not-empty boundRestarts)
-                         (->> alignments-stack (map :id) (some boundRestarts)))]
+        (let [retry-id (when (not-empty bound-restarts)
+                         (->> alignments-stack (map :id) (some bound-restarts)))]
           [bounds retry-id]))
       ;; All bounds are satisfied
       [nil nil])))
