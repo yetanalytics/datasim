@@ -2,8 +2,7 @@
   (:require [clojure.test  :refer [deftest testing is]]
             [java-time.api :as t]
             [com.yetanalytics.datasim :as ds]
-            [com.yetanalytics.datasim.test-constants :as const]
-            [com.yetanalytics.datasim.xapi.statement :as statement])
+            [com.yetanalytics.datasim.test-constants :as const])
   (:import [java.io FileNotFoundException]))
 
 (defmacro test-temporal
