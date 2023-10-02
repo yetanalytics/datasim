@@ -164,7 +164,8 @@
         object-override (select-object-override rng objects weights)
         template-rules* (remove-object-rules template-rules object-override)
         timestamp-inst  (jt/instant timestamp timezone)
-        statement-meta  {:timestamp       timestamp-inst
+        statement-meta  {:timestamp       timestamp
+                         :timezone        timezone
                          :time-ms         (.toEpochMilli timestamp-inst)
                          :time-since-last time-since-last
                          :time-since-ms   (.toMillis time-since-last)
