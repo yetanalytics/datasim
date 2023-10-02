@@ -50,7 +50,7 @@
                           :weight    "bar"}]})
     
     "Actor Models w/ Overrides" "invalid alignments"
-    :models const/overrides-models-filepath
+    :models const/simple-overrides-models-filepath
     #(conj % {:personae        [{:id   "notanid"
                                  :type "notatype"}]
               :objectOverrides [{:component "notaniri"

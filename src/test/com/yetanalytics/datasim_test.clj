@@ -124,7 +124,7 @@
                       (nth 10000)))))
   (testing "We respect temporal properties for different actors"
     (let [input  (-> const/simple-input
-                     (assoc :models const/temporal-models)
+                     (assoc :models const/simple-temporal-models)
                      (assoc-in [:parameters :end] nil))
           result (generate-map input)]
       (testing "- Alice: all verbs happen on the order of minutes (the default)"
@@ -276,7 +276,7 @@
       (is (every? #{"https://w3id.org/xapi/cmi5/activities/block"}
                   (take 10 act-types)))))
   (testing "Can apply object override and respect weights"
-    (let [input     (assoc const/simple-input :models const/overrides-models)
+    (let [input     (assoc const/simple-input :models const/simple-overrides-models)
           result    (generate-seq input :select-agents [bob-mbox])
           objects   (map get-object result)
           obj-count (count objects)
@@ -300,7 +300,7 @@
              (+ mean-2 (* 3 sd))))))
   (testing "Can apply object override and respect weights - only activity"
     (let [input     (-> const/simple-input
-                        (assoc :models const/overrides-models)
+                        (assoc :models const/simple-overrides-models)
                         (update-in [:models 0 :objectOverrides 0]
                                    assoc
                                    :weight 1.0)
