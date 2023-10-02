@@ -1,0 +1,36 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "hours": [[6, 12]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "mean": 1,
+                        "unit": "hours"
+                    }
+                ]
+            },
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-B1",
+                "bounds": [
+                    {
+                        "hours": [[0, 18]]
+                    }
+                ]
+            },
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-B1",
+                "bounds": [
+                    {
+                        "hours": [[0, 18]]
+                    }
+                ]
+            }
+        ]
+    }
+]

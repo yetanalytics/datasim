@@ -1,0 +1,62 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": [[1, 4]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "months": [1]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 1,
+                        "unit": "weeks"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [2]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 2,
+                        "unit": "weeks"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [3]
+                            }
+                        ],
+                        "min": 1,
+                        "mean": 1,
+                        "unit": "weeks"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [4]
+                            }
+                        ],
+                        "min": 1,
+                        "mean": 2,
+                        "unit": "weeks"
+                    },
+                    {
+                        "min": 0,
+                        "mean": 1,
+                        "unit": "weeks"
+                    }
+                ]
+            }
+        ]
+    }
+]

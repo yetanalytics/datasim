@@ -1,0 +1,93 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [1],
+                        "hours": [0],
+                        "minutes": [0],
+                        "seconds": [[0, 7]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [0]
+                            }
+                        ],
+                        "fixed": 10,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [1]
+                            }
+                        ],
+                        "fixed": 20,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [2]
+                            }
+                        ],
+                        "fixed": 30,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [3]
+                            }
+                        ],
+                        "fixed": 40,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [4]
+                            }
+                        ],
+                        "fixed": 50,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [5]
+                            }
+                        ],
+                        "fixed": 60,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [6]
+                            }
+                        ],
+                        "fixed": 70,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [7]
+                            }
+                        ],
+                        "fixed": 80,
+                        "unit": "millis"
+                    }
+                ]
+            }
+        ]
+    }
+]

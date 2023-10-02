@@ -1,0 +1,103 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [[1, 8]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [1]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 1,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [2]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 2,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [3]
+                            }
+                        ],
+                        "min": 1,
+                        "mean": 1,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [4]
+                            }
+                        ],
+                        "min": 1,
+                        "mean": 2,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [5]
+                            }
+                        ],
+                        "min": 2,
+                        "mean": 1,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [6]
+                            }
+                        ],
+                        "min": 2,
+                        "mean": 2,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [7]
+                            }
+                        ],
+                        "min": 3,
+                        "mean": 1,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [8]
+                            }
+                        ],
+                        "min": 3,
+                        "mean": 2,
+                        "unit": "hours"
+                    },
+                    {
+                        "min": 0,
+                        "mean": 1,
+                        "unit": "hours"
+                    }
+                ]
+            }
+        ]
+    }
+]

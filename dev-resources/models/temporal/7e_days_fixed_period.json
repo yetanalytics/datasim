@@ -1,0 +1,93 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": [[1, 8]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "months": [1]
+                            }
+                        ],
+                        "fixed": 1,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [2]
+                            }
+                        ],
+                        "fixed": 2,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [3]
+                            }
+                        ],
+                        "fixed": 3,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [4]
+                            }
+                        ],
+                        "fixed": 4,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [5]
+                            }
+                        ],
+                        "fixed": 5,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [6]
+                            }
+                        ],
+                        "fixed": 6,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [7]
+                            }
+                        ],
+                        "fixed": 7,
+                        "unit": "days"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "months": [8]
+                            }
+                        ],
+                        "fixed": 8,
+                        "unit": "days"
+                    },
+                    {
+                        "fixed": 1,
+                        "unit": "days"
+                    }
+                ]
+            }
+        ]
+    }
+]

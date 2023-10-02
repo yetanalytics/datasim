@@ -1,0 +1,20 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "daysOfMonth": [31]
+                    }
+                ],
+                "periods": [
+                    {
+                        "mean": 10,
+                        "unit": "minutes"
+                    }
+                ]
+            }
+        ]
+    }
+]
