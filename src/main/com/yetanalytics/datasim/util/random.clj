@@ -1,9 +1,8 @@
 (ns com.yetanalytics.datasim.util.random
   "Random number generation and probabilistic operations."
-  (:require [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
-            [clojure.math :as math]
-            [com.yetanalytics.datasim.util.maths :refer [bound-probability]])
+            [clojure.math           :as math])
   (:refer-clojure :exclude
                   [rand rand-int rand-nth random-sample random-uuid shuffle])
   (:import [java.util UUID Random]))
@@ -212,6 +211,11 @@
                :coll    (s/every any? :min-count 1)
                :weights (s/? (s/map-of any? ::weight)))
   :ret coll?)
+
+(defn- bound-probability
+  "Bound `n` to between `0.0` and `1.0` to create a valid probability."
+  [n]
+  (-> n (max 0.0) (min 1.0)))
 
 (defn random-sample
   "Probabilistically sample elements from `coll`, where each element has
