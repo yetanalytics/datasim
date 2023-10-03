@@ -144,21 +144,6 @@
 
 ;; Data structure helpers
 
-(defn- personaes->group-actor-id-map
-  "Convert `personae-array` into a map from group IDs, which represent
-   each personae in the array, to actor IDs, representing each group member."
-  [personae-array]
-  (reduce
-   (fn [m {actors :member :as personae}]
-     (let [group-id (actor/actor-ifi personae)]
-       (reduce
-        (fn [m* actor]
-          (assoc m* (actor/actor-ifi actor) group-id))
-        m
-        actors)))
-   {}
-   personae-array))
-
 (s/fdef build-skeleton
   :args (s/cat :input ::datasim/input)
   :ret ::skeleton)
@@ -180,7 +165,7 @@
         ?from-time  (some-> from t/instant (t/local-date-time zone-region))
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
-        actor-group-map (personaes->group-actor-id-map personae-array)
+        actor-group-map (actor/groups->agent-group-ifi-map personae-array)
         ;; Derive profiles map
         activity-seed   (random/rand-unbound-int sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)
