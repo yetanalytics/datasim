@@ -28,5 +28,9 @@
 (def persona-spec
   (s/multi-spec persona-spec* :type))
 
-(def personae-spec
-  (s/every persona-spec :kind vector? :min-count 1))
+(defn distinct-personae?
+  "Are each of the `:personae` in `map-coll` distinct from each other?"
+  [map-coll]
+  (let [personaes (map :personae map-coll)]
+    (= (-> personaes count)
+       (-> personaes distinct count))))

@@ -6,7 +6,7 @@
                 "type": "Agent"
             }
         ],
-        "alignments": [
+        "patterns": [
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfieds",
                 "period": {
@@ -14,6 +14,35 @@
                     "mean": 1.0,
                     "unit": "hours"
                 }
+            }
+        ]
+    },
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:frederstaz@example.org",
+                "type": "Agent"
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "bounds": [
+                    {
+                        "months": [["January", "October"], "December"],
+                        "years": [2019]
+                    }
+                ]
+            }
+        ],
+        "templates": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfied",
+                "bounds": [
+                    {
+                        "minutes": [[0, 35], [50, 59]]
+                    }
+                ]
             }
         ]
     }

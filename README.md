@@ -75,14 +75,31 @@ Predefined xAPI Actors (upon whom the simulation will be based) are required to 
 
 Models represents user-provided influences on xAPI simulation. Each model is a JSON object that consists of the following properties:
 - `personae`: An array of Actors, Groups, or Role objects that define who the model applies to. If this is missing, then the model serves as the default model for the simulation. Each `personae` array must be unique, though Actors, Groups, or Roles may repeat across different models.
-- `alignments`: An array of JSON objects containing component `id`, `weight`, and `period` properties.
-  - `weight` values weight that component's relationship to others in the Profiles. Valid `weight` values range from 0 to 1, where 0 denotes that that component will not be chosen (unless all other weights are also 0); if not present, a default weight of 0.5 will be used. The exact function of `weight` will depend on the component type:
-    - Patterns and Statement Templates in an `alternates` Pattern are more likely to be chosen the higher each component's weight is, and those in an `optional` Pattern are more likely to be included. 
-    - Verbs, Activities, and Activity Types with higher weights are more likely to be chosen against other Concepts of the same type (if they are not explicitly set by Statement Templates).
-  - `period` denotes the amount of elapsed time between generated Statements. This is an object with `mean`, `min`, and `unit` properties; `min` specifies a minimum delay, `mean` the average delay (added on top of `min`), and `unit` the time unit for both (valid values ranging from `millisecond` to `week`). This only applies to Statement Templates and Patterns; child Patterns or Templates will override any `period` properties set by parent Patterns.
-- `objectOverrides`: An array of JSON objects containing (xAPI) `objects` and `weights`. If present, these objects will overwrite any that would have been set by the Profile. Like with `alignments`, the higher the weight value, the more likely the object will be chosen.
+- `verbs`: An array of objects with Verb `id` and `weight` values. Valid `weight` values range from `0` to `1`, where `0` denotes that that component will not be chosen (unless all other weights are also `0`). If not present, a default weight of `0.5` will be used.
+- `activities`: An array of objects with Activity `id` and `weight` values (as described under `verbs`).
+- `activityTypes`: An array of objects with Activity Type `id`
+and `weight` values (as described under `verbs`).
+- `patterns`: An array of objects with Pattern `id` and the following additional optional values:
+  - `weights`: An array of child Pattern/Template `id` and `weight` values. Each weight affects how likely each of the Pattern's child patterns are chosen (for `alternates`) or how likely the child Pattern will be selected at all (for `optional`, for these `null` is also a valid option). This has no effect on `sequence`, `zeroOrMore`, or `oneOrMore` Patterns.
+  - `repeat-max`: A positive integer representing the maximum number of times (exclusive) the child pattern can be generated. Only affects `zeroOrMore` and `oneOrMore` patterns.
+  - `bounds`: An array of objects containing key-value pairs where each value is an array of singular values (e.g. `"January"`) or pair arrays of start and end values (e.g. `["January", "October"]`). For example `{"years": [2023], "months": [[1 5]]}` describes an inclusive bound from January to May 2023. The following are valid bound values:
+    - `years`: Any positive integer
+    - `months`: `1` to `12`, or their name equivalents, i.e. `"January"` to `"December"`
+    - `daysOfMonth:` `1` to `31` (though `29` or `30` are skipped at runtime for months that do not include these days)
+    - `daysOfWeek`: `0` to `6`, or their name equivalents, i.e. `"Sunday"` to `"Saturday"`
+    - `hours`: `0` to `23`
+    - `minutes`: `0` to `59`
+    - `seconds`: `0` to `59`
+  - `period`: an object with `mean`, `min`, and `unit` properties. `min` specifies a minimum delay, `mean` the average delay (added on top of `min`), and `unit` the time unit for both (valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`). This only applies to Statement Templates and Patterns; child Patterns or Templates will override any `period` properties set by parent Patterns.
+  - `retry`: One of four options that determine Statement generation retry behavior in the event where a time bound is exceeded:
+    - `null` (or not present): Terminate the generation on the current Pattern immediately, and move again with the next Pattern's generation.
+    - `"pattern"`: Retry generation of this Pattern if this Pattern's bound is exceeded.
+    - `"child"`: Retry generation of whichever child Pattern or Statement Template in which this Pattern's bound is exceeded.
+    - `"template"`: Retry generation of the Statement Template that exceeded this Pattern's bound.
+- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `period`, and `retry` values, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
+- `objectOverrides`: An array of objects containing (xAPI) `object` and `weight`. If present, these objects will overwrite any that would have been set by the Profile.
 
-An example of a model array with valid `personae` and `alignments` is shown below:
+An example of a model array with valid `personae`, `verbs`, and `templates` is shown below:
 
 ```json
     [
@@ -93,13 +110,21 @@ An example of a model array with valid `personae` and `alignments` is shown belo
                 "type": "Agent"
             }
         ],
-        "alignments": [
+        "verbs": [
             {
                 "component": "https://example.org/verb/did",
                 "weight": 0.8
             }
+        ],
+        "templates": [
             {
                 "component": "https://w3id.org/xapi/cmi5#satisfied",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": [["January", "May"]]
+                    }
+                ],
                 "period": {
                     "min": 1,
                     "mean": 2.0,
@@ -110,7 +135,6 @@ An example of a model array with valid `personae` and `alignments` is shown belo
       }
     ]
 ```
-
 
 #### Simulation Parameters
 

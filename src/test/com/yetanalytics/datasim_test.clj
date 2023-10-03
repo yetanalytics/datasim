@@ -88,8 +88,7 @@
     (let [skeleton (generate-map (assoc-in const/simple-input
                                            [:parameters :end]
                                            nil))]
-      (are [actor-id] (let [statement-seq (get skeleton
-                                               actor-id)
+      (are [actor-id] (let [statement-seq (get skeleton actor-id)
                             f1 (future (nth statement-seq 1000))
                             f2 (future (nth statement-seq 1000))]
                         (= @f1 @f2))
@@ -119,21 +118,26 @@
                         (assoc :models const/temporal-models)
                         (assoc-in [:parameters :end] nil))
           result    (generate-map input)]
-      (testing "- Alice: all verbs happen on the order of minutes"
+      (testing "- Alice: all verbs happen on the order of minutes (the default)"
         (is (->> (get result alice-mbox)
                  (take 100)
                  (every? (fn [statement]
-                           (let [diff (:duration-ms (meta statement))]
-                             (< diff ms-in-hr)))))))
+                           (let [diff (:time-since-ms (meta statement))]
+                             (> ms-in-hr diff)))))))
       (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
         (is (->> (get result bob-mbox)
                  (take 100)
                  (every? (fn [statement]
                            (let [verb (get-in statement ["verb" "id"])
-                                 diff (:duration-ms (meta statement))]
+                                 diff (:time-since-ms (meta statement))]
                              (if (= verb satisfied)
                                (< ms-in-hr diff)
-                               (< diff ms-in-hr)))))))))))
+                               (> ms-in-hr diff))))))))
+      (testing "- Fred: generation cannot occur due to bounds"
+        (is (= '()
+               (->> (get result fred-mbox)
+                    ;; Safety measure to avoid actually infinite seq
+                    (take 100))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
@@ -195,42 +199,42 @@
       (is (= #{alice-mailto bob-mailto fred-mailto}
              (set (map get-actor-mbox result))))))
   (testing "Respects pattern weights"
-    (let [alignments [{:id     "https://w3id.org/xapi/cmi5#waivedsession"
-                       :weight 1.0}
-                      {:id     "https://w3id.org/xapi/cmi5#noresultsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#failedsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#completionnosuccesssession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#completionmaybefailedsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#passedsession"
-                       :weight 0.0}
-                      {:id     "https://w3id.org/xapi/cmi5#completionpassedsession"
-                       :weight 0.0}]
-          input      (update-in const/simple-input
-                                [:models 0 :alignments]
-                                into
-                                alignments)
+    (let [pat-weights [{:id     "https://w3id.org/xapi/cmi5#waivedsession"
+                        :weight 1.0}
+                       {:id     "https://w3id.org/xapi/cmi5#noresultsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#failedsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#completionnosuccesssession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#completionmaybefailedsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#passedsession"
+                        :weight 0.0}
+                       {:id     "https://w3id.org/xapi/cmi5#completionpassedsession"
+                        :weight 0.0}]
+          pat-align  [{:id      "https://w3id.org/xapi/cmi5#typicalsession"
+                       :weights pat-weights}]
+          input      (assoc-in const/simple-input
+                               [:models 0 :patterns]
+                               pat-align)
           result     (generate-seq input :select-agents [bob-mbox])
           verbs      (map #(get-in % ["verb" "id"]) result)]
       (is (every? #{"http://adlnet.gov/expapi/verbs/satisfied"
                     "http://adlnet.gov/expapi/verbs/waived"}
                   verbs))))
   (testing "Respects activity weights"
-    (let [alignments [{:id "https://w3id.org/xapi/cmi5/activities/block"
+    (let [act-align  [{:id     "https://w3id.org/xapi/cmi5/activities/block"
                        :weight 1.0}
-                      {:id "https://w3id.org/xapi/cmi5/activities/course"
+                      {:id     "https://w3id.org/xapi/cmi5/activities/course"
                        :weight 0.0}
-                      {:id "https://w3id.org/xapi/cmi5/activitytype/block"
+                      {:id     "https://w3id.org/xapi/cmi5/activitytype/block"
                        :weight 0.0}
-                      {:id "https://w3id.org/xapi/cmi5/activitytype/course"
+                      {:id     "https://w3id.org/xapi/cmi5/activitytype/course"
                        :weight 0.0}]
-          input      (update-in const/simple-input
-                                [:models 0 :alignments]
-                                into
-                                alignments)
+          input      (assoc-in const/simple-input
+                               [:models 0 :activityTypes]
+                               act-align)
           result     (generate-seq input :select-agents [bob-mbox])
           act-types  (->> result
                           ;; "satisfied" statements define object activity
@@ -240,11 +244,10 @@
                           (map (fn [stmt]
                                  (get-in stmt ["object" "definition" "type"]))))]
       (is (every? #{"https://w3id.org/xapi/cmi5/activities/block"}
-                  act-types))))
+                  (take 10 act-types)))))
   (testing "Can apply object override and respect weights"
     (let [input     (assoc const/simple-input :models const/overrides-models)
-          result    (generate-seq input
-                                  :select-agents [bob-mbox])
+          result    (generate-seq input :select-agents [bob-mbox])
           objects   (map get-object result)
           obj-count (count objects)
           obj-freq  (frequencies objects)

@@ -12,8 +12,7 @@
             [com.yetanalytics.datasim.xapi.profile          :as profile]
             [com.yetanalytics.datasim.xapi.profile.activity :as activity]
             [com.yetanalytics.datasim.xapi.profile.verb     :as verb]
-            [com.yetanalytics.datasim.xapi.profile.template :as template]
-            [com.yetanalytics.datasim.xapi.registration     :as reg]))
+            [com.yetanalytics.datasim.xapi.profile.template :as template]))
 
 ;; Statement healing is currently limited to inserting missing required
 ;; properties; it does not fix properties that are not included but have
@@ -37,11 +36,11 @@
 (s/def ::alignments
   ::model/alignments)
 
-(s/def ::registration
-  ::reg/registration)
-
 (s/def ::template
   ::template/template)
+
+(s/def ::registration
+  uuid?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -72,10 +71,10 @@
   :ret ::xs/verb)
 
 (defn complete-verb
-  [{verb-id "id" :as verb} {:keys [verb-map alignments]} rng]
+  [{verb-id "id" :as verb} {:keys [verb-map weights]} rng]
   (let [return-verb   (fn [_] verb)
         merge-verb    (fn [v] (merge-nested v verb))
-        align-weights (:weights alignments)]
+        verb-weights  (:verbs weights)]
     (or
      ;; Verb found by ID
      (some->> verb-id
@@ -91,7 +90,7 @@
      ;; Choose random verb
      (some->> verb-map
               not-empty
-              (random/choose-map rng align-weights))
+              (random/choose-map rng verb-weights))
      ;; Generate random verb as verb map is empty
      (some->> {}
               (generate-verb rng)))))
@@ -114,11 +113,12 @@
 
 (defn complete-activity
   [{activity-id "id" {activity-type "type"} "definition" :as activity}
-   {:keys [activity-map alignments]}
+   {:keys [activity-map weights]}
    rng]
   (let [return-activity   (fn [_] activity)
         merge-activity    (fn [a] (merge-nested a activity))
-        alignment-weights (:weights alignments)]
+        activity-weights  (get weights :activities)
+        act-type-weights  (get weights :activity-types)]
     (or
      ;; Get activity by ID
      (some->> activity-id
@@ -128,7 +128,7 @@
      (some->> activity-type
               (get activity-map)
               not-empty
-              (random/choose-map rng alignment-weights)
+              (random/choose-map rng activity-weights)
               merge-activity)
      ;; Activity w/ ID not found, return as-is
      (some->> activity-id
@@ -140,8 +140,8 @@
      ;; Choose random activity
      (some->> activity-map
               not-empty
-              (random/choose-map rng alignment-weights)
-              (random/choose-map rng alignment-weights))
+              (random/choose-map rng act-type-weights)
+              (random/choose-map rng activity-weights))
      ;; Generate random activity as activity map is empty
      (some->> {}
               (generate-activity rng)))))

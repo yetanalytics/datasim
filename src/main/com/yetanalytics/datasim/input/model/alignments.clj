@@ -1,10 +1,25 @@
 (ns com.yetanalytics.datasim.input.model.alignments
-  (:require [clojure.set        :as cset]
-            [clojure.spec.alpha :as s]
-            [xapi-schema.spec   :as xs]
+  "Models for individual Concepts, Templates, Patterns, and Object
+   Overrides. The term \"alignments\" is largely historical, as it was used
+   to refer to models, before model personae were added."
+  (:require [clojure.set            :as cset]
+            [clojure.spec.alpha     :as s]
+            [clojure.spec.gen.alpha :as sgen]
+            [clojure.walk           :as w]
+            [xapi-schema.spec       :as xs]
             [com.yetanalytics.datasim.math.random :as random]
-            [com.yetanalytics.datasim.input.model.alignments.bound :as-alias bound]
+            [com.yetanalytics.datasim.input.model.alignments.weight :as-alias weight]
+            [com.yetanalytics.datasim.input.model.alignments.bounds :as-alias bounds]
             [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ID
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; TODO: Use pan.axioms/iri once that has its own generator
+
+;; nilable so that optional patterns can specify weight for `null` option
+(s/def ::id (s/nilable ::xs/iri))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Weight
@@ -13,6 +28,9 @@
 ;; See also: ::object-overrides/weight
 
 (s/def ::weight ::random/weight)
+
+(s/def ::weights
+  (s/every (s/keys :req-un [::id ::weight]) :kind vector?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Bounds
@@ -49,48 +67,48 @@
    "Saturday"  6})
 
 (def month-of-year-map
-  {"January"   0
-   "February"  1
-   "March"     2
-   "April"     3
-   "May"       4
-   "June"      5
-   "July"      6
-   "August"    7
-   "September" 8
-   "October"   9
-   "November"  10
-   "December"  11})
+  {"January"   1
+   "February"  2
+   "March"     3
+   "April"     4
+   "May"       5
+   "June"      6
+   "July"      7
+   "August"    8
+   "September" 9
+   "October"   10
+   "November"  11
+   "December"  12})
 
-(s/def ::bound/second
+(s/def ::bounds/seconds
   (bound-spec (s/int-in 0 60)))
 
-(s/def ::bound/minute
+(s/def ::bounds/minutes
   (bound-spec (s/int-in 0 60)))
 
-(s/def ::bound/hour
+(s/def ::bounds/hours
   (bound-spec (s/int-in 0 24)))
 
-(s/def ::bound/day-of-week
+(s/def ::bounds/daysOfWeek
   (bound-spec (named-time-spec (s/int-in 0 7) day-of-week-map)))
 
-(s/def ::bound/day-of-month
-  (bound-spec (s/int-in 0 31)))
+(s/def ::bounds/daysOfMonth
+  (bound-spec (s/int-in 1 32)))
 
-(s/def ::bound/month
-  (bound-spec (named-time-spec (s/int-in 0 12) month-of-year-map)))
+(s/def ::bounds/months
+  (bound-spec (named-time-spec (s/int-in 1 13) month-of-year-map)))
 
-(s/def ::bound/year
+(s/def ::bounds/years
   (bound-spec pos-int?))
 
-(s/def ::timeBounds
-  (s/every (s/keys :opt-un [::bound/second
-                            ::bound/minute
-                            ::bound/hour
-                            ::bound/day-of-week
-                            ::bound/day-of-month
-                            ::bound/month
-                            ::bound/year])
+(s/def ::bounds
+  (s/every (s/keys :opt-un [::bounds/seconds
+                            ::bounds/minutes
+                            ::bounds/hours
+                            ::bounds/daysOfWeek
+                            ::bounds/daysOfMonth
+                            ::bounds/months
+                            ::bounds/years])
            :kind vector?
            :min-count 1))
 
@@ -113,17 +131,75 @@
                    ::period/unit]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Retry Options
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::retry
+  (s/nilable #{"template" "child" "pattern"}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Max Repeat
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::repeat-max pos-int?)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Object
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Due to limitations of keywords, we cannot have IRI keys, limiting extensions
+(defn- no-iri-keys?
+  "Returns false if there exists a key made from an IRI, e.g.
+   (name :https://foo.org) => \"/foo.org\""
+  [obj]
+  (cond
+    (map? obj)
+    (if-not (->> obj vals (map no-iri-keys?) (some false?))
+      (->> obj keys (some (partial re-matches #".*/.*")) not)
+      false)
+    (vector? obj)
+    (every? no-iri-keys? obj)
+    :else
+    true))
+
+(s/def ::object
+  (s/with-gen (s/and (s/conformer w/stringify-keys w/keywordize-keys)
+                     no-iri-keys?
+                     :statement/object) ; from xapi-schema
+    #(->> (s/gen :statement/object)
+          (sgen/such-that no-iri-keys?)
+          (sgen/fmap w/keywordize-keys))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Alignment
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Use pan.axioms/iri once that has its own generator
-(s/def ::id ::xs/iri)
+(def verb-spec
+  (s/keys :req-un [::id
+                   ::weight]))
 
-(def alignment-spec
+(def activity-spec
   (s/keys :req-un [::id]
-          :opt-un [::weight
-                   ::timeBounds
-                   ::period]))
+          :opt-un [::weight]))
 
-(def alignments-spec
-  (s/every alignment-spec :kind vector? :min-count 1))
+(def activity-type-spec
+  (s/keys :req-un [::id]
+          :opt-un [::weight]))
+
+(def pattern-spec
+  (s/keys :req-un [::id]
+          :opt-un [::weights    ; for alternate and optional patterns 
+                   ::repeat-max ; for oneOrMore and zeroOrMore patterns
+                   ::bounds
+                   ::period
+                   ::retry]))
+
+(def template-spec
+  (s/keys :req-un [::id]
+          :opt-un [::bounds
+                   ::period
+                   ::retry]))
+
+(def object-override-spec
+  (s/keys :req-un [::object]
+          :opt-un [::weight]))

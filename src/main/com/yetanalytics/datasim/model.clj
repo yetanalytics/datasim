@@ -1,49 +1,75 @@
 (ns com.yetanalytics.datasim.model
   (:require [clojure.spec.alpha :as s]
-            [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.input.model            :as model]
+            [com.yetanalytics.datasim.input.model.alignments :as model.alignments]
             [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.model.weights          :as-alias weights]
+            [com.yetanalytics.datasim.model.pattern          :as-alias pattern]
             [com.yetanalytics.datasim.model.alignment        :as-alias alignment]
             [com.yetanalytics.datasim.model.alignment.period :as-alias alignment.period]
             [com.yetanalytics.datasim.model.object-override  :as-alias obj-override]
+            [com.yetanalytics.datasim.model.temporal         :as temporal]
             [com.yetanalytics.datasim.xapi.actor             :as actor]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::alignment/weights
-  (s/map-of ::xs/iri ::random/weight))
+(s/def ::objects
+  (s/coll-of ::model.alignments/object))
 
-(s/def ::alignment.period/min int?)
-(s/def ::alignment.period/mean pos-int?)
+(s/def ::weights/verbs
+  (s/map-of ::model.alignments/id ::random/weight))
 
-(s/def ::alignment/periods
-  (s/map-of ::xs/iri (s/keys :req-un [::alignment.period/min
-                                      ::alignment.period/mean])))
+(s/def ::weights/activities
+  (s/map-of ::model.alignments/id ::random/weight))
+
+(s/def ::weights/activity-types
+  (s/map-of ::model.alignments/id ::random/weight))
+
+(s/def ::weights/object-overrides
+  (s/map-of ::model.alignments/object ::random/weight))
+
+(s/def ::weights
+  (s/keys :opt-un [::weights/verbs
+                   ::weights/activities
+                   ::weights/activity-types
+                   ::weights/object-overrides]))
+
+(s/def ::pattern/weights
+  (s/map-of ::model.alignments/id ::random/weight))
+
+(s/def ::pattern/bounds
+  ::temporal/bounds)
+
+(s/def ::pattern/period
+  ::temporal/period)
+
+(s/def ::pattern/retry
+  #{:template})
+
+(s/def ::pattern/repeat-max
+  pos-int?)
+
+(s/def ::pattern
+  (s/keys :opt-un [::pattern/weights
+                   ::pattern/bounds
+                   ::pattern/period
+                   ::pattern/retry
+                   ::pattern/repeat-max]))
+
+(s/def ::patterns
+  (s/every ::pattern))
 
 (s/def ::alignments
-  (s/keys :opt-un [::alignment/weights
-                   ::alignment/periods]))
+  (s/keys :req-un [::weights
+                   ::objects
+                   ::patterns]))
 
-(s/def ::obj-override/weights
-  (s/map-of :statement/object ::random/weight))
-
-(s/def ::obj-override/objects
-  (s/coll-of :statement/object :kind vector? :min-count 1))
-
-(s/def ::object-overrides
-  (s/keys :req-un [::obj-override/objects]
-          :opt-un [::obj-override/weights]))
-
-(s/def ::model
-  (s/keys :opt-un [::alignments
-                   ::object-overrides]))
-
-(s/def ::default-model (s/nilable ::model))
-(s/def ::agent-models (s/map-of ::actor/actor-ifi ::model))
-(s/def ::group-models (s/map-of ::actor/actor-ifi ::model))
-(s/def ::role-models (s/map-of string? ::model))
+(s/def ::default-model (s/nilable ::alignments))
+(s/def ::agent-models (s/map-of ::actor/actor-ifi ::alignments))
+(s/def ::group-models (s/map-of ::actor/actor-ifi ::alignments))
+(s/def ::role-models (s/map-of string? ::alignments))
 
 (def model-map-spec
   (s/keys :req-un [::default-model
@@ -55,61 +81,41 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ms-per-second
-  1000)
+(defn- reduce-weights
+  ([alignments]
+   (reduce-weights alignments :id))
+  ([alignments id-keyword]
+   (reduce (fn [acc m]
+             (let [id (get m id-keyword)]
+               (if-some [weight (:weight m)]
+                 (assoc acc id weight)
+                 acc)))
+           {}
+           alignments)))
 
-(def ms-per-minute
-  60000)
-
-(def ms-per-hour
-  3600000)
-
-(def ms-per-day
-  86400000)
-
-(def ms-per-week
-  604800000)
-
-(defn- convert-time
-  "Convert time `t` into milliseconds based on the time `unit`. Coerces
-   any doubles into integers."
-  [t unit]
-  (long (case unit
-          :millis  t
-          :seconds (* t ms-per-second)
-          :minutes (* t ms-per-minute)
-          :hours   (* t ms-per-hour)
-          :days    (* t ms-per-day)
-          :weeks   (* t ms-per-week))))
-
-(defn- convert-time-period
-  [{:keys [min mean unit]}]
-  (let [unit* (or (some-> unit keyword) :minute)
-        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
-        min*  (or (some-> min (convert-time unit*)) 0)]
-    {:min  min*
-     :mean mean*}))
+(defn- reduce-patterns
+  [patterns]
+  (reduce
+   (fn [acc {:keys [id weights repeat-max bounds period retry]}]
+     (let [m (cond-> {}
+               weights    (assoc :weights (reduce-weights weights))
+               bounds     (assoc :bounds (temporal/convert-bounds bounds))
+               period     (assoc :period (temporal/convert-period period))
+               retry      (assoc :retry (keyword retry))
+               repeat-max (assoc :repeat-max repeat-max))]
+       (assoc acc id m)))
+   {}
+   patterns))
 
 (defn- mapify-alignments
-  [alignments]
-  {:weights (reduce (fn [acc {:keys [id weight]}]
-                      (if (some? weight)
-                        (assoc acc id weight)
-                        acc))
-                    {}
-                    alignments)
-   :periods (reduce (fn [acc {:keys [id period]}]
-                      (assoc acc id (convert-time-period period)))
-                    {}
-                    alignments)})
-
-(defn- mapify-object-overrides
-  [object-overrides]
-  {:weights (reduce (fn [m {:keys [weight object]}]
-                      (assoc m object weight))
-                    {}
-                    object-overrides)
-   :objects (map :object object-overrides)})
+  [{:keys [verbs activities activityTypes patterns templates objectOverrides]}]
+  {:weights  {:verbs            (reduce-weights verbs)
+              :activities       (reduce-weights activities)
+              :activity-types   (reduce-weights activityTypes)
+              :object-overrides (reduce-weights objectOverrides :object)}
+   :objects  (mapv :object objectOverrides)
+   :patterns (merge (reduce-patterns patterns)
+                    (reduce-patterns templates))})
 
 (s/fdef models->map
   :args (s/cat :models ::model/models)
@@ -127,14 +133,8 @@
                         "Group" :group-models
                         "Role"  :role-models}]
     (reduce
-     (fn [acc {:keys [personae alignments objectOverrides]}]
-       (let [model* (cond-> {}
-                      (not-empty alignments)
-                      (assoc :alignments
-                             (mapify-alignments alignments))
-                      (not-empty objectOverrides)
-                      (assoc :object-overrides
-                             (mapify-object-overrides objectOverrides)))]
+     (fn [acc {:keys [personae] :as model}]
+       (let [model* (mapify-alignments model)]
          (if (some? personae)
            (reduce
             (fn [acc* {persona-id   :id
@@ -152,7 +152,7 @@
                :agent-id ::actor/actor-ifi
                :group-id ::actor/actor-ifi
                :role-id  (s/and string? not-empty))
-  :ret ::model)
+  :ret ::alignments)
 
 (defn get-actor-model
   "Get the appropriate model associated with the actor described by

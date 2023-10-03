@@ -9,103 +9,119 @@
             [com.yetanalytics.datasim.math.random       :as random]
             [com.yetanalytics.datasim.xapi.actor        :as actor]
             [com.yetanalytics.datasim.xapi.profile      :as p]
-            [com.yetanalytics.datasim.xapi.registration :as reg]
             [com.yetanalytics.datasim.xapi.statement    :as statement]
             [com.yetanalytics.datasim.util.sequence     :as su]
-            [com.yetanalytics.datasim.util.async        :as au])
-  (:import [java.time ZoneRegion]))
+            [com.yetanalytics.datasim.util.async        :as au]
+            [com.yetanalytics.datasim.model.temporal    :as temporal]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; "skeleton" is a map of agent ids to maps with setup info for the agent.
-
-;; A tuple of [timestamp probability]
-(def prob-seq-moment-spec
-  (s/tuple pos-int?
-           (s/double-in
-            :min 0.0
-            :max 1.0
-            :infinite? false
-            :NaN? false)))
-
-(s/def ::probability-seq
-  (s/every prob-seq-moment-spec))
-
-(s/def ::seed
-  int?)
-
-(s/def ::registration-seq
-  (s/every ::p/registration-map))
-
-;; Based on the probability of activity at a given minute, and an infinite seq
-;; of profile walks, emit statements for one actor
-(s/def :skeleton/statement-seq
-  (s/every ::xs/statement :kind #(instance? clojure.lang.LazySeq %)))
+(s/def ::statement-seq
+  (s/every ::xs/statement))
 
 (s/def ::skeleton
-  (s/map-of ::actor/actor-ifi
-            :skeleton/statement-seq))
+  (s/map-of ::actor/actor-ifi ::statement-seq))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Sequence
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def min-ms 60000.0) ; The amount of milliseconds in one minute
-
 (s/fdef statement-seq
-  :args (s/cat :inputs (s/keys :req-un [::statement/type-iri-map
-                                        ::statement/activity-map
-                                        ::statement/statement-base-map
-                                        ::statement/parsed-rules-map
-                                        ::statement/actor
-                                        ::statement/alignments]
-                               :opt-un [::statement/object-overrides])
-               :probability-seq  ::probability-seq
-               :registration-seq ::registration-seq
-               :seed             ::seed)
-  :ret :skeleton/statement-seq)
+  :args (s/cat :inputs     (s/keys :req-un [::statement/type-iri-map
+                                            ::statement/activity-map
+                                            ::statement/pattern-map
+                                            ::statement/statement-base-map
+                                            ::statement/parsed-rules-map
+                                            ::statement/actor
+                                            ::statement/alignments]
+                                   :opt-un [::statement/object-overrides])
+               :rng        ::random/rng
+               :alignments ::model/alignments
+               :start-time ::temporal/date-time
+               :?end-time  ::temporal/date-time
+               :?from-time ::temporal/date-time
+               :zone-region string?)
+  :ret ::statement-seq)
 
-(defn- increment-period
-  "Generate a new millisecond time value that to be added upon the prev time.
-   The time difference is an exponentially-distributed random variable
-   with `mean`; the `min` paramter also adds a fixed minimum
-   time to the value, for a new mean `mean + min`. This ensures that the
-   events occur as a Poisson random process. Note that this assumes the
-   millisecond as the basic unit of time."
-  [rng {:keys [mean min]
-        :or {mean min-ms
-             min  0}}]
-  (let [rate   (/ 1.0 mean)
-        t-diff (long (random/rand-exp rng rate))]
-    (+ min t-diff)))
+(defn- init-statement-seq
+  "Init sequence of registration IDs"
+  [seed]
+  (let [rng (random/seed-rng seed)]
+    (repeatedly (partial random/rand-uuid rng))))
 
-(defn- statement-seq
-  "Generate a lazy sequence of xAPI Statements occuring as a Poisson
-   process. Accepts a `registration-seq` where each entry includes the
-   Statement Template and the temporal properties of each generated
-   Statement. The sequence will either end at `?end-time` or, if `nil`,
-   be infinite."
-  [inputs registration-seq seed start-time ?end-time]
-  (let [time-rng (random/seed-rng seed)
-        end-cmp  (if (some? ?end-time)
-                   (fn [time-ms] (< time-ms ?end-time))
-                   (constantly true))
-        statement-seq*
-        (fn statement-seq* [prev-time registration-seq]
+(defn- temp-statement-seq
+  "Generate sequence of maps of `:template`, `:timestamp`, `:time-since-last`,
+   and `:registration` values."
+  [inputs alignments seed timestamp registration-seq]
+  (let [profile-rng
+        (random/seed-rng seed)
+        fill-statement-seq*
+        (fn fill-statement-seq* [timestamp [registration & rest-regs]]
           (lazy-seq
-           (let [reg-map     (first registration-seq)
-                 period      (:period reg-map)
-                 duration-ms (increment-period time-rng period)
-                 time-ms     (+ prev-time duration-ms)
-                 input-map   (merge inputs reg-map {:time-ms     time-ms
-                                                    :duration-ms duration-ms})]
-             (if (end-cmp time-ms)
-               (cons (statement/generate-statement input-map)
-                     (statement-seq* time-ms (rest registration-seq)))
-               '()))))]
-    (statement-seq* start-time registration-seq)))
+           (let [profile-seed
+                 (random/rand-unbound-int profile-rng)
+                 template-maps
+                 (p/walk-profile-patterns inputs alignments profile-seed timestamp)
+                 ?next-timestamp
+                 (:timestamp (meta template-maps))]
+             (cond-> (map #(assoc % :registration registration) template-maps)
+               ?next-timestamp
+               (concat (fill-statement-seq* ?next-timestamp rest-regs))))))]
+    (fill-statement-seq* timestamp registration-seq)))
+
+(defn- drop-statement-seq
+  "Drop sequence entries after `?end-time` (or none if `?end-time` is `nil`)."
+  [?end-time simulation-seq]
+  (let [before-end?
+        (if (some? ?end-time)
+          (fn [{:keys [timestamp]}]
+            (t/before? timestamp ?end-time))
+          (constantly true))]
+    (take-while before-end? simulation-seq)))
+
+(defn- seed-statement-seq
+  "Generate seeds for each sequence generation. (We do this so that if
+   `from-statement-seq` drops entries, we wouldn't have wasted time generating
+   dropped statements)."
+  [rng simulation-seq]
+  (map #(assoc % :seed (random/rand-unbound-int rng))
+       simulation-seq))
+
+(defn- from-statement-seq
+  "Drop seeded simulation entries before `?from-time` (or none if
+   `?from-time` is `nil`)."
+  [?from-time simulation-seq]
+  (let [before-from?
+        (if (some? ?from-time)
+          (fn [{:keys [timestamp]}]
+            ;; Also excludes timestamps that equal from-time
+            (not (t/after? timestamp ?from-time)))
+          (constantly false))]
+    (drop-while before-from? simulation-seq)))
+
+(defn- gens-statement-seq
+  "Generate the actual statements from the entries in `simulation-seq`."
+  [input simulation-seq]
+  (map #(statement/generate-statement (merge input %))
+       simulation-seq))
+
+(defn statement-seq
+  "Generate a lazy sequence of xAPI Statements occuring as a Poisson
+   process. The sequence will either end at `?end-time` or, if `nil`,
+   be infinite."
+  [input seed alignments start-time ?end-time ?from-time zone-region]
+  (let [sim-rng   (random/seed-rng seed)
+        reg-seed  (random/rand-unbound-int sim-rng)
+        temp-seed (random/rand-unbound-int sim-rng)
+        stmt-rng  (random/seed-rng (random/rand-unbound-int sim-rng))]
+    (->> (init-statement-seq reg-seed)
+         (temp-statement-seq input alignments temp-seed start-time)
+         (drop-statement-seq ?end-time)
+         (seed-statement-seq stmt-rng)
+         (from-statement-seq ?from-time)
+         (gens-statement-seq (assoc input :timezone zone-region)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Skeleton
@@ -128,25 +144,6 @@
    {}
    personae-array))
 
-;; Timestamp helpers
-
-(defn- timezone->region ^ZoneRegion [tz]
-  (t/zone-id tz))
-
-(defn- timestamp->millis [ts]
-  (.toEpochMilli (t/instant ts)))
-
-(defn- drop-statements-from-time
-  "Drop any `statements` whose `:time-ms` metadata comes after
-   `from-ms`."
-  [from-ms statements]
-  (drop-while
-   (fn [statement]
-     (>= from-ms (-> statement meta :time-ms)))
-   statements))
-
-;; Time/probability sequence helpers
-
 (s/fdef build-skeleton
   :args (s/cat :input ::datasim/input)
   :ret ::skeleton)
@@ -158,15 +155,14 @@
    Spooky."
   [{:keys [profiles personae-array models parameters]}]
   (let [;; Input parameters
-        {:keys [start end timezone seed] ?from-stamp :from} parameters
+        {:keys [start end from timezone seed]} parameters
         ;; RNG for generating the rest of the seeds
         sim-rng     (random/seed-rng seed)
         ;; Set timezone region and timestamps
-        zone-region (timezone->region timezone)
-        t-start     (timestamp->millis start)
-        ?t-from     (some-> ?from-stamp timestamp->millis)
-        ?t-end      (some-> end timestamp->millis)
-        ?sample-ms  (some-> ?t-end (- t-start))
+        zone-region (t/zone-id timezone)
+        start-time  (-> start t/instant (t/local-date-time zone-region))
+        ?end-time   (some-> end t/instant (t/local-date-time zone-region))
+        ?from-time  (some-> from t/instant (t/local-date-time zone-region))
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
         actor-group-map (personaes->group-actor-id-map personae-array)
@@ -188,12 +184,7 @@
                                                          actor-id
                                                          actor-group-id
                                                          actor-role)
-                  actor-alignment (:alignments actor-model-map)
-                  ;; Actor registration seq
-                  actor-reg-seed  (random/rand-unbound-int sim-rng)
-                  actor-reg-seq   (reg/registration-seq profiles-map
-                                                        actor-alignment
-                                                        actor-reg-seed)
+                  actor-alignment (dissoc actor-model-map :personae)
                   ;; Additional seed for further gen
                   actor-seed      (random/rand-unbound-int sim-rng)
                   ;; Dissoc `:role` since it is not an xAPI property
@@ -203,14 +194,13 @@
                   actor-input     (merge profiles-map
                                          actor-model-map
                                          actor-xapi-map)
-                  actor-stmt-seq* (statement-seq actor-input
-                                                 actor-reg-seq
+                  actor-stmt-seq  (statement-seq actor-input
                                                  actor-seed
-                                                 t-start
-                                                 ?t-end)
-                  actor-stmt-seq  (cond->> actor-stmt-seq*
-                                    ?t-from
-                                    (drop-statements-from-time ?t-from))]
+                                                 actor-alignment
+                                                 start-time
+                                                 ?end-time
+                                                 ?from-time
+                                                 zone-region)]
               (assoc m actor-id actor-stmt-seq)))
           {}))))
 
@@ -225,7 +215,7 @@
   :args (s/cat :input :com.yetanalytics.datasim/input
                :options (s/keys*
                          :opt-un [::select-agents]))
-  :ret :skeleton/statement-seq)
+  :ret ::statement-seq)
 
 (defn sim-seq
   "Given input, build a skeleton and produce a seq of statements."
