@@ -301,12 +301,40 @@
                        (<= 10 sec 30)
                        (zero? (mod hr 2))
                        (zero? (mod min 2)))))))
+    ;; Bounds w/ hour periods
+    ;; Should cause early termination due to running into max-retries param
+    (test-temporal
+     "6a_hours_period_every_second_hour"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?
+     (partial every?
+              (fn [statement]
+                (let [{:keys [timestamp]} (meta statement)
+                      hour (t/as timestamp :hour-of-day)]
+                  (zero? (mod hour 2))))))
+    (test-temporal
+     "6b_hours_period_every_start_hour"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?
+     (partial every?
+              (fn [statement]
+                (let [{:keys [timestamp]} (meta statement)
+                      hour (t/as timestamp :hour-of-day)]
+                  (zero? (mod hour 24))))))
+    (test-temporal
+     "6c_hours_fixed_period_every_second_hour"
+     empty?)
+    (test-temporal
+     "6d_hours_fixed_period_every_start_hour"
+     empty?)
     ;; Periods
     ;; Since statement gen is a Poisson process, we compute
     ;; mean # of occurences = total time / mean period, with 
     ;; +/- 3 * standard deviation = 3 * sqrt(mean # of occurences)
     (test-temporal
-     "6a_millis_period"
+     "7a_millis_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -322,7 +350,7 @@
           (<= 07 (get counts 7) 23)  ; 1000 / 50 = 20
           ))))
     (test-temporal
-     "6b_seconds_period"
+     "7b_seconds_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -338,7 +366,7 @@
           (<= 02 (get counts 7) 22) ; 60 / 5 = 12
           ))))
     (test-temporal
-     "6c_minutes_period"
+     "7c_minutes_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -354,7 +382,7 @@
           (<= 02 (get counts 7) 22) ; 60 / 5 = 12
           ))))
     (test-temporal
-     "6d_hours_period"
+     "7d_hours_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -371,7 +399,7 @@
           (<= 0 (get counts 7) 12) ; 24 / 5 = 4.8
           ))))
     (test-temporal
-     "6e_days_period"
+     "7e_days_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -388,7 +416,7 @@
           (<= 0 (get counts 7) 15)  ; 30 / 5 = 6
           ))))
     (test-temporal
-     "6f_weeks_period"
+     "7f_weeks_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -404,7 +432,7 @@
     ;; Fixed periods
     ;; Note that the counts may not exactly be total / period due to bounds
     (test-temporal
-     "7a_millis_fixed_period"
+     "8a_millis_fixed_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -420,7 +448,7 @@
           (= 13 (get counts 7)) ; 1000 / 80 = 12.5
           ))))
     (test-temporal
-     "7b_seconds_fixed_period"
+     "8b_seconds_fixed_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -436,7 +464,7 @@
           (=  8 (get counts 7)) ; 60 / 8 = 7.5
           ))))
     (test-temporal
-     "7c_minutes_fixed_period"
+     "8c_minutes_fixed_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -452,7 +480,7 @@
           (=  8 (get counts 7)) ; 60 / 8 = 7.5
           ))))
     (test-temporal
-     "7d_hours_fixed_period"
+     "8d_hours_fixed_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -469,7 +497,7 @@
           (=  3 (get counts 7)) ; 24 / 8 = 3
           ))))
     (test-temporal
-     "7e_days_fixed_period"
+     "8e_days_fixed_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -486,7 +514,7 @@
           (=  4 (get counts 7)) ; 30 / 8 = 3.75
           ))))
     (test-temporal
-     "7f_weeks_fixed_period"
+     "8f_weeks_fixed_period"
      cyclic-verbs?
      (fn [statements]
        (let [counts (group-statements statements
@@ -499,34 +527,6 @@
           (= 2 (get counts 2)) ; 31 / 21 = 1.476190...
           (= 1 (get counts 3)) ; 30 / 28 = 1.07142857...
           ))))
-    ;; Bounds w/ large periods
-    ;; Should cause early termination due to running into max-retries param
-    (test-temporal
-     "8a_hours_period_every_second_hour"
-     not-empty?
-     (comp not cyclic-verbs?)
-     repeating-verbs?
-     (partial every?
-              (fn [statement]
-                (let [{:keys [timestamp]} (meta statement)
-                      hour (t/as timestamp :hour-of-day)]
-                  (zero? (mod hour 2))))))
-    (test-temporal
-     "8b_hours_period_every_start_hour"
-     not-empty?
-     (comp not cyclic-verbs?)
-     repeating-verbs?
-     (partial every?
-              (fn [statement]
-                (let [{:keys [timestamp]} (meta statement)
-                      hour (t/as timestamp :hour-of-day)]
-                  (zero? (mod hour 24))))))
-    (test-temporal
-     "8c_hours_fixed_period_every_second_hour"
-     empty?)
-    (test-temporal
-     "8d_hours_fixed_period_every_start_hour"
-     empty?)
     ;; Outer + inner bounds
     (test-temporal
      "9a_outer_bound_larger"
