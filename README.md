@@ -75,7 +75,11 @@ Predefined xAPI Actors (upon whom the simulation will be based) are required to 
 
 Models represents user-provided influences on xAPI simulation. Each model is a JSON object that consists of the following properties:
 - `personae`: An array of Actors, Groups, or Role objects that define who the model applies to. If this is missing, then the model serves as the default model for the simulation. Each `personae` array must be unique, though Actors, Groups, or Roles may repeat across different models.
-- `alignments`: An array of JSON objects containing component `id` and `weight` values that weight that component's relationship to others in the Profiles. Patterns and Statement Templates in an `alternates` Pattern are more likely to be chosen the higher each component's weight is, and those in an `optional` Pattern are more likely to be included Likewise, Verbs and Activity Types with higher weights are more likely to be chosen against other Concepts of the same type (if they are not explicitly set by Statement Templates). Valid `weight` values range from 0 to 1, where 0 denotes that that component will not be chosen (unless all other weights are also 0); if not present, a default weight of 0.5 will be used.
+- `alignments`: An array of JSON objects containing component `id`, `weight`, and `period` properties.
+  - `weight` values weight that component's relationship to others in the Profiles. Valid `weight` values range from 0 to 1, where 0 denotes that that component will not be chosen (unless all other weights are also 0); if not present, a default weight of 0.5 will be used. The exact function of `weight` will depend on the component type:
+    - Patterns and Statement Templates in an `alternates` Pattern are more likely to be chosen the higher each component's weight is, and those in an `optional` Pattern are more likely to be included. 
+    - Verbs, Activities, and Activity Types with higher weights are more likely to be chosen against other Concepts of the same type (if they are not explicitly set by Statement Templates).
+  - `period` denotes the amount of elapsed time between generated Statements. This is an object with `mean`, `min`, and `unit` properties; `min` specifies a minimum delay, `mean` the average delay (added on top of `min`), and `unit` the time unit for both (valid values ranging from `millisecond` to `week`). This only applies to Statement Templates and Patterns; child Patterns or Templates will override any `period` properties set by parent Patterns.
 - `objectOverrides`: An array of JSON objects containing (xAPI) `objects` and `weights`. If present, these objects will overwrite any that would have been set by the Profile. Like with `alignments`, the higher the weight value, the more likely the object will be chosen.
 
 An example of a model array with valid `personae` and `alignments` is shown below:
@@ -93,6 +97,14 @@ An example of a model array with valid `personae` and `alignments` is shown belo
             {
                 "component": "https://example.org/verb/did",
                 "weight": 0.8
+            }
+            {
+                "component": "https://w3id.org/xapi/cmi5#satisfied",
+                "period": {
+                    "min": 1,
+                    "mean": 2.0,
+                    "unit": "second"
+                }
             }
         ]
       }

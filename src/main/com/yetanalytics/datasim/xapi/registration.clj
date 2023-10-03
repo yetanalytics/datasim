@@ -41,7 +41,8 @@
                 {:registration      registration
                  :seed              (random/rand-unbound-int rng)
                  :template          template
-                 :pattern-ancestors (-> template meta :pattern-ancestors)})))))
+                 :pattern-ancestors (-> template meta :pattern-ancestors)
+                 :period            (-> template meta :period)})))))
 
 (defn- registration-seq*
   [pattern-walk-fn alignments rng]

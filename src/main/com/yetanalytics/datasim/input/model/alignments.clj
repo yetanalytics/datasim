@@ -4,7 +4,7 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.math.random :as random]
             [com.yetanalytics.datasim.input.model.alignments.bound :as-alias bound]
-            [com.yetanalytics.datasim.input.model.alignments.delay :as-alias delay]))
+            [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Weight
@@ -95,40 +95,22 @@
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Time Delay
+;; Time Period
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private double-spec
-  (s/double-in :min 0 :infinite? false :NaN? false))
+(s/def ::period/min
+  (s/and number? pos?))
 
-(s/def ::delay/min double-spec)
+(s/def ::period/mean
+  (s/and number? pos? (comp not zero?)))
 
-(s/def ::delay/mean double-spec)
+(s/def ::period/unit
+  #{"millis" "seconds" "minutes" "hours" "days" "weeks"})
 
-(s/def ::delay/max double-spec)
-
-(s/def ::delay/sd double-spec)
-
-(s/def ::delay/unit
-  #{"millisecond" "second" "minute" "hour" "day" "week" "month"})
-
-(defn- ordered-delay-values?
-  [{:keys [min mean max]}]
-  (cond
-    (and min mean max) (<= min mean max)
-    (and min mean)     (<= min mean)
-    (and mean max)     (<= mean max)
-    (and min max)      (<= min max)
-    mean  true ; cannot have only min or only max
-    :else false))
-
-(s/def ::timeDelay
-  (s/and (s/keys :req-un [::delay/unit]
-                 :opt-un [::delay/min
-                          ::delay/mean
-                          ::delay/max
-                          ::delay/sd])
-         ordered-delay-values?))
+(s/def ::period
+  (s/keys :opt-un [::period/min
+                   ::period/mean
+                   ::period/unit]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Alignment
@@ -141,7 +123,7 @@
   (s/keys :req-un [::id]
           :opt-un [::weight
                    ::timeBounds
-                   ::timeDelay]))
+                   ::period]))
 
 (def alignments-spec
   (s/every alignment-spec :kind vector? :min-count 1))

@@ -1,11 +1,12 @@
 (ns com.yetanalytics.datasim.model
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.input.model           :as model]
-            [com.yetanalytics.datasim.math.random           :as random]
-            [com.yetanalytics.datasim.model.alignment       :as-alias alignment]
-            [com.yetanalytics.datasim.model.object-override :as-alias obj-override]
-            [com.yetanalytics.datasim.xapi.actor            :as actor]))
+            [com.yetanalytics.datasim.input.model            :as model]
+            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.model.alignment        :as-alias alignment]
+            [com.yetanalytics.datasim.model.alignment.period :as-alias alignment.period]
+            [com.yetanalytics.datasim.model.object-override  :as-alias obj-override]
+            [com.yetanalytics.datasim.xapi.actor             :as actor]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -14,9 +15,16 @@
 (s/def ::alignment/weights
   (s/map-of ::xs/iri ::random/weight))
 
-;; TODO: Temporal properties
+(s/def ::alignment.period/min int?)
+(s/def ::alignment.period/mean pos-int?)
+
+(s/def ::alignment/periods
+  (s/map-of ::xs/iri (s/keys :req-un [::alignment.period/min
+                                      ::alignment.period/mean])))
+
 (s/def ::alignments
-  (s/keys :opt-un [::alignment/weights]))
+  (s/keys :opt-un [::alignment/weights
+                   ::alignment/periods]))
 
 (s/def ::obj-override/weights
   (s/map-of :statement/object ::random/weight))
@@ -47,16 +55,58 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: Temporal properties
+(def ms-per-second
+  1000)
+
+(def ms-per-minute
+  60000)
+
+(def ms-per-hour
+  3600000)
+
+(def ms-per-day
+  86400000)
+
+(def ms-per-week
+  604800000)
+
+(defn- convert-time
+  "Convert time `t` into milliseconds based on the time `unit`. Coerces
+   any doubles into integers."
+  [t unit]
+  (long (case unit
+          :millis  t
+          :seconds (* t ms-per-second)
+          :minutes (* t ms-per-minute)
+          :hours   (* t ms-per-hour)
+          :days    (* t ms-per-day)
+          :weeks   (* t ms-per-week))))
+
+(defn- convert-time-period
+  [{:keys [min mean unit]}]
+  (let [unit* (or (some-> unit keyword) :minute)
+        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
+        min*  (or (some-> min (convert-time unit*)) 0)]
+    {:min  min*
+     :mean mean*}))
+
 (defn- mapify-alignments
   [alignments]
-  {:weights (reduce (fn [m {:keys [id weight]}] (assoc m id weight))
+  {:weights (reduce (fn [acc {:keys [id weight]}]
+                      (if (some? weight)
+                        (assoc acc id weight)
+                        acc))
+                    {}
+                    alignments)
+   :periods (reduce (fn [acc {:keys [id period]}]
+                      (assoc acc id (convert-time-period period)))
                     {}
                     alignments)})
 
 (defn- mapify-object-overrides
   [object-overrides]
-  {:weights (reduce (fn [m {:keys [weight object]}] (assoc m object weight))
+  {:weights (reduce (fn [m {:keys [weight object]}]
+                      (assoc m object weight))
                     {}
                     object-overrides)
    :objects (map :object object-overrides)})

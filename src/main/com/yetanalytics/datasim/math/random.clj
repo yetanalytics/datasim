@@ -2,7 +2,8 @@
   "Random number generation and probabilistic operations."
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]
-            [com.yetanalytics.datasim.util.maths :as maths])
+            [clojure.math :as math]
+            [com.yetanalytics.datasim.util.maths :refer [bound-probability]])
   (:refer-clojure :exclude
                   [rand rand-int rand-nth random-sample random-uuid shuffle])
   (:import [java.util UUID Random]))
@@ -103,7 +104,7 @@
 
 (s/fdef rand-gaussian
   :args (s/cat :rng  ::rng
-               :mean double?
+               :mean number?
                :sd   ::sd)
   :ret double?)
 
@@ -127,6 +128,19 @@
    a Bernoulli-distributed value."
   [rng prob]
   (< (rand rng) prob))
+
+;; See: https://en.wikipedia.org/wiki/Exponential_distribution#Random_variate_generation
+
+(s/fdef rand-exp
+  :args (s/cat :rng    ::rng
+               :lambda (s/and double? pos?))
+  :ret (s/double-in :min 0.0 :infinite? false :NaN? false))
+
+(defn rand-exp
+  "Generate a pseudorandom, exponentially distributed double value with
+   mean `(/ 1 lambda)`, where `lambda` is the so-called \"rate parameter\"."
+  [^Random rng lambda]
+  (* -1.0 (/ (math/log (rand rng)) lambda)))
 
 ;; Technically a UUID is also a number, right?
 
@@ -214,7 +228,7 @@
   ([rng prob coll weights]
    (filter (fn [x]
              (let [weight (get weights x default-weight)
-                   prob*  (maths/bound-probability (+ prob weight))]
+                   prob*  (bound-probability (+ prob weight))]
                (rand-boolean rng prob*)))
            coll)))
 

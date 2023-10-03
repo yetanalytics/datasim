@@ -52,7 +52,8 @@
   (merge profiles-map
          {:actor             actor
           :alignments        alignments
-          :sim-t             0
+          :time-ms           0
+          :duration-ms       0
           :seed              top-seed
           :template          default-template
           :pattern-ancestors pattern-ancestors

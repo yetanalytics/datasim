@@ -75,7 +75,6 @@
 (def no-concepts-profile-input
   (assoc const/simple-input :profiles [const/no-concept-profile]))
 
-(get-in const/simple-input [:parameters :end])
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,7 +111,29 @@
                       (assoc-in [:parameters :end] nil)
                       generate-map
                       (get bob-mbox)
-                      (nth 10000))))))
+                      (nth 10000)))))
+  (testing "We respect temporal properties for different actors"
+    (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
+          ms-in-hr  3600000
+          input     (-> const/simple-input
+                        (assoc :models const/temporal-models)
+                        (assoc-in [:parameters :end] nil))
+          result    (generate-map input)]
+      (testing "- Alice: all verbs happen on the order of minutes"
+        (is (->> (get result alice-mbox)
+                 (take 100)
+                 (every? (fn [statement]
+                           (let [diff (:duration-ms (meta statement))]
+                             (< diff ms-in-hr)))))))
+      (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
+        (is (->> (get result bob-mbox)
+                 (take 100)
+                 (every? (fn [statement]
+                           (let [verb (get-in statement ["verb" "id"])
+                                 diff (:duration-ms (meta statement))]
+                             (if (= verb satisfied)
+                               (< ms-in-hr diff)
+                               (< diff ms-in-hr)))))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
@@ -212,8 +233,8 @@
                                 alignments)
           result     (generate-seq input :select-agents [bob-mbox])
           act-types  (->> result
-                            ;; "satisfied" statements define object activity
-                            ;; via rules, hence we need to exclude them
+                          ;; "satisfied" statements define object activity
+                          ;; via rules, hence we need to exclude them
                           (filter (fn [{{verb-id "id"} "verb"}]
                                     (not= verb-id "http://adlnet.gov/expapi/verbs/satisfied")))
                           (map (fn [stmt]
@@ -245,22 +266,23 @@
              (get obj-freq override-2)
              (+ mean-2 (* 3 sd))))))
   (testing "Can apply object override and respect weights - only activity"
-    (let [input     (-> (assoc const/simple-input
-                               :models const/overrides-models)
+    (let [input     (-> const/simple-input
+                        (assoc :models const/overrides-models)
                         (update-in [:models 0 :objectOverrides 0]
                                    assoc
                                    :weight 1.0)
                         (update-in [:models 0 :objectOverrides 1]
                                    assoc
                                    :weight 0.0))
-          ret       (generate-seq input
+          result    (generate-seq input
                                   :select-agents [bob-mbox])
-          objects   (map get-object ret)]
+          objects   (map get-object result)]
       (is (every? #(= override-1 %) objects))))
   (testing "Can apply multiple personae"
-    (let [ret (generate-seq (update const/simple-input
-                                    :personae-array conj const/tc3-personae))
-          ids (map get-actor-mbox ret)]
+    (let [input  (update const/simple-input
+                         :personae-array conj const/tc3-personae)
+          result (generate-seq input)
+          ids    (map get-actor-mbox result)]
       (is (= #{;; simple personae
                alice-mailto
                bob-mailto

@@ -31,7 +31,7 @@
   ::model/object-overrides)
 
 ;; Simulation time, in ms since epoch.
-(s/def ::sim-t pos-int?)
+(s/def ::time-ms pos-int?)
 
 ;; A seed to generate with. Note that if you're calling more seeded
 ;; generators, you'll need to make a seed from this one for each.
@@ -47,38 +47,19 @@
 (s/def ::inputs
   (s/merge ::profile/profile-map
            ::reg/registration-map
-           (s/keys :req-un [::actor ::alignments ::sim-t ::seed]
+           (s/keys :req-un [::actor ::alignments ::time-ms ::seed]
                    :opt-un [::object-overrides
                             ::sub-registration])))
 
 ;; Metadata
 
-;; The duration, in milliseconds, of the returned statement.
-;; This is so we can resume processing AFTER the statement timestamp + duration.
-(s/def ::end-ms pos-int?)
+(s/def ::duration-ms pos-int?)
 
-(s/def ::timestamp-ms pos-int?)
-
-(s/def ::meta
-  (s/keys :req-un [::timestamp-ms
-                   ::end-ms]))
+(s/def ::meta (s/keys :req-un [::time-ms ::duration-ms ::template]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- time-ms->timestamp
-  [time-ms]
-  (.toString (Instant/ofEpochMilli time-ms)))
-
-(def additional-time-ms-mean 600000.0)
-
-(def additional-time-ms-sd 0.5)
-
-(defn- end-time-ms [start-time-ms rng]
-  (->> (random/rand-gaussian rng additional-time-ms-mean additional-time-ms-sd)
-       long
-       (+ start-time-ms)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Statement Object Override
@@ -107,19 +88,16 @@
 ;; Statement Generation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- time-ms->timestamp
+  [time-ms]
+  (.toString (Instant/ofEpochMilli time-ms)))
+
 (defn- base-statement
-  [template-base {:keys [sim-t registration]} rng]
+  [template-base {:keys [time-ms registration]} rng]
   (-> template-base
       (assoc-in ["id"] (random/rand-uuid rng))
-      (assoc-in ["timestamp"] (time-ms->timestamp sim-t))
+      (assoc-in ["timestamp"] (time-ms->timestamp time-ms))
       (assoc-in ["context" "registration"] registration)))
-
-;; TODO: Add duration ms in the meta?
-(defn- statement-meta
-  [template sim-t rng]
-  {:end-ms       (end-time-ms sim-t rng)
-   :timestamp-ms sim-t
-   :template     template})
 
 (s/fdef generate-statement
   :args (s/cat :args-map ::inputs)
@@ -147,15 +125,10 @@
    | `seed`               | The seed used to generate random numbers during generation.
    | `pattern-ancestors`  | The coll of Patterns visited en route to `template`.
    | `sub-registration`   | (NOT YET IMPLEMENTED) The sub-registration object of the Statement.
-   | `sim-t`              | The time (in ms) of this simulation.
+   | `time-ms`            | The time (in ms) that the statement occurs; becomes the timestamp.
+   | `duration-ms`        | The duration (in ms) since the previous statement.
    
-   Returns a Statement with a map of the following as metadata:
-
-   | Metadata       | Description
-   | ---            | ---
-   | `end-ms`       | The time (in epoch ms) after which the `actor` can continue.
-   | `timestamp-ms` | The time of the timestamp (in epoch ms). It must be `> sim-t` and `<= end-ms`; for simplicity we just make it `sim-t`.
-   | `template`     | The Template used to generate this Statement"
+   Returns a Statement with `template`, `time-ms`, and `duration-ms` as metadata."
   #_{:clj-kondo/ignore [:unused-binding]} ; unused args are used in helper fns
   [{:keys [type-iri-map
            verb-map
@@ -171,7 +144,8 @@
            pattern-ancestors
            registration
            sub-registration
-           sim-t]
+           time-ms
+           duration-ms]
     :as inputs}]
   (let [;; Template Prep
         template-id
@@ -187,11 +161,14 @@
         ;; Basics
         rng             (random/seed-rng seed)
         object-override (select-object-override rng object-overrides)
-        template-rules* (remove-object-rules template-rules object-override)]
+        template-rules* (remove-object-rules template-rules object-override)
+        statement-meta  {:time-ms     time-ms
+                         :duration-ms duration-ms
+                         :template    template}]
     (-> template-base
         (base-statement inputs rng)
         (apply-object-override object-override)
         (rule/apply-inclusion-rules template-rules* rng)
         (heal/complete-statement inputs rng)
         (rule/apply-exclusion-rules template-rules*)
-        (with-meta (statement-meta template sim-t rng)))))
+        (with-meta statement-meta))))
