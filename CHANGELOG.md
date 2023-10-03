@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.3.2] - 2023-10-03
+- Update server Jetty dependencies to v9.4.52 to address CVEs.
+
 ## [0.3.1] - 2023-07-24
 - Fix bug where the same `any` and `all` values are chosen within the same generated sequence.
 
