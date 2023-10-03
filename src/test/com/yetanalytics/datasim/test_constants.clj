@@ -52,6 +52,8 @@
   "dev-resources/models/simple_with_overrides.json")
 (def simple-temporal-models-filepath
   "dev-resources/models/simple_with_temporal.json")
+(def simple-repeat-max-models-filepath
+  "dev-resources/models/simple_with_repeat_max.json")
 (def tc3-models-filepath
   "dev-resources/models/tccc_dev.json")
 
@@ -142,6 +144,9 @@
 
 (def simple-temporal-models
   (input/from-location :models :json simple-temporal-models-filepath))
+
+(def simple-repeat-max-models
+  (input/from-location :models :json simple-repeat-max-models-filepath))
 
 (def temporal-models-coll
   (map (partial input/from-location :models :json)

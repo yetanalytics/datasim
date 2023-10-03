@@ -125,14 +125,22 @@
 
 (defn- zero-or-more->seq
   [{:keys [rng]} alignments-stack zero-or-more]
-  (let [{:keys [repeat-max]} (peek alignments-stack)]
-    (-> (random/rand-int rng (inc (or repeat-max default-repeat-max)))
+  (let [{:keys [repeat-max]} (peek alignments-stack)
+        repeat-max* (inc (or repeat-max default-repeat-max))]
+    (-> (random/rand-int rng repeat-max*)
         (repeat zero-or-more))))
+
+(comment
+  (def the-rng (random/seed-rng 100))
+  (frequencies (take 1000 (repeatedly #(inc (random/rand-int the-rng 5)))))
+  (frequencies (take 1000 (repeatedly #(random/rand-int the-rng (inc 5)))))
+  )
 
 (defn- one-or-more->seq
   [{:keys [rng]} alignments-stack one-or-more]
-  (let [{:keys [repeat-max]} (peek alignments-stack)]
-    (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
+  (let [{:keys [repeat-max]} (peek alignments-stack)
+        repeat-max* (or repeat-max default-repeat-max)]
+    (-> (inc (random/rand-int rng repeat-max*))
         (repeat one-or-more))))
 
 (defn- iterate-patterns
