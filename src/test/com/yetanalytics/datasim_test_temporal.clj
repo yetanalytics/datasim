@@ -42,6 +42,31 @@
           (take (count statements)))
      (map get-verb statements)))
 
+(defn- repeating-verbs?
+  "Similar to `cyclic-verbs?` but returns `true` even upon early termination."
+  [statements]
+  (->> (map (fn [stmt-1 stmt-2]
+              (let [v1 (get-verb stmt-1)
+                    v2 (get-verb stmt-2)]
+                (or (and (= verb-2 v2)
+                         (= verb-1 v1))
+                    (and (= verb-3 v2)
+                         (= verb-2 v1))
+                    (and (= verb-4 v2)
+                         (= verb-3 v1))
+                    (and (= verb-5 v2)
+                         (= verb-4 v1))
+                    (and (= verb-6 v2)
+                         (= verb-5 v1))
+                    (and (= verb-7 v2)
+                         (= verb-6 v1))
+                    (and (= verb-8 v2)
+                         (= verb-7 v1))
+                    (= verb-1 v2))))
+            statements
+            (rest statements))
+       (every? true?)))
+
 (defn- group-statements
   "Group `statements` by `as-keyword` (e.g. `:hour-of-day`) into
    a vector with `num-slots`. The time units start at 0 if `zero-indexed?`
@@ -376,6 +401,8 @@
           (<= 0 (get counts 2) 6)
           (<= 0 (get counts 3) 5)  ; 4 / 3 = 1.33...
           ))))
+    ;; Fixed periods
+    ;; Note that the counts may not exactly be total / period due to bounds
     (test-temporal
      "7a_millis_fixed_period"
      cyclic-verbs?
@@ -477,7 +504,8 @@
     (test-temporal
      "8a_hours_period_every_second_hour"
      not-empty?
-     (comp not cyclic-verbs?) ; early termination
+     (comp not cyclic-verbs?)
+     repeating-verbs?
      (partial every?
               (fn [statement]
                 (let [{:keys [timestamp]} (meta statement)
@@ -486,7 +514,8 @@
     (test-temporal
      "8b_hours_period_every_start_hour"
      not-empty?
-     (comp not cyclic-verbs?) ; early termination
+     (comp not cyclic-verbs?)
+     repeating-verbs?
      (partial every?
               (fn [statement]
                 (let [{:keys [timestamp]} (meta statement)
@@ -638,4 +667,29 @@
                             meta
                             :timestamp
                             (t/as :minute-of-hour)))))))
-            (every? true?))))))
+            (every? true?))))
+    (test-temporal
+     "11a_end_current_pattern"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?)
+    (test-temporal
+     "11b_end_parent_pattern"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?)
+    (test-temporal
+     "11c_end_all_pattern"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?)
+    (test-temporal
+     "11d_end_child_pattern"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?)
+    (test-temporal
+     "11e_end_child_template"
+     not-empty?
+     (comp not cyclic-verbs?)
+     repeating-verbs?)))
