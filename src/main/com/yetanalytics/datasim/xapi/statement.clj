@@ -4,7 +4,7 @@
             [clojure.walk       :as w]
             [java-time.api      :as jt]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model                  :as model]
             [com.yetanalytics.datasim.xapi.profile           :as profile]
             [com.yetanalytics.datasim.xapi.profile.template  :as t]

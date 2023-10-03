@@ -11,7 +11,7 @@
             [com.yetanalytics.pan.objects.template :as pan-template]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model                  :as model]
             [com.yetanalytics.datasim.model.temporal         :as temporal]
             [com.yetanalytics.datasim.xapi.profile.activity  :as act]

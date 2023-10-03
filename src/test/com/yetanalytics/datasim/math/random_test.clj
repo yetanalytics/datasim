@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.math :as math]
             [clojure.spec.test.alpha :as stest]
-            [com.yetanalytics.datasim.math.random :as r]))
+            [com.yetanalytics.datasim.util.random :as r]))
 
 (deftest random-functions-test
   (testing "Generative tests"

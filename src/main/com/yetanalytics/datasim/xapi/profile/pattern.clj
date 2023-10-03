@@ -7,7 +7,7 @@
             [com.yetanalytics.pan.objects.pattern    :as pattern]
             [com.yetanalytics.datasim.model          :as model]
             [com.yetanalytics.datasim.model.temporal :as temporal]
-            [com.yetanalytics.datasim.math.random    :as random]
+            [com.yetanalytics.datasim.util.random    :as random]
             [com.yetanalytics.datasim.xapi.profile   :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

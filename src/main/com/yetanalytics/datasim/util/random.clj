@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.math.random
+(ns com.yetanalytics.datasim.util.random
   "Random number generation and probabilistic operations."
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.gen.alpha :as sgen]

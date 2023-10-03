@@ -6,7 +6,7 @@
             [clojure.test.check.generators :as stest]
             [clojure.walk                  :as w]
             [xapi-schema.spec              :as xs]
-            [com.yetanalytics.datasim.math.random           :as random]
+            [com.yetanalytics.datasim.util.random           :as random]
             [com.yetanalytics.datasim.model                 :as model]
             [com.yetanalytics.datasim.xapi.path             :as xp]
             [com.yetanalytics.datasim.xapi.profile          :as profile]

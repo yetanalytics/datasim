@@ -3,7 +3,7 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.input.model            :as model]
             [com.yetanalytics.datasim.input.model.alignments :as model.alignments]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model.weights          :as-alias weights]
             [com.yetanalytics.datasim.model.pattern          :as-alias pattern]
             [com.yetanalytics.datasim.model.alignment        :as-alias alignment]

@@ -6,7 +6,7 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.schemer             :as schemer]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.xapi.path   :as xp]
             [com.yetanalytics.datasim.xapi.rule   :as r]
             [com.yetanalytics.datasim.xapi.profile :as profile]

@@ -4,15 +4,15 @@
             [clojure.core.async :as a]
             [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim                   :as-alias datasim]
-            [com.yetanalytics.datasim.model             :as model]
-            [com.yetanalytics.datasim.math.random       :as random]
-            [com.yetanalytics.datasim.xapi.actor        :as actor]
-            [com.yetanalytics.datasim.xapi.profile      :as p]
-            [com.yetanalytics.datasim.xapi.statement    :as statement]
-            [com.yetanalytics.datasim.util.sequence     :as su]
-            [com.yetanalytics.datasim.util.async        :as au]
-            [com.yetanalytics.datasim.model.temporal    :as temporal]))
+            [com.yetanalytics.datasim                :as-alias datasim]
+            [com.yetanalytics.datasim.model          :as model]
+            [com.yetanalytics.datasim.xapi.actor     :as actor]
+            [com.yetanalytics.datasim.xapi.profile   :as p]
+            [com.yetanalytics.datasim.xapi.statement :as statement]
+            [com.yetanalytics.datasim.util.random    :as random]
+            [com.yetanalytics.datasim.util.sequence  :as su]
+            [com.yetanalytics.datasim.util.async     :as au]
+            [com.yetanalytics.datasim.model.temporal :as temporal]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs

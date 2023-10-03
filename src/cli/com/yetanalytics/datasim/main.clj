@@ -5,7 +5,7 @@
             [com.yetanalytics.datasim.client           :as client]
             [com.yetanalytics.datasim.input            :as input]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.math.random      :as random]
+            [com.yetanalytics.datasim.util.random      :as random]
             [com.yetanalytics.datasim.util.errors      :as errors]
             [com.yetanalytics.datasim.util.io          :as dio])
   (:gen-class))

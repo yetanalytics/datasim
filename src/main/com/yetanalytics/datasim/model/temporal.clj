@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
             [java-time.api          :as t]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.input.model.alignments :as align])
   (:import [java.time LocalDateTime]))
 

@@ -1,7 +1,7 @@
 (ns com.yetanalytics.datasim.model.temporal-test
   (:require [clojure.test :refer [deftest testing is are]]
             [java-time.api :as t]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.model.temporal :as temporal]))
 
 (deftest time-helpers-test
