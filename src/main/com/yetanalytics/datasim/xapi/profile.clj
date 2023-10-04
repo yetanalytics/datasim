@@ -5,6 +5,7 @@
    of an entire Profile cosmos."
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
+            [java-time.api      :as t]
             [com.yetanalytics.pan.objects.profile  :as pan-profile]
             [com.yetanalytics.pan.objects.concept  :as pan-concept]
             [com.yetanalytics.pan.objects.pattern  :as pan-pattern]
@@ -13,7 +14,6 @@
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model                  :as model]
-            [com.yetanalytics.datasim.model.temporal         :as temporal]
             [com.yetanalytics.datasim.xapi.profile.activity  :as act]
             [com.yetanalytics.datasim.xapi.profile.extension :as ext]
             [com.yetanalytics.datasim.xapi.profile.pattern   :as pat]
@@ -179,7 +179,7 @@
                :alignments  ::model/alignments
                :seed        ::random/seed
                :max-retries pos-int?
-               :start-time  ::temporal/date-time)
+               :start-time  t/local-date-time?)
   :ret (s/every ::pat/template-map))
 
 (defn walk-profile-patterns

@@ -6,7 +6,8 @@
             [com.yetanalytics.pan.objects.template   :as template]
             [com.yetanalytics.pan.objects.pattern    :as pattern]
             [com.yetanalytics.datasim.model          :as model]
-            [com.yetanalytics.datasim.model.temporal :as temporal]
+            [com.yetanalytics.datasim.model.bounds   :as bounds]
+            [com.yetanalytics.datasim.model.periods  :as periods]
             [com.yetanalytics.datasim.util.random    :as random]
             [com.yetanalytics.datasim.xapi.profile   :as-alias profile]))
 
@@ -68,7 +69,7 @@
   ::model/pattern)
 
 (s/def ::template ::template/template)
-(s/def ::timestamp ::temporal/date-time)
+(s/def ::timestamp t/local-date-time?)
 (s/def ::time-since-last t/duration?)
 (s/def ::failure? boolean?)
 
@@ -88,8 +89,8 @@
                                                     ::max-retries
                                                     ::random/rng])
                :alignments-stack   (s/every ::alignments :kind vector?)
-               :prev-timestamp     ::temporal/date-time
-               :prev-timestamp-gen ::temporal/date-time
+               :prev-timestamp     t/local-date-time?
+               :prev-timestamp-gen t/local-date-time?
                :pattern            (s/or :pattern  ::pattern/pattern
                                          :template ::template/template))
   :ret (s/and (s/coll-of ::template-map)
@@ -193,7 +194,7 @@
   [alignments-stack timestamp]
   (loop [[alignments & rest-stack] alignments-stack]
     (if-some [{:keys [bounds bound-restarts]} alignments]
-      (if (temporal/bounded-time? bounds timestamp)
+      (if (bounds/bounded-time? bounds timestamp)
         ;; Bound is satisfied
         (recur rest-stack)
         ;; Bound is NOT satisfied, find the highest-level pattern to retry
@@ -213,7 +214,7 @@
   (let [periods (some :periods alignments-stack)]
     (loop [prev-timestamp init-timestamp
            retry-count    0]
-      (let [timestamp (temporal/add-periods prev-timestamp rng periods)
+      (let [timestamp (periods/add-periods prev-timestamp rng periods)
             [?bounds ?retry-id] (repeat-at alignments-stack timestamp)]
         (if-not ?bounds
           (with-meta (list {:template        template
@@ -222,7 +223,7 @@
                                                          timestamp)})
             {:timestamp     timestamp
              :timestamp-gen timestamp})
-          (if-some [next-time (temporal/next-bounded-time ?bounds timestamp)]
+          (if-some [next-time (bounds/next-bounded-time ?bounds timestamp)]
             (if (and (or (not ?retry-id)
                          (= template-id ?retry-id))
                      (< retry-count max-retries))

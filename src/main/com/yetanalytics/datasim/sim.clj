@@ -11,8 +11,7 @@
             [com.yetanalytics.datasim.xapi.statement :as statement]
             [com.yetanalytics.datasim.util.random    :as random]
             [com.yetanalytics.datasim.util.sequence  :as su]
-            [com.yetanalytics.datasim.util.async     :as au]
-            [com.yetanalytics.datasim.model.temporal :as temporal]))
+            [com.yetanalytics.datasim.util.async     :as au]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -37,11 +36,11 @@
                                             ::statement/actor
                                             ::statement/alignments]
                                    :opt-un [::statement/object-overrides])
-               :rng        ::random/rng
-               :alignments ::model/alignments
-               :start-time ::temporal/date-time
-               :?end-time  ::temporal/date-time
-               :?from-time ::temporal/date-time
+               :rng         ::random/rng
+               :alignments  ::model/alignments
+               :start-time  t/local-date-time?
+               :?end-time   t/local-date-time?
+               :?from-time  t/local-date-time?
                :zone-region string?)
   :ret ::statement-seq)
 
