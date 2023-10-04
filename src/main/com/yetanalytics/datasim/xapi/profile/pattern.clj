@@ -56,8 +56,6 @@
 ;; Pattern Walk
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def default-repeat-max 5)
-
 (s/def ::alignments-map
   (s/map-of ::pattern-map-id ::model/pattern))
 
@@ -65,8 +63,7 @@
 
 (s/def ::retry-id ::pattern-map-id)
 
-(s/def ::alignments
-  ::model/pattern)
+(s/def ::alignments ::model/pattern)
 
 (s/def ::template ::template/template)
 (s/def ::timestamp t/local-date-time?)
@@ -83,11 +80,14 @@
           :opt-un [::failure?
                    ::retry-id]))
 
+(def context-spec
+  (s/keys :req-un [::pattern-map
+                   ::alignments-map
+                   ::max-retries
+                   ::random/rng]))
+
 (s/fdef walk-pattern
-  :args (s/cat :context            (s/keys :req-un [::pattern-map
-                                                    ::alignments-map
-                                                    ::max-retries
-                                                    ::random/rng])
+  :args (s/cat :context            context-spec
                :alignments-stack   (s/every ::alignments :kind vector?)
                :prev-timestamp     t/local-date-time?
                :prev-timestamp-gen t/local-date-time?
@@ -127,20 +127,14 @@
 (defn- zero-or-more->seq
   [{:keys [rng]} alignments-stack zero-or-more]
   (let [{:keys [repeat-max]} (peek alignments-stack)
-        repeat-max* (inc (or repeat-max default-repeat-max))]
+        repeat-max* (inc (or repeat-max model/default-repeat-max))]
     (-> (random/rand-int rng repeat-max*)
         (repeat zero-or-more))))
-
-(comment
-  (def the-rng (random/seed-rng 100))
-  (frequencies (take 1000 (repeatedly #(inc (random/rand-int the-rng 5)))))
-  (frequencies (take 1000 (repeatedly #(random/rand-int the-rng (inc 5)))))
-  )
 
 (defn- one-or-more->seq
   [{:keys [rng]} alignments-stack one-or-more]
   (let [{:keys [repeat-max]} (peek alignments-stack)
-        repeat-max* (or repeat-max default-repeat-max)]
+        repeat-max* (or repeat-max model/default-repeat-max)]
     (-> (inc (random/rand-int rng repeat-max*))
         (repeat one-or-more))))
 
