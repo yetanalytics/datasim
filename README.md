@@ -206,7 +206,7 @@ The `validate-input` subcommand is used to validate and combine input files. The
 | `-p, --profile URI` | The location of an xAPI profile, can be used multiple times.
 | `-a, --actor-personae URI` | The location of an Actor Personae document indicating the actors in the sim.
 | `-m, --models URI` | The location of an Persona Model document, to describe alignments and overrides for the personae.
-| `-o, -parameters URI` | The location of simulation parameters document. (The "o" stands for "options.")
+| `-o, -parameters URI` | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
 | `-i, --input URI` | The location of a JSON file containing a combined simulation input spec.
 | `-c, --combined-input URI` | The location of the validated input to be produced.
 

@@ -1,10 +1,9 @@
 (ns com.yetanalytics.datasim.cli.input
   "CLI options and functions for sim inputs (including input validation)."
-  (:require [com.yetanalytics.datasim.cli.util         :as u]
-            [com.yetanalytics.datasim.input            :as input]
-            [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.math.random      :as random]
-            [com.yetanalytics.datasim.util.errors      :as errors]))
+  (:require [com.yetanalytics.datasim.cli.util    :as u]
+            [com.yetanalytics.datasim.input       :as input]
+            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.errors :as errors]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CLI Input Options
@@ -20,7 +19,7 @@
   "The location of an Persona Model document, to describe alignments and overrides for the personae.")
 
 (def parameters-desc
-  "The location of simulation parameters document.")
+  "The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present.")
 
 (def input-desc
   "The location of a JSON file containing a combined simulation input spec.")
@@ -48,8 +47,7 @@
    ["-o" "--parameters URI" "Parameters Location"
     :id       :parameters
     :desc     parameters-desc
-    :parse-fn (partial input/from-location :parameters :json)
-    :default  (params/apply-defaults)]
+    :parse-fn (partial input/from-location :parameters :json)]
    ["-i" "--input URI" "Pre-validated input location"
     :id       :input
     :desc     input-desc
@@ -84,8 +82,7 @@
     :desc     parameters-desc
     :parse-fn (partial input/from-location :parameters :json)
     :validate [(partial input/validate-throw :parameters)
-               "Failed to validate Parameters."]
-    :default (params/apply-defaults)]
+               "Failed to validate Parameters."]]
    ["-i" "--input URI" "Pre-validated input location"
     :id       :input
     :desc     input-desc
