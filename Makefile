@@ -2,8 +2,7 @@
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
-VERSION ?= 0.3.0
-MAIN_NS ?= com.yetanalytics.datasim.main
+VERSION ?= 0.4.0
 
 clean:
 	rm -rf target
@@ -11,7 +10,7 @@ clean:
 target/bundle/datasim_cli.jar:
 	mkdir -p target/bundle
 	rm -f pom.xml
-	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-cli :version '"$(VERSION)"' :jar target/bundle/datasim_cli.jar :main-class com.yetanalytics.datasim.main
+	clojure -X:depstar uberjar :no-pom false :sync-pom true :aliases '[:cli]' :aot true :group-id $(GROUP_ID) :artifact-id $(ARTIFACT_ID)-cli :version '"$(VERSION)"' :jar target/bundle/datasim_cli.jar :main-class com.yetanalytics.datasim.cli
 	rm -f pom.xml
 
 target/bundle/datasim_server.jar: # no AOT for this one
@@ -35,7 +34,7 @@ target/bundle: target/bundle/bin target/bundle/datasim_cli.jar target/bundle/dat
 
 bundle: target/bundle
 
-
+# Tests
 
 test-unit:
 	clojure -Adev:cli:run-tests
@@ -53,7 +52,7 @@ test-cli-output:
 	clojure -A:cli:run generate -i dev-resources/input/simple.json 
 
 test-bundle-output: bundle
-	cd target/bundle; bin/run.sh generate -i ../../dev-resources/input/simple.json 
+	cd target/bundle; bin/run.sh generate -i ../../dev-resources/input/simple.json
 
 validate-template:
 	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/0_vpc.yml
