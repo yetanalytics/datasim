@@ -26,6 +26,120 @@
   [opt-map id v]
   (update-in opt-map [:parameters id] (fnil conj []) v))
 
+(def ^:private validate-input-options
+  [["-p" "--profile URI" "xAPI Profile Location"
+    :id :profiles
+    :desc "The location of an xAPI profile, can be used multiple times."
+    :parse-fn (partial input/from-location :profile :json)
+    :assoc-fn conj-input]
+   ["-a" "--actor-personae URI" "Actor Personae Location"
+    :id :personae-array
+    :desc "The location of an Actor Personae document indicating the actors in the sim."
+    :parse-fn (partial input/from-location :personae :json)
+    :assoc-fn conj-input]
+   ["-m" "--models URI" "Persona Model Location"
+    :id :models
+    :desc "The location of an Persona Model document, to describe alignments and overrides for the personae."
+    :parse-fn (partial input/from-location :models :json)]
+   ["-o" "--parameters URI" "Parameters Location"
+    :id :parameters
+    :desc "The location of simulation parameters document."
+    :parse-fn (partial input/from-location :parameters :json)
+    :default (params/apply-defaults)]
+   ["-i" "--input URI" "Pre-validated input location"
+    :id :input
+    :desc "The location of a JSON file containing a combined simulation input spec."
+    :parse-fn (partial input/from-location :input :json)]
+   ["-c" "--combined-input URI" "Validated combined input location"
+    :id :location
+    :desc "The location of the validated input to be produced"]])
+
+(def ^:private input-options
+  [["-p" "--profile URI" "xAPI Profile Location"
+    :id       :profiles
+    :desc     "The location of an xAPI profile, can be used multiple times."
+    :parse-fn (partial input/from-location :profile :json)
+    :validate [(partial input/validate-throw :profile)
+               "Failed to validate profile."]
+    :assoc-fn conj-input]
+   ["-a" "--actor-personae URI" "Actor Personae Location"
+    :id       :personae-array
+    :desc     "The location of an Actor Personae document indicating the actors in the sim."
+    :parse-fn (partial input/from-location :personae :json)
+    :validate [(partial input/validate-throw :personae)
+               "Failed to validate personae."]
+    :assoc-fn conj-input]
+   ["-m" "--models URI" "Persona Model Location"
+    :id :models
+    :desc     "The location of an Persona Model document, to describe alignments and overrides for the personae."
+    :parse-fn (partial input/from-location :models :json)
+    :validate [(partial input/validate-throw :models)
+               "Failed to validate Models."]]
+   ["-o" "--parameters URI" "Parameters Location"
+    :id       :parameters
+    :desc     "The location of simulation parameters document."
+    :parse-fn (partial input/from-location :parameters :json)
+    :validate [(partial input/validate-throw :parameters)
+               "Failed to validate Parameters."]
+    :default (params/apply-defaults)]
+   ["-i" "--input URI" "Pre-validated input location"
+    :id       :input
+    :desc     "The location of a JSON file containing a combined simulation input spec."
+    :parse-fn (partial input/from-location :input :json)
+    :validate [(partial input/validate-throw :input)
+               "Failed to validate input."]]])
+
+(def ^:private generate-options
+  [[nil "--seed SEED" "Override input seed"
+    :id :override-seed
+    :parse-fn parse-long
+    :validate [int? "Seed is not an integer."]
+    :desc "An integer seed to override the one in the input spec. Use -1 for random."]
+   [nil "--actor AGENT_ID" "Select actor(s) by agent ID"
+    :id :select-agents
+    :multi true
+    :update-fn (fnil conj #{})
+    :desc "Pass an agent id in the format mbox::malto:bob@example.org to select actor(s)"]
+   [nil "--gen-profile IRI" "Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles."
+    :id :gen-profiles
+    :assoc-fn conj-param-input]
+   [nil "--gen-pattern IRI" "Only generate based on the given primary pattern. May be given multiple times to include multiple patterns."
+    :id :gen-patterns
+    :assoc-fn conj-param-input]])
+
+(def ^:private post-options
+  [["-E" "--endpoint URI" "LRS Endpoint for POST"
+    :id :endpoint
+    :desc "The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi"
+    :missing "[-E|--endpoint] argument is required for POST."]
+   ["-U" "--username URI" "LRS Basic auth username"
+    :id :username
+    :desc "The basic auth username for the LRS you wish to post to"]
+   ["-P" "--password URI" "LRS Basic auth password"
+    :id :password
+    :desc "The basic auth password for the LRS you wish to post to"]
+   ["-B" "--batch-size SIZE" "LRS POST batch size"
+    :id :batch-size
+    :default 25
+    :parse-fn parse-long
+    :validate [int? "Batch size is not an integer."]
+    :desc "The batch size for POSTing to an LRS"]
+   ["-C" "--concurrency CONC" "LRS POST concurrency"
+    :id :concurrency
+    :default 4
+    :parse-fn parse-long
+    :validate [int? "Concurrency is not an integer."]
+    :desc "The max concurrency of the LRS POST pipeline"]
+   ["-L" "--post-limit LIMIT" "LRS POST total statement limit"
+    :id :post-limit
+    :default 999
+    :parse-fn parse-long
+    :validate [int? "POST statement limit is not an integer."]
+    :desc "The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit."]
+   ["-A" "--[no-]async" "Async operation. Use --no-async if statements must be sent to server in timestamp order."
+    :id :async
+    :default true]])
+
 (defn cli-options
   "Generate CLI options, skipping validation if `validate?` is false"
   [validate?]
@@ -237,8 +351,84 @@
 
 ;; Main function ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def top-level-options
+  [["-h" "--help" "Display the top-level help guide."]])
+
+(def top-level-summary
+  (str "Usage: 'datasim <subcommand> <args>' or 'datasim [-h|--help]'.\n"
+       "\n"
+       " where the subcommand can be one of the following:\n"
+       "   validate-input: Validate the input and create an input JSON file.\n"
+       "   generate:       Generate statements from input and print to stdout.\n"
+       "   generate-post:  Generate statements from input and POST them to an LRS.\n"
+       "\n"
+       " Run 'datasim <subcommand> --help' for more info on each subcommand."))
+
+(defn- exec-subcommand [cli-options exec-fn args]
+  (let [{:keys [options summary errors]}
+        (cli/parse-opts args cli-options)
+        {:keys [help]}
+        options
+        errors* (not-empty errors)]
+    (cond
+      help    (println summary)
+      errors* (bail! errors*)
+      :else   (exec-fn options))))
+
+(defn- validate-input [args]
+  (exec-subcommand
+   (conj validate-input-options
+         ["-h" "--help"])
+   (fn [{:keys [location] :as options}]
+     (let [input (sim-input options)]
+       (assert-valid-input input)
+       (if location
+         (write-input! input location)
+         (write-input! input))))
+   args))
+
+(defn- generate [args]
+  (exec-subcommand
+   (concat input-options
+           generate-options
+           [["-h" "--help"]])
+   (fn [options]
+     (let [input (sim-input options)]
+       (assert-valid-input input)
+       (print-sim! input options)))
+   args))
+
+(defn- generate-post [args]
+  (exec-subcommand
+   (concat input-options
+           generate-options
+           post-options
+           [["-h" "--help"]])
+   (fn [options]
+     (let [input (sim-input options)]
+       (assert-valid-input input)
+       (post-sim! input options)))
+   args))
+
 (defn -main [& args]
-  (let [;; If the verb is "validate-input", we
+  (let [{:keys [options arguments summary errors]}
+        (cli/parse-opts args top-level-options
+                        :in-order true
+                        :summary-fn (fn [_] top-level-summary))
+        [subcommand & rest-args]
+        arguments]
+    (cond
+      (:help options)
+      (println summary)
+      (not subcommand)
+      (print "No subcommand entered.\n\n" summary)
+      :else
+      (case subcommand
+        "validate-input" (validate-input rest-args)
+        "generate"       (generate rest-args)
+        "generate-post"  (generate-post rest-args)
+        (bail! errors))))
+  #_(let [;; If the verb is "validate-input", we
         ;; skip tools.cli validation and do a
         ;; more in-depth one.
         cli-opts
