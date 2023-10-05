@@ -201,33 +201,33 @@ With no commands or `--help` it will give you the list of subcommands:
 
 The `validate-input` subcommand is used to validate and combine input files. These are its arguments:
 
-| Argument | Description
-| --- | ---
-| `-p, --profile URI` | The location of an xAPI profile, can be used multiple times.
+| Argument                   | Description
+| ---                        | ---
+| `-p, --profile URI`        | The location of an xAPI profile, can be used multiple times.
 | `-a, --actor-personae URI` | The location of an Actor Personae document indicating the actors in the sim.
-| `-m, --models URI` | The location of an Persona Model document, to describe alignments and overrides for the personae.
-| `-o, -parameters URI` | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
-| `-i, --input URI` | The location of a JSON file containing a combined simulation input spec.
+| `-m, --models URI`         | The location of an Persona Model document, to describe alignments and overrides for the personae.
+| `-o, -parameters URI`      | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
+| `-i, --input URI`          | The location of a JSON file containing a combined simulation input spec.
 | `-c, --combined-input URI` | The location of the validated input to be produced.
 
 The `generate` subcommand is used to generate statements from an input and print them to standard output. The inputs can be a combined `--input` location or a combination of `-p`, `-a`, `-m`, and `-o` inputs. The additional arguments are as follows:
-| Argument | Description
-| --- | ---
-| `--seed SEED` | An integer seed to override the one in the input spec. Use -1 for a random seed.
-| `--actor AGENT_ID` | Pass an agent id in the format 'mbox::mailto:[email]' to select actor(s)
+| Argument            | Description
+| ---                 | ---
+| `--seed SEED`       | An integer seed to override the one in the input spec. Use -1 for a random seed.
+| `--actor AGENT_ID`  | Pass an agent id in the format 'mbox::mailto:[email]' to select actor(s)
 | `--gen-profile IRI` | Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
 | `--gen-pattern IRI` | Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
 
 The `generate-post` subcommand is used to generate statements from an input and POST them to an LRS. In addition to the `generate` arguments, this subcommands has these additional arguments:
-| Argument | Description
-| --- | ---
-| `-E, --endpoint URI` | The xAPI endpoint of an LRS to POST to, ex: `https://lrs.example.org/xapi`
-| `-U, --username URI` | The Basic Auth username for the LRS.
-| `-P, --password URI` | The Basic Auth password for the LRS.
-| `-B, --batch-size SIZE` | The batch size, i.e. how many statements to send at a time, for POSTing.
-| `-C, --concurrency CONC` | The max concurrency of the LRS POST pipeline.
-| `-L, --post-limit LIMIT` | The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
-| `-A, --[no-]async` | Async operation. Use `--no-async`` if statements must be sent to server in timestamp order.
+| Argument                 | Description | Default
+| ---                      | ---         | ---
+| `-E, --endpoint URI`     | The xAPI endpoint of an LRS to POST to, ex: `https://lrs.example.org/xapi` | N/A
+| `-U, --username URI`     | The Basic Auth username for the LRS. | N/A
+| `-P, --password URI`     | The Basic Auth password for the LRS. | N/A
+| `-B, --batch-size SIZE`  | The batch size, i.e. how many statements to send at a time, for POSTing. | `25`
+| `-C, --concurrency CONC` | The max concurrency of the LRS POST pipeline. | `4`
+| `-L, --post-limit LIMIT` | The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit. | `999`
+| `-A, --[no-]async` | Async operation. Use `--no-async` if statements must be sent to server in timestamp order. | `true`
 
 The following is an example of a simple run. We first create a combined input file using `validate-input`:
 ```
