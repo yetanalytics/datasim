@@ -25,8 +25,8 @@
 (def input-desc
   "The location of a JSON file containing a combined simulation input spec.")
 
-(def combined-input-desc
-  "The location of the validated input to be produced.")
+(def validated-input-desc
+  "The location of the validated input to be produced. If not provided, the validated input will be printed to stdout instead.")
 
 ;; NOTE: For the `validate-input` subcommand, we skip tools.cli validation and
 ;; do more in-depth validation involving combined inputs.
@@ -54,9 +54,9 @@
     :id       :input
     :desc     input-desc
     :parse-fn (partial input/from-location :input :json)]
-   ["-c" "--combined-input URI" "Validated combined input location"
-    :id   :location
-    :desc combined-input-desc]])
+   ["-v" "--validated-input URI" "Validated combined input location"
+    :id   :validated-input
+    :desc validated-input-desc]])
 
 (def input-options
   [["-p" "--profile URI" "xAPI Profile Location"
@@ -145,10 +145,10 @@
   (u/exec-subcommand
    (conj validate-input-options
          ["-h" "--help"])
-   (fn [{:keys [location] :as options}]
+   (fn [{:keys [validated-input] :as options}]
      (let [input (sim-input options)]
        (assert-valid-input input)
-       (if location
-         (write-input! input location)
+       (if validated-input
+         (write-input! input validated-input)
          (write-input! input))))
    args))

@@ -44,10 +44,10 @@ test-unit-onyx:
 	clojure -Adev:cli:onyx:run-onyx-tests
 
 test-cli:
-	clojure -A:cli:run validate-input -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json -c dev-resources/input/simple.json
+	clojure -A:cli:run validate-input -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json -v dev-resources/input/simple.json
 
 test-cli-comprehensive:
-	clojure -A:cli:run validate-input -i dev-resources/input/simple.json -c dev-resources/input/simple.json
+	clojure -A:cli:run validate-input -i dev-resources/input/simple.json -v dev-resources/input/simple.json
 
 test-cli-output:
 	clojure -A:cli:run generate -i dev-resources/input/simple.json 
