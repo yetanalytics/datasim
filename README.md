@@ -201,14 +201,14 @@ With no commands or `--help` it will give you the list of subcommands:
 
 The `validate-input` subcommand is used to validate and combine input files. These are its arguments:
 
-| Argument                   | Description
-| ---                        | ---
-| `-p, --profile URI`        | The location of an xAPI profile, can be used multiple times.
-| `-a, --actor-personae URI` | The location of an Actor Personae document indicating the actors in the sim.
-| `-m, --models URI`         | The location of an Persona Model document, to describe alignments and overrides for the personae.
-| `-o, -parameters URI`      | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
-| `-i, --input URI`          | The location of a JSON file containing a combined simulation input spec.
-| `-c, --combined-input URI` | The location of the validated input to be produced.
+| Argument                    | Description
+| ---                         | ---
+| `-p, --profile URI`         | The location of an xAPI profile, can be used multiple times.
+| `-a, --actor-personae URI`  | The location of an Actor Personae document indicating the actors in the sim.
+| `-m, --models URI`          | The location of an Persona Model document, to describe alignments and overrides for the personae.
+| `-o, -parameters URI`       | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
+| `-i, --input URI`           | The location of a JSON file containing a combined simulation input spec.
+| `-v, --validated-input URI` | The location of the validated input to be produced.
 
 The `generate` subcommand is used to generate statements from an input and print them to standard output. The inputs can be a combined `--input` location or a combination of `-p`, `-a`, `-m`, and `-o` inputs. The additional arguments are as follows:
 | Argument            | Description
@@ -236,7 +236,7 @@ bin/run.sh validate-input \
     -a dev-resources/personae/simple.json \
     -m dev-resources/models/simple.json \
     -o dev-resources/parameters/simple.json \ 
-    -c dev-resources/input/simple.json
+    -v dev-resources/input/simple.json
 ```
 
 Once we have that sim specification, we can run the simulation using the `generate`:
