@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.main
+(ns com.yetanalytics.datasim.cli
   (:require [clojure.tools.cli  :as cli]
             [com.yetanalytics.datasim.cli.input    :as cli-input]
             [com.yetanalytics.datasim.cli.generate :as cli-gen]

@@ -18,7 +18,8 @@
  :aliases
  {:cli {:extra-paths ["src/cli"]
         :extra-deps {org.clojure/tools.cli {:mvn/version "1.0.219"}}}
-  :run {:main-opts ["-m" "com.yetanalytics.datasim.main"]}
+  ;; TODO: More CLI-specific name for :run alias
+  :run {:main-opts ["-m" "com.yetanalytics.datasim.cli"]}
   :dev {:extra-paths ["dev-resources" "src/dev"]
         :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
                      incanter/incanter-charts {:mvn/version "1.9.3"}
