@@ -52,7 +52,7 @@
     :parse-fn (partial input/from-location :input :json)]
    ["-c" "--combined-input URI" "Validated combined input location"
     :id :location
-    :desc "The location of the validated input to be produced"]])
+    :desc "The location of the validated input to be produced."]])
 
 (def ^:private input-options
   [["-p" "--profile URI" "xAPI Profile Location"
@@ -99,7 +99,7 @@
     :id :select-agents
     :multi true
     :update-fn (fnil conj #{})
-    :desc "Pass an agent id in the format mbox::malto:bob@example.org to select actor(s)"]
+    :desc "Pass an agent id in the format 'mbox::malito:[email]' to select actor(s)"]
    [nil "--gen-profile IRI" "Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles."
     :id :gen-profiles
     :assoc-fn conj-param-input]
@@ -114,22 +114,22 @@
     :missing "[-E|--endpoint] argument is required for POST."]
    ["-U" "--username URI" "LRS Basic auth username"
     :id :username
-    :desc "The basic auth username for the LRS you wish to post to"]
+    :desc "The Basic Auth username for the LRS."]
    ["-P" "--password URI" "LRS Basic auth password"
     :id :password
-    :desc "The basic auth password for the LRS you wish to post to"]
+    :desc "The Basic Auth password for the LRS."]
    ["-B" "--batch-size SIZE" "LRS POST batch size"
     :id :batch-size
     :default 25
     :parse-fn parse-long
     :validate [int? "Batch size is not an integer."]
-    :desc "The batch size for POSTing to an LRS"]
+    :desc "The batch size, i.e. how many statements to send at a time, for POSTing."]
    ["-C" "--concurrency CONC" "LRS POST concurrency"
     :id :concurrency
     :default 4
     :parse-fn parse-long
     :validate [int? "Concurrency is not an integer."]
-    :desc "The max concurrency of the LRS POST pipeline"]
+    :desc "The max concurrency of the LRS POST pipeline."]
    ["-L" "--post-limit LIMIT" "LRS POST total statement limit"
     :id :post-limit
     :default 999
@@ -357,12 +357,12 @@
 (def top-level-summary
   (str "Usage: 'datasim <subcommand> <args>' or 'datasim [-h|--help]'.\n"
        "\n"
-       " where the subcommand can be one of the following:\n"
-       "   validate-input: Validate the input and create an input JSON file.\n"
-       "   generate:       Generate statements from input and print to stdout.\n"
-       "   generate-post:  Generate statements from input and POST them to an LRS.\n"
+       "where the subcommand can be one of the following:\n"
+       "  validate-input: Validate the input and create an input JSON file.\n"
+       "  generate:       Generate statements from input and print to stdout.\n"
+       "  generate-post:  Generate statements from input and POST them to an LRS.\n"
        "\n"
-       " Run 'datasim <subcommand> --help' for more info on each subcommand."))
+       "Run 'datasim <subcommand> --help' for more info on each subcommand."))
 
 (defn- exec-subcommand [cli-options exec-fn args]
   (let [{:keys [options summary errors]}
