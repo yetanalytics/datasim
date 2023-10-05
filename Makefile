@@ -44,16 +44,16 @@ test-unit-onyx:
 	clojure -Adev:cli:onyx:run-onyx-tests
 
 test-cli:
-	clojure -A:cli:run -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json validate-input dev-resources/input/simple.json
+	clojure -A:cli:run validate-input -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json -c dev-resources/input/simple.json
 
 test-cli-comprehensive:
-	clojure -A:cli:run -i dev-resources/input/simple.json validate-input dev-resources/input/simple.json
+	clojure -A:cli:run validate-input -i dev-resources/input/simple.json -c dev-resources/input/simple.json
 
 test-cli-output:
-	clojure -A:cli:run -i dev-resources/input/simple.json generate
+	clojure -A:cli:run generate -i dev-resources/input/simple.json 
 
 test-bundle-output: bundle
-	cd target/bundle; bin/run.sh -i ../../dev-resources/input/simple.json generate
+	cd target/bundle; bin/run.sh generate -i ../../dev-resources/input/simple.json 
 
 validate-template:
 	AWS_PAGER="" aws cloudformation validate-template --template-body file://template/0_vpc.yml
