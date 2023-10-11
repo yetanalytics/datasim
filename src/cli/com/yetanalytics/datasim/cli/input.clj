@@ -113,7 +113,7 @@
                   (random/rand-unbound-int (random/rng))
                   override-seed)))))
 
-(defn assert-valid-input
+(defn validate-input*
   "Perform validation on `input` and fail w/ early termination if
    it is not valid.
    
@@ -122,7 +122,7 @@
    comprehensive spec from the options and check that."
   [input]
   (when-let [errors (not-empty (input/validate :input input))]
-    (u/bail! (errors/map-coll->strs errors))))
+    (errors/map-coll->strs errors)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Subcommand
@@ -135,7 +135,7 @@
    (input/to-file input :json location)
    (println (format "Input specification written to %s" location))))
 
-(defn validate-input
+(defn validate-input!
   "Combine and validate the arguments given in `args` and write them
    to `location` (if `location` is provided)."
   [args]
@@ -144,8 +144,9 @@
          ["-h" "--help"])
    (fn [{:keys [validated-input] :as options}]
      (let [input (sim-input options)]
-       (assert-valid-input input)
-       (if validated-input
-         (write-input! input validated-input)
-         (write-input! input))))
+       (if-some [errors (validate-input* input)]
+         {:errors errors}
+         (if validated-input
+           (write-input! input validated-input)
+           (write-input! input)))))
    args))

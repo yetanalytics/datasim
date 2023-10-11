@@ -130,7 +130,7 @@
         (case tag
           :fail
           (let [{:keys [status error]} ret]
-            (u/bail! [(client/post-error-message status error)]))
+           {:errors [(client/post-error-message status error)]})
           :success
           (do
             (dio/println-coll ret) ; Statement ID strings
@@ -145,8 +145,9 @@
                          (take post-limit))
         {:keys [fail]} (client/post-statements post-options statements)]
     (when (not-empty fail)
-      (u/bail! (for [{:keys [status error]} fail]
-                 (client/post-error-message status error))))))
+      {:errors (map (fn [{:keys [status error]}]
+                      (client/post-error-message status error))
+                    fail)})))
 
 (defn- post-sim!
   [input options]
@@ -172,7 +173,7 @@
 ;; Subcommands
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn generate
+(defn generate!
   "Generate statements based on simulation `args` and print them to stdout."
   [args]
   (u/exec-subcommand
@@ -181,11 +182,12 @@
            [["-h" "--help"]])
    (fn [options]
      (let [input (cli-input/sim-input options)]
-       (cli-input/assert-valid-input input)
-       (print-sim! input options)))
+       (if-some [errors (cli-input/validate-input* input)]
+         {:errors errors}
+         (print-sim! input options))))
    args))
 
-(defn generate-post
+(defn generate-post!
   "Generate statements based on simulation `args` and POST them to an LRS
    (whose endpoint and other properties are also in `args`)."
   [args]
@@ -196,6 +198,7 @@
            [["-h" "--help"]])
    (fn [options]
      (let [input (cli-input/sim-input options)]
-       (cli-input/assert-valid-input input)
-       (post-sim! input options)))
+       (if-some [errors (cli-input/validate-input* input)]
+         {:errors errors}
+         (post-sim! input options))))
    args))
