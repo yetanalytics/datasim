@@ -25,10 +25,13 @@
                      incanter/incanter-charts {:mvn/version "1.9.3"}
                      criterium/criterium {:mvn/version "0.4.5"}}}
   :test {:extra-paths ["src/test" "src/test_onyx"]
-         :extra-deps {same/ish {:mvn/version "0.1.6"}}}
+         :extra-deps {same/ish {:mvn/version "0.1.6"}
+                      clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}}}
   :run-tests
   {:extra-paths ["src/test"]
    :extra-deps {same/ish {:mvn/version "0.1.6"}
+                ; org.testcontainers/testcontainers {:mvn/version "1.19.1"}
+                clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}
                 io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
                                                       :git/sha "dfb30dd"}}
    :main-opts ["-m" "cognitect.test-runner"
