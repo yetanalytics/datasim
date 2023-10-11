@@ -62,9 +62,8 @@
       (if-let [batch (first batches)]
         (let [{:keys [status body] :as response}
               @(post-batch endpoint http-options batch)]
-          (if (= 200 status)
+          (if (<= 200 status 299)
             ;; Success!
-            ;; FIXME: Shouldn't other codes like 204 be supported?
             (let [statement-ids (decode-body body)]
               (when print-ids?
                 (dio/println-coll statement-ids))
