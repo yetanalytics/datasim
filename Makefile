@@ -37,7 +37,7 @@ bundle: target/bundle
 # Tests
 
 test-unit:
-	clojure -Adev:test:run-test
+	clojure -Adev:cli:server:test:run-test
 
 test-unit-onyx:
 	clojure -Adev:cli:onyx:run-onyx-test
