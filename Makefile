@@ -40,7 +40,7 @@ test-unit:
 	clojure -Adev:cli:server:test:run-test
 
 test-unit-onyx:
-	clojure -Adev:cli:onyx:run-onyx-test
+	clojure -Adev:cli:onyx:onyx-test:run-onyx-test
 
 test-cli:
 	clojure -A:cli:run-cli validate-input -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json -v dev-resources/input/simple.json
