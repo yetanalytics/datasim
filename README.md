@@ -295,13 +295,13 @@ By default the server starts at http://localhost:9090
 
 The API is configurable with the following runtime environment variables:
 
-| Variable            | Default                                                                                          | Notes                                                                                                  | Example           |
-|---------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-------------------|
-| CREDENTIALS         | <none>                                                                                           | Basic Authentication credentials required to call the API endpoints in the form of `username:password` | `datasim:datasim` |
-| API_ROOT_PATH       | <none>                                                                                           | Root path to prefix API routes. Must begin with a `/`, cannot end with a `/`.                          | `/foo`            |
-| API_HOST            | `0.0.0.0`                                                                                        | Host on which to bind the API server.                                                                  | `localhost`       |
-| API_PORT            | `9090`                                                                                           | Port on which to bind the API server.                                                                  | `8080`            |
-| API_ALLOWED_ORIGINS | <details>`https://yetanalytics.github.io,http://localhost:9091`<summary>(URLs)</summary></details> | CORS allowed origins for the API server, separated by commas.                                          | `*`               |
+| Variable | Default | Notes | Example |
+|---|---|---|---|
+| CREDENTIALS | `username:password` | Basic Authentication credentials required to call the API endpoints in the form of `username:password` | `datasim:datasim` |
+| API_ROOT_PATH | <none> | Root path to prefix API routes. Must begin with a `/`, cannot end with a `/`. | `/foo` |
+| API_HOST | `0.0.0.0`| Host on which to bind the API server. | `localhost` |
+| API_PORT | `9090` | Port on which to bind the API server. | `8080` |
+| API_ALLOWED_ORIGINS | <details>`https://yetanalytics.github.io,http://localhost:9091`<summary>(URLs)</summary></details> | CORS allowed origins for the API server, separated by commas. | `*` |
 
 Currently defaults are configured to work with the default settings in the DATASIM-UI project locally.
 
