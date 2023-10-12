@@ -16,94 +16,67 @@
         http-kit/http-kit {:mvn/version "2.7.0"}
         cheshire/cheshire {:mvn/version "5.11.0"}}
  :aliases
- {:cli {:extra-paths ["src/cli"]
-        :extra-deps {org.clojure/tools.cli {:mvn/version "1.0.219"}}}
-  ;; TODO: More CLI-specific name for :run alias
-  :run {:main-opts ["-m" "com.yetanalytics.datasim.cli"]}
-  :dev {:extra-paths ["dev-resources" "src/dev"]
-        :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
-                     incanter/incanter-charts {:mvn/version "1.9.3"}
-                     criterium/criterium {:mvn/version "0.4.5"}}}
-  :test {:extra-paths ["src/test" "src/test_onyx"]
-         :extra-deps {same/ish {:mvn/version "0.1.6"}
-                      clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}}}
-  :run-tests
-  {:extra-paths ["src/test"]
-   :extra-deps {same/ish {:mvn/version "0.1.6"}
-                ; org.testcontainers/testcontainers {:mvn/version "1.19.1"}
-                clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}
-                io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
-                                                      :git/sha "dfb30dd"}}
-   :main-opts ["-m" "cognitect.test-runner"
-               "-d" "src/test"]}
-  :run-onyx-tests
-  {:extra-paths ["src/test_onyx"]
-   :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
-                                                      :git/sha "dfb30dd"}}
-   :main-opts ["-m" "cognitect.test-runner"
-               "-d" "src/test_onyx"]}
-  :server
-  {:extra-paths ["src/server"]
-   :extra-deps
-   {;; Jetty deps - need to exclude and use v9.4.52 due to CVEs
-    io.pedestal/pedestal.jetty
-    {:mvn/version "0.6.0"
-     :exclusions [org.eclipse.jetty/jetty-server
-                  org.eclipse.jetty/jetty-servlet
-                  org.eclipse.jetty.alpn/alpn-api
-                  org.eclipse.jetty/jetty-alpn-server
-                  org.eclipse.jetty.http2/http2-server
-                  org.eclipse.jetty.websocket/websocket-api
-                  org.eclipse.jetty.websocket/websocket-servlet
-                  org.eclipse.jetty.websocket/websocket-server]}
-    org.eclipse.jetty/jetty-server       {:mvn/version "9.4.52.v20230823"}
-    org.eclipse.jetty/jetty-servlet      {:mvn/version "9.4.52.v20230823"}
-    org.eclipse.jetty.alpn/alpn-api      {:mvn/version "1.1.3.v20160715"}
-    org.eclipse.jetty/jetty-alpn-server  {:mvn/version "9.4.52.v20230823"}
-    org.eclipse.jetty.http2/http2-server {:mvn/version "9.4.52.v20230823"}
-    ;; Other server deps
-    io.pedestal/pedestal.service {:mvn/version "0.6.0"}
-    org.slf4j/slf4j-simple       {:mvn/version "1.7.28"}
-    clj-http/clj-http            {:mvn/version "3.12.3"}
-    environ/environ              {:mvn/version "1.1.0"}
-    ;; Buddy/BouncyCastle deps
-    buddy/buddy-auth {:mvn/version "3.0.323"
-                      :exclusions  [cheshire/cheshire
-                                    buddy/buddy-sign]}
-    buddy/buddy-sign {:mvn/version "3.5.346"
-                      :exclusions  [org.bouncycastle/bcprov-jdk18on]}
-    org.bouncycastle/bcprov-jdk18on {:mvn/version "1.75"}}
-   :main-opts   ["-m" "com.yetanalytics.datasim.server"]}
-  :onyx
-  {:extra-paths ["onyx-resources" "src/onyx"]
-   :extra-deps {com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.11.899"}
-                com.amazonaws/aws-java-sdk-core {:mvn/version "1.11.899"}
-                org.onyxplatform/onyx {:mvn/version "0.14.6"
-                                       :exclusions
-                                       ;; TODO: More exclusions probably
-                                       [org.clojure/clojure
-                                        org.clojure/core.async
-                                        org.slf4j/slf4j-nop
-                                        com.amazonaws/aws-java-sdk-s3]}
-                aleph/aleph {:mvn/version "0.4.7-alpha7"}
-                com.fzakaria/slf4j-timbre {:mvn/version "0.3.20"}
-                org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}
-                org.onyxplatform/onyx-http {:mvn/version "0.14.5.0"
-                                            :exclusions [aleph/aleph
-                                                         io.netty/netty-all]}
-                ;; for local repl
-                com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-                ;; for remote repl
-                nrepl/nrepl {:mvn/version "0.8.3"}
-                cider/cider-nrepl {:mvn/version "0.25.6"}
-                org.onyxplatform/onyx-peer-http-query {:mvn/version "0.14.5.1-SNAPSHOT"}
-                org.onyxplatform/onyx-amazon-s3 {:mvn/version "0.14.5.0"
-                                                 :exclusions [org.clojure/clojure
-                                                              org.onyxplatform/onyx
-                                                              com.amazonaws/aws-java-sdk-s3]}}}
-  :onyx-dev
-  {:extra-paths ["src/onyx_dev"]}
-
+ {:dev      {:extra-paths ["dev-resources" "src/dev"]
+             :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
+                          incanter/incanter-charts {:mvn/version "1.9.3"}
+                          criterium/criterium {:mvn/version "0.4.5"}}}
+  :test     {:extra-paths ["src/test" "src/test_onyx"]
+             :extra-deps {same/ish {:mvn/version "0.1.6"}
+                          clj-test-containers/clj-test-containers {:mvn/version "0.7.4"}}}
+  :run-test {:extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                                :git/sha "dfb30dd"}}
+             :main-opts ["-m" "cognitect.test-runner"
+                         "-d" "src/test"]}
+  :cli      {:extra-paths ["src/cli"]
+             :extra-deps {org.clojure/tools.cli {:mvn/version "1.0.219"}}}
+  :run-cli  {:main-opts ["-m" "com.yetanalytics.datasim.cli"]}
+  :server   {:extra-paths ["src/server"]
+             :extra-deps
+             {io.pedestal/pedestal.jetty   {:mvn/version "0.6.1"}
+              io.pedestal/pedestal.service {:mvn/version "0.6.0"}
+              org.slf4j/slf4j-simple       {:mvn/version "1.7.28"}
+              clj-http/clj-http            {:mvn/version "3.12.3"}
+              environ/environ              {:mvn/version "1.1.0"}
+              ;; Buddy/BouncyCastle deps
+              buddy/buddy-auth {:mvn/version "3.0.323"
+                                :exclusions  [cheshire/cheshire
+                                              buddy/buddy-sign]}
+              buddy/buddy-sign {:mvn/version "3.5.346"
+                                :exclusions  [org.bouncycastle/bcprov-jdk18on]}
+              org.bouncycastle/bcprov-jdk18on {:mvn/version "1.75"}}}
+  :run-server {:main-opts ["-m" "com.yetanalytics.datasim.server"]}
+  :onyx {:extra-paths ["onyx-resources" "src/onyx"]
+         :extra-deps {com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.11.899"}
+                      com.amazonaws/aws-java-sdk-core {:mvn/version "1.11.899"}
+                      org.onyxplatform/onyx {:mvn/version "0.14.6"
+                                             :exclusions
+                                             ;; TODO: More exclusions probably
+                                             [org.clojure/clojure
+                                              org.clojure/core.async
+                                              org.slf4j/slf4j-nop
+                                              com.amazonaws/aws-java-sdk-s3]}
+                      aleph/aleph {:mvn/version "0.4.7-alpha7"}
+                      com.fzakaria/slf4j-timbre {:mvn/version "0.3.20"}
+                      org.onyxplatform/lib-onyx {:mvn/version "0.14.1.0"}
+                      org.onyxplatform/onyx-http {:mvn/version "0.14.5.0"
+                                                  :exclusions [aleph/aleph
+                                                               io.netty/netty-all]}
+                      ;; for local repl
+                      com.bhauman/rebel-readline {:mvn/version "0.1.4"}
+                      ;; for remote repl
+                      nrepl/nrepl {:mvn/version "0.8.3"}
+                      cider/cider-nrepl {:mvn/version "0.25.6"}
+                      org.onyxplatform/onyx-peer-http-query {:mvn/version "0.14.5.1-SNAPSHOT"}
+                      org.onyxplatform/onyx-amazon-s3 {:mvn/version "0.14.5.0"
+                                                       :exclusions [org.clojure/clojure
+                                                                    org.onyxplatform/onyx
+                                                                    com.amazonaws/aws-java-sdk-s3]}}}
+  :onyx-dev      {:extra-paths ["src/onyx_dev"]}
+  :onyx-test     {:extra-paths ["src/test_onyx"]}
+  :run-onyx-test {:extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                                     :git/sha "dfb30dd"}}
+                  :main-opts ["-m" "cognitect.test-runner"
+                              "-d" "src/test_onyx"]}
   :depstar {:replace-deps ; tool usage is new in 2.x
             {seancorfield/depstar {:mvn/version "2.0.165"}}
             :ns-default hf.depstar
