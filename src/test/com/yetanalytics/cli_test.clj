@@ -1,39 +1,17 @@
 (ns com.yetanalytics.cli-test
   "Integration tests for the DATASIM CLI."
   (:require [clojure.test :refer [deftest testing is]]
-            [clj-test-containers.core :as tc]
+            [clojure.string :as cstr]
             [org.httpkit.client :as http]
+            [clj-test-containers.core :as tc]
+            [com.yetanalytics.datasim.input :as input]
             [com.yetanalytics.datasim.cli.input :as cli-input]
             [com.yetanalytics.datasim.cli.generate :as cli-gen]
-            [com.yetanalytics.datasim.input :as input]
-            [clojure.string :as cstr]))
+            [com.yetanalytics.datasim.test-containers :as ds-tc]))
 
-(def server-validate-command
-  ["/persephone/bin/server.sh" "validate"
-   "-p" "dev-resources/profiles/cmi5/fixed.json"])
-
-(def server-match-command
-  ["/persephone/bin/server.sh" "match"
-   "-p" "dev-resources/profiles/cmi5/fixed.json"])
-
-(def container-map
-  {:image-name    "yetanalytics/persephone:v0.9.1"
-   :exposed-ports [8080]})
-
-(def filesystem-map
-  {:host-path      "dev-resources/"
-   :container-path "/persephone/dev-resources/"
-   :mode           :read-only})
-
-(def validate-server-container
-  (-> (assoc container-map :command server-validate-command)
-      tc/create
-      (tc/bind-filesystem! filesystem-map)))
-
-(def match-server-container
-  (-> (assoc container-map :command server-match-command)
-      tc/create
-      (tc/bind-filesystem! filesystem-map)))
+(def json-post-header
+  {"X-Experience-Api-Version" "1.0.3"
+   "Content-Type" "application/json"})
 
 (deftest validate-input-test
   (testing "validate-input subcommand"
@@ -49,7 +27,7 @@
       (is (nil? (input/validate :input input*))))))
 
 (deftest generate-test
-  (let [cont (tc/start! validate-server-container)
+  (let [cont (tc/start! ds-tc/validate-server-container)
         host (:host cont)
         port (get (:mapped-ports cont) 8080)]
     (testing "generate subcommand"
@@ -64,10 +42,9 @@
                      #_{:clj-kondo/ignore [:unresolved-var]}
                      @(http/post
                        (format "http://%s:%d/statements" host port)
-                       {:headers {"X-Experience-Api-Version" "1.0.3"
-                                  "Content-Type" "application/json"}
-                        :body stmt-str
-                        :as :stream})]
+                       {:headers json-post-header
+                        :body    stmt-str
+                        :as      :stream})]
                  (= 204 (:status validate-res))))
              (take 25 (cstr/split-lines results))))))
     (testing "generate-post subcommand - sync"
@@ -81,7 +58,7 @@
         ;; Errors would indicate 4xx response from Persephone server
         (is (nil? (:errors results)))))
     (testing "generate-post subcommand - async"
-      (let [cont (tc/start! validate-server-container)
+      (let [cont (tc/start! ds-tc/validate-server-container)
             host (:host cont)
             port (get (:mapped-ports cont) 8080)
             res  (cli-gen/generate-post!
@@ -95,7 +72,7 @@
 
 (deftest generate-test-2
   (testing "generate-post subcommand on match serever"
-    (let [cont (tc/start! match-server-container)
+    (let [cont (tc/start! ds-tc/match-server-container)
           host (:host cont)
           port (get (:mapped-ports cont) 8080)
           res  (cli-gen/generate-post!
