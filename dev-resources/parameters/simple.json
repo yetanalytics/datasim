@@ -1,4 +1,6 @@
-{"start": "2019-11-18T11:38:39.219768Z",
- "end": "2019-11-19T11:38:39.219768Z",
- "timezone": "America/New_York",
- "seed": 42}
+{
+    "start": "2019-11-18T11:38:39.219768Z",
+    "end": "2019-11-19T11:38:39.219768Z",
+    "timezone": "America/New_York",
+    "seed": 42
+}
