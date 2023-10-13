@@ -82,7 +82,7 @@ and `weight` values (as described under `verbs`).
 - `patterns`: An array of objects with Pattern `id` and the following additional optional values:
   - `weights`: An array of child Pattern/Template `id` and `weight` values. Each weight affects how likely each of the Pattern's child patterns are chosen (for `alternates`) or how likely the child Pattern will be selected at all (for `optional`, for these `null` is also a valid option). This has no effect on `sequence`, `zeroOrMore`, or `oneOrMore` Patterns.
   - `repeat-max`: A positive integer representing the maximum number of times (exclusive) the child pattern can be generated. Only affects `zeroOrMore` and `oneOrMore` patterns.
-  - `bounds`: An array of objects containing key-value pairs where each value is an array of singular values (e.g. `"January"`) or pair arrays of start and end values (e.g. `["January", "October"]`). For example `{"years": [2023], "months": [[1 5]]}` describes an inclusive bound from January to May 2023. The following are valid bound values:
+  - `bounds`: An array of objects containing key-value pairs where each value is an array of singular values (e.g. `"January"`) or pair arrays of start and end values (e.g. `["January", "October"]`). For example `{"years": [2023], "months": [[1 5]]}` describes an inclusive bound from January to May 2023. If not present, indicates an infinite bound, such that any timestamp is valid. The following are valid bound values:
     - `years`: Any positive integer
     - `months`: `1` to `12`, or their name equivalents, i.e. `"January"` to `"December"`
     - `daysOfMonth:` `1` to `31` (though `29` or `30` are skipped at runtime for months that do not include these days)
@@ -90,7 +90,12 @@ and `weight` values (as described under `verbs`).
     - `hours`: `0` to `23`
     - `minutes`: `0` to `59`
     - `seconds`: `0` to `59`
-  - `period`: an object with `mean`, `min`, and `unit` properties. `min` specifies a minimum delay, `mean` the average delay (added on top of `min`), and `unit` the time unit for both (valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`). This only applies to Statement Templates and Patterns; child Patterns or Templates will override any `period` properties set by parent Patterns.
+  - `periods`: an array of objects that specify the amount of time between generated Statements. Only the first valid period in the array will be applied to generate the next Statement (see `bounds` property). Each period object has the following optional properties:
+    - `min`: a minimum amount of time between Statements; default is `0`
+    - `mean` the average amount of time between Statements (added on top of `min`); default is `1`
+    - `fixed`: a fixed amount of time between Statements; overrides `min` and `mean`
+    - `unit`: the time unit for all temporal values. Valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`; the default is `minutes`
+    - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A nonexisting `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array. At least one period must not have a `bounds` value, so it can act as the default period.
   - `retry`: One of four options that determine Statement generation retry behavior in the event where a time bound is exceeded:
     - `null` (or not present): Terminate the generation on the current Pattern immediately, and move again with the next Pattern's generation.
     - `"pattern"`: Retry generation of this Pattern if this Pattern's bound is exceeded.

@@ -9,11 +9,13 @@
         "patterns": [
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfieds",
-                "period": {
-                    "min": 1,
-                    "mean": 1.0,
-                    "unit": "hours"
-                }
+                "periods": [
+                    {
+                        "min": 1,
+                        "mean": 1.0,
+                        "unit": "hours"
+                    }
+                ]
             }
         ]
     },
@@ -29,8 +31,7 @@
                 "id": "https://w3id.org/xapi/cmi5#typicalsessions",
                 "bounds": [
                     {
-                        "months": [["January", "October"], "December"],
-                        "years": [2019]
+                        "months": [["January", "October"], "December"]
                     }
                 ]
             }
@@ -40,7 +41,7 @@
                 "id": "https://w3id.org/xapi/cmi5#satisfied",
                 "bounds": [
                     {
-                        "minutes": [[0, 35], [50, 59]]
+                        "minutes": [[0, 10]]
                     }
                 ]
             }

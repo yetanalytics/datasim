@@ -1,5 +1,6 @@
 (ns com.yetanalytics.datasim.xapi.profile.pattern
-  "Creation of `pattern-walk-fn` for Profile compilation."
+  "Pattern map compilation and walking. This is where the magic of
+   profile simulation happens."
   (:require [clojure.spec.alpha :as s]
             [java-time.api      :as t]
             [com.yetanalytics.pan.objects.template   :as template]
@@ -188,11 +189,11 @@
 
 (defn- visit-template
   [{:keys [rng] :as ctx}
-   {:keys [period bounds retry retry-id] :as alignments}
+   {:keys [periods bounds retry retry-id] :as alignments}
    prev-timestamp
    prev-timestamp-gen
    template]
-  (let [timestamp (temporal/add-period prev-timestamp rng period)]
+  (let [timestamp (temporal/add-periods prev-timestamp rng periods)]
     (if (temporal/bounded-time? bounds timestamp)
       (with-meta (list {:template        template
                         :timestamp       timestamp
@@ -279,9 +280,4 @@
         (t/local-date-time the-instant "UTC")
         {:alternates [:pattern-A #_:pattern-B]})
        (take 8))
-  
-  (temporal/next-bounded-time
-   (temporal/convert-bounds [{:years [2023 2024]
-                              :minutes [0]}])
-   (t/local-date-time the-instant "UTC"))
   )

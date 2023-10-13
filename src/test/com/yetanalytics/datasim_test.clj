@@ -3,7 +3,9 @@
             [clojure.math       :as math]
             [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
+            [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.model.temporal :refer [ms-per-hour]]
             [com.yetanalytics.datasim.test-constants :as const]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim :refer [generate-map
@@ -75,6 +77,9 @@
 (def no-concepts-profile-input
   (assoc const/simple-input :profiles [const/no-concept-profile]))
 
+(def satisfied-verb
+  "http://adlnet.gov/expapi/verbs/satisfied")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,32 +117,46 @@
                       (get bob-mbox)
                       (nth 10000)))))
   (testing "We respect temporal properties for different actors"
-    (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
-          ms-in-hr  3600000
-          input     (-> const/simple-input
-                        (assoc :models const/temporal-models)
-                        (assoc-in [:parameters :end] nil))
-          result    (generate-map input)]
+    (let [input  (-> const/simple-input
+                     (assoc :models const/temporal-models)
+                     (assoc-in [:parameters :end] nil))
+          result (generate-map input)]
       (testing "- Alice: all verbs happen on the order of minutes (the default)"
         (is (->> (get result alice-mbox)
                  (take 100)
-                 (every? (fn [statement]
-                           (let [diff (:time-since-ms (meta statement))]
-                             (> ms-in-hr diff)))))))
+                 (every?
+                  (fn [statement]
+                    (let [diff (:time-since-ms (meta statement))]
+                      (> ms-per-hour diff)))))))
       (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
         (is (->> (get result bob-mbox)
                  (take 100)
-                 (every? (fn [statement]
-                           (let [verb (get-in statement ["verb" "id"])
-                                 diff (:time-since-ms (meta statement))]
-                             (if (= verb satisfied)
-                               (< ms-in-hr diff)
-                               (> ms-in-hr diff))))))))
-      (testing "- Fred: generation cannot occur due to bounds"
-        (is (= '()
-               (->> (get result fred-mbox)
-                    ;; Safety measure to avoid actually infinite seq
-                    (take 100))))))))
+                 (every?
+                  (fn [statement]
+                    (let [verb (get-in statement ["verb" "id"])
+                          diff (:time-since-ms (meta statement))]
+                      (if (= verb satisfied-verb)
+                        ;; Satisfied period: 1 hour min + 1 hour mean
+                        (< ms-per-hour diff)
+                        ;; Default period: no min + 1 minute mean
+                        (> ms-per-hour diff))))))))
+      (testing "- Fred: bounds are satisfied for each verb"
+        (is (->> (get result fred-mbox)
+                 (take 100)
+                 (every?
+                  (fn [statement]
+                    (let [verb   (get-in statement ["verb" "id"])
+                          ts     (get-in statement ["timestamp"])
+                          ts-ldt (-> ts
+                                     t/zoned-date-time
+                                     (t/local-date-time "America/New_York"))
+                          ts-min (t/as ts-ldt :minute-of-hour)
+                          ts-mon (t/as ts-ldt :month-of-year)]
+                      (if (= verb satisfied-verb)
+                        ;; Satisfied bound: {"minutes": [[0, 10]]}
+                        (<= 0 ts-min 10)
+                        ;; Typical Sessions bound: {"months": [[1, 10], 12]}
+                        (not= 11 ts-mon)))))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
