@@ -36,7 +36,7 @@ The inputs to DATASIM consist of four parts, each represented by JSON. They are 
 
 One or more valid xAPI Profiles are required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
 
-Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `gen-profiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `gen-patterns` option by supplying one or more pattern IDs.
+Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `genProfiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `genPatterns` option by supplying one or more pattern IDs.
 
 #### Personae
 

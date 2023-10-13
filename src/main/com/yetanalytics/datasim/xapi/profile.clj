@@ -98,13 +98,13 @@
   :ret ::type-iri-map)
 
 (defn select-primary-patterns
-  "Given `type-iri-map` and the `gen-profiles` and `gen-patterns` params,
+  "Given `type-iri-map` and the `genProfiles` and `genPatterns` params,
    update the Pattern map to further specify primary patterns for generation.
-   Primary patterns in this context must be specified by `gen-profiles` or
-   `gen-patterns`, or else they will no longer be counted as primary patterns."
-  [type-iri-map {:keys [gen-profiles gen-patterns]}]
-  (let [?profile-set   (some-> gen-profiles not-empty set)
-        ?pattern-set   (some-> gen-patterns not-empty set)
+   Primary patterns in this context must be specified by `genProfiles` or
+   `genPatterns`, or else they will no longer be counted as primary patterns."
+  [type-iri-map {:keys [genProfiles genPatterns]}]
+  (let [?profile-set   (some-> genProfiles not-empty set)
+        ?pattern-set   (some-> genPatterns not-empty set)
         primary-pat?   (fn [profile-id pattern-id]
                          (and (or (nil? ?profile-set)
                                   (contains? ?profile-set profile-id))

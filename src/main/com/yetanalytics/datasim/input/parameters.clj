@@ -52,11 +52,11 @@
   pos-int?)
 
 ;; Restrict Generation to these profile IDs
-(s/def ::gen-profiles
+(s/def ::genProfiles
   (s/every ::prof/id))
 
 ;; Restrict Generation to these pattern IDs
-(s/def ::gen-patterns
+(s/def ::genPatterns
   (s/every ::pat/id))
 
 (defn- ordered-timestamps?
@@ -83,8 +83,8 @@
                     ::from
                     ::max
                     ::max-retries
-                    ::gen-profiles
-                    ::gen-patterns])
+                    ::genProfiles
+                    ::genPatterns])
    ordered-timestamps?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

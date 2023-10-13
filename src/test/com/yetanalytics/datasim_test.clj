@@ -225,22 +225,22 @@
           [s1' & _]   (generate-seq from-input)]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
-  (testing "Respects `gen-profiles` param (w/ multiple profiles)"
+  (testing "Respects `genProfiles` param (w/ multiple profiles)"
     (let [input    (update double-profile-input
                            :parameters
                            assoc
-                           :gen-profiles [cmi5-id])
+                           :genProfiles [cmi5-id])
           result   (generate-seq input)
           cat-acts (map get-context-category-activities result)]
       (is (= [[{"id" cmi5-version-id}]
               [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
                {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
              (distinct cat-acts)))))
-  (testing "Respects `gen-patterns` param (w/ multiple profiles)"
+  (testing "Respects `genPatterns` param (w/ multiple profiles)"
     (let [input    (update double-profile-input
                            :parameters
                            assoc
-                           :gen-patterns [tla-completed-session-id])
+                           :genPatterns [tla-completed-session-id])
           result   (generate-seq input)
           cat-acts (map get-context-category-activities result)]
       (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
@@ -250,7 +250,7 @@
                        (update :profiles conj const/referential-profile)
                        (update :parameters
                                assoc
-                               :gen-patterns [referential-completed-session-id]))
+                               :genPatterns [referential-completed-session-id]))
           result   (generate-seq input)
           cat-acts (map get-context-category-activities result)]
       (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?

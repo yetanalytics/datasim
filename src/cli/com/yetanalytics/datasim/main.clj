@@ -115,10 +115,10 @@
     :id :async
     :default true]
    [nil "--gen-profile IRI" "Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles."
-    :id :gen-profiles
+    :id :genProfiles
     :assoc-fn conj-param-input]
    [nil "--gen-pattern IRI" "Only generate based on the given primary pattern. May be given multiple times to include multiple patterns."
-    :id :gen-patterns
+    :id :genPatterns
     :assoc-fn conj-param-input]
    ;; Help
    ["-h" "--help"]])
