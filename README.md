@@ -126,7 +126,7 @@ An example of a model array with valid `personae`, `verbs`, and `templates` is s
                         "months": [["January", "May"]]
                     }
                 ],
-                "boundRetries": [
+                "boundRestarts": [
                     "https://w3id.org/xapi/cmi5#toplevel"
                 ],
                 "period": {
@@ -151,10 +151,12 @@ The simulation parameters input covers the details of the simulation not covered
         "max": 200,
         "timezone": "America/New_York",
         "seed": 42,
-        "max-retries": 10
+        "maxRestarts": 10
     }
 ```
-Note the `max-retries` parameter; this is to limit the amount of times a particular Pattern is repeated when a `bounds` is violated.
+Note the `maxRestarts` parameter; this is to limit the amount of times a particular Pattern is restarted when a `bounds` is violated.
+
+Additional parameters include `genPatterns` and `genProfiles`, which are explained in more detail under [xAPI Profiles](#xapi-profiles).
 
 #### (Alternatively) Simulation Specification
 

@@ -175,11 +175,11 @@
             (partial tmp/update-parsed-rules-map profile-map*))))
 
 (s/fdef walk-profile-patterns
-  :args (s/cat :profile-map ::profile-map
-               :alignments  ::model/alignments
-               :seed        ::random/seed
-               :max-retries pos-int?
-               :start-time  t/local-date-time?)
+  :args (s/cat :profile-map  ::profile-map
+               :alignments   ::model/alignments
+               :seed         ::random/seed
+               :max-restarts pos-int?
+               :start-time   t/local-date-time?)
   :ret (s/every ::pat/template-map))
 
 (defn walk-profile-patterns
@@ -187,12 +187,12 @@
   [{pattern-iri-map :pattern-map}
    {pattern-alignments :patterns}
    seed
-   max-retries
+   max-restarts
    start-time]
   (let [pattern-rng  (random/seed-rng seed)
         root-pattern (get pattern-iri-map ::pat/root)
         context      {:pattern-map    pattern-iri-map
                       :alignments-map pattern-alignments
-                      :max-retries    max-retries
+                      :max-restarts   max-restarts
                       :rng            pattern-rng}]
     (pat/walk-pattern context [] start-time start-time root-pattern)))

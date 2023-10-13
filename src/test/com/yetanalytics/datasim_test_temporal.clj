@@ -302,7 +302,7 @@
                        (zero? (mod hr 2))
                        (zero? (mod min 2)))))))
     ;; Bounds w/ hour periods
-    ;; Should cause early termination due to running into max-retries param
+    ;; Should cause early termination due to running into maxRestarts param
     (test-temporal
      "6a_hours_period_every_second_hour"
      not-empty?
