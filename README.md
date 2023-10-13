@@ -90,14 +90,14 @@ and `weight` values (as described under `verbs`).
     - `hours`: `0` to `23`
     - `minutes`: `0` to `59`
     - `seconds`: `0` to `59`
-  - `boundRetries`: An array of Pattern IDs to retry if the timestamp violates `bounds`. The top-most Pattern in `boundRetries` will be tried, e.g. if Pattern A is a parent of Pattern B and both are listed in `boundRetries`, it will be Pattern A that is retried. If `boundRetries` is empty or not present, or if none of the ancestor Patterns are included, then Statement generation will continue at its current point.
+  - `boundRestarts`: An array of Pattern IDs to retry if the timestamp violates `bounds`. The top-most Pattern in `boundRestarts` will be tried, e.g. if Pattern A is a parent of Pattern B and both are listed in `boundRestarts`, it will be Pattern A that is retried. If `boundRestarts` is empty or not present, or if none of the ancestor Patterns are included, then Statement generation will continue at its current point.
   - `periods`: An array of objects that specify the amount of time between generated Statements. Only the first valid period in the array will be applied to generate the next Statement (see `bounds` property). Each period object has the following optional properties:
     - `min`: a minimum amount of time between Statements; default is `0`
     - `mean` the average amount of time between Statements (added on top of `min`); default is `1`
     - `fixed`: a fixed amount of time between Statements; overrides `min` and `mean`
     - `unit`: the time unit for all temporal values. Valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`; the default is `minutes`
     - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A nonexisting `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array. At least one period must not have a `bounds` value, so it can act as the default period.
-- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `boundRetries`, and `period` properties, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
+- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `boundRestarts`, and `period` properties, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
 - `objectOverrides`: An array of objects containing (xAPI) `object` and `weight`. If present, these objects will overwrite any that would have been set by the Profile.
 
 An example of a model array with valid `personae`, `verbs`, and `templates` is shown below:
