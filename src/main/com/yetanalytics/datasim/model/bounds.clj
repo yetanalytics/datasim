@@ -201,16 +201,26 @@
     :daysOfMonth :days-of-month
     unit))
 
+(defn- values->range
+  [start end ?step]
+  (let [start* (string->int start)
+        end*   (inc (string->int end))]
+    (if ?step
+      (range start* end* ?step)
+      (range start* end*))))
+
 (defn- reduce-values
   [vs* v]
-  (if (coll? v)
-    (let [[start end ?step] v
-          start* (string->int start)
-          end*   (inc (string->int end))
-          vrange (if ?step
-                   (range start* end* ?step)
-                   (range start* end*))]
+  (cond
+    (map? v)
+    (let [{:keys [start end step]} v
+          vrange (values->range start end step)]
       (into vs* vrange))
+    (coll? v)
+    (let [[start end step] v
+          vrange (values->range start end step)]
+      (into vs* vrange))
+    :else
     (let [v* (string->int v)]
       (conj vs* v*))))
 

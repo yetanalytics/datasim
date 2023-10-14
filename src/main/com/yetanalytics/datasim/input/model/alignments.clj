@@ -36,6 +36,13 @@
 ;; Time Bounds
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::bounds/start nat-int?)
+(s/def ::bounds/end nat-int?)
+(s/def ::bounds/step pos-int?)
+
+(defn- interval-map->tuple [{:keys [start end]}]
+  [start end])
+
 (defn- interval? [[start end]]
   (< start end))
 
@@ -47,6 +54,12 @@
                          interval?)
                   :step-interval
                   (s/and (s/tuple ~scalar-spec ~scalar-spec pos-int?)
+                         interval?)
+                  :map
+                  (s/and (s/keys :req-un [::bounds/start ::bounds/end]
+                                 :opt-un [::bounds/step])
+                         (s/conformer interval-map->tuple)
+                         (s/tuple ~scalar-spec ~scalar-spec)
                          interval?))
             :kind vector?
             :min-count 1

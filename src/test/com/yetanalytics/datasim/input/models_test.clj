@@ -39,7 +39,7 @@
                     :minutes     [[0 59 2]]
                     :hours       [[8 12]]
                     :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
-                    :daysOfMonth [[1 10] [21 30]]
+                    :daysOfMonth [{:start 1 :end 10} {:start 21 :end 30 :step 2}]
                     :months      [1 ["April" "May"]]
                     :years       [2023 2024]}]
    :boundRestarts ["http://www.whatever.com/pattern1"]

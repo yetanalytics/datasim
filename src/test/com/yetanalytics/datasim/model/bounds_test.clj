@@ -91,14 +91,14 @@
                       :minutes       '(1)
                       :hours         '(8 9 10 11 12)
                       :days-of-week  '(0 2 4)
-                      :days-of-month '(1 2 3 4 5 6 7 8 9 10 21 22 23 24 25 26 27 28 29 30)
+                      :days-of-month '(1 2 3 4 5 6 7 8 9 10 21 23 25 27 29)
                       :months        '(1 4 5)
                       :years         '(2023 2024)}
              :sets   {:seconds       #{1 2 3}
                       :minutes       #{1}
                       :hours         #{8 9 10 11 12}
                       :days-of-week  #{0 2 4}
-                      :days-of-month #{1 2 3 4 5 6 7 8 9 10 21 22 23 24 25 26 27 28 29 30}
+                      :days-of-month #{1 2 3 4 5 6 7 8 9 10 21 23 25 27 29}
                       :months        #{1 4 5}
                       :years         #{2023 2024}}}]
            (bounds/convert-bounds
@@ -106,9 +106,19 @@
               :minutes     [1]
               :hours       [[8 12]]
               :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
-              :daysOfMonth [[1 10] [21 30]]
+              :daysOfMonth [{:start 1 :end 10} {:start 21 :end 30 :step 2}]
               :months      [1 ["April" "May"]]
               :years       [2023 2024]}])))
+    (is (= [{:ranges {:seconds '(0)
+                      :minutes '(0)
+                      :hours   '(0)}
+             :sets   {:seconds #{0}
+                      :minutes #{0}
+                      :hours   #{0}}}]
+           (bounds/convert-bounds
+            [{:seconds [0]
+              :minutes [[0 0]]
+              :hours   [{:start 0 :end 0}]}])))
     (is (= [{:ranges {:seconds       '(0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30)
                       :minutes       '(0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30)
                       :hours         '(0 6 12 18)
