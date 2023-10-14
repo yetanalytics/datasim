@@ -44,7 +44,7 @@
   [start end])
 
 (defn- interval? [[start end]]
-  (< start end))
+  (<= start end))
 
 (defmacro bound-spec [scalar-spec]
   `(s/every (s/or :scalar
