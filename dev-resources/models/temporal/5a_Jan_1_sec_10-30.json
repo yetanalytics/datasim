@@ -1,0 +1,17 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [1],
+                        "seconds": [[10, 30]]
+                    }
+                ]
+            }
+        ]
+    }
+]

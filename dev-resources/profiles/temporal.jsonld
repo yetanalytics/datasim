@@ -1,0 +1,337 @@
+{
+    "id": "http://yetanalytics.com/temporal",
+    "type": "Profile",
+    "@context": "https://w3id.org/xapi/profiles/context",
+    "conformsTo": "https://w3id.org/xapi/profiles#1.0",
+    "prefLabel": {
+        "en": "Temporal Profile"
+    },
+    "definition": {
+        "en": "Profile to test temporal and other modeling properties."
+    },
+    "versions": [
+        {
+            "id": "http://yetanalytics.com/temporal/v1",
+            "generatedAtTime": "2023-09-26T12:00:00-05:00"
+        }
+    ],
+    "author": {
+        "type": "Organization",
+        "name": "Yet Analytics, Inc."
+    },
+    "concepts": [
+        {
+            "id": "http://yetanalytics.com/temporal/activity-type",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "ActivityType",
+            "prefLabel": {
+                "en": "Activity Type"
+            },
+            "definition": {
+                "en": "The Activity Type"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-1",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 1"
+            },
+            "definition": {
+                "en": "The First Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-2",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 2"
+            },
+            "definition": {
+                "en": "The Second Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-3",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 3"
+            },
+            "definition": {
+                "en": "The Third Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-4",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 4"
+            },
+            "definition": {
+                "en": "The Fourth Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-5",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 5"
+            },
+            "definition": {
+                "en": "The Fifth Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-6",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 6"
+            },
+            "definition": {
+                "en": "The Sixth Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-7",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 7"
+            },
+            "definition": {
+                "en": "The Seventh Verb"
+            }
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/verb-8",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Verb",
+            "prefLabel": {
+                "en": "Verb 8"
+            },
+            "definition": {
+                "en": "The Eighth Verb"
+            }
+        }
+    ],
+    "templates": [
+        {
+            "id": "http://yetanalytics.com/temporal/template-1",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 1"
+            },
+            "definition": {
+                "en": "The First Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-1",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-2",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 2"
+            },
+            "definition": {
+                "en": "The Second Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-2",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-3",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 3"
+            },
+            "definition": {
+                "en": "The Third Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-3",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-4",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 4"
+            },
+            "definition": {
+                "en": "The Fourth Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-4",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-5",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 5"
+            },
+            "definition": {
+                "en": "The Fifth Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-5",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-6",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 6"
+            },
+            "definition": {
+                "en": "The Sixth Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-6",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-7",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 7"
+            },
+            "definition": {
+                "en": "The Seventh Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-7",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/template-8",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "StatementTemplate",
+            "prefLabel": {
+                "en": "Template 8"
+            },
+            "definition": {
+                "en": "The Eighth Statement Template"
+            },
+            "verb": "http://yetanalytics.com/temporal/verb-8",
+            "objectActivityType": "http://yetanalytics.com/temporal/activity-type"
+        }
+    ],
+    "patterns": [
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-A",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern A"
+            },
+            "definition": {
+                "en": "The Only First-Level Pattern"
+            },
+            "primary": true,
+            "sequence": [
+                "http://yetanalytics.com/temporal/pattern-B1",
+                "http://yetanalytics.com/temporal/pattern-B2"
+            ]
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-B1",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern B1"
+            },
+            "definition": {
+                "en": "The First Second-Level Pattern"
+            },
+            "sequence": [
+                "http://yetanalytics.com/temporal/pattern-C1",
+                "http://yetanalytics.com/temporal/pattern-C2"
+            ]
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-B2",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern B2"
+            },
+            "definition": {
+                "en": "The Second Second-Level Pattern"
+            },
+            "sequence": [
+                "http://yetanalytics.com/temporal/pattern-C3",
+                "http://yetanalytics.com/temporal/pattern-C4"
+            ]
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-C1",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern C1"
+            },
+            "definition": {
+                "en": "The First Third-Level Pattern"
+            },
+            "sequence": [
+                "http://yetanalytics.com/temporal/template-1",
+                "http://yetanalytics.com/temporal/template-2"
+            ]
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-C2",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern C2"
+            },
+            "definition": {
+                "en": "The Second Third-Level Pattern"
+            },
+            "sequence": [
+                "http://yetanalytics.com/temporal/template-3",
+                "http://yetanalytics.com/temporal/template-4"
+            ]
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-C3",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern C3"
+            },
+            "definition": {
+                "en": "The Third Third-Level Pattern"
+            },
+            "sequence": [
+                "http://yetanalytics.com/temporal/template-5",
+                "http://yetanalytics.com/temporal/template-6"
+            ]
+        },
+        {
+            "id": "http://yetanalytics.com/temporal/pattern-C4",
+            "inScheme": "http://yetanalytics.com/temporal/v1",
+            "type": "Pattern",
+            "prefLabel": {
+                "en": "Pattern C4"
+            },
+            "definition": {
+                "en": "The Fourth Third-Level Pattern"
+            },
+            "sequence": [
+                "http://yetanalytics.com/temporal/template-7",
+                "http://yetanalytics.com/temporal/template-8"
+            ]
+        }
+    ]
+}

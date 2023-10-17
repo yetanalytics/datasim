@@ -124,7 +124,7 @@
                       (nth 10000)))))
   (testing "We respect temporal properties for different actors"
     (let [input  (-> const/simple-input
-                     (assoc :models const/temporal-models)
+                     (assoc :models const/simple-temporal-models)
                      (assoc-in [:parameters :end] nil))
           result (generate-map input)]
       (testing "- Alice: all verbs happen on the order of minutes (the default)"
@@ -167,7 +167,45 @@
                          (= verb initialized-verb)
                          (and (<= 10 ts-min 59)
                               (zero? (mod ts-min 5)))
-                         :else true)))))))))))
+                         :else true))))))))))
+  (testing "We respect repeatMax properties for different actors"
+    (let [input       (-> const/simple-input
+                          (assoc :models const/simple-repeat-max-models)
+                          (assoc-in [:parameters :end] nil))
+          result      (generate-map input)
+          first-alice (-> result (get alice-mbox) first)
+          first-bob   (-> result (get bob-mbox) first)
+          first-fred  (-> result (get fred-mbox) first)
+          first-reg?  (fn [first stmt]
+                        (= (get-in first ["context" "registration"])
+                           (get-in stmt ["context" "registration"])))
+          reduce-sats (fn [acc stmt]
+                        (cond
+                          (= satisfied-verb
+                             (get-in stmt ["verb" "id"]))
+                          (conj (pop acc) (conj (peek acc) stmt))
+                          (not-empty (peek acc))
+                          (conj acc [])
+                          :else
+                          acc))]
+      (testing "- Alice: repeatMax of 5 (default)"
+        (is (->> (get result alice-mbox)
+                 (take-while (partial first-reg? first-alice))
+                 (reduce reduce-sats [[]])
+                 (every? (fn [sat-stmts]
+                           (<= (count sat-stmts) 5))))))
+      (testing "- Bob: repeatMax of 1"
+        (is (->> (get result bob-mbox)
+                 (take-while (partial first-reg? first-bob))
+                 (reduce reduce-sats [[]])
+                 (every? (fn [sat-stmts]
+                           (<= (count sat-stmts) 1))))))
+      (testing "- Fred: repeatMax of 100"
+        (is (->> (get result fred-mbox)
+                 (take-while (partial first-reg? first-fred))
+                 (reduce reduce-sats [[]])
+                 (every? (fn [sat-stmts]
+                           (<= (count sat-stmts) 100)))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
@@ -276,7 +314,7 @@
       (is (every? #{"https://w3id.org/xapi/cmi5/activities/block"}
                   (take 10 act-types)))))
   (testing "Can apply object override and respect weights"
-    (let [input     (assoc const/simple-input :models const/overrides-models)
+    (let [input     (assoc const/simple-input :models const/simple-overrides-models)
           result    (generate-seq input :select-agents [bob-mbox])
           objects   (map get-object result)
           obj-count (count objects)
@@ -299,17 +337,17 @@
              (get obj-freq override-2)
              (+ mean-2 (* 3 sd))))))
   (testing "Can apply object override and respect weights - only activity"
-    (let [input     (-> const/simple-input
-                        (assoc :models const/overrides-models)
-                        (update-in [:models 0 :objectOverrides 0]
-                                   assoc
-                                   :weight 1.0)
-                        (update-in [:models 0 :objectOverrides 1]
-                                   assoc
-                                   :weight 0.0))
-          result    (generate-seq input
-                                  :select-agents [bob-mbox])
-          objects   (map get-object result)]
+    (let [input   (-> const/simple-input
+                      (assoc :models const/simple-overrides-models)
+                      (update-in [:models 0 :objectOverrides 0]
+                                 assoc
+                                 :weight 1.0)
+                      (update-in [:models 0 :objectOverrides 1]
+                                 assoc
+                                 :weight 0.0))
+          result  (generate-seq input
+                                :select-agents [bob-mbox])
+          objects (map get-object result)]
       (is (every? #(= override-1 %) objects))))
   (testing "Can apply multiple personae"
     (let [input  (update const/simple-input

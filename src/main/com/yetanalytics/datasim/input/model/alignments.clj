@@ -130,7 +130,7 @@
 
 (defn- has-default-period?
   [periods]
-  (some (fn [{:keys [bounds] :as period}] (when (not bounds) period))
+  (some (fn [{:keys [bounds] :as _period}] (boolean (not bounds)))
         periods))
 
 (s/def ::period/min
@@ -154,7 +154,8 @@
                             ::period/fixed
                             ::period/unit
                             ::period/bounds])
-           :kind (every-pred vector? has-default-period?)
+           :kind #(and (vector? %)
+                       (has-default-period? %))
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

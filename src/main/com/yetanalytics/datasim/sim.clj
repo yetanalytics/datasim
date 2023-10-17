@@ -45,6 +45,8 @@
                :zone-region string?)
   :ret ::statement-seq)
 
+(def empty-seq-limit 10000)
+
 (defn- init-statement-seq
   "Init sequence of registration IDs"
   [seed]
@@ -58,18 +60,31 @@
   (let [profile-rng
         (random/seed-rng seed)
         fill-statement-seq*
-        (fn fill-statement-seq* [timestamp [registration & rest-regs]]
+        (fn fill-statement-seq*
+          [timestamp [registration & rest-regs] num-empties]
           (lazy-seq
            (let [profile-seed
                  (random/rand-unbound-int profile-rng)
                  template-maps
                  (p/walk-profile-patterns inputs alignments profile-seed max-retries timestamp)
                  ?next-timestamp
-                 (:timestamp (meta template-maps))]
-             (cond-> (map #(assoc % :registration registration) template-maps)
-               ?next-timestamp
-               (concat (fill-statement-seq* ?next-timestamp rest-regs))))))]
-    (fill-statement-seq* timestamp registration-seq)))
+                 (:timestamp (meta template-maps))
+                 template-maps*
+                 (not-empty
+                  (map #(assoc % :registration registration) template-maps))]
+             (cond
+               ;; Usual case: valid seq + next timestamp
+               (and template-maps* ?next-timestamp)
+               (concat template-maps*
+                       (fill-statement-seq* ?next-timestamp rest-regs 0))
+               ;; Empty generated seq; must be limited by `empty-seq-limit`
+               (and (< num-empties empty-seq-limit) ?next-timestamp)
+               (fill-statement-seq* ?next-timestamp rest-regs (inc num-empties))
+               ;; No next timestamp; terminate early
+               template-maps* template-maps*
+               ;; "Base case"; terminate early with empty list
+               :else          (list)))))]
+    (fill-statement-seq* timestamp registration-seq 0)))
 
 (defn- drop-statement-seq
   "Drop sequence entries after `?end-time` (or none if `?end-time` is `nil`)."

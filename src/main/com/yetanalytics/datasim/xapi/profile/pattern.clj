@@ -125,24 +125,23 @@
 
 (defn- zero-or-more->seq
   [{:keys [rng]} alignments-stack zero-or-more]
-  (let [{:keys [repeat-max]} (peek alignments-stack)]
-    (-> (random/rand-int rng (inc (or repeat-max default-repeat-max)))
+  (let [{:keys [repeat-max]} (peek alignments-stack)
+        repeat-max* (inc (or repeat-max default-repeat-max))]
+    (-> (random/rand-int rng repeat-max*)
         (repeat zero-or-more))))
+
+(comment
+  (def the-rng (random/seed-rng 100))
+  (frequencies (take 1000 (repeatedly #(inc (random/rand-int the-rng 5)))))
+  (frequencies (take 1000 (repeatedly #(random/rand-int the-rng (inc 5)))))
+  )
 
 (defn- one-or-more->seq
   [{:keys [rng]} alignments-stack one-or-more]
-  (let [{:keys [repeat-max]} (peek alignments-stack)]
-    (-> (inc (random/rand-int rng (inc (or repeat-max default-repeat-max))))
+  (let [{:keys [repeat-max]} (peek alignments-stack)
+        repeat-max* (or repeat-max default-repeat-max)]
+    (-> (inc (random/rand-int rng repeat-max*))
         (repeat one-or-more))))
-
-;; Test case TODOs:
-;; - Different combos of time bounds and periods in general
-;; - Nested bounds, e.g. if timestamp satisfies inner bound but
-;;   not outer bound
-;; - When generated timestamp ALWAYS exceeds the containing bound,
-;;   causing gen to hang; need to solve w/ max-retries parameter
-;; - Different `retry` cases: "template", "child", and "pattern"
-;;   (in addition to nil)
 
 (defn- iterate-patterns
   [{:keys [pattern-map alignments-map max-retries] :as ctx}
@@ -154,9 +153,9 @@
   (loop [prev-templates     (list)
          prev-timestamp     init-timestamp
          prev-timestamp-gen init-timestamp-gen
-         child-ids          child-ids
+         child-ids*         child-ids
          retry-count        0]
-    (if-some [child-id (first child-ids)]
+    (if-some [child-id (first child-ids*)]
       (let [pattern     (get pattern-map child-id)
             pat-align   (-> (get alignments-map child-id) (assoc :id child-id))
             align-stack (conj alignments-stack pat-align)
@@ -184,24 +183,23 @@
           (recur (concat prev-templates templates)
                  timestamp
                  timestamp-gen
-                 (rest child-ids)
+                 (rest child-ids*)
                  retry-count)))
       (with-meta prev-templates
         {:timestamp     prev-timestamp
          :timestamp-gen prev-timestamp-gen}))))
 
-;; Repeat at the LOWEST repeatable pattern BELOW a violated bound
 (defn- repeat-at
   [alignments-stack timestamp]
   (loop [[alignments & rest-stack] alignments-stack]
-    (if-some [{:keys [bounds boundRestarts]} alignments]
+    (if-some [{:keys [bounds bound-restarts]} alignments]
       (if (temporal/bounded-time? bounds timestamp)
         ;; Bound is satisfied
         (recur rest-stack)
         ;; Bound is NOT satisfied, find the highest-level pattern to retry
         ;; `some` works as alignments-stack vector goes from highest -> lowest
-        (let [retry-id (when (not-empty boundRestarts)
-                         (->> alignments-stack (map :id) (some boundRestarts)))]
+        (let [retry-id (when (not-empty bound-restarts)
+                         (->> alignments-stack (map :id) (some bound-restarts)))]
           [bounds retry-id]))
       ;; All bounds are satisfied
       [nil nil])))
