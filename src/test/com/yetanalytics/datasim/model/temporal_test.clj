@@ -110,6 +110,28 @@
               :daysOfMonth [[1 10] [21 30]]
               :months      [1 ["April" "May"]]
               :years       [2023 2024]}])))
+    (is (= [{:ranges {:seconds       '(0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30)
+                      :minutes       '(0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30)
+                      :hours         '(0 6 12 18)
+                      :days-of-week  '(0 2 4 6)
+                      :days-of-month '(15 19 23 27 31)
+                      :months        '(1 4 7 10)
+                      :years         '(2023 2025 2027 2029 2031 2033)}
+             :sets   {:seconds       #{0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30}
+                      :minutes       #{0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30}
+                      :hours         #{0 6 12 18}
+                      :days-of-week  #{0 2 4 6}
+                      :days-of-month #{15 19 23 27 31}
+                      :months        #{1 4 7 10}
+                      :years         #{2023 2025 2027 2029 2031 2033}}}]
+           (temporal/convert-bounds
+            [{:seconds     [[0 30 2]]
+              :minutes     [[0 30 2]]
+              :hours       [[0 23 6]]
+              :daysOfWeek  [["Sunday" "Saturday" 2]]
+              :daysOfMonth [[15 31 4]]
+              :months      [["January" "December" 3]]
+              :years       [[2023 2033 2]]}])))
     (is (= [{:ranges {:years '(2021 2022 2023 2024)}
              :sets   {:years #{2021 2022 2023 2024}}}
             {:ranges {:years '(1971 1972 1973 1974)}
@@ -133,12 +155,18 @@
         ;; year bounds
         true  [{:years [2023 2024]}]
         true  [{:years [[2023 2024]]}]
+        true  [{:years [[2001 2031 2]]}]
         true  [{:years [2023]} {:years [2024]}]
         false [{:years [2024]}]
         ;; month bounds
         true  [{:years  [2023]
                 :months [1 2 3]}]
         true  [{:months [1 2 3]}]
+        true  [{:months [[1 10]]}]
+        true  [{:months [[1 10 2]]}]
+        true  [{:months ["January"]}]
+        true  [{:months [["January" "October"]]}]
+        true  [{:months [["January" "October" 2]]}]
         true  [{:years  [2023]
                 :months [1]}
                {:years  [2024]
@@ -158,6 +186,7 @@
                {:years       [2024]
                 :daysOfMonth [[4 6]]}]
         true  [{:daysOfMonth [[1 12]]}]
+        true  [{:daysOfMonth [[1 12 2]]}]
         false [{:years       [2023]
                 :months      [1]
                 :daysOfMonth [4 5 6]}]
@@ -171,6 +200,12 @@
         false [{:years      [2023]
                 :months     [1]
                 :daysOfWeek [[1 6]]}]
+        true  [{:daysOfWeek [0]}]
+        true  [{:daysOfWeek [[0 6]]}]
+        true  [{:daysOfWeek [[0 6 2]]}]
+        true  [{:daysOfWeek ["Sunday"]}]
+        true  [{:daysOfWeek [["Sunday" "Saturday"]]}]
+        true  [{:daysOfWeek [["Sunday" "Saturday" 2]]}]
         true  [{:years       [2023]
                 :months      [1]
                 :daysOfWeek  [0]
@@ -190,6 +225,7 @@
                 :hours       [1]}]
         true  [{:hours [0]}]
         true  [{:hours [[0 14]]}]
+        true  [{:hours [[0 14 2]]}]
         true  [{:daysOfWeek [1]
                 :hours      [[12 23]]}
                {:daysOfWeek [0]
@@ -210,6 +246,7 @@
                 :hour        [0]
                 :minutes     [1]}]
         true  [{:minutes [[0 29]]}]
+        true  [{:minutes [[0 29 2]]}]
         true  [{:minutes [[30 59]]}
                {:minutes [[0 29]]}]
         false [{:minutes [[30 59]]}]
@@ -227,6 +264,7 @@
                 :minutes     [0]
                 :seconds     [1]}]
         true  [{:seconds [[0 29]]}]
+        true  [{:seconds [[0 29 2]]}]
         true  [{:seconds [[30 59]]}
                {:seconds [[0 29]]}]
         false [{:seconds [[30 59]]}])))

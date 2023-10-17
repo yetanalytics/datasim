@@ -224,10 +224,12 @@
 (defn- reduce-values
   [vs* v]
   (if (coll? v)
-    (let [[start end] v
+    (let [[start end ?step] v
           start* (string->int start)
-          end*   (string->int end)
-          vrange (range start* (inc end*))]
+          end*   (inc (string->int end))
+          vrange (if ?step
+                   (range start* end* ?step)
+                   (range start* end*))]
       (into vs* vrange))
     (let [v* (string->int v)]
       (conj vs* v*))))

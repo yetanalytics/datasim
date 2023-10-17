@@ -40,9 +40,14 @@
   (< start end))
 
 (defmacro bound-spec [scalar-spec]
-  `(s/every (s/or :scalar   ~scalar-spec
-                  :interval (s/and (s/tuple ~scalar-spec ~scalar-spec)
-                                   interval?))
+  `(s/every (s/or :scalar
+                  ~scalar-spec
+                  :interval
+                  (s/and (s/tuple ~scalar-spec ~scalar-spec)
+                         interval?)
+                  :step-interval
+                  (s/and (s/tuple ~scalar-spec ~scalar-spec pos-int?)
+                         interval?))
             :kind vector?
             :min-count 1
             :gen-max 3))
@@ -113,6 +118,13 @@
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Time Bound Retries
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::boundRestarts
+  (s/every ::xs/iri :kind vector?))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Period
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -146,17 +158,10 @@
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Retry Options
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::retry
-  (s/nilable #{"template" "child" "pattern"}))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Max Repeat
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::repeat-max pos-int?)
+(s/def ::repeatMax pos-int?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object
@@ -203,17 +208,17 @@
 
 (def pattern-spec
   (s/keys :req-un [::id]
-          :opt-un [::weights    ; for alternate and optional patterns 
-                   ::repeat-max ; for oneOrMore and zeroOrMore patterns
+          :opt-un [::weights   ; for alternate and optional patterns 
+                   ::repeatMax ; for oneOrMore and zeroOrMore patterns
                    ::bounds
-                   ::periods
-                   ::retry]))
+                   ::boundRestarts
+                   ::periods]))
 
 (def template-spec
   (s/keys :req-un [::id]
           :opt-un [::bounds
-                   ::periods
-                   ::retry]))
+                   ::boundRestarts
+                   ::periods]))
 
 (def object-override-spec
   (s/keys :req-un [::object]

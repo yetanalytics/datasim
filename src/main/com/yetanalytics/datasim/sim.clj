@@ -54,7 +54,7 @@
 (defn- temp-statement-seq
   "Generate sequence of maps of `:template`, `:timestamp`, `:time-since-last`,
    and `:registration` values."
-  [inputs alignments seed timestamp registration-seq]
+  [inputs alignments seed max-retries timestamp registration-seq]
   (let [profile-rng
         (random/seed-rng seed)
         fill-statement-seq*
@@ -63,7 +63,7 @@
            (let [profile-seed
                  (random/rand-unbound-int profile-rng)
                  template-maps
-                 (p/walk-profile-patterns inputs alignments profile-seed timestamp)
+                 (p/walk-profile-patterns inputs alignments profile-seed max-retries timestamp)
                  ?next-timestamp
                  (:timestamp (meta template-maps))]
              (cond-> (map #(assoc % :registration registration) template-maps)
@@ -111,13 +111,13 @@
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
    process. The sequence will either end at `?end-time` or, if `nil`,
    be infinite."
-  [input seed alignments start-time ?end-time ?from-time zone-region]
+  [input seed alignments start-time ?end-time ?from-time zone-region max-retries]
   (let [sim-rng   (random/seed-rng seed)
         reg-seed  (random/rand-unbound-int sim-rng)
         temp-seed (random/rand-unbound-int sim-rng)
         stmt-rng  (random/seed-rng (random/rand-unbound-int sim-rng))]
     (->> (init-statement-seq reg-seed)
-         (temp-statement-seq input alignments temp-seed start-time)
+         (temp-statement-seq input alignments temp-seed max-retries start-time)
          (drop-statement-seq ?end-time)
          (seed-statement-seq stmt-rng)
          (from-statement-seq ?from-time)
@@ -155,7 +155,7 @@
    Spooky."
   [{:keys [profiles personae-array models parameters]}]
   (let [;; Input parameters
-        {:keys [start end from timezone seed]} parameters
+        {:keys [start end from timezone seed max-retries]} parameters
         ;; RNG for generating the rest of the seeds
         sim-rng     (random/seed-rng seed)
         ;; Set timezone region and timestamps
@@ -200,7 +200,8 @@
                                                  start-time
                                                  ?end-time
                                                  ?from-time
-                                                 zone-region)]
+                                                 zone-region
+                                                 max-retries)]
               (assoc m actor-id actor-stmt-seq)))
           {}))))
 

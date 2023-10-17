@@ -38,10 +38,21 @@
         ],
         "templates": [
             {
-                "id": "https://w3id.org/xapi/cmi5#satisfied",
+                "id": "https://w3id.org/xapi/cmi5#launched",
                 "bounds": [
                     {
                         "minutes": [[0, 10]]
+                    }
+                ],
+                "boundRetries": [
+                    "https://w3id.org/xapi/cmi5#typicalsessions"
+                ]
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#initialized",
+                "bounds": [
+                    {
+                        "minutes": [[10, 59, 5]]
                     }
                 ]
             }
