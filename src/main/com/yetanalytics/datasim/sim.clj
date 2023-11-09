@@ -4,15 +4,14 @@
             [clojure.core.async :as a]
             [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim                   :as-alias datasim]
-            [com.yetanalytics.datasim.model             :as model]
-            [com.yetanalytics.datasim.math.random       :as random]
-            [com.yetanalytics.datasim.xapi.actor        :as actor]
-            [com.yetanalytics.datasim.xapi.profile      :as p]
-            [com.yetanalytics.datasim.xapi.statement    :as statement]
-            [com.yetanalytics.datasim.util.sequence     :as su]
-            [com.yetanalytics.datasim.util.async        :as au]
-            [com.yetanalytics.datasim.model.temporal    :as temporal]))
+            [com.yetanalytics.datasim                :as-alias datasim]
+            [com.yetanalytics.datasim.model          :as model]
+            [com.yetanalytics.datasim.xapi.actor     :as actor]
+            [com.yetanalytics.datasim.xapi.profile   :as p]
+            [com.yetanalytics.datasim.xapi.statement :as statement]
+            [com.yetanalytics.datasim.util.random    :as random]
+            [com.yetanalytics.datasim.util.sequence  :as su]
+            [com.yetanalytics.datasim.util.async     :as au]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -37,11 +36,11 @@
                                             ::statement/actor
                                             ::statement/alignments]
                                    :opt-un [::statement/object-overrides])
-               :rng        ::random/rng
-               :alignments ::model/alignments
-               :start-time ::temporal/date-time
-               :?end-time  ::temporal/date-time
-               :?from-time ::temporal/date-time
+               :rng         ::random/rng
+               :alignments  ::model/alignments
+               :start-time  t/local-date-time?
+               :?end-time   t/local-date-time?
+               :?from-time  t/local-date-time?
                :zone-region string?)
   :ret ::statement-seq)
 
@@ -144,21 +143,6 @@
 
 ;; Data structure helpers
 
-(defn- personaes->group-actor-id-map
-  "Convert `personae-array` into a map from group IDs, which represent
-   each personae in the array, to actor IDs, representing each group member."
-  [personae-array]
-  (reduce
-   (fn [m {actors :member :as personae}]
-     (let [group-id (actor/actor-ifi personae)]
-       (reduce
-        (fn [m* actor]
-          (assoc m* (actor/actor-ifi actor) group-id))
-        m
-        actors)))
-   {}
-   personae-array))
-
 (s/fdef build-skeleton
   :args (s/cat :input ::datasim/input)
   :ret ::skeleton)
@@ -180,7 +164,7 @@
         ?from-time  (some-> from t/instant (t/local-date-time zone-region))
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
-        actor-group-map (personaes->group-actor-id-map personae-array)
+        actor-group-map (actor/groups->agent-group-ifi-map personae-array)
         ;; Derive profiles map
         activity-seed   (random/rand-unbound-int sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)

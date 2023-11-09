@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.input.models-test
+(ns com.yetanalytics.datasim.input.model-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input.model :as model]))

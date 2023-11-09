@@ -5,7 +5,7 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.pan.objects.profile :as prof]
             [com.yetanalytics.pan.objects.pattern :as pat]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.util.errors :as errs])
   (:import [clojure.lang ExceptionInfo]
            [java.time.zone ZoneRulesException]

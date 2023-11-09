@@ -5,7 +5,7 @@
             [clojure.spec.alpha :as s]
             [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.model.temporal :refer [ms-per-hour]]
+            [com.yetanalytics.datasim.model.bounds :refer [ms-per-hour]]
             [com.yetanalytics.datasim.test-constants :as const]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim :refer [generate-map

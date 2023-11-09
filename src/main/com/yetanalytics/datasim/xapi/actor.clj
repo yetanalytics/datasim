@@ -2,7 +2,8 @@
   "Utilities for Agents and Groups (collectively known as Actors)."
   (:require [clojure.string         :as cstr]
             [clojure.spec.alpha     :as s]
-            [clojure.spec.gen.alpha :as sgen]))
+            [clojure.spec.gen.alpha :as sgen]
+            [xapi-schema.spec       :as xs]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -36,6 +37,10 @@
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/fdef actor-ifi
+  :args (s/cat :actor ::xs/actor)
+  :ret ::actor-ifi)
+
 (defn actor-ifi
   "Return a string representing the IFI of an Agent or Group. Will be prefixed
    with the IFI property and two colons `::`.
@@ -57,3 +62,22 @@
            (format "mbox_sha1sum::%s" mbox_sha1sum))
       (and openid
            (format "openid::%s" openid))))
+
+(s/fdef groups->agent-group-ifi-map
+  :args (s/cat :group-coll (s/every ::xs/identified-group))
+  :ret (s/map-of ::actor-ifi ::actor-ifi))
+
+(defn groups->agent-group-ifi-map
+  "Convert `group-coll` into a map from member agent IFIs to group IFIs."
+  [group-coll]
+  (reduce
+   (fn [m {agents :member :as personae}]
+     (let [group-ifi (actor-ifi personae)]
+       (reduce
+        (fn [m* actor]
+          (let [agent-ifi (actor-ifi actor)]
+            (assoc m* agent-ifi group-ifi)))
+        m
+        agents)))
+   {}
+   group-coll))

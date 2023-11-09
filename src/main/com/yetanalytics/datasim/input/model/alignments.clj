@@ -7,7 +7,7 @@
             [clojure.spec.gen.alpha :as sgen]
             [clojure.walk           :as w]
             [xapi-schema.spec       :as xs]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.input.model.alignments.weight :as-alias weight]
             [com.yetanalytics.datasim.input.model.alignments.bounds :as-alias bounds]
             [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))

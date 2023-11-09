@@ -3,13 +3,14 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.datasim.input.model            :as model]
             [com.yetanalytics.datasim.input.model.alignments :as model.alignments]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model.weights          :as-alias weights]
             [com.yetanalytics.datasim.model.pattern          :as-alias pattern]
             [com.yetanalytics.datasim.model.alignment        :as-alias alignment]
             [com.yetanalytics.datasim.model.alignment.period :as-alias alignment.period]
             [com.yetanalytics.datasim.model.object-override  :as-alias obj-override]
-            [com.yetanalytics.datasim.model.temporal         :as temporal]
+            [com.yetanalytics.datasim.model.bounds           :as bounds]
+            [com.yetanalytics.datasim.model.periods          :as periods]
             [com.yetanalytics.datasim.xapi.actor             :as actor]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,13 +42,13 @@
   (s/map-of ::model.alignments/id ::random/weight))
 
 (s/def ::pattern/bounds
-  ::temporal/bounds)
+  ::bounds/bounds)
 
 (s/def ::pattern/bound-retries
   (s/every ::xs/iri :kind set?))
 
 (s/def ::pattern/period
-  ::temporal/period)
+  ::periods/period)
 
 (s/def ::pattern/repeat-max
   pos-int?)
@@ -79,6 +80,12 @@
                    ::role-models]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Constants
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def default-repeat-max 5)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -100,9 +107,9 @@
    (fn [acc {:keys [id weights repeatMax bounds boundRestarts periods]}]
      (let [m (cond-> {}
                weights       (assoc :weights (reduce-weights weights))
-               bounds        (assoc :bounds (temporal/convert-bounds bounds))
+               bounds        (assoc :bounds (bounds/convert-bounds bounds))
                boundRestarts (assoc :bound-restarts (set boundRestarts))
-               periods       (assoc :periods (temporal/convert-periods periods))
+               periods       (assoc :periods (periods/convert-periods periods))
                repeatMax     (assoc :repeat-max repeatMax))]
        (assoc acc id m)))
    {}
