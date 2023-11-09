@@ -61,8 +61,8 @@
                             (into #{}))]
     (for [[idx pattern-id] (map-indexed vector gen-patterns)
           :when            (not (contains? pattern-id-set pattern-id))]
-      {:id   (str "parameters-gen-patterns-" idx)
-       :path [:parameters :gen-patterns idx]
+      {:id   (str "parameters-genPatterns-" idx)
+       :path [:parameters :genPatterns idx]
        :text (validate-pattern-filters-emsg pattern-id pattern-id-set)})))
 
 (defn validate-profile-filters
@@ -70,6 +70,6 @@
   (let [profile-id-set (->> profiles (map :id) (into #{}))]
     (for [[idx profile-id] (map-indexed vector gen-profiles)
           :when            (not (contains? profile-id-set profile-id))]
-      {:id   (str "parameters-gen-profiles-" idx)
-       :path [:parameters :gen-profiles idx]
+      {:id   (str "parameters-genProfiles-" idx)
+       :path [:parameters :genProfiles idx]
        :text (validate-profile-fitlers-emsg profile-id profile-id-set)})))

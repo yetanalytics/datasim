@@ -98,13 +98,13 @@
   :ret ::type-iri-map)
 
 (defn select-primary-patterns
-  "Given `type-iri-map` and the `gen-profiles` and `gen-patterns` params,
+  "Given `type-iri-map` and the `genProfiles` and `genPatterns` params,
    update the Pattern map to further specify primary patterns for generation.
-   Primary patterns in this context must be specified by `gen-profiles` or
-   `gen-patterns`, or else they will no longer be counted as primary patterns."
-  [type-iri-map {:keys [gen-profiles gen-patterns]}]
-  (let [?profile-set   (some-> gen-profiles not-empty set)
-        ?pattern-set   (some-> gen-patterns not-empty set)
+   Primary patterns in this context must be specified by `genProfiles` or
+   `genPatterns`, or else they will no longer be counted as primary patterns."
+  [type-iri-map {:keys [genProfiles genPatterns]}]
+  (let [?profile-set   (some-> genProfiles not-empty set)
+        ?pattern-set   (some-> genPatterns not-empty set)
         primary-pat?   (fn [profile-id pattern-id]
                          (and (or (nil? ?profile-set)
                                   (contains? ?profile-set profile-id))
@@ -175,11 +175,11 @@
             (partial tmp/update-parsed-rules-map profile-map*))))
 
 (s/fdef walk-profile-patterns
-  :args (s/cat :profile-map ::profile-map
-               :alignments  ::model/alignments
-               :seed        ::random/seed
-               :max-retries pos-int?
-               :start-time  t/local-date-time?)
+  :args (s/cat :profile-map  ::profile-map
+               :alignments   ::model/alignments
+               :seed         ::random/seed
+               :max-restarts pos-int?
+               :start-time   t/local-date-time?)
   :ret (s/every ::pat/template-map))
 
 (defn walk-profile-patterns
@@ -187,12 +187,12 @@
   [{pattern-iri-map :pattern-map}
    {pattern-alignments :patterns}
    seed
-   max-retries
+   max-restarts
    start-time]
   (let [pattern-rng  (random/seed-rng seed)
         root-pattern (get pattern-iri-map ::pat/root)
         context      {:pattern-map    pattern-iri-map
                       :alignments-map pattern-alignments
-                      :max-retries    max-retries
+                      :max-restarts   max-restarts
                       :rng            pattern-rng}]
     (pat/walk-pattern context [] start-time start-time root-pattern)))

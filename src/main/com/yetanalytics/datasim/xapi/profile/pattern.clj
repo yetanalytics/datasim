@@ -59,9 +59,9 @@
 (s/def ::alignments-map
   (s/map-of ::pattern-map-id ::model/pattern))
 
-(s/def ::max-retries pos-int?)
+(s/def ::max-restarts pos-int?)
 
-(s/def ::retry-id ::pattern-map-id)
+(s/def ::restart-id ::pattern-map-id)
 
 (s/def ::alignments ::model/pattern)
 
@@ -78,12 +78,12 @@
 (s/def ::template-seq-meta
   (s/keys :req-un [::timestamp]
           :opt-un [::failure?
-                   ::retry-id]))
+                   ::restart-id]))
 
 (def context-spec
   (s/keys :req-un [::pattern-map
                    ::alignments-map
-                   ::max-retries
+                   ::max-restarts
                    ::random/rng]))
 
 (s/fdef walk-pattern
@@ -139,7 +139,7 @@
         (repeat one-or-more))))
 
 (defn- iterate-patterns
-  [{:keys [pattern-map alignments-map max-retries] :as ctx}
+  [{:keys [pattern-map alignments-map max-restarts] :as ctx}
    alignments-stack
    init-timestamp
    init-timestamp-gen
@@ -149,7 +149,7 @@
          prev-timestamp     init-timestamp
          prev-timestamp-gen init-timestamp-gen
          child-ids*         child-ids
-         retry-count        0]
+         restart-count      0]
     (if-some [child-id (first child-ids*)]
       (let [pattern     (get pattern-map child-id)
             pat-align   (-> (get alignments-map child-id) (assoc :id child-id))
@@ -159,18 +159,18 @@
                                       prev-timestamp
                                       prev-timestamp-gen
                                       pattern)
-            {:keys [timestamp timestamp-gen failure? retry-id] :as temp-meta}
+            {:keys [timestamp timestamp-gen failure? restart-id] :as temp-meta}
             (meta templates)]
         (cond
           (and failure?
                timestamp
-               (= retry-id pattern-id)
-               (< retry-count max-retries))
+               (= restart-id pattern-id)
+               (< restart-count max-restarts))
           (recur (list)
                  timestamp
                  init-timestamp-gen
                  child-ids
-                 (inc retry-count))
+                 (inc restart-count))
           failure?
           (with-meta (concat prev-templates templates)
             temp-meta)
@@ -179,7 +179,7 @@
                  timestamp
                  timestamp-gen
                  (rest child-ids*)
-                 retry-count)))
+                 restart-count)))
       (with-meta prev-templates
         {:timestamp     prev-timestamp
          :timestamp-gen prev-timestamp-gen}))))
@@ -191,25 +191,27 @@
       (if (bounds/bounded-time? bounds timestamp)
         ;; Bound is satisfied
         (recur rest-stack)
-        ;; Bound is NOT satisfied, find the highest-level pattern to retry
+        ;; Bound is NOT satisfied, find the highest-level pattern to restart
         ;; `some` works as alignments-stack vector goes from highest -> lowest
-        (let [retry-id (when (not-empty bound-restarts)
-                         (->> alignments-stack (map :id) (some bound-restarts)))]
-          [bounds retry-id]))
+        (let [restart-id (when (not-empty bound-restarts)
+                           (->> alignments-stack
+                                (map :id)
+                                (some bound-restarts)))]
+          [bounds restart-id]))
       ;; All bounds are satisfied
       [nil nil])))
 
 (defn- visit-template
-  [{:keys [rng max-retries]}
+  [{:keys [rng max-restarts]}
    alignments-stack
    init-timestamp
    init-timestamp-gen
    {template-id :id :as template}]
   (let [periods (some :periods alignments-stack)]
     (loop [prev-timestamp init-timestamp
-           retry-count    0]
+           restart-count  0]
       (let [timestamp (periods/add-periods prev-timestamp rng periods)
-            [?bounds ?retry-id] (repeat-at alignments-stack timestamp)]
+            [?bounds ?restart-id] (repeat-at alignments-stack timestamp)]
         (if-not ?bounds
           (with-meta (list {:template        template
                             :timestamp       timestamp
@@ -218,19 +220,19 @@
             {:timestamp     timestamp
              :timestamp-gen timestamp})
           (if-some [next-time (bounds/next-bounded-time ?bounds timestamp)]
-            (if (and (or (not ?retry-id)
-                         (= template-id ?retry-id))
-                     (< retry-count max-retries))
-              (recur next-time (inc retry-count))
+            (if (and (or (not ?restart-id)
+                         (= template-id ?restart-id))
+                     (< restart-count max-restarts))
+              (recur next-time (inc restart-count))
               (with-meta (list)
                 {:timestamp     next-time
                  :timestamp-gen init-timestamp-gen
                  :failure?      true
-                 :retry-id      ?retry-id}))
+                 :restart-id    ?restart-id}))
             (with-meta (list)
               {:failure?      true
                :timestamp-gen init-timestamp-gen
-               :retry-id      ?retry-id})))))))
+               :restart-id    ?restart-id})))))))
 
 (defmethod walk-pattern :sequence
   [ctx alignments-stack prev-timestamp prev-timestamp-gen {:keys [id sequence]}]

@@ -44,7 +44,7 @@
 (s/def ::pattern/bounds
   ::bounds/bounds)
 
-(s/def ::pattern/bound-retries
+(s/def ::pattern/bound-restarts
   (s/every ::xs/iri :kind set?))
 
 (s/def ::pattern/period
@@ -56,7 +56,7 @@
 (s/def ::pattern
   (s/keys :opt-un [::pattern/weights
                    ::pattern/bounds
-                   ::pattern/bound-retries
+                   ::pattern/bound-restarts
                    ::pattern/period
                    ::pattern/repeat-max]))
 

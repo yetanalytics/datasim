@@ -51,12 +51,16 @@
 (s/def ::max
   pos-int?)
 
+;; Max number of bound restarts before giving up
+(s/def ::maxRestarts
+  pos-int?)
+
 ;; Restrict Generation to these profile IDs
-(s/def ::gen-profiles
+(s/def ::genProfiles
   (s/every ::prof/id))
 
 ;; Restrict Generation to these pattern IDs
-(s/def ::gen-patterns
+(s/def ::genPatterns
   (s/every ::pat/id))
 
 (defn- ordered-timestamps?
@@ -82,9 +86,9 @@
            :opt-un [::end
                     ::from
                     ::max
-                    ::max-retries
-                    ::gen-profiles
-                    ::gen-patterns])
+                    ::maxRestarts
+                    ::genProfiles
+                    ::genPatterns])
    ordered-timestamps?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,17 +104,20 @@
 ;; Defaults
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def utc-timezone "UTC")
+(def default-max-restarts 5)
+
 (defn apply-defaults
   "Apply defaults to `params` with the current time and a random seed.
    If `params` is not provided simply return the default parameters."
   ([]
    (apply-defaults {}))
-  ([{:keys [start from timezone seed max-retries] :as params}]
+  ([{:keys [start from timezone seed maxRestarts] :as params}]
    (merge
     params
     (let [start (or start (.toString (Instant/now)))]
       {:start       start
        :from        (or from start)
-       :timezone    (or timezone "UTC")
+       :timezone    (or timezone utc-timezone)
        :seed        (or seed (random/rand-unbound-int (random/rng)))
-       :max-retries (or max-retries 5)}))))
+       :maxRestarts (or maxRestarts default-max-restarts)}))))

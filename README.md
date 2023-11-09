@@ -36,7 +36,7 @@ The inputs to DATASIM consist of four parts, each represented by JSON. They are 
 
 One or more valid xAPI Profiles are required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
 
-Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `gen-profiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `gen-patterns` option by supplying one or more pattern IDs.
+Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `genProfiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `genPatterns` option by supplying one or more pattern IDs.
 
 #### Personae
 
@@ -90,14 +90,14 @@ and `weight` values (as described under `verbs`).
     - `hours`: `0` to `23`
     - `minutes`: `0` to `59`
     - `seconds`: `0` to `59`
-  - `boundRetries`: An array of Pattern IDs to retry if the timestamp violates `bounds`. The top-most Pattern in `boundRetries` will be tried, e.g. if Pattern A is a parent of Pattern B and both are listed in `boundRetries`, it will be Pattern A that is retried. If `boundRetries` is empty or not present, or if none of the ancestor Patterns are included, then Statement generation will continue at its current point.
+  - `boundRestarts`: An array of Pattern IDs to retry if the timestamp violates `bounds`. The top-most Pattern in `boundRestarts` will be tried, e.g. if Pattern A is a parent of Pattern B and both are listed in `boundRestarts`, it will be Pattern A that is retried. If `boundRestarts` is empty or not present, or if none of the ancestor Patterns are included, then Statement generation will continue at its current point.
   - `periods`: An array of objects that specify the amount of time between generated Statements. Only the first valid period in the array will be applied to generate the next Statement (see `bounds` property). Each period object has the following optional properties:
     - `min`: a minimum amount of time between Statements; default is `0`
     - `mean` the average amount of time between Statements (added on top of `min`); default is `1`
     - `fixed`: a fixed amount of time between Statements; overrides `min` and `mean`
     - `unit`: the time unit for all temporal values. Valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`; the default is `minutes`
     - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A nonexisting `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array. At least one period must not have a `bounds` value, so it can act as the default period.
-- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `boundRetries`, and `period` properties, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
+- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `boundRestarts`, and `period` properties, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
 - `objectOverrides`: An array of objects containing (xAPI) `object` and `weight`. If present, these objects will overwrite any that would have been set by the Profile.
 
 An example of a model array with valid `personae`, `verbs`, and `templates` is shown below:
@@ -126,7 +126,7 @@ An example of a model array with valid `personae`, `verbs`, and `templates` is s
                         "months": [["January", "May"]]
                     }
                 ],
-                "boundRetries": [
+                "boundRestarts": [
                     "https://w3id.org/xapi/cmi5#toplevel"
                 ],
                 "period": {
@@ -151,10 +151,12 @@ The simulation parameters input covers the details of the simulation not covered
         "max": 200,
         "timezone": "America/New_York",
         "seed": 42,
-        "max-retries": 10
+        "maxRestarts": 10
     }
 ```
-Note the `max-retries` parameter; this is to limit the amount of times a particular Pattern is repeated when a `bounds` is violated.
+Note the `maxRestarts` parameter; this is to limit the amount of times a particular Pattern is restarted when a `bounds` is violated.
+
+Additional parameters include `genPatterns` and `genProfiles`, which are explained in more detail under [xAPI Profiles](#xapi-profiles).
 
 #### (Alternatively) Simulation Specification
 

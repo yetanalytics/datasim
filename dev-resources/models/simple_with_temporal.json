@@ -44,7 +44,7 @@
                         "minutes": [[0, 10]]
                     }
                 ],
-                "boundRetries": [
+                "boundRestarts": [
                     "https://w3id.org/xapi/cmi5#typicalsessions"
                 ]
             },

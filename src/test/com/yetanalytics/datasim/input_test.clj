@@ -83,21 +83,21 @@
              true
              (catch Exception _ false))))
   (testing "combined input is invalid"
-    (testing "with invalid gen-profiles"
+    (testing "with invalid genProfiles"
       (is (try
             (validate-throw
              :input
              (assoc-in const/simple-input
-                       [:parameters :gen-profiles]
+                       [:parameters :genProfiles]
                        ["http://example.com/nonexistent.jsonld"]))
             false
             (catch Exception _ true))))
-    (testing "with invalid gen-patterns"
+    (testing "with invalid genPatterns"
       (is (try
             (validate-throw
              :input
              (assoc-in const/simple-input
-                       [:parameters :gen-patterns]
+                       [:parameters :genPatterns]
                        ["http://example.com/nonexistent#pattern"]))
             false
             (catch Exception _ true))))))
