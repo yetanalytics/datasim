@@ -103,23 +103,25 @@
 ;; Auth data and fns
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def default-creds ["username:password"])
+
 ;; Reach into the environment and grab all of the user credentials from there
 ;; that will be used in basic auth.
 (defonce users
   (delay
-    (let [credentials (env :credentials "")
-          users'      (cstr/split credentials #",")]
-      (if (not= [""] users')
-        ;; Create a map of every allowed credential
-        (reduce (fn [m cred]
-                  (let [[user pass] (cstr/split cred #":")]
-                    (assoc m user {:username user
-                                   :password pass})))
-                {}
-                users')
-        (do
-          (log/info :msg "No Basic-Auth Credentials were set.")
-          {})))))
+    (let [creds  (env :credentials "")
+          users' (cstr/split creds #",")
+          users  (if (not= [""] users')
+                   users'
+                   (do (log/info :msg "Using default Basic Auth credentials!")
+                       default-creds))]
+      ;; Create a map of every allowed credential
+      (reduce (fn [m cred]
+                (let [[user pass] (cstr/split cred #":")]
+                  (assoc m user {:username user
+                                 :password pass})))
+              {}
+              users))))
 
 ;; `request` is unused but is needed for `backends/basic`
 (defn auth-fn
@@ -157,9 +159,8 @@
     :enter (fn [ctx]
              (update ctx :request middleware/authentication-request backend))}))
 
-(defn authorization-interceptor
+(def authorization-interceptor
   "Port of buddy-auth's wrap-authorization middleware."
-  [backend]
   #_{:clj-kondo/ignore [:unresolved-symbol]}
   (error/error-dispatch
    [ctx ex]
@@ -173,8 +174,7 @@
    (assoc ctx ::chain/error ex)))
 
 (def common-interceptors
-  [authentication-interceptor
-   (authorization-interceptor backend)])
+  [authentication-interceptor authorization-interceptor])
 
 ;; Generate response to stream simulation to the client.
 ;; Return a json file, and set it to be downloaded by the user.

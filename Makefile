@@ -37,19 +37,19 @@ bundle: target/bundle
 # Tests
 
 test-unit:
-	clojure -Adev:cli:run-tests
+	clojure -Adev:cli:server:test:run-test
 
 test-unit-onyx:
-	clojure -Adev:cli:onyx:run-onyx-tests
+	clojure -Adev:cli:onyx:onyx-test:run-onyx-test
 
 test-cli:
-	clojure -A:cli:run validate-input -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json -v dev-resources/input/simple.json
+	clojure -A:cli:run-cli validate-input -p dev-resources/profiles/cmi5/fixed.json -a dev-resources/personae/simple.json -m dev-resources/models/simple.json -o dev-resources/parameters/simple.json -v dev-resources/input/simple.json
 
 test-cli-comprehensive:
-	clojure -A:cli:run validate-input -i dev-resources/input/simple.json -v dev-resources/input/simple.json
+	clojure -A:cli:run-cli validate-input -i dev-resources/input/simple.json -v dev-resources/input/simple.json
 
 test-cli-output:
-	clojure -A:cli:run generate -i dev-resources/input/simple.json 
+	clojure -A:cli:run-cli generate -i dev-resources/input/simple.json 
 
 test-bundle-output: bundle
 	cd target/bundle; bin/run.sh generate -i ../../dev-resources/input/simple.json
@@ -63,4 +63,4 @@ validate-template:
 ci: test-unit test-unit-onyx test-cli validate-template
 
 server:
-	clojure -A:server
+	clojure -A:server:run-server

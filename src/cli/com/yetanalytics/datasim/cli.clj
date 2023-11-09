@@ -31,8 +31,10 @@
       (not subcommand)
       (print "No subcommand entered.\n\n" summary)
       :else
-      (case subcommand
-        "validate-input" (cli-input/validate-input rest-args)
-        "generate"       (cli-gen/generate rest-args)
-        "generate-post"  (cli-gen/generate-post rest-args)
-        (u/bail! errors)))))
+      (let [results (case subcommand
+                      "validate-input" (cli-input/validate-input! rest-args)
+                      "generate"       (cli-gen/generate! rest-args)
+                      "generate-post"  (cli-gen/generate-post! rest-args)
+                      (u/bail! errors))]
+        (when-some [errors (:errors results)]
+          (u/bail! errors))))))

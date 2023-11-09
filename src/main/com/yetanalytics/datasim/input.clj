@@ -141,8 +141,8 @@
 (defmethod validate :default [type-k _]
   (throw-unknown-key type-k))
 
-(defmethod validate :input
-  [_ {:keys [profiles personae-array models parameters] :as input}]
+(defn- validate-input
+  [{:keys [profiles personae-array models parameters] :as input}]
   (-> (concat (profile/validate-profiles profiles)
               (personae/validate-personae-array personae-array)
               (models/validate-models models)
@@ -150,6 +150,9 @@
               (validate-pattern-filters input))
       vec
       not-empty))
+
+(defmethod validate :input [_ input]
+  (validate-input input))
 
 (defmethod validate :profile [_ profile]
   (profile/validate-profile profile))
