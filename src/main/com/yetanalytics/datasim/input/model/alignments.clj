@@ -7,7 +7,7 @@
             [clojure.spec.gen.alpha :as sgen]
             [clojure.walk           :as w]
             [xapi-schema.spec       :as xs]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.input.model.alignments.weight :as-alias weight]
             [com.yetanalytics.datasim.input.model.alignments.bounds :as-alias bounds]
             [com.yetanalytics.datasim.input.model.alignments.period :as-alias period]))
@@ -40,9 +40,14 @@
   (< start end))
 
 (defmacro bound-spec [scalar-spec]
-  `(s/every (s/or :scalar   ~scalar-spec
-                  :interval (s/and (s/tuple ~scalar-spec ~scalar-spec)
-                                   interval?))
+  `(s/every (s/or :scalar
+                  ~scalar-spec
+                  :interval
+                  (s/and (s/tuple ~scalar-spec ~scalar-spec)
+                         interval?)
+                  :step-interval
+                  (s/and (s/tuple ~scalar-spec ~scalar-spec pos-int?)
+                         interval?))
             :kind vector?
             :min-count 1
             :gen-max 3))
@@ -113,8 +118,20 @@
            :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Time Bound Restarts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::boundRestarts
+  (s/every ::xs/iri :kind vector?))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Time Period
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- has-default-period?
+  [periods]
+  (some (fn [{:keys [bounds] :as _period}] (boolean (not bounds)))
+        periods))
 
 (s/def ::period/min
   (s/and number? pos?))
@@ -122,26 +139,30 @@
 (s/def ::period/mean
   (s/and number? pos? (comp not zero?)))
 
+(s/def ::period/fixed
+  (s/and number? pos? (comp not zero?)))
+
 (s/def ::period/unit
   #{"millis" "seconds" "minutes" "hours" "days" "weeks"})
 
-(s/def ::period
-  (s/keys :opt-un [::period/min
-                   ::period/mean
-                   ::period/unit]))
+(s/def ::period/bounds
+  ::bounds)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Retry Options
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::retry
-  (s/nilable #{"template" "child" "pattern"}))
+(s/def ::periods
+  (s/every (s/keys :opt-un [::period/min
+                            ::period/mean
+                            ::period/fixed
+                            ::period/unit
+                            ::period/bounds])
+           :kind #(and (vector? %)
+                       (has-default-period? %))
+           :min-count 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Max Repeat
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::repeat-max pos-int?)
+(s/def ::repeatMax pos-int?)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Object
@@ -188,17 +209,17 @@
 
 (def pattern-spec
   (s/keys :req-un [::id]
-          :opt-un [::weights    ; for alternate and optional patterns 
-                   ::repeat-max ; for oneOrMore and zeroOrMore patterns
+          :opt-un [::weights   ; for alternate and optional patterns 
+                   ::repeatMax ; for oneOrMore and zeroOrMore patterns
                    ::bounds
-                   ::period
-                   ::retry]))
+                   ::boundRestarts
+                   ::periods]))
 
 (def template-spec
   (s/keys :req-un [::id]
           :opt-un [::bounds
-                   ::period
-                   ::retry]))
+                   ::boundRestarts
+                   ::periods]))
 
 (def object-override-spec
   (s/keys :req-un [::object]

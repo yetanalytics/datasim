@@ -43,10 +43,10 @@
 ;; makes use of two different parts of the input spec
 
 (defn validate-pattern-filters
-  [{{:keys [gen-profiles gen-patterns]} :parameters
+  [{{:keys [genProfiles genPatterns]} :parameters
     profiles :profiles}]
-  (concat (profile/validate-profile-filters profiles gen-profiles)
-          (profile/validate-pattern-filters profiles gen-patterns)))
+  (concat (profile/validate-profile-filters profiles genProfiles)
+          (profile/validate-pattern-filters profiles genPatterns)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input I/O

@@ -4,15 +4,14 @@
             [clojure.core.async :as a]
             [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim                   :as-alias datasim]
-            [com.yetanalytics.datasim.model             :as model]
-            [com.yetanalytics.datasim.math.random       :as random]
-            [com.yetanalytics.datasim.xapi.actor        :as actor]
-            [com.yetanalytics.datasim.xapi.profile      :as p]
-            [com.yetanalytics.datasim.xapi.statement    :as statement]
-            [com.yetanalytics.datasim.util.sequence     :as su]
-            [com.yetanalytics.datasim.util.async        :as au]
-            [com.yetanalytics.datasim.model.temporal    :as temporal]))
+            [com.yetanalytics.datasim                :as-alias datasim]
+            [com.yetanalytics.datasim.model          :as model]
+            [com.yetanalytics.datasim.xapi.actor     :as actor]
+            [com.yetanalytics.datasim.xapi.profile   :as p]
+            [com.yetanalytics.datasim.xapi.statement :as statement]
+            [com.yetanalytics.datasim.util.random    :as random]
+            [com.yetanalytics.datasim.util.sequence  :as su]
+            [com.yetanalytics.datasim.util.async     :as au]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -37,13 +36,15 @@
                                             ::statement/actor
                                             ::statement/alignments]
                                    :opt-un [::statement/object-overrides])
-               :rng        ::random/rng
-               :alignments ::model/alignments
-               :start-time ::temporal/date-time
-               :?end-time  ::temporal/date-time
-               :?from-time ::temporal/date-time
+               :rng         ::random/rng
+               :alignments  ::model/alignments
+               :start-time  t/local-date-time?
+               :?end-time   t/local-date-time?
+               :?from-time  t/local-date-time?
                :zone-region string?)
   :ret ::statement-seq)
+
+(def empty-seq-limit 10000)
 
 (defn- init-statement-seq
   "Init sequence of registration IDs"
@@ -54,22 +55,39 @@
 (defn- temp-statement-seq
   "Generate sequence of maps of `:template`, `:timestamp`, `:time-since-last`,
    and `:registration` values."
-  [inputs alignments seed timestamp registration-seq]
+  [inputs alignments seed max-restarts timestamp registration-seq]
   (let [profile-rng
         (random/seed-rng seed)
         fill-statement-seq*
-        (fn fill-statement-seq* [timestamp [registration & rest-regs]]
+        (fn fill-statement-seq*
+          [timestamp [registration & rest-regs] num-empties]
           (lazy-seq
            (let [profile-seed
                  (random/rand-unbound-int profile-rng)
                  template-maps
-                 (p/walk-profile-patterns inputs alignments profile-seed timestamp)
+                 (p/walk-profile-patterns inputs
+                                          alignments
+                                          profile-seed
+                                          max-restarts
+                                          timestamp)
                  ?next-timestamp
-                 (:timestamp (meta template-maps))]
-             (cond-> (map #(assoc % :registration registration) template-maps)
-               ?next-timestamp
-               (concat (fill-statement-seq* ?next-timestamp rest-regs))))))]
-    (fill-statement-seq* timestamp registration-seq)))
+                 (:timestamp (meta template-maps))
+                 template-maps*
+                 (not-empty
+                  (map #(assoc % :registration registration) template-maps))]
+             (cond
+               ;; Usual case: valid seq + next timestamp
+               (and template-maps* ?next-timestamp)
+               (concat template-maps*
+                       (fill-statement-seq* ?next-timestamp rest-regs 0))
+               ;; Empty generated seq; must be limited by `empty-seq-limit`
+               (and (< num-empties empty-seq-limit) ?next-timestamp)
+               (fill-statement-seq* ?next-timestamp rest-regs (inc num-empties))
+               ;; No next timestamp; terminate early
+               template-maps* template-maps*
+               ;; "Base case"; terminate early with empty list
+               :else          (list)))))]
+    (fill-statement-seq* timestamp registration-seq 0)))
 
 (defn- drop-statement-seq
   "Drop sequence entries after `?end-time` (or none if `?end-time` is `nil`)."
@@ -111,13 +129,13 @@
   "Generate a lazy sequence of xAPI Statements occuring as a Poisson
    process. The sequence will either end at `?end-time` or, if `nil`,
    be infinite."
-  [input seed alignments start-time ?end-time ?from-time zone-region]
+  [input seed alignments start-time ?end-time ?from-time zone-region max-restarts]
   (let [sim-rng   (random/seed-rng seed)
         reg-seed  (random/rand-unbound-int sim-rng)
         temp-seed (random/rand-unbound-int sim-rng)
         stmt-rng  (random/seed-rng (random/rand-unbound-int sim-rng))]
     (->> (init-statement-seq reg-seed)
-         (temp-statement-seq input alignments temp-seed start-time)
+         (temp-statement-seq input alignments temp-seed max-restarts start-time)
          (drop-statement-seq ?end-time)
          (seed-statement-seq stmt-rng)
          (from-statement-seq ?from-time)
@@ -128,21 +146,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Data structure helpers
-
-(defn- personaes->group-actor-id-map
-  "Convert `personae-array` into a map from group IDs, which represent
-   each personae in the array, to actor IDs, representing each group member."
-  [personae-array]
-  (reduce
-   (fn [m {actors :member :as personae}]
-     (let [group-id (actor/actor-ifi personae)]
-       (reduce
-        (fn [m* actor]
-          (assoc m* (actor/actor-ifi actor) group-id))
-        m
-        actors)))
-   {}
-   personae-array))
 
 (s/fdef build-skeleton
   :args (s/cat :input ::datasim/input)
@@ -155,7 +158,7 @@
    Spooky."
   [{:keys [profiles personae-array models parameters]}]
   (let [;; Input parameters
-        {:keys [start end from timezone seed]} parameters
+        {:keys [start end from timezone seed maxRestarts]} parameters
         ;; RNG for generating the rest of the seeds
         sim-rng     (random/seed-rng seed)
         ;; Set timezone region and timestamps
@@ -165,7 +168,7 @@
         ?from-time  (some-> from t/instant (t/local-date-time zone-region))
         ;; Derive actor, activity, and profile object colls and maps
         actor-seq       (apply concat (map :member personae-array))
-        actor-group-map (personaes->group-actor-id-map personae-array)
+        actor-group-map (actor/groups->agent-group-ifi-map personae-array)
         ;; Derive profiles map
         activity-seed   (random/rand-unbound-int sim-rng)
         profiles-map    (p/profiles->profile-map profiles parameters activity-seed)
@@ -200,7 +203,8 @@
                                                  start-time
                                                  ?end-time
                                                  ?from-time
-                                                 zone-region)]
+                                                 zone-region
+                                                 maxRestarts)]
               (assoc m actor-id actor-stmt-seq)))
           {}))))
 

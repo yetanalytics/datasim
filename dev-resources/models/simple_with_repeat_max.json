@@ -1,0 +1,38 @@
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bobfake@example.org",
+                "type": "Agent"
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfieds",
+                "repeatMax": 1
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "repeatMax": 1
+            }
+        ]
+    },
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:frederstaz@example.org",
+                "type": "Agent"
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfieds",
+                "repeatMax": 100
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "repeatMax": 100
+            }
+        ]
+    }
+]

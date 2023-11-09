@@ -1,0 +1,20 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [[0, 2022]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "mean": 1,
+                        "unit": "days"
+                    }
+                ]
+            }
+        ]
+    }
+]

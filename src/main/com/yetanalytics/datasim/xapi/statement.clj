@@ -4,7 +4,7 @@
             [clojure.walk       :as w]
             [java-time.api      :as jt]
             [xapi-schema.spec   :as xs]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model                  :as model]
             [com.yetanalytics.datasim.xapi.profile           :as profile]
             [com.yetanalytics.datasim.xapi.profile.template  :as t]
@@ -164,7 +164,8 @@
         object-override (select-object-override rng objects weights)
         template-rules* (remove-object-rules template-rules object-override)
         timestamp-inst  (jt/instant timestamp timezone)
-        statement-meta  {:timestamp       timestamp-inst
+        statement-meta  {:timestamp       timestamp
+                         :timezone        timezone
                          :time-ms         (.toEpochMilli timestamp-inst)
                          :time-since-last time-since-last
                          :time-since-ms   (.toMillis time-since-last)

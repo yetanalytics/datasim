@@ -1,4 +1,4 @@
-(ns com.yetanalytics.datasim.input.models-test
+(ns com.yetanalytics.datasim.input.model-test
   (:require [clojure.test :refer [deftest testing is]]
             [clojure.spec.alpha :as s]
             [com.yetanalytics.datasim.input.model :as model]))
@@ -25,28 +25,36 @@
               :weight 0.1}
              {:id     "http://www.whatever.com/pattern1/child"
               :weight 0.9}]
-   :period  {:min  2.1
-             :mean 3
-             :unit "weeks"}})
+   :periods [{:min  2.1
+              :mean 3
+              :unit "weeks"}]})
 
 (def pat-alignment-2
-  {:id         "http://www.whatever.com/pattern2"
-   :weights    [{:id     "http://www.whatever.com/pattern2/child1"
-                 :weight 0.8}
-                {:id     "http://www.whatever.com/pattern2/child2"
-                 :weight 0.2}]
-   :bounds     [{:seconds     [1 2 3]
-                 :minutes     [1]
-                 :hours       [[8 12]]
-                 :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
-                 :daysOfMonth [[1 10] [21 30]]
-                 :months      [1 ["April" "May"]]
-                 :years       [2023]}]
-   :period     {:min  2
-                :mean 3.2
-                :unit "millis"}
-   :retry      "template"
-   :repeat-max 10})
+  {:id            "http://www.whatever.com/pattern2"
+   :weights       [{:id     "http://www.whatever.com/pattern2/child1"
+                    :weight 0.8}
+                   {:id     "http://www.whatever.com/pattern2/child2"
+                    :weight 0.2}]
+   :bounds        [{:seconds     [1 2 3]
+                    :minutes     [[0 59 2]]
+                    :hours       [[8 12]]
+                    :daysOfWeek  ["Sunday" "Tuesday" "Thursday"]
+                    :daysOfMonth [[1 10] [21 30]]
+                    :months      [1 ["April" "May"]]
+                    :years       [2023 2024]}]
+   :boundRestarts ["http://www.whatever.com/pattern1"]
+   :periods       [{:min    2
+                    :mean   3.2
+                    :unit   "millis"
+                    :bounds [{:years [2023]}]}
+                   {:min    8
+                    :mean   1.1
+                    :unit   "millis"
+                    :bounds [{:years [2024]}]}
+                   {:fixed 2
+                    :mean  3.1 ; would be ignored
+                    :unit  "millis"}]
+   :repeatMax     10})
 
 (def template-alignment
   {:id     "http://www.whatever.com/template"
@@ -110,17 +118,19 @@
     (is (not (s/valid? ::model/patterns
                        [(assoc-in pat-alignment-1 [:bounds 0 :minutes] [60])])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :mean] 0)])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :mean] 0)])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :mean] -3)])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :mean] -3)])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :mean] "4")])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :mean] "4")])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :min] -1.2)])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :min] -1.2)])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :min] "3")])))
+                       [(assoc-in pat-alignment-1 [:periods 0 :min] "3")])))
     (is (not (s/valid? ::model/patterns
-                       [(assoc-in pat-alignment-1 [:period :unit] "months")]))))
+                       [(assoc-in pat-alignment-1 [:periods 0 :unit] "months")])))
+    (is (not (s/valid? ::model/patterns
+                       [(assoc-in pat-alignment-2 [:periods 2 :bounds] [{:years [2024]}])]))))
   (testing "object overrides"
     (is (s/valid? ::model/objectOverrides
                   [object-override-example]))

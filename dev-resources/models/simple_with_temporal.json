@@ -9,11 +9,13 @@
         "patterns": [
             {
                 "id": "https://w3id.org/xapi/cmi5#satisfieds",
-                "period": {
-                    "min": 1,
-                    "mean": 1.0,
-                    "unit": "hours"
-                }
+                "periods": [
+                    {
+                        "min": 1,
+                        "mean": 1.0,
+                        "unit": "hours"
+                    }
+                ]
             }
         ]
     },
@@ -29,18 +31,28 @@
                 "id": "https://w3id.org/xapi/cmi5#typicalsessions",
                 "bounds": [
                     {
-                        "months": [["January", "October"], "December"],
-                        "years": [2019]
+                        "months": [["January", "October"], "December"]
                     }
                 ]
             }
         ],
         "templates": [
             {
-                "id": "https://w3id.org/xapi/cmi5#satisfied",
+                "id": "https://w3id.org/xapi/cmi5#launched",
                 "bounds": [
                     {
-                        "minutes": [[0, 35], [50, 59]]
+                        "minutes": [[0, 10]]
+                    }
+                ],
+                "boundRestarts": [
+                    "https://w3id.org/xapi/cmi5#typicalsessions"
+                ]
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#initialized",
+                "bounds": [
+                    {
+                        "minutes": [[10, 59, 5]]
                     }
                 ]
             }

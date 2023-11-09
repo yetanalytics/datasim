@@ -14,7 +14,7 @@
             [com.yetanalytics.pathetic.path :as jpath]
             [com.yetanalytics.pan.objects.templates.rule :as rule]
             [com.yetanalytics.datasim.xapi.path          :as xp]
-            [com.yetanalytics.datasim.math.random        :as random]
+            [com.yetanalytics.datasim.util.random        :as random]
             [com.yetanalytics.datasim.xapi.profile       :as-alias profile]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

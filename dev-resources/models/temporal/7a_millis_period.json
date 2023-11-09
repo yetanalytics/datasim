@@ -1,0 +1,106 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [1],
+                        "hours": [0],
+                        "minutes": [0],
+                        "seconds": [[0, 7]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [0]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 10,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [1]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 20,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [2]
+                            }
+                        ],
+                        "min": 10,
+                        "mean": 10,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [3]
+                            }
+                        ],
+                        "min": 10,
+                        "mean": 20,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [4]
+                            }
+                        ],
+                        "min": 20,
+                        "mean": 10,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [5]
+                            }
+                        ],
+                        "min": 20,
+                        "mean": 20,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [6]
+                            }
+                        ],
+                        "min": 30,
+                        "mean": 10,
+                        "unit": "millis"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "seconds": [7]
+                            }
+                        ],
+                        "min": 30,
+                        "mean": 20,
+                        "unit": "millis"
+                    },
+                    {
+                        "min": 0,
+                        "mean": 10,
+                        "unit": "millis"
+                    }
+                ]
+            }
+        ]
+    }
+]

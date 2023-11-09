@@ -36,11 +36,11 @@
     :update-fn (fnil conj #{})
     :desc      select-agent-desc]
    [nil "--gen-profile IRI" "Select Profile IRIs"
-    :id      :gen-profiles
+    :id      :genProfiles
     :assoc-fn u/conj-param-input
     :desc     gen-profiles-desc]
    [nil "--gen-pattern IRI" "Select Pattern IRIs"
-    :id       :gen-patterns
+    :id       :genPatterns
     :assoc-fn u/conj-param-input
     :desc     gen-patterns-desc]])
 

@@ -5,15 +5,15 @@
    of an entire Profile cosmos."
   (:require [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
+            [java-time.api      :as t]
             [com.yetanalytics.pan.objects.profile  :as pan-profile]
             [com.yetanalytics.pan.objects.concept  :as pan-concept]
             [com.yetanalytics.pan.objects.pattern  :as pan-pattern]
             [com.yetanalytics.pan.objects.template :as pan-template]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.parameters :as params]
-            [com.yetanalytics.datasim.math.random            :as random]
+            [com.yetanalytics.datasim.util.random            :as random]
             [com.yetanalytics.datasim.model                  :as model]
-            [com.yetanalytics.datasim.model.temporal         :as temporal]
             [com.yetanalytics.datasim.xapi.profile.activity  :as act]
             [com.yetanalytics.datasim.xapi.profile.extension :as ext]
             [com.yetanalytics.datasim.xapi.profile.pattern   :as pat]
@@ -98,13 +98,13 @@
   :ret ::type-iri-map)
 
 (defn select-primary-patterns
-  "Given `type-iri-map` and the `gen-profiles` and `gen-patterns` params,
+  "Given `type-iri-map` and the `genProfiles` and `genPatterns` params,
    update the Pattern map to further specify primary patterns for generation.
-   Primary patterns in this context must be specified by `gen-profiles` or
-   `gen-patterns`, or else they will no longer be counted as primary patterns."
-  [type-iri-map {:keys [gen-profiles gen-patterns]}]
-  (let [?profile-set   (some-> gen-profiles not-empty set)
-        ?pattern-set   (some-> gen-patterns not-empty set)
+   Primary patterns in this context must be specified by `genProfiles` or
+   `genPatterns`, or else they will no longer be counted as primary patterns."
+  [type-iri-map {:keys [genProfiles genPatterns]}]
+  (let [?profile-set   (some-> genProfiles not-empty set)
+        ?pattern-set   (some-> genPatterns not-empty set)
         primary-pat?   (fn [profile-id pattern-id]
                          (and (or (nil? ?profile-set)
                                   (contains? ?profile-set profile-id))
@@ -175,10 +175,11 @@
             (partial tmp/update-parsed-rules-map profile-map*))))
 
 (s/fdef walk-profile-patterns
-  :args (s/cat :profile-map ::profile-map
-               :alignments  ::model/alignments
-               :seed        ::random/seed
-               :start-time  ::temporal/date-time)
+  :args (s/cat :profile-map  ::profile-map
+               :alignments   ::model/alignments
+               :seed         ::random/seed
+               :max-restarts pos-int?
+               :start-time   t/local-date-time?)
   :ret (s/every ::pat/template-map))
 
 (defn walk-profile-patterns
@@ -186,10 +187,12 @@
   [{pattern-iri-map :pattern-map}
    {pattern-alignments :patterns}
    seed
+   max-restarts
    start-time]
   (let [pattern-rng  (random/seed-rng seed)
         root-pattern (get pattern-iri-map ::pat/root)
         context      {:pattern-map    pattern-iri-map
                       :alignments-map pattern-alignments
+                      :max-restarts   max-restarts
                       :rng            pattern-rng}]
-    (pat/walk-pattern context nil start-time start-time root-pattern)))
+    (pat/walk-pattern context [] start-time start-time root-pattern)))

@@ -1,0 +1,94 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [[1, 8]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [1]
+                            }
+                        ],
+                        "fixed": 1,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [2]
+                            }
+                        ],
+                        "fixed": 2,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [3]
+                            }
+                        ],
+                        "fixed": 3,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [4]
+                            }
+                        ],
+                        "fixed": 4,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [5]
+                            }
+                        ],
+                        "fixed": 5,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [6]
+                            }
+                        ],
+                        "fixed": 6,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [7]
+                            }
+                        ],
+                        "fixed": 7,
+                        "unit": "hours"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "daysOfMonth": [8]
+                            }
+                        ],
+                        "fixed": 8,
+                        "unit": "hours"
+                    },
+                    {
+                        "fixed": 1,
+                        "unit": "hours"
+                    }
+                ]
+            }
+        ]
+    }
+]

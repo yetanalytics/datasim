@@ -1,10 +1,8 @@
-(ns com.yetanalytics.datasim.model.temporal
+(ns com.yetanalytics.datasim.model.bounds
   (:require [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as sgen]
             [java-time.api          :as t]
-            [com.yetanalytics.datasim.math.random            :as random]
-            [com.yetanalytics.datasim.input.model.alignments :as align])
-  (:import [java.time LocalDateTime]))
+            [com.yetanalytics.datasim.input.model.alignments :as align]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specs
@@ -24,9 +22,7 @@
 
 (s/def ::month (s/int-in 1 13))
 
-(s/def ::day (s/int-in 1 32))
-
-(s/def ::day-of-month ::day)
+(s/def ::day-of-month (s/int-in 1 32))
 
 (s/def ::day-of-week (s/int-in 0 6))
 
@@ -41,9 +37,6 @@
 
 (s/def ::months
   (s/coll-of ::month :distinct true :min-count 1))
-
-(s/def ::days
-  (s/coll-of ::day :distinct true :min-count 1))
 
 (s/def ::days-of-month
   (s/coll-of ::day-of-month :distinct true :min-count 1))
@@ -60,21 +53,7 @@
 (s/def ::seconds
   (s/coll-of ::second :distinct true :min-count 1))
 
-(def ^:private ranges-spec
-  (s/keys :opt-un [::years
-                   ::months
-                   ::days
-                   ::hours
-                   ::minutes
-                   ::seconds]))
-
-(s/def ::ranges
-  (s/with-gen (s/and ranges-spec
-                     (s/map-of keyword? (s/and seq? sorted-entries?)))
-    (fn [] (sgen/fmap #(update-vals % sort)
-                      (s/gen ranges-spec)))))
-
-(def ^:private sets-spec
+(def ^:private bound-spec
   (s/keys :opt-un [::years
                    ::months
                    ::days-of-month
@@ -83,31 +62,27 @@
                    ::minutes
                    ::seconds]))
 
+(s/def ::ranges
+  (s/with-gen (s/and bound-spec
+                     (s/map-of keyword? (s/and seq? sorted-entries?)))
+    (fn [] (sgen/fmap #(update-vals % sort)
+                      (s/gen bound-spec)))))
+
 (s/def ::sets
-  (s/with-gen (s/and sets-spec
+  (s/with-gen (s/and bound-spec
                      (s/map-of keyword? set?))
     (fn [] (sgen/fmap #(update-vals % set)
-                      (s/gen sets-spec)))))
+                      (s/gen bound-spec)))))
 
 (s/def ::bounds
-  (s/keys :req-un [::ranges ::sets]))
-
-(s/def ::min nat-int?)
-
-(s/def ::mean pos-int?)
-
-(s/def ::period
-  (s/keys :req-un [::min ::mean]))
-
-(s/def ::date-time
-  #(instance? LocalDateTime %))
+  (s/every (s/keys :req-un [::ranges ::sets])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/fdef time-map
-  :args (s/cat :date-time ::date-time)
+  :args (s/cat :date-time t/local-date-time?)
   :ret (s/keys :req-un [::year
                         ::month
                         ::day-of-month
@@ -131,7 +106,7 @@
     {:year         year
      :month        month
      :day-of-month day-month
-     :day-of-week  day-week
+     :day-of-week  (mod day-week 7) ; need to convert Sunday from 7 to 0
      :hour         hour
      :minute       minute
      :second       second}))
@@ -150,7 +125,7 @@
 (s/fdef day-of-month?
   :args (s/cat :year  ::year
                :month ::month
-               :day   ::day)
+               :day   ::day-of-month)
   :ret boolean?)
 
 (defn day-of-month?
@@ -187,7 +162,7 @@
 (s/fdef day-of-week
   :args (s/cat :year  ::year
                :month ::month
-               :day   ::day)
+               :day   ::day-of-month)
   :ret ::day-of-week)
 
 (defn day-of-week
@@ -223,16 +198,18 @@
   [unit]
   (case unit
     :daysOfWeek  :days-of-week
-    :daysOfMonth :day-of-month
+    :daysOfMonth :days-of-month
     unit))
 
 (defn- reduce-values
   [vs* v]
   (if (coll? v)
-    (let [[start end] v
+    (let [[start end ?step] v
           start* (string->int start)
-          end*   (string->int end)
-          vrange (range start* (inc end*))]
+          end*   (inc (string->int end))
+          vrange (if ?step
+                   (range start* end* ?step)
+                   (range start* end*))]
       (into vs* vrange))
     (let [v* (string->int v)]
       (conj vs* v*))))
@@ -278,30 +255,6 @@
 (def ms-per-week
   604800000)
 
-(defn- convert-time
-  "Convert time `t` into milliseconds based on the time `unit`. Coerces
-   any doubles into integers."
-  [t unit]
-  (long (case unit
-          :millis  t
-          :seconds (* t ms-per-second)
-          :minutes (* t ms-per-minute)
-          :hours   (* t ms-per-hour)
-          :days    (* t ms-per-day)
-          :weeks   (* t ms-per-week))))
-
-(s/fdef convert-period
-  :args (s/cat :period ::align/period)
-  :ret ::period)
-
-(defn convert-period
-  [{:keys [min mean unit]}]
-  (let [unit* (or (some-> unit keyword) :minute)
-        mean* (or (some-> mean (convert-time unit*)) ms-per-minute)
-        min*  (or (some-> min (convert-time unit*)) 0)]
-    {:min  min*
-     :mean mean*}))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Runtime
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -314,20 +267,21 @@
       (contains? unit-set unit)))
 
 (defn- in-bound?
-  [{{:keys [years months days-of-month days-of-week hours minutes]} :sets}
+  [{{:keys [years months days-of-month days-of-week hours minutes seconds]} :sets}
    date-time]
-  (let [{:keys [year month day-of-month day-of-week hour minute]}
+  (let [{:keys [year month day-of-month day-of-week hour minute second]}
         (time-map date-time)]
     (and (in-bound-unit? years year)
          (in-bound-unit? months month)
          (in-bound-unit? days-of-month day-of-month)
          (in-bound-unit? days-of-week day-of-week)
          (in-bound-unit? hours hour)
-         (in-bound-unit? minutes minute))))
+         (in-bound-unit? minutes minute)
+         (in-bound-unit? seconds second))))
 
 (s/fdef bounded-time?
   :args (s/cat :bounds    ::bounds
-               :date-time ::date-time)
+               :date-time t/local-date-time?)
   :ret boolean?)
 
 (defn bounded-time?
@@ -351,7 +305,7 @@
            (< inst-time t))))
 
 (defn- next-bounded-times
-  "Returns a sequence of the next LocalDateTime that are within `bounds`."
+  "Returns a sequence of the next LocalDateTime that are within the bound."
   [{{:keys [years months days-of-month hours minutes seconds]
      :or {months        (range 1 13)
           days-of-month (range 1 32)
@@ -369,6 +323,9 @@
          inst-min :minute
          inst-sec :second}
         (time-map date-time)
+        years
+        (or years
+            (range inst-yr Integer/MAX_VALUE))
         day-of-week?
         (if (empty? days-of-week)
           (constantly true)
@@ -411,36 +368,12 @@
 
 (s/fdef next-bounded-time
   :args (s/cat :bound     ::bounds
-               :date-time ::date-time)
-  :ret ::date-time)
+               :date-time t/local-date-time?)
+  :ret t/local-date-time?)
 
 (defn next-bounded-time
+  "Returns the next timestamp after `date-time` within any of the `bounds`."
   [bounds date-time]
-  (first (next-bounded-times bounds date-time)))
-
-;; Next Time
-
-(def min-ms 60000.0) ; The amount of milliseconds in one minute
-
-(defn- generate-period
-  [rng {:keys [mean min]
-        :or {mean min-ms
-             min  0}}]
-  (let [rate   (/ 1.0 mean)
-        t-diff (long (random/rand-exp rng rate))]
-    (+ min t-diff)))
-
-(s/fdef add-period
-  :args (s/cat :date-time ::date-time
-               :rng       ::rng
-               :period    ::period)
-  :ret ::date-time)
-
-(defn add-period
-  "Add a random amount of milliseonds `date-time` based on the parameters
-   in `period`. The millis amount is an exponential-distributed random var
-   with `period` parameters `:mean` and `:min`. The generated sequence
-   that uses these periodic date-times will thus occur as a Poisson random
-   process."
-  [date-time rng period]
-  (t/plus date-time (t/millis (generate-period rng period))))
+  (some (fn [bound]
+          (first (next-bounded-times bound date-time)))
+        bounds))

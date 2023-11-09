@@ -48,6 +48,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn validate-models
-  [alignments]
-  (some->> (s/explain-data ::models alignments)
+  [models]
+  (some->> (s/explain-data ::models models)
            (errs/explain-to-map-coll ::models)))

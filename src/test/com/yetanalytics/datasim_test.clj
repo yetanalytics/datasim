@@ -3,7 +3,9 @@
             [clojure.math       :as math]
             [clojure.core.async :as a]
             [clojure.spec.alpha :as s]
+            [java-time.api      :as t]
             [xapi-schema.spec   :as xs]
+            [com.yetanalytics.datasim.model.bounds :refer [ms-per-hour]]
             [com.yetanalytics.datasim.test-constants :as const]
             [com.yetanalytics.datasim.sim :as sim]
             [com.yetanalytics.datasim :refer [generate-map
@@ -75,6 +77,15 @@
 (def no-concepts-profile-input
   (assoc const/simple-input :profiles [const/no-concept-profile]))
 
+(def satisfied-verb
+  "http://adlnet.gov/expapi/verbs/satisfied")
+
+(def launched-verb
+  "http://adlnet.gov/expapi/verbs/launched")
+
+(def initialized-verb
+  "http://adlnet.gov/expapi/verbs/initialized")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -112,32 +123,89 @@
                       (get bob-mbox)
                       (nth 10000)))))
   (testing "We respect temporal properties for different actors"
-    (let [satisfied "http://adlnet.gov/expapi/verbs/satisfied"
-          ms-in-hr  3600000
-          input     (-> const/simple-input
-                        (assoc :models const/temporal-models)
-                        (assoc-in [:parameters :end] nil))
-          result    (generate-map input)]
+    (let [input  (-> const/simple-input
+                     (assoc :models const/simple-temporal-models)
+                     (assoc-in [:parameters :end] nil))
+          result (generate-map input)]
       (testing "- Alice: all verbs happen on the order of minutes (the default)"
         (is (->> (get result alice-mbox)
                  (take 100)
-                 (every? (fn [statement]
-                           (let [diff (:time-since-ms (meta statement))]
-                             (> ms-in-hr diff)))))))
+                 (every?
+                  (fn [statement]
+                    (let [diff (:time-since-ms (meta statement))]
+                      (> ms-per-hour diff)))))))
       (testing "- Bob: satisfieds happen on the order of hours, other verbs as normal"
         (is (->> (get result bob-mbox)
                  (take 100)
-                 (every? (fn [statement]
-                           (let [verb (get-in statement ["verb" "id"])
-                                 diff (:time-since-ms (meta statement))]
-                             (if (= verb satisfied)
-                               (< ms-in-hr diff)
-                               (> ms-in-hr diff))))))))
-      (testing "- Fred: generation cannot occur due to bounds"
-        (is (= '()
-               (->> (get result fred-mbox)
-                    ;; Safety measure to avoid actually infinite seq
-                    (take 100))))))))
+                 (every?
+                  (fn [statement]
+                    (let [verb (get-in statement ["verb" "id"])
+                          diff (:time-since-ms (meta statement))]
+                      (if (= verb satisfied-verb)
+                        ;; Satisfied period: 1 hour min + 1 hour mean
+                        (< ms-per-hour diff)
+                        ;; Default period: no min + 1 minute mean
+                        (> ms-per-hour diff))))))))
+      (testing "- Fred: bounds are satisfied for each verb"
+        (is (->> (get result fred-mbox)
+                 (take 100)
+                 (every?
+                  (fn [statement]
+                    (let [verb   (get-in statement ["verb" "id"])
+                          ts     (get-in statement ["timestamp"])
+                          ts-ldt (-> ts
+                                     t/zoned-date-time
+                                     (t/local-date-time "America/New_York"))
+                          ts-min (t/as ts-ldt :minute-of-hour)
+                          ts-mon (t/as ts-ldt :month-of-year)]
+                      (and
+                       (or (= verb satisfied-verb)
+                           (not= 11 ts-mon))
+                       (cond
+                         (= verb launched-verb)
+                         (<= 0 ts-min 10)
+                         (= verb initialized-verb)
+                         (and (<= 10 ts-min 59)
+                              (zero? (mod ts-min 5)))
+                         :else true))))))))))
+  (testing "We respect repeatMax properties for different actors"
+    (let [input       (-> const/simple-input
+                          (assoc :models const/simple-repeat-max-models)
+                          (assoc-in [:parameters :end] nil))
+          result      (generate-map input)
+          first-alice (-> result (get alice-mbox) first)
+          first-bob   (-> result (get bob-mbox) first)
+          first-fred  (-> result (get fred-mbox) first)
+          first-reg?  (fn [first stmt]
+                        (= (get-in first ["context" "registration"])
+                           (get-in stmt ["context" "registration"])))
+          reduce-sats (fn [acc stmt]
+                        (cond
+                          (= satisfied-verb
+                             (get-in stmt ["verb" "id"]))
+                          (conj (pop acc) (conj (peek acc) stmt))
+                          (not-empty (peek acc))
+                          (conj acc [])
+                          :else
+                          acc))]
+      (testing "- Alice: repeatMax of 5 (default)"
+        (is (->> (get result alice-mbox)
+                 (take-while (partial first-reg? first-alice))
+                 (reduce reduce-sats [[]])
+                 (every? (fn [sat-stmts]
+                           (<= (count sat-stmts) 5))))))
+      (testing "- Bob: repeatMax of 1"
+        (is (->> (get result bob-mbox)
+                 (take-while (partial first-reg? first-bob))
+                 (reduce reduce-sats [[]])
+                 (every? (fn [sat-stmts]
+                           (<= (count sat-stmts) 1))))))
+      (testing "- Fred: repeatMax of 100"
+        (is (->> (get result fred-mbox)
+                 (take-while (partial first-reg? first-fred))
+                 (reduce reduce-sats [[]])
+                 (every? (fn [sat-stmts]
+                           (<= (count sat-stmts) 100)))))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"
@@ -157,22 +225,22 @@
           [s1' & _]   (generate-seq from-input)]
       (is (not= s0 s1'))
       (is (= s1 s1'))))
-  (testing "Respects `gen-profiles` param (w/ multiple profiles)"
+  (testing "Respects `genProfiles` param (w/ multiple profiles)"
     (let [input    (update double-profile-input
                            :parameters
                            assoc
-                           :gen-profiles [cmi5-id])
+                           :genProfiles [cmi5-id])
           result   (generate-seq input)
           cat-acts (map get-context-category-activities result)]
       (is (= [[{"id" cmi5-version-id}]
               [{"id" cmi5-version-id}  ; has both since cmi5-moveon-id is an
                {"id" cmi5-moveon-id}]] ; 'any' or 'none' value in the profile
              (distinct cat-acts)))))
-  (testing "Respects `gen-patterns` param (w/ multiple profiles)"
+  (testing "Respects `genPatterns` param (w/ multiple profiles)"
     (let [input    (update double-profile-input
                            :parameters
                            assoc
-                           :gen-patterns [tla-completed-session-id])
+                           :genPatterns [tla-completed-session-id])
           result   (generate-seq input)
           cat-acts (map get-context-category-activities result)]
       (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
@@ -182,7 +250,7 @@
                        (update :profiles conj const/referential-profile)
                        (update :parameters
                                assoc
-                               :gen-patterns [referential-completed-session-id]))
+                               :genPatterns [referential-completed-session-id]))
           result   (generate-seq input)
           cat-acts (map get-context-category-activities result)]
       (is (= [nil [{"id" tla-version-id}]] ; why are some category activites nil?
@@ -246,7 +314,7 @@
       (is (every? #{"https://w3id.org/xapi/cmi5/activities/block"}
                   (take 10 act-types)))))
   (testing "Can apply object override and respect weights"
-    (let [input     (assoc const/simple-input :models const/overrides-models)
+    (let [input     (assoc const/simple-input :models const/simple-overrides-models)
           result    (generate-seq input :select-agents [bob-mbox])
           objects   (map get-object result)
           obj-count (count objects)
@@ -269,17 +337,17 @@
              (get obj-freq override-2)
              (+ mean-2 (* 3 sd))))))
   (testing "Can apply object override and respect weights - only activity"
-    (let [input     (-> const/simple-input
-                        (assoc :models const/overrides-models)
-                        (update-in [:models 0 :objectOverrides 0]
-                                   assoc
-                                   :weight 1.0)
-                        (update-in [:models 0 :objectOverrides 1]
-                                   assoc
-                                   :weight 0.0))
-          result    (generate-seq input
-                                  :select-agents [bob-mbox])
-          objects   (map get-object result)]
+    (let [input   (-> const/simple-input
+                      (assoc :models const/simple-overrides-models)
+                      (update-in [:models 0 :objectOverrides 0]
+                                 assoc
+                                 :weight 1.0)
+                      (update-in [:models 0 :objectOverrides 1]
+                                 assoc
+                                 :weight 0.0))
+          result  (generate-seq input
+                                :select-agents [bob-mbox])
+          objects (map get-object result)]
       (is (every? #(= override-1 %) objects))))
   (testing "Can apply multiple personae"
     (let [input  (update const/simple-input

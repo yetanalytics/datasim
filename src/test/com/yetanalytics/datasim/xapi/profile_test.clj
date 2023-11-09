@@ -46,18 +46,18 @@
     (is (= combined-iri-map
            (profile/select-primary-patterns
             combined-iri-map
-            {:gen-profiles [cmi5-id tla-id]}))))
+            {:genProfiles [cmi5-id tla-id]}))))
   (testing "profile selection, selected patterns"
     (is (not= combined-iri-map
               (profile/select-primary-patterns
                combined-iri-map
-               {:gen-profiles [cmi5-id tla-id]
-                :gen-patterns [cmi5-pattern-id]}))))
+               {:genProfiles [cmi5-id tla-id]
+                :genPatterns [cmi5-pattern-id]}))))
   (testing "filters by profile"
     (is (= [cmi5-pattern-id]
            (-> (profile/select-primary-patterns
                 combined-iri-map
-                {:gen-profiles [cmi5-id]})
+                {:genProfiles [cmi5-id]})
                (get "Pattern")
                vals
                primary-pattern-ids))))
@@ -65,7 +65,7 @@
     (is (= [cmi5-pattern-id]
            (-> (profile/select-primary-patterns
                 combined-iri-map
-                {:gen-patterns [cmi5-pattern-id]})
+                {:genPatterns [cmi5-pattern-id]})
                (get "Pattern")
                vals
                primary-pattern-ids)))))
@@ -310,7 +310,7 @@
   ([seed]
    (walk-pattern {} seed))
   ([alignments seed]
-   (->> (profile/walk-profile-patterns profile-map alignments seed start-time)
+   (->> (profile/walk-profile-patterns profile-map alignments seed 5 start-time)
         (map :template))))
 
 (deftest walk-pattern-test
