@@ -2,7 +2,7 @@
   "CLI options and functions for sim inputs (including input validation)."
   (:require [com.yetanalytics.datasim.cli.util    :as u]
             [com.yetanalytics.datasim.input       :as input]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.util.errors :as errors]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -319,7 +319,7 @@
           objects   (map get-object result)
           obj-count (count objects)
           obj-freq  (frequencies objects)
-          ;; See `datasim.math.random` for math details
+          ;; See `datasim.util.random` for math details
           mean-1*   (- 1 (/ 0.3 (* 2 0.7)))
           mean-2*   (- 1 mean-1*)
           mean-1    (* obj-count mean-1*)

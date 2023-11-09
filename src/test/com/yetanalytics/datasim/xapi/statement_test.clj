@@ -1209,7 +1209,7 @@
           statements (gen-weighted-statements {:verbs weights})
           verb-ids   (map #(get-in % ["verb" "id"]) statements)
           verb-freqs (frequencies verb-ids)]
-      ;; See `datasim.math.random-test` for details on how the expected means
+      ;; See `datasim.util.random-test` for details on how the expected means
       ;; (800 and 200, respectively) are computed.
       (is (= 793 (get verb-freqs "https://w3id.org/xapi/adl/verbs/abandoned")))
       (is (= 207 (get verb-freqs "https://w3id.org/xapi/adl/verbs/satisfied")))
