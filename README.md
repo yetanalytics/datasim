@@ -189,55 +189,80 @@ In the form of a CLI application, DATASIM takes the inputs listed above as JSON 
 
 For the CLI the first step is to build the project so that it can be run on a JVM.
 
+```
     make bundle
+```
 
 Now that we have this, navigate to target/bundle and run
 
+```
     bin/run.sh
+```
 
-With no commands or `--help` it will give you the list of parameters:
+With no commands or `--help` it will give you the list of subcommands:
 
-    -p, --profile URI              The location of an xAPI profile, can be used multiple times.
-    -a, --actor-personae URI       The location of an Actor Personae document indicating the actors in the sim, can be used multiple times.
-    -m, --models URI               The location of an Personae Model Document.
-    -o, --parameters URI     {...} The location of a Sim Parameters Document.
-    -i, --input URI                The location of a JSON file containing a combined simulation input spec.
-        --seed SEED                An integer seed to override the one in the input spec. Use -1 for random.
-        --actor AGENT_ID           Pass an agent id in the format mbox::malto:bob@example.org to select actor(s)
-    -E, --endpoint URI             The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi
-    -U, --username URI             The basic auth username for the LRS you wish to post to
-    -P, --password URI             The basic auth password for the LRS you wish to post to
-    -B, --batch-size SIZE     25   The batch size for POSTing to an LRS
-    -C, --concurrency CONC    4    The max concurrency of the LRS POST pipeline
-    -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
-    -A, --[no-]async               Async operation. Use --no-async if statements must be sent to server in timestamp order.
-        --gen-profile IRI          Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
-        --gen-pattern IRI          Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
-    -h, --help                     Show this list.
+| Subcommand       | Description
+| ---              | ---
+| `validate-input` | Validate the input and create an input JSON file.
+| `generate`       | Generate statements from input and print to stdout.
+| `generate-post`  | Generate statements from input and POST them to an LRS.
 
-For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:
+The `validate-input` subcommand is used to validate and combine input files. These are its arguments:
 
-    bin/run.sh -p [profile json file] \
-               -a [actors json filename] \
-               -m [models json filename] \
-               -o [sim params json filename] \
-               validate-input [desired output filename]
+| Argument                    | Description
+| ---                         | ---
+| `-p, --profile URI`         | The location of an xAPI profile, can be used multiple times.
+| `-a, --actor-personae URI`  | The location of an Actor Personae document indicating the actors in the sim.
+| `-m, --models URI`          | The location of an Persona Model document, to describe alignments and overrides for the personae.
+| `-o, -parameters URI`       | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
+| `-i, --input URI`           | The location of a JSON file containing a combined simulation input spec.
+| `-v, --validated-input URI` | The location of the validated input to be produced.
 
-Once we have that simulation specification, we can run the sim just from that like so:
+The `generate` subcommand is used to generate statements from an input and print them to standard output. The inputs can be a combined `--input` location or a combination of `-p`, `-a`, `-m`, and `-o` inputs. The additional arguments are as follows:
+| Argument            | Description
+| ---                 | ---
+| `--seed SEED`       | An integer seed to override the one in the input spec. Use -1 for a random seed.
+| `--actor AGENT_ID`  | Pass an agent id in the format 'mbox::mailto:[email]' to select actor(s)
+| `--gen-profile IRI` | Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
+| `--gen-pattern IRI` | Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
 
-    bin/run.sh -i dev-resources/input/simple.json generate
+The `generate-post` subcommand is used to generate statements from an input and POST them to an LRS. In addition to the `generate` arguments, this subcommands has these additional arguments:
+| Argument                 | Description | Default
+| ---                      | ---         | ---
+| `-E, --endpoint URI`     | The xAPI endpoint of an LRS to POST to, ex: `https://lrs.example.org/xapi` | N/A
+| `-U, --username URI`     | The Basic Auth username for the LRS. | N/A
+| `-P, --password URI`     | The Basic Auth password for the LRS. | N/A
+| `-B, --batch-size SIZE`  | The batch size, i.e. how many statements to send at a time, for POSTing. | `25`
+| `-C, --concurrency CONC` | The max concurrency of the LRS POST pipeline. | `4`
+| `-L, --post-limit LIMIT` | The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit. | `999`
+| `-A, --[no-]async` | Async operation. Use `--no-async` if statements must be sent to server in timestamp order. | `true`
 
-###### CLI LRS POST
+The following is an example of a simple run. We first create a combined input file using `validate-input`:
+```
+bin/run.sh validate-input \
+    -p dev-resources/profile/cmi5/fixed.json \
+    -a dev-resources/personae/simple.json \
+    -m dev-resources/models/simple.json \
+    -o dev-resources/parameters/simple.json \ 
+    -v dev-resources/input/simple.json
+```
 
-If we have an endpoint and credentials for an LRS we can direcly POST the statements to it:
+Once we have that sim specification, we can run the simulation using the `generate`:
+```
+bin/run.sh generate -i dev-resources/input/simple.json
+```
 
-    bin/run.sh -i dev-resources/input/simple.json \
-               -E [LRS xAPI endpoint ex. https://lrs.example.org/xapi] \
-               -U [basic auth username] \
-               -P [basic auth password] \
-               -B [batch size] \
-               -L [limit statements posted, -1 is no limit] \
-               generate post
+If we have an endpoint and credentials for an LRS we can directly POST the simulated statements using `generate-post`:
+
+```
+bin/run.sh generate-post \
+    -i dev-resources/input/simple.json \
+    -E http://localhost:8080/xapi \
+    -U username \
+    -P password \
+    -B 20 \
+    -L 1000 \
+```
 
 As statements are successfully sent to the LRS their IDs will be sent to stdout.
 
