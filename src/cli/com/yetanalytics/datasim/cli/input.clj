@@ -27,6 +27,10 @@
 (def validated-input-desc
   "The location of the validated input to be produced. If not provided, the validated input will be printed to stdout instead.")
 
+;; TODO: Update `:profiles` input to accept both single objects and arrays.
+;; TODO: Update `:personae-array` input to accept both single objects and arrays
+;; (and rename to just `:personaes`).
+
 ;; NOTE: For the `validate-input` subcommand, we skip tools.cli validation and
 ;; do more in-depth validation involving combined inputs.
 (def validate-input-options

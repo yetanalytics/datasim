@@ -134,8 +134,8 @@
 (def tc3-personae
   (input/from-location :personae :json tc3-personae-filepath))
 
-(def temporal-personaes
-  (input/from-location :personae-array :json temporal-personae-filepath))
+(def temporal-personae
+  (input/from-location :personae :json temporal-personae-filepath))
 
 ;; Models
 
@@ -166,7 +166,7 @@
   (zipmap temporal-models-filepath-coll*
           (map (fn [temporal-model]
                  {:profiles       [temporal-profile]
-                  :personae-array temporal-personaes
+                  :personae-array [temporal-personae]
                   :parameters     temporal-parameters
                   :models         temporal-model})
                temporal-models-coll)))

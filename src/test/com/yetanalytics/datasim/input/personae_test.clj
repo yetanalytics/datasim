@@ -14,6 +14,9 @@
 (def tc3-personae
   (dio/read-json-location const/tc3-personae-filepath))
 
+(def temporal-personae
+  (dio/read-json-location const/temporal-personae-filepath))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -21,7 +24,8 @@
 (deftest personae-test
   (testing "personae without roles"
     (is (nil? (personae/validate-personae simple-personae)))
-    (is (nil? (personae/validate-personae tc3-personae))))
+    (is (nil? (personae/validate-personae tc3-personae)))
+    (is (nil? (personae/validate-personae temporal-personae))))
   (testing "personae with roles"
     (is (nil? (-> simple-personae
                   (assoc-in [:member 0 :role] "Lead Developer")
