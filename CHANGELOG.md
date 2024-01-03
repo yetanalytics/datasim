@@ -1,7 +1,15 @@
 # Change Log
 
-## [0.4.0] - TBD
-- Some wibbly wobbly timey wimey stuff
+## [0.4.0] - 2024-01-03
+- Change `alignments` inputs to `models` inputs that incorporate additional temporal properties.
+- Make `models` an array in which the user can apply different `personae` to.
+- Separate alignments by component types: `verbs`, `activities`, `activityTypes`, `templates`, `patterns`, and `objectOverrides`.
+- The new temporal properties are as follows:
+  - `bounds`: the time intervals in which a particular Pattern's or Template's statements are allowed to generate in.
+  - `boundRestarts`: which Pattern or Template should repeat if a bound is exceeded.
+  - `periods`: the frequency in which a Pattern's or Template's statements are generated.
+- Make `repeatMax` a model property for Patterns instead of a hardcoded constant.
+- Rework the CLI so that subcommands go in the front, not the end, of the top-level command.
 
 ## [0.3.2] - 2023-10-03
 - Update server Jetty dependencies to v9.4.52 to address CVEs.
