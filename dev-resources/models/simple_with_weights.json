@@ -1,0 +1,66 @@
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bobfake@example.org",
+                "type": "Agent"
+            }
+        ],
+        "activityTypes": [
+            {
+                "id": "https://w3id.org/xapi/cmi5/activities/block",
+                "weight": 1.0
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5/activitytype/block",
+                "weight": 1.0
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5/activities/course",
+                "weight": 0.0
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5/activitytype/course",
+                "weight": 0.0
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfieds",
+                "repeatMax": 0
+            }
+        ]
+    },
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:frederstaz@example.org",
+                "type": "Agent"
+            }
+        ],
+        "activityTypes": [
+            {
+                "id": "https://w3id.org/xapi/cmi5/activities/block",
+                "weight": 0.0
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5/activitytype/block",
+                "weight": 0.0
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5/activities/course",
+                "weight": 1.0
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5/activitytype/course",
+                "weight": 1.0
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfieds",
+                "repeatMax": 0
+            }
+        ]
+    }
+]
