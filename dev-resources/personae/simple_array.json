@@ -1,0 +1,22 @@
+[
+  {
+    "name": "trainees",
+    "objectType": "Group",
+    "member": [
+      {
+        "name": "Bob Fakename",
+        "mbox": "mailto:bobfake@example.org",
+        "role": "Lead Developer"
+      },
+      {
+        "name": "Alice Faux",
+        "mbox": "mailto:alicefaux@example.org",
+        "role": "Data Engineer"
+      },
+      {
+        "name": "Fred Ersatz",
+        "mbox": "mailto:frederstaz@example.org"
+      }
+    ]
+  }
+]
