@@ -10,8 +10,6 @@ DATASIM provides DoD distributed learning stakeholders and the broader xAPI comm
 
 DATASIM is funded by the Advanced Distributed Learning Initiative at US DoD.
 
-This documentation and repository refer to the simulation engine of DATASIM, which will run as a standalone CLI, and may also be deployed as a REST API. For the User Interface (which interacts with the API) please see https://github.com/yetanalytics/datasim-ui.
-
 ## Installation
 
 To use the core DATASIM library in your project, use the following dependency in your `deps.edn` file:
