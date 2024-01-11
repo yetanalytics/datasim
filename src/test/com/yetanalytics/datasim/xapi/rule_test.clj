@@ -6,7 +6,7 @@
             [clojure.spec.alpha :as s]
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.schemer             :as schemer]
-            [com.yetanalytics.datasim.math.random :as random]
+            [com.yetanalytics.datasim.util.random :as random]
             [com.yetanalytics.datasim.xapi.path   :as xp]
             [com.yetanalytics.datasim.xapi.rule   :as r]
             [com.yetanalytics.datasim.xapi.profile :as profile]
@@ -863,7 +863,7 @@
                 {:location "$.actor.name"
                  :all      ["Alice Faux" "Bob Fakename"]}))
     (testing "remove actor name via `none`"
-      (is-actor {"name" "g0940tWy7k3GA49j871LLl4W0" ; randomly generated
+      (is-actor {"name" "jntEzRjtBxBJ9lS0OY1vzukO9rbS" ; randomly generated
                  "mbox" "mailto:alice@example.org"}
                 {:location "$.actor.name"
                  :none     ["Alice Faux" "Bob Fakename"]}))
@@ -970,12 +970,12 @@
                 :all      ["Launched"]}))
     (testing "insert verb description (spec gen)"
       (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
-                "display" {"en-US" "zG8V0L1Ft301HRaB06wC5"}}
+                "display" {"en-US" "F0b8eo9FvLZI3Mf1V3gTneDFUC4s3"}}
                {:location "$.verb.display.en-US"
                 :presence "included"}))
     (testing "insert verb description (recommended presence, spec gen)"
       (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
-                "display" {"en-US" "zG8V0L1Ft301HRaB06wC5"}}
+                "display" {"en-US" "F0b8eo9FvLZI3Mf1V3gTneDFUC4s3"}}
                {:location "$.verb.display.en-US"
                 :presence "recommended"}))
     (testing "include then exclude verb description, resulting in no net change"
@@ -995,7 +995,7 @@
     (testing "add two lang map entries w/ three rules"
       (is-verb {"id" "https://adlnet.gov/expapi/verbs/launched"
                 "display" {"en-US" "Launched"
-                           "zh-CN" "3csI6sZq6uxukVZ964BE5GDrqBoLJ7"}} ; randomly generated
+                           "zh-CN" "hm74DN7tV2jq3S59O5TUQUV5l"}} ; randomly generated
                {:location "$.verb.display.en-US"
                 :all      ["Launched"]}
                {:location "$.verb.display.zh-CN"
@@ -1038,9 +1038,9 @@
     (testing "replace two different activity IDs"
       (is-ctx-activities
        "other"
-       [{"id" "http://www.example.com/meetings/occurances/bar"
+       [{"id" "http://www.example.com/meetings/occurances/foo"
          "objectType" "Activity"}
-        {"id" "http://www.example.com/meetings/occurances/foo"
+        {"id" "http://www.example.com/meetings/occurances/bar"
          "objectType" "Activity"}]
        {:location "$.context.contextActivities.other[0,1].id"
         :all      ["http://www.example.com/meetings/occurances/foo"
@@ -1048,11 +1048,10 @@
     (testing "replace and insert activity IDs using wildcard"
       (is-ctx-activities
        "other"
-       [{"id" "http://www.example.com/meetings/occurances/qux" ; randomly chosen
+       [{"id" "http://www.example.com/meetings/occurances/baz" ; randomly chosen
          "objectType" "Activity"}
-        {"id" "http://www.example.com/meetings/occurances/foo"
-         "objectType" "Activity"}
-        {"id" "http://www.example.com/meetings/occurances/baz"}]
+        {"id" "http://www.example.com/meetings/occurances/3425567"
+         "objectType" "Activity"}]
        {:location "$.context.contextActivities.other[*].id"
         :all      ["http://www.example.com/meetings/occurances/foo"
                    "http://www.example.com/meetings/occurances/bar"
@@ -1063,13 +1062,13 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
+         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}}
-        {"definition" {"type" "http://www.example.com/activity-type-1"}}
+         "definition" {"type" "http://www.example.com/activity-type-3"}}
         {"definition" {"type" "http://www.example.com/activity-type-3"}}
-        {"definition" {"type" "http://www.example.com/activity-type-2"}}]
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-1"}}]
        {:location "$.context.contextActivities.other[0,1,2,3,4].definition.type"
         :all      ["http://www.example.com/activity-type-1"
                    "http://www.example.com/activity-type-2"
@@ -1079,7 +1078,7 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"}
-        {"id" "http://www.example.com/meetings/occurances/bar" ; randomly chosen
+        {"id" "http://www.example.com/meetings/occurances/foo" ; randomly chosen
          "objectType" "Activity"}]
        {:location "$.context.contextActivities.other[1].id"
         :any      ["http://www.example.com/meetings/occurances/foo"
@@ -1098,9 +1097,9 @@
     (testing "try creating multiple IDs"
       (is-ctx-activities
        "grouping"
-       [{"id" "http://www.example.com/id-3"} ; randomly shuffled
-        {"id" "http://www.example.com/id-1"}
-        {"id" "http://www.example.com/id-2"}]
+       [{"id" "http://www.example.com/id-1"} ; randomly shuffled
+        {"id" "http://www.example.com/id-2"}
+        {"id" "http://www.example.com/id-3"}]
        {:location "$.context.contextActivities.grouping[0,1,2].id"
         :presence "included"
         :all      ["http://www.example.com/id-1"
@@ -1138,13 +1137,13 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
+         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}}
-        {"definition" {"type" "http://www.example.com/activity-type-1"}}
+         "definition" {"type" "http://www.example.com/activity-type-3"}}
         {"definition" {"type" "http://www.example.com/activity-type-3"}}
-        {"definition" {"type" "http://www.example.com/activity-type-2"}}]
+        {"definition" {"type" "http://www.example.com/activity-type-2"}}
+        {"definition" {"type" "http://www.example.com/activity-type-1"}}]
        {:location "$.context.contextActivities.other[0,1,2,3,4]"
         :selector "$.definition.type"
         :all      ["http://www.example.com/activity-type-1"
@@ -1157,10 +1156,10 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
+         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-2"}}]
+         "definition" {"type" "http://www.example.com/activity-type-1"}}]
        {:location "$.context.contextActivities.other[0] | $.context.contextActivities.other[1]"
         :selector "$.definition.type"
         :all      ["http://www.example.com/activity-type-1"
@@ -1171,10 +1170,10 @@
        "other"
        [{"id" "http://www.example.com/meetings/occurances/34257"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-1"}} ; randomly chosen
+         "definition" {"type" "http://www.example.com/activity-type-3"}} ; randomly chosen
         {"id" "http://www.example.com/meetings/occurances/3425567"
          "objectType" "Activity"
-         "definition" {"type" "http://www.example.com/activity-type-2"}}]
+         "definition" {"type" "http://www.example.com/activity-type-1"}}]
        {:location "$.context.contextActivities"
         :selector "$.other[0].definition.type | $.other[1].definition.type"
         :all      ["http://www.example.com/activity-type-1"
@@ -1317,7 +1316,7 @@
             any-rule {:location "$.context.extensions['http://example.com/extension']"
                       :presence "included"
                       :any      [1 2 3 4 5]}]
-        (is (= [2 3 5 3 5 5 1 1 1 2]
+        (is (= [2 1 2 3 1 1 4 4 1 3]
                (->> (repeatedly 10 #(apply-rules {} [any-rule] the-rng))
                     (map #(get-in % ["context" "extensions" "http://example.com/extension"])))))))
     (testing "all values only"
@@ -1325,7 +1324,7 @@
             all-rule {:location "$.result.extensions['http://example.com/extension']"
                       :presence "included"
                       :all      ["A" "B" "C" "D" "E"]}]
-        (is (= ["C" "B" "B" "A" "B" "A" "E" "D" "D" "E"]
+        (is (= ["A" "B" "D" "A" "E" "E" "B" "A" "B" "A"]
                (->> (repeatedly 10 #(apply-rules {} [all-rule] the-rng))
                     (map #(get-in % ["result" "extensions" "http://example.com/extension"])))))))
     (testing "both any and all values"
@@ -1334,7 +1333,7 @@
                        :presence "included"
                        :any      [true false 1 2 3]
                        :all      [true false "A" "B" "C"]}]
-        (is (= [true false false true false false true true false false]
+        (is (= [false true false false false false true false false true]
                (->> (repeatedly 10 #(apply-rules {} [both-rule] the-rng))
                     (map #(get-in % ["object" "definition" "extensions" "http://example.com/extension"])))))))))
 

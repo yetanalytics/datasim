@@ -1,0 +1,61 @@
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bobfake@example.org",
+                "type": "Agent"
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#satisfieds",
+                "periods": [
+                    {
+                        "min": 1,
+                        "mean": 1.0,
+                        "unit": "hours"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:frederstaz@example.org",
+                "type": "Agent"
+            }
+        ],
+        "patterns": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#typicalsessions",
+                "bounds": [
+                    {
+                        "months": [["January", "October"], "December"]
+                    }
+                ]
+            }
+        ],
+        "templates": [
+            {
+                "id": "https://w3id.org/xapi/cmi5#launched",
+                "bounds": [
+                    {
+                        "minutes": [[0, 10]]
+                    }
+                ],
+                "boundRestarts": [
+                    "https://w3id.org/xapi/cmi5#typicalsessions"
+                ]
+            },
+            {
+                "id": "https://w3id.org/xapi/cmi5#initialized",
+                "bounds": [
+                    {
+                        "minutes": [[10, 59, 5]]
+                    }
+                ]
+            }
+        ]
+    }
+]

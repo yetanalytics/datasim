@@ -1,0 +1,96 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [1],
+                        "hours": [0],
+                        "minutes": [[0, 7]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [0]
+                            }
+                        ],
+                        "fixed": 1,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [1]
+                            }
+                        ],
+                        "fixed": 2,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [2]
+                            }
+                        ],
+                        "fixed": 3,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [3]
+                            }
+                        ],
+                        "fixed": 4,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [4]
+                            }
+                        ],
+                        "fixed": 5,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [5]
+                            }
+                        ],
+                        "fixed": 6,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [6]
+                            }
+                        ],
+                        "fixed": 7,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [7]
+                            }
+                        ],
+                        "fixed": 8,
+                        "unit": "seconds"
+                    },
+                    {
+                        "fixed": 1,
+                        "unit": "seconds"
+                    }
+                ]
+            }
+        ]
+    }
+]

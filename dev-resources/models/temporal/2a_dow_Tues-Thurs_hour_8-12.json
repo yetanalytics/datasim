@@ -1,0 +1,21 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "daysOfWeek": ["Tuesday", "Thursday"],
+                        "hours": [[8, 12]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "mean": 10,
+                        "unit": "minutes"
+                    }
+                ]
+            }
+        ]
+    }
+]

@@ -62,9 +62,8 @@
       (if-let [batch (first batches)]
         (let [{:keys [status body] :as response}
               @(post-batch endpoint http-options batch)]
-          (if (= 200 status)
+          (if (<= 200 status 299)
             ;; Success!
-            ;; FIXME: Shouldn't other codes like 204 be supported?
             (let [statement-ids (decode-body body)]
               (when print-ids?
                 (dio/println-coll statement-ids))
@@ -104,7 +103,8 @@
         in-chan   (a/chan buffer-in (partition-all batch-size))
         out-chan  (a/chan buffer-out) ; is this.. backpressure?
         callback  (fn [port {:keys [status body error] :as ret}]
-                    (if (or (not= 200 status) error)
+                    (if (or (not (<= 200 status 299))
+                            error)
                       ;; Error: Stop further processing
                       (do
                         (swap! run? not)

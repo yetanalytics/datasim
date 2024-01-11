@@ -1,0 +1,105 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": ["January"],
+                        "daysOfMonth": [1],
+                        "hours": [0],
+                        "minutes": [[0, 7]]
+                    }
+                ],
+                "periods": [
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [0]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 1,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [1]
+                            }
+                        ],
+                        "min": 0,
+                        "mean": 2,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [2]
+                            }
+                        ],
+                        "min": 1,
+                        "mean": 1,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [3]
+                            }
+                        ],
+                        "min": 1,
+                        "mean": 2,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [4]
+                            }
+                        ],
+                        "min": 2,
+                        "mean": 1,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [5]
+                            }
+                        ],
+                        "min": 2,
+                        "mean": 2,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [6]
+                            }
+                        ],
+                        "min": 3,
+                        "mean": 1,
+                        "unit": "seconds"
+                    },
+                    {
+                        "bounds": [
+                            {
+                                "minutes": [7]
+                            }
+                        ],
+                        "min": 3,
+                        "mean": 2,
+                        "unit": "seconds"
+                    },
+                    {
+                        "min": 0,
+                        "mean": 1,
+                        "unit": "seconds"
+                    }
+                ]
+            }
+        ]
+    }
+]

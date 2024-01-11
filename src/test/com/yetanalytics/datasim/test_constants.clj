@@ -1,7 +1,8 @@
 (ns com.yetanalytics.datasim.test-constants
-  "Constants for input items, i.e. profiles, personae, alignments, and
+  "Constants for input items, i.e. profiles, personae, models, and
    parameters."
-  (:require [com.yetanalytics.datasim.input :as input]))
+  (:require [clojure.java.io :as io]
+            [com.yetanalytics.datasim.input :as input]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Filepath Names
@@ -31,6 +32,8 @@
   "dev-resources/profiles/referential.jsonld")
 (def tc3-profile-filepath
   "dev-resources/profiles/tccc/cuf_hc_video_and_asm_student_survey_profile.jsonld")
+(def temporal-profile-filepath
+  "dev-resources/profiles/temporal.jsonld")
 
 ;; Personae
 
@@ -38,29 +41,41 @@
   "dev-resources/personae/simple.json")
 (def tc3-personae-filepath
   "dev-resources/personae/tccc_dev.json")
+(def temporal-personae-filepath
+  "dev-resources/personae/temporal.json")
 
-;; Alignments
+;; Models
 
-(def simple-alignments-filepath
-  "dev-resources/alignments/simple.json")
-(def overrides-alignments-filepath
-  "dev-resources/alignments/simple_with_overrides.json")
-(def tc3-alignments-filepath
-  "dev-resources/alignments/tccc_dev.json")
+(def simple-models-filepath
+  "dev-resources/models/simple.json")
+(def simple-overrides-models-filepath
+  "dev-resources/models/simple_with_overrides.json")
+(def simple-temporal-models-filepath
+  "dev-resources/models/simple_with_temporal.json")
+(def simple-repeat-max-models-filepath
+  "dev-resources/models/simple_with_repeat_max.json")
+(def tc3-models-filepath
+  "dev-resources/models/tccc_dev.json")
+
+(def temporal-models-filepath
+  "dev-resources/models/temporal/")
+(def temporal-models-filepath-coll*
+  (-> temporal-models-filepath io/as-file .list seq))
+(def temporal-models-filepath-coll
+  (map (partial str temporal-models-filepath)
+       temporal-models-filepath-coll*))
 
 ;; Parameters
 
 (def simple-parameters-filepath
   "dev-resources/parameters/simple.json")
+(def temporal-parameters-filepath
+  "dev-resources/parameters/temporal.json")
 
 ;; Combined Input
 
 (def simple-input-filepath
   "dev-resources/input/simple.json")
-(def overrides-input-filepath
-  "dev-resources/alignments/simple_with_overrides.json")
-(def mom-input-filepath
-  "dev-resources/input/mom64.json")
 
 ;; Miscellaneous
 
@@ -108,6 +123,9 @@
 (def tc3-profile
   (input/from-location :profile :json tc3-profile-filepath))
 
+(def temporal-profile
+  (input/from-location :profile :json temporal-profile-filepath))
+
 ;; Personae
 
 (def simple-personae
@@ -116,12 +134,39 @@
 (def tc3-personae
   (input/from-location :personae :json tc3-personae-filepath))
 
-;; Alignments
+(def temporal-personae
+  (input/from-location :personae :json temporal-personae-filepath))
 
-(def override-alignments
-  (input/from-location :alignments :json overrides-input-filepath))
+;; Models
+
+(def simple-overrides-models
+  (input/from-location :models :json simple-overrides-models-filepath))
+
+(def simple-temporal-models
+  (input/from-location :models :json simple-temporal-models-filepath))
+
+(def simple-repeat-max-models
+  (input/from-location :models :json simple-repeat-max-models-filepath))
+
+(def temporal-models-coll
+  (map (partial input/from-location :models :json)
+       temporal-models-filepath-coll))
+
+;; Parameters
+
+(def temporal-parameters
+  (input/from-location :parameters :json temporal-parameters-filepath))
 
 ;; Combined Input
 
 (def simple-input
   (input/from-location :input :json simple-input-filepath))
+
+(def temporal-input-map
+  (zipmap temporal-models-filepath-coll*
+          (map (fn [temporal-model]
+                 {:profiles       [temporal-profile]
+                  :personae-array [temporal-personae]
+                  :parameters     temporal-parameters
+                  :models         temporal-model})
+               temporal-models-coll)))

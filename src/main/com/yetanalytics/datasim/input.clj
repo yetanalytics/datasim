@@ -1,9 +1,10 @@
 (ns com.yetanalytics.datasim.input
   "Comprehensive specification of input"
   (:require [clojure.spec.alpha :as s]
+            [com.yetanalytics.datasim :as-alias datasim]
             [com.yetanalytics.datasim.input.profile    :as profile]
             [com.yetanalytics.datasim.input.personae   :as personae]
-            [com.yetanalytics.datasim.input.alignments :as alignments]
+            [com.yetanalytics.datasim.input.model      :as models]
             [com.yetanalytics.datasim.input.parameters :as params]
             [com.yetanalytics.datasim.util.io          :as dio]))
 
@@ -22,19 +23,16 @@
 (s/def ::personae-array
   ::personae/personae-array)
 
-;; TODO: `::alignments` is the name of two separate things: the top-level
-;; alignments input vector, and the inner vector associated with each actor.
-;; Find separate names for each.
-(s/def ::alignments
-  ::alignments/alignment-vector)
+(s/def ::models
+  ::models/models)
 
 (s/def ::parameters
   ::params/parameters)
 
-(s/def :com.yetanalytics.datasim/input
+(s/def ::datasim/input
   (s/keys :req-un [::profiles
                    ::personae-array
-                   ::alignments
+                   ::models
                    ::parameters]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -45,10 +43,10 @@
 ;; makes use of two different parts of the input spec
 
 (defn validate-pattern-filters
-  [{{:keys [gen-profiles gen-patterns]} :parameters
+  [{{:keys [genProfiles genPatterns]} :parameters
     profiles :profiles}]
-  (concat (profile/validate-profile-filters profiles gen-profiles)
-          (profile/validate-pattern-filters profiles gen-patterns)))
+  (concat (profile/validate-profile-filters profiles genProfiles)
+          (profile/validate-pattern-filters profiles genPatterns)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Input I/O
@@ -92,7 +90,7 @@
   (->> (dio/read-json-location location)
        vec))
 
-(defmethod from-location [:alignments :json] [_ _ location]
+(defmethod from-location [:models :json] [_ _ location]
   (->> (dio/read-json-location location)
        vec))
 
@@ -143,15 +141,18 @@
 (defmethod validate :default [type-k _]
   (throw-unknown-key type-k))
 
-(defmethod validate :input
-  [_ {:keys [profiles personae-array alignments parameters] :as input}]
+(defn- validate-input
+  [{:keys [profiles personae-array models parameters] :as input}]
   (-> (concat (profile/validate-profiles profiles)
               (personae/validate-personae-array personae-array)
-              (alignments/validate-alignments alignments)
+              (models/validate-models models)
               (params/validate-parameters parameters)
               (validate-pattern-filters input))
       vec
       not-empty))
+
+(defmethod validate :input [_ input]
+  (validate-input input))
 
 (defmethod validate :profile [_ profile]
   (profile/validate-profile profile))
@@ -159,8 +160,8 @@
 (defmethod validate :personae [_ personae]
   (personae/validate-personae personae))
 
-(defmethod validate :alignments [_ alignments]
-  (alignments/validate-alignments alignments))
+(defmethod validate :models [_ models]
+  (models/validate-models models))
 
 (defmethod validate :parameters [_ parameters]
   (params/validate-parameters parameters))

@@ -1,0 +1,20 @@
+[
+    {
+        "patterns": [
+            {
+                "id": "http://yetanalytics.com/temporal/pattern-A",
+                "bounds": [
+                    {
+                        "hours": [0]
+                    }
+                ],
+                "periods": [
+                    {
+                        "fixed": 1,
+                        "unit": "hours"
+                    }
+                ]
+            }
+        ]
+    }
+]

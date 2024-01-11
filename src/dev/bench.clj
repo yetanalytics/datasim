@@ -19,7 +19,7 @@
   (def input
     {:profiles [(input/from-location :profile :json "dev-resources/bench/calibration.jsonld")]
      :personae-array [(input/from-location :personae :json "dev-resources/bench/actors.json")]
-     :alignments (input/from-location :alignments :json "dev-resources/bench/alignments.json")
+     :models (input/from-location :models :json "dev-resources/bench/models.json")
      :parameters (input/from-location :parameters :json "dev-resources/bench/params.json")})
 
   (c/with-progress-reporting

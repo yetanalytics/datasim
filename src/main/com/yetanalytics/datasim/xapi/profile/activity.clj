@@ -6,7 +6,7 @@
             [xapi-schema.spec   :as xs]
             [com.yetanalytics.pan.objects.concepts.activity-type :as pan-at]
             [com.yetanalytics.pan.objects.concepts.activity      :as pan-a]
-            [com.yetanalytics.datasim.math.random           :as random]
+            [com.yetanalytics.datasim.util.random           :as random]
             [com.yetanalytics.datasim.xapi.profile          :as-alias profile]
             [com.yetanalytics.datasim.xapi.profile.template :as template]))
 

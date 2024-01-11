@@ -14,6 +14,9 @@
 (def tc3-personae
   (dio/read-json-location const/tc3-personae-filepath))
 
+(def temporal-personae
+  (dio/read-json-location const/temporal-personae-filepath))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Tests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -21,7 +24,8 @@
 (deftest personae-test
   (testing "personae without roles"
     (is (nil? (personae/validate-personae simple-personae)))
-    (is (nil? (personae/validate-personae tc3-personae))))
+    (is (nil? (personae/validate-personae tc3-personae)))
+    (is (nil? (personae/validate-personae temporal-personae))))
   (testing "personae with roles"
     (is (nil? (-> simple-personae
                   (assoc-in [:member 0 :role] "Lead Developer")
@@ -29,12 +33,12 @@
                   (assoc-in [:member 2 :role] "CEO")
                   personae/validate-personae)))
     (is (nil? (-> tc3-personae
-                  (assoc-in [:member 0 :role] "Avatar")
-                  (assoc-in [:member 1 :role] "Water Tribe Chief")
-                  (assoc-in [:member 2 :role] "Earth Queen")
-                  (assoc-in [:member 3 :role] "Fire Lord")
-                  (assoc-in [:member 4 :role] "Air Nomand")
-                  (assoc-in [:member 5 :role] "Cabbage Merchant")
+                  (assoc-in [:member 0 :role] "xAPI God")
+                  (assoc-in [:member 1 :role] "Company Chief")
+                  (assoc-in [:member 2 :role] "Questions Queen")
+                  (assoc-in [:member 3 :role] "Learning Lord")
+                  (assoc-in [:member 4 :role] "Simulations Nomand")
+                  (assoc-in [:member 5 :role] "Statement Merchant")
                   personae/validate-personae)))))
 
 (deftest personae-array-validation-test

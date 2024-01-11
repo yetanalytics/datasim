@@ -17,7 +17,7 @@ This documentation and repository refer to the simulation engine of DATASIM, whi
 To use the core DATASIM library in your project, use the following dependency in your `deps.edn` file:
 
 ```clojure
-com.yetanalytics/datasim {:mvn/version "0.3.2"}
+com.yetanalytics/datasim {:mvn/version "0.4.0"}
 ```
 
 If you wish to install DATASIM as an application with features such as CLI or the webserver, perform the following steps:
@@ -36,62 +36,140 @@ The inputs to DATASIM consist of four parts, each represented by JSON. They are 
 
 One or more valid xAPI Profiles are required for DATASIM to generate xAPI Statements. You can learn more about the xAPI Profile Specification [here](https://github.com/adlnet/xapi-profiles). This input can either be a single Profile JSON-LD document or an array of JSON-LD format profiles. At this time all referenced concepts in a Profile must be included in the input. For instance if in "Profile A" I have a Pattern that references a Statement Template found in "Profile B", both Profiles must be included in an array as the Profile input.
 
-Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `gen-profiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `gen-patterns` option by supplying one or more pattern IDs.
+Note that by default, any patterns with a `primary` property set to `true` in the provided profiles will be used for generation. You can control which profiles these primary patterns are sourced from with the `genProfiles` option by supplying one or more profile IDs. You can further control which specific primary patterns are used with the `genPatterns` option by supplying one or more pattern IDs.
 
 #### Personae
 
 Predefined xAPI Actors (upon whom the simulation will be based) are required to run a DATASIM simulation. This takes the form of a JSON array of xAPI Groups, each object containing an array of conformant Actor members, an example of which is below:
 
+```json
     [
-      {"name": "trainees1",
-       "objectType": "Group",
-       "member": [{"name": "Bob Fakename",
-                   "mbox": "mailto:bob@example.org"},
-                  {"name": "Alice Faux",
-                   "mbox": "mailto:alice@example.org"}},
-      {"name": "trainees2"
-       "objectType": "Group",
-       "member": [{"name": "Fred Ersatz",
-                   "mbox": "mailto:fred@example.org"}]}
+        {
+            "name": "trainees1",
+            "objectType": "Group",
+            "member": [
+                {
+                    "name": "Bob Fakename",
+                    "mbox": "mailto:bob@example.org"
+                },
+                {
+                    "name": "Alice Faux",
+                    "mbox": "mailto:alice@example.org"
+                }
+            ]
+        },
+        {
+            "name": "trainees2",
+            "objectType": "Group",
+            "member": [
+                {
+                    "name": "Fred Ersatz",
+                    "mbox": "mailto:fred@example.org"
+                }
+            ]
+        }
     ]
+```
 
-#### Alignments
+#### Models
 
-An alignment represents a way to influence the simulation by explicitly weighting an Actor's relationship to a part of the xAPI Profile. Each actor can have alignments to multiple parts of the Profile, and the weight system ranges from -1 to 1 (with 1 being an extremely high propensity for interaction in the simulation and -1 indicating that zero statements should be created for that Actor and that Profile Component). During the simulation these weights factor in but do not completely predict the outcome as there is still randomness in Actor behavior. The records are an array of objects where each object is a combination of Actor (id in IFI format), type ("Agent", "Group", or "Role") and an array of IRIs to align to, and weights for each.
+Models represents user-provided influences on xAPI simulation. Each model is a JSON object that consists of the following properties:
+- `personae`: An array of Actors, Groups, or Role objects that define who the model applies to. If this is missing, then the model serves as the default model for the simulation. Each `personae` array must be unique, though Actors, Groups, or Roles may repeat across different models.
+- `verbs`: An array of objects with Verb `id` and `weight` values. Valid `weight` values range from `0` to `1`, where `0` denotes that that component will not be chosen (unless all other weights are also `0`). If not present, a default weight of `0.5` will be used.
+- `activities`: An array of objects with Activity `id` and `weight` values (as described under `verbs`).
+- `activityTypes`: An array of objects with Activity Type `id`
+and `weight` values (as described under `verbs`).
+- `patterns`: An array of objects with Pattern `id` and the following additional optional values:
+  - `weights`: An array of child Pattern/Template `id` and `weight` values. Each weight affects how likely each of the Pattern's child patterns are chosen (for `alternates`) or how likely the child Pattern will be selected at all (for `optional`, for these `null` is also a valid option). This has no effect on `sequence`, `zeroOrMore`, or `oneOrMore` Patterns.
+  - `repeat-max`: A positive integer representing the maximum number of times (exclusive) the child pattern can be generated. Only affects `zeroOrMore` and `oneOrMore` patterns.
+  - `bounds`: An array of objects containing key-value pairs where each value is an array of singular values (e.g. `"January"`) or arrays of start, end, and optional step values (e.g. `["January", "October"]`). For example `{"years": [2023], "months": [[1, 5]]}` describes an inclusive bound from January to May 2023; making the `months` bound `[[1, 5, 2]]` would have restricted it to only January, March, and May 2023. If not present, `bounds` indicates an infinite bound, such that any timestamp is valid. The following are valid bound values:
+    - `years`: Any positive integer
+    - `months`: `1` to `12`, or their name equivalents, i.e. `"January"` to `"December"`
+    - `daysOfMonth:` `1` to `31` (though `29` or `30` are skipped at runtime for months that do not include these days)
+    - `daysOfWeek`: `0` to `6`, or their name equivalents, i.e. `"Sunday"` to `"Saturday"`
+    - `hours`: `0` to `23`
+    - `minutes`: `0` to `59`
+    - `seconds`: `0` to `59`
+  - `boundRestarts`: An array of Pattern IDs to retry if the timestamp violates `bounds`. The top-most Pattern in `boundRestarts` will be tried, e.g. if Pattern A is a parent of Pattern B and both are listed in `boundRestarts`, it will be Pattern A that is retried. If `boundRestarts` is empty or not present, or if none of the ancestor Patterns are included, then Statement generation will continue at its current point.
+  - `periods`: An array of objects that specify the amount of time between generated Statements. Only the first valid period in the array will be applied to generate the next Statement (see `bounds` property). Each period object has the following optional properties:
+    - `min`: a minimum amount of time between Statements; default is `0`
+    - `mean` the average amount of time between Statements (added on top of `min`); default is `1`
+    - `fixed`: a fixed amount of time between Statements; overrides `min` and `mean`
+    - `unit`: the time unit for all temporal values. Valid values are `millis`, `seconds`, `minutes`, `hours`, `days`, and `weeks`; the default is `minutes`
+    - `bounds`: an array of the temporal bounds the period can apply in. During generation, the current Statement timestamp is checked against each period's `bounds`, and the first period whose bound satisfies the timestamp will be used to generate the next Statement timestamp. A nonexisting `bounds` value indicates an infinite bound, i.e. any timestamp is always valid. The syntax is the same as the top-level `bounds` array. At least one period must not have a `bounds` value, so it can act as the default period.
+- `templates`: An array of objects with Statement Template `id` and optional `bounds`, `boundRestarts`, and `period` properties, as explained above in `patterns`. Note that `weights` and `repeat-max` do not apply here.
+- `objectOverrides`: An array of objects containing (xAPI) `object` and `weight`. If present, these objects will overwrite any that would have been set by the Profile.
 
-    [
-      {
-        "id": "mbox::mailto:bob@example.org",
-        "type": "Agent",
-        "alignments": [
-          {
-            "component": "https://example.org/course/1440130447",
-            "weight": -1.0
-          }
+An example of a model array with valid `personae`, `verbs`, and `templates` is shown below:
+
+```json
+[
+    {
+        "personae": [
+            {
+                "id": "mbox::mailto:bob@example.org",
+                "type": "Agent"
+            }
+        ],
+        "verbs": [
+            {
+                "component": "https://example.org/verb/did",
+                "weight": 0.8
+            }
+        ],
+        "templates": [
+            {
+                "component": "https://w3id.org/xapi/cmi5#satisfied",
+                "bounds": [
+                    {
+                        "years": [2023],
+                        "months": [["January", "May"]]
+                    }
+                ],
+                "boundRestarts": [
+                    "https://w3id.org/xapi/cmi5#toplevel"
+                ],
+                "period": {
+                    "min": 1,
+                    "mean": 2.0,
+                    "unit": "second"
+                }
+            }
         ]
-      }
-    ]
-
+    }
+]
+```
 
 #### Simulation Parameters
 
 The simulation parameters input covers the details of the simulation not covered by other pieces. This includes Start Time, End Time, Timezone, Max (number of statements) and *seed*. When run, the simulation will create a time sequence from the Start Time to the End Time and generated xAPI statements will have corresponding dates and times. The *seed* is important as it controls the inputs to all random value generation and corresponds to repeatability. A simulation run with the same inputs and the same seed will deterministically create the same xAPI Statements, but changing the seed value will create an entirely different simulation. An example of simulation parameters is below:
 
-    {"start": "2019-11-18T11:38:39.219768Z",
-     "end": "2019-11-19T11:38:39.219768Z",
-     "max": 200,
-     "timezone": "America/New_York",
-     "seed": 42}
+```json
+    {
+        "start": "2019-11-18T11:38:39.219768Z",
+        "end": "2019-11-19T11:38:39.219768Z",
+        "max": 200,
+        "timezone": "America/New_York",
+        "seed": 42,
+        "maxRestarts": 10
+    }
+```
+Note the `maxRestarts` parameter; this is to limit the amount of times a particular Pattern is restarted when a `bounds` is violated.
 
+Additional parameters include `genPatterns` and `genProfiles`, which are explained in more detail under [xAPI Profiles](#xapi-profiles).
 
 #### (Alternatively) Simulation Specification
 
 The simulation specification is a single object containing of all of the above. This is exported during a simulation run and can serve as the sole input to another simulation.
 
-    {"profiles":[ ... ],
-     "parameters": ...,
-     "personae-array": [ ... ],
-     "alignments": ... }
+```json
+    {
+        "profiles": [ ... ],
+        "parameters": ...,
+        "personae-array": [ ... ],
+        "models": [...]
+    }
+```
 
 ### System Requirements
 
@@ -111,55 +189,80 @@ In the form of a CLI application, DATASIM takes the inputs listed above as JSON 
 
 For the CLI the first step is to build the project so that it can be run on a JVM.
 
+```
     make bundle
+```
 
 Now that we have this, navigate to target/bundle and run
 
+```
     bin/run.sh
+```
 
-With no commands or `--help` it will give you the list of parameters:
+With no commands or `--help` it will give you the list of subcommands:
 
-    -p, --profile URI              The location of an xAPI profile, can be used multiple times.
-    -a, --actor-personae URI       The location of an Actor Personae document indicating the actors in the sim, can be used multiple times.
-    -l, --alignments URI           The location of an Actor Alignments Document.
-    -o, --parameters URI     {...} The location of a Sim Parameters Document.
-    -i, --input URI                The location of a JSON file containing a combined simulation input spec.
-        --seed SEED                An integer seed to override the one in the input spec. Use -1 for random.
-        --actor AGENT_ID           Pass an agent id in the format mbox::malto:bob@example.org to select actor(s)
-    -E, --endpoint URI             The xAPI endpoint of an LRS to POST to, ex: https://lrs.example.org/xapi
-    -U, --username URI             The basic auth username for the LRS you wish to post to
-    -P, --password URI             The basic auth password for the LRS you wish to post to
-    -B, --batch-size SIZE     25   The batch size for POSTing to an LRS
-    -C, --concurrency CONC    4    The max concurrency of the LRS POST pipeline
-    -L, --post-limit LIMIT    999  The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit.
-    -A, --[no-]async               Async operation. Use --no-async if statements must be sent to server in timestamp order.
-        --gen-profile IRI          Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
-        --gen-pattern IRI          Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
-    -h, --help                     Show this list.
+| Subcommand       | Description
+| ---              | ---
+| `validate-input` | Validate the input and create an input JSON file.
+| `generate`       | Generate statements from input and print to stdout.
+| `generate-post`  | Generate statements from input and POST them to an LRS.
 
-For a simple run, we will first create the simulation specification by combining the inputs, validating them, and outputting to a simulation input file like so:
+The `validate-input` subcommand is used to validate and combine input files. These are its arguments:
 
-    bin/run.sh -p [profile json file] \
-               -a [actors json filename] \
-               -l [alignments json filename] \
-               -o [sim params json filename] \
-               validate-input [desired output filename]
+| Argument                    | Description
+| ---                         | ---
+| `-p, --profile URI`         | The location of an xAPI profile, can be used multiple times.
+| `-a, --actor-personae URI`  | The location of an Actor Personae document indicating the actors in the sim.
+| `-m, --models URI`          | The location of an Persona Model document, to describe alignments and overrides for the personae.
+| `-o, -parameters URI`       | The location of simulation parameters document. Uses the current time and timezone as defaults if they are not present. (The "o" stands for "options.")
+| `-i, --input URI`           | The location of a JSON file containing a combined simulation input spec.
+| `-v, --validated-input URI` | The location of the validated input to be produced.
 
-Once we have that simulation specification, we can run the sim just from that like so:
+The `generate` subcommand is used to generate statements from an input and print them to standard output. The inputs can be a combined `--input` location or a combination of `-p`, `-a`, `-m`, and `-o` inputs. The additional arguments are as follows:
+| Argument            | Description
+| ---                 | ---
+| `--seed SEED`       | An integer seed to override the one in the input spec. Use -1 for a random seed.
+| `--actor AGENT_ID`  | Pass an agent id in the format 'mbox::mailto:[email]' to select actor(s)
+| `--gen-profile IRI` | Only generate based on primary patterns in the given profile. May be given multiple times to include multiple profiles.
+| `--gen-pattern IRI` | Only generate based on the given primary pattern. May be given multiple times to include multiple patterns.
 
-    bin/run.sh -i dev-resources/input/simple.json generate
+The `generate-post` subcommand is used to generate statements from an input and POST them to an LRS. In addition to the `generate` arguments, this subcommands has these additional arguments:
+| Argument                 | Description | Default
+| ---                      | ---         | ---
+| `-E, --endpoint URI`     | The xAPI endpoint of an LRS to POST to, ex: `https://lrs.example.org/xapi` | N/A
+| `-U, --username URI`     | The Basic Auth username for the LRS. | N/A
+| `-P, --password URI`     | The Basic Auth password for the LRS. | N/A
+| `-B, --batch-size SIZE`  | The batch size, i.e. how many statements to send at a time, for POSTing. | `25`
+| `-C, --concurrency CONC` | The max concurrency of the LRS POST pipeline. | `4`
+| `-L, --post-limit LIMIT` | The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit. | `999`
+| `-A, --[no-]async` | Async operation. Use `--no-async` if statements must be sent to server in timestamp order. | `true`
 
-###### CLI LRS POST
+The following is an example of a simple run. We first create a combined input file using `validate-input`:
+```
+bin/run.sh validate-input \
+    -p dev-resources/profile/cmi5/fixed.json \
+    -a dev-resources/personae/simple.json \
+    -m dev-resources/models/simple.json \
+    -o dev-resources/parameters/simple.json \ 
+    -v dev-resources/input/simple.json
+```
 
-If we have an endpoint and credentials for an LRS we can direcly POST the statements to it:
+Once we have that sim specification, we can run the simulation using the `generate`:
+```
+bin/run.sh generate -i dev-resources/input/simple.json
+```
 
-    bin/run.sh -i dev-resources/input/simple.json \
-               -E [LRS xAPI endpoint ex. https://lrs.example.org/xapi] \
-               -U [basic auth username] \
-               -P [basic auth password] \
-               -B [batch size] \
-               -L [limit statements posted, -1 is no limit] \
-               generate post
+If we have an endpoint and credentials for an LRS we can directly POST the simulated statements using `generate-post`:
+
+```
+bin/run.sh generate-post \
+    -i dev-resources/input/simple.json \
+    -E http://localhost:8080/xapi \
+    -U username \
+    -P password \
+    -B 20 \
+    -L 1000 \
+```
 
 As statements are successfully sent to the LRS their IDs will be sent to stdout.
 
@@ -200,13 +303,13 @@ By default the server starts at http://localhost:9090
 
 The API is configurable with the following runtime environment variables:
 
-| Variable            | Default                                                                                          | Notes                                                                                                  | Example           |
-|---------------------|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-------------------|
-| CREDENTIALS         | <none>                                                                                           | Basic Authentication credentials required to call the API endpoints in the form of `username:password` | `datasim:datasim` |
-| API_ROOT_PATH       | <none>                                                                                           | Root path to prefix API routes. Must begin with a `/`, cannot end with a `/`.                          | `/foo`            |
-| API_HOST            | `0.0.0.0`                                                                                        | Host on which to bind the API server.                                                                  | `localhost`       |
-| API_PORT            | `9090`                                                                                           | Port on which to bind the API server.                                                                  | `8080`            |
-| API_ALLOWED_ORIGINS | <details>`https://yetanalytics.github.io,http://localhost:9091`<summary>(URLs)</summary></details> | CORS allowed origins for the API server, separated by commas.                                          | `*`               |
+| Variable | Default | Notes | Example |
+|---|---|---|---|
+| CREDENTIALS | `username:password` | Basic Authentication credentials required to call the API endpoints in the form of `username:password` | `datasim:datasim` |
+| API_ROOT_PATH | <none> | Root path to prefix API routes. Must begin with a `/`, cannot end with a `/`. | `/foo` |
+| API_HOST | `0.0.0.0`| Host on which to bind the API server. | `localhost` |
+| API_PORT | `9090` | Port on which to bind the API server. | `8080` |
+| API_ALLOWED_ORIGINS | <details>`https://yetanalytics.github.io,http://localhost:9091`<summary>(URLs)</summary></details> | CORS allowed origins for the API server, separated by commas. | `*` |
 
 Currently defaults are configured to work with the default settings in the DATASIM-UI project locally.
 
@@ -226,7 +329,7 @@ This endpoint takes a set of simulation inputs, returns a file with the output d
 
     personae-array: Array of JSON Objects containing Actors formatted as above
 
-    alignments: JSON Object containing Alignments formatted as above
+    models: Array of JSON Objects containing Models formatted as above
 
     parameters: Simulation Parameters JSON Object
 

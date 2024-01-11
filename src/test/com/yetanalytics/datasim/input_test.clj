@@ -30,27 +30,36 @@
     "xAPI Profile" "non-IRI ID" 
     :profile const/cmi5-profile-filepath
     #(assoc % :id "foo")
+
     "Actor Personae" "empty `:members` coll"
     :personae const/simple-personae-filepath
     #(assoc % :member [])
-    "Actor Alignments" "invalid due to invalid alignments"
-    :alignments const/simple-alignments-filepath
-    #(conj % {:id         "notanid"
-              :alignments [{:component "notaniri"
-                            :weight    "bar"}]})
-    "Actor Alignments, Long" "invalid alignments"
-    :alignments const/tc3-alignments-filepath
-    #(conj % {:id         "notanid"
-              :alignments [{:component "notaniri"
-                            :weight    "bar"}]})
-    "Actor Alignments w/ Overrides" "invalid alignments"
-    :alignments const/overrides-alignments-filepath
-    #(conj % {:id         "notanid"
-              :alignments [{:component "notaniri"
-                            :weight    "bar"}]})
+    
+    "Actor Models" "invalid due to invalid alignments"
+    :models const/simple-models-filepath
+    #(conj % {:personae [{:id   "notanid"
+                          :type "notatype"}]
+              :verbs    [{:component "notaniri"
+                          :weight    "bar"}]})
+    
+    "Actor Models, Long" "invalid alignments"
+    :models const/tc3-models-filepath
+    #(conj % {:personae [{:id   "notanid"
+                          :type "notatype"}]
+              :verbs    [{:component "notaniri"
+                          :weight    "bar"}]})
+    
+    "Actor Models w/ Overrides" "invalid alignments"
+    :models const/simple-overrides-models-filepath
+    #(conj % {:personae        [{:id   "notanid"
+                                 :type "notatype"}]
+              :objectOverrides [{:component "notaniri"
+                                 :weight    "bar"}]})
+    
     "Simulation Parameters" "non-numeric seed"
     :parameters const/simple-parameters-filepath
     #(assoc % :seed "hey")
+    
     "Combined Input Spec" "`:profiles` not being a vector"
     :input const/simple-input-filepath
     #(update % :profiles first)))
@@ -74,21 +83,21 @@
              true
              (catch Exception _ false))))
   (testing "combined input is invalid"
-    (testing "with invalid gen-profiles"
+    (testing "with invalid genProfiles"
       (is (try
             (validate-throw
              :input
              (assoc-in const/simple-input
-                       [:parameters :gen-profiles]
+                       [:parameters :genProfiles]
                        ["http://example.com/nonexistent.jsonld"]))
             false
             (catch Exception _ true))))
-    (testing "with invalid gen-patterns"
+    (testing "with invalid genPatterns"
       (is (try
             (validate-throw
              :input
              (assoc-in const/simple-input
-                       [:parameters :gen-patterns]
+                       [:parameters :genPatterns]
                        ["http://example.com/nonexistent#pattern"]))
             false
             (catch Exception _ true))))))
