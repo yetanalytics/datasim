@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.1] - 2024-01-23
+- Update Cheshire dependency to 5.12.0.
+
 ## [0.4.0] - 2024-01-03
 - Change `alignments` inputs to `models` inputs that incorporate additional temporal properties.
 - Make `models` an array in which the user can apply different `personae` to.
