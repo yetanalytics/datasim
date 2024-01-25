@@ -78,7 +78,9 @@
 (defn- assoc-activity
   "Associate `activity` to `activity-map`."
   [activity-map activity]
-  (let [{activity-id :id {activity-type-id :type} :definition} activity]
+  (let [{activity-id :id
+         {activity-type-id :type} :activityDefinition}
+        activity]
     (assoc-in activity-map
               [activity-type-id activity-id]
               (profile->statement-activity activity))))
@@ -158,3 +160,15 @@
     (-> {}
         (reduce-activities concept-activities)
         (reduce-act-type-ids activity-type-ids))))
+
+(comment
+  (create-activity-map
+   {"Activity"
+    {"http://profiles.afrl.af.mil/elements/airsense"
+     {:id "http://profiles.afrl.af.mil/elements/airsense"
+      :type "Activity"
+      :definition {:name {:en "Airsense"}
+                   :definition {:en "Recognizes..."}
+                   :type "http://profiles.afrl.af.mil/elements"}}}}
+   100)
+  )
