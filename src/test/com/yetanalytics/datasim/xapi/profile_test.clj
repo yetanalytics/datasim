@@ -76,9 +76,9 @@
 
 (def activity-profile
   {:id "http://example.org/activity-profile"
-   :concepts [{:id         "http://example.org/activity-with-type"
-               :type       "Activity"
-               :definition {:type "http://example.org/activity-type-1"}}
+   :concepts [{:id                 "http://example.org/activity-with-type"
+               :type               "Activity"
+               :activityDefinition {:type "http://example.org/activity-type-1"}}
               {:id   "http://example.org/activity-without-type"
                :type "Activity"}
               {:id   "http://example.org/activity-type-1"
