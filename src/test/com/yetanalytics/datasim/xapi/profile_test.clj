@@ -76,33 +76,46 @@
 
 (def activity-profile
   {:id "http://example.org/activity-profile"
-   :concepts [{:id                 "http://example.org/activity-with-type"
-               :type               "Activity"
-               :activityDefinition {:type "http://example.org/activity-type-1"}}
+   :concepts [{:id   "http://example.org/activity-with-type"
+               :type "Activity"
+               :activityDefinition {:name {:en "Typed Activity"}
+                                    :type "http://example.org/activity-type-1"}}
               {:id   "http://example.org/activity-without-type"
-               :type "Activity"}
+               :type "Activity"
+               :activityDefinition {:name {:en "Non-typed Activity"}}}
               {:id   "http://example.org/activity-type-1"
                :type "ActivityType"}
               {:id   "http://example.org/activity-type-2"
                :type "ActivityType"}
               {:id   "http://example.org/activity-type-3"
                :type "ActivityType"}]
-   :templates [{:id "http://example.org/template"
+   :templates [{:id "http://example.org/template-1"
                 :objectActivityType "http://example.org/activity-type-1"}
-               {:id "http://example.org/template"
+               {:id "http://example.org/template-2"
                 :rules [{:location "$.object.definition.type"
                          :all ["http://example.org/activity-type-1"]}
                         {:location "$.object.definition"
-                         :all [{:type "http://example.org/activity-type-1"}]}]}]})
+                         :all [{:type "http://example.org/activity-type-1"}]}]}
+               {:id "http://example.org/template-3"
+                :rules [{:location "$.object.id"
+                         :all ["http://example.org/activity-with-type"]}]}
+               {:id "http://example.org/template-4"
+                :rules [{:location "$.object.definition.type"
+                         :all ["http://example.org/activity-type-not-exists"]}]}
+               {:id "http://example.org/template-5" ; not added at this step
+                :rules [{:location "$.object.id"    ; added during statement healing
+                         :all ["http://example.org/activity-not-exists"]}]}]})
 
 (def expected-activity-map
   {nil
    {"http://example.org/activity-without-type"
-    {"id" "http://example.org/activity-without-type"}}
+    {"id" "http://example.org/activity-without-type"
+     "definition" {"name" {"en" "Non-typed Activity"}}}}
    "http://example.org/activity-type-1"
    {"http://example.org/activity-with-type"
     {"id" "http://example.org/activity-with-type"
-     "definition" {"type" "http://example.org/activity-type-1"}}}
+     "definition" {"name" {"en" "Typed Activity"}
+                   "type" "http://example.org/activity-type-1"}}}
    "http://example.org/activity-type-2"
    {"https://example.org/activity/418707894"
     {"id"         "https://example.org/activity/418707894"
@@ -110,7 +123,11 @@
    "http://example.org/activity-type-3"
    {"https://example.org/activity/1432714272"
     {"id" "https://example.org/activity/1432714272"
-     "definition" {"type" "http://example.org/activity-type-3"}}}})
+     "definition" {"type" "http://example.org/activity-type-3"}}}
+   "http://example.org/activity-type-not-exists"
+   {"https://example.org/activity/1671689032"
+    {"id" "https://example.org/activity/1671689032"
+     "definition" {"type" "http://example.org/activity-type-not-exists"}}}})
 
 (deftest activity-map-test
   (testing "Activity Map creation"
