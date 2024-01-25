@@ -68,12 +68,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- profile->statement-activity
-  [{:keys [id definition]}]
+  [{:keys [id activityDefinition]}]
   (cond-> {"id" id}
-    definition
-    (assoc "definition" (-> definition
-                            (dissoc definition :_context)
-                            w/stringify-keys))))
+    activityDefinition
+    (assoc "definition"
+           (-> activityDefinition (dissoc :_context) w/stringify-keys))))
 
 (defn- assoc-activity
   "Associate `activity` to `activity-map`."
@@ -160,15 +159,3 @@
     (-> {}
         (reduce-activities concept-activities)
         (reduce-act-type-ids activity-type-ids))))
-
-(comment
-  (create-activity-map
-   {"Activity"
-    {"http://profiles.afrl.af.mil/elements/airsense"
-     {:id "http://profiles.afrl.af.mil/elements/airsense"
-      :type "Activity"
-      :definition {:name {:en "Airsense"}
-                   :definition {:en "Recognizes..."}
-                   :type "http://profiles.afrl.af.mil/elements"}}}}
-   100)
-  )
