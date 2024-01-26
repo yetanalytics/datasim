@@ -68,17 +68,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- profile->statement-activity
-  [{:keys [id definition]}]
+  [{:keys [id activityDefinition]}]
   (cond-> {"id" id}
-    definition
-    (assoc "definition" (-> definition
-                            (dissoc definition :_context)
-                            w/stringify-keys))))
+    activityDefinition
+    (assoc "definition"
+           (-> activityDefinition (dissoc :_context) w/stringify-keys))))
 
 (defn- assoc-activity
   "Associate `activity` to `activity-map`."
   [activity-map activity]
-  (let [{activity-id :id {activity-type-id :type} :definition} activity]
+  (let [{activity-id :id
+         {activity-type-id :type} :activityDefinition}
+        activity]
     (assoc-in activity-map
               [activity-type-id activity-id]
               (profile->statement-activity activity))))

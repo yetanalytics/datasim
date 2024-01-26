@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.4.1] - 2024-01-25
+- Fix a number of bugs associated with Statement generation:
+  - Fix places where `:definition` was used when `:activityDefinition` was supposed to be used in the code, causing Activities not to be associated with their respective Activity Types.
+  - Stringify keys for map values of `any`, `all`, and `none` in Statement Template rules.
+
 ## [0.4.0] - 2024-01-03
 - Change `alignments` inputs to `models` inputs that incorporate additional temporal properties.
 - Make `models` an array in which the user can apply different `personae` to.

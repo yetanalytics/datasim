@@ -9,6 +9,7 @@
             [clojure.string                 :as cstr]
             [clojure.spec.alpha             :as s]
             [clojure.test.check.generators  :as gen]
+            [clojure.walk                   :as w]
             [xapi-schema.spec               :as xs]
             [com.yetanalytics.pathetic      :as path]
             [com.yetanalytics.pathetic.path :as jpath]
@@ -206,9 +207,9 @@
   (let [paths (cond-> (parse-json-path location)
                 selector
                 (join-location-and-selector (parse-json-path selector)))
-        ?any  (not-empty (set any))
-        ?all  (not-empty (set all))
-        ?none (not-empty (set none))]
+        ?any  (not-empty (set (map w/stringify-keys any)))
+        ?all  (not-empty (set (map w/stringify-keys all)))
+        ?none (not-empty (set (map w/stringify-keys none)))]
     (cond-> {:location paths}
       presence       (assoc :presence (keyword presence))
       (or ?any ?all) (assoc :valueset (rule-value-set ?any ?all ?none))
