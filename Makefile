@@ -2,7 +2,7 @@
 
 GROUP_ID ?= com.yetanalytics
 ARTIFACT_ID ?= datasim
-VERSION ?= 0.4.0
+VERSION ?= 0.4.1
 
 clean:
 	rm -rf target
