@@ -205,7 +205,36 @@
                  (take-while (partial first-reg? first-fred))
                  (reduce reduce-sats [[]])
                  (every? (fn [sat-stmts]
-                           (<= (count sat-stmts) 100)))))))))
+                           (<= (count sat-stmts) 100))))))))
+  (testing "Respects activity + activity type references within profile"
+    (let [input  (assoc const/simple-input :profiles [const/activity-profile])
+          result (->> (get (generate-map input) alice-mbox) (take 4) vec)]
+      (is (= {"id" "https://xapinet.org/xapi/yet/activity/typed",
+              "definition"
+              {"name"        {"en" "Activity with Activity Type"},
+               "description" {"en" "Activity with Activity Type"},
+               "type"        "https://xapinet.org/xapi/yet/activity-type"}}
+             (-> result (get 0) (get-in ["object"]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "category" 0]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "other" 0]))
+             (-> result (get 1) (get-in ["object"]))
+             (-> result (get 1) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 1) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 1) (get-in ["context" "contextActivities" "other" 0]))
+             (-> result (get 2) (get-in ["object"]))
+             (-> result (get 2) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 2) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 2) (get-in ["context" "contextActivities" "other" 0]))))
+      (is (= {"id" "https://xapinet.org/xapi/yet/activity/nontyped",
+              "definition"
+              {"name"        {"en" "Activity without Activity Type"},
+               "description" {"en" "Activity without Activity Type"}}}
+             (-> result (get 3) (get-in ["object"]))
+             (-> result (get 3) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 3) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 3) (get-in ["context" "contextActivities" "other" 0])))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"

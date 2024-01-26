@@ -96,11 +96,11 @@
                   count))))
   (testing "fixed / valid profiles"
     (is (nil? (profile/validate-profiles [const/acrossx-profile])))
-    (is (nil? (profile/validate-profiles [const/activity-profile])))
+    (is (nil? (profile/validate-profiles [const/activity-streams-profile])))
     (is (nil? (profile/validate-profiles [const/tc3-profile]))))
   ;; Following tests exist to point out flaws in Profiles
   (testing "invalid profiles"
     ;; AcrossX and ActivityStreams violate spec:
     ;; "related MUST only be used on deprecated Concepts"
     (is (some? (profile/validate-profiles [const/acrossx-profile*])))
-    (is (some? (profile/validate-profiles [const/activity-profile*])))))
+    (is (some? (profile/validate-profiles [const/activity-streams-profile*])))))

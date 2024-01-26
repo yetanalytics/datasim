@@ -13,4 +13,4 @@ jobs:
       nvd-config-filename: '.nvd/config.json'
       notify-slack: true
     secrets:
-      SLACK_WORKFLOW_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
