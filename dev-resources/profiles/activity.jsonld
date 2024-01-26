@@ -1,0 +1,153 @@
+{
+    "id": "https://xapinet.org/xapi/yet/activity-profile",
+    "type": "Profile",
+    "@context": "https://w3id.org/xapi/profiles/context",
+    "conformsTo": "https://w3id.org/xapi/profiles#1.0",
+    "prefLabel": {
+        "en": "Activity Test Profile"
+    },
+    "definition": {
+        "en": "This Profile is intended to test Activity and Activity Types"
+    },
+    "versions": [
+        {
+            "id": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "generatedAtTime": "2024-01-25T10:10:10Z"
+        }
+    ],
+    "author": {
+        "url": "https://www.yetanalytics.com/",
+        "name": "Yet Analytics",
+        "type": "Organization"
+    },
+    "concepts": [
+        {
+            "id": "https://xapinet.org/xapi/yet/activity/nontyped",
+            "type": "Activity",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "activityDefinition": {
+                "@context": "https://w3id.org/xapi/profiles/activity-context",
+                "name": {
+                    "en": "Activity without Activity Type"
+                },
+                "description": {
+                    "en": "Activity without Activity Type"
+                }
+            }
+        },
+        {
+            "id": "https://xapinet.org/xapi/yet/activity/typed",
+            "type": "Activity",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "activityDefinition": {
+                "@context": "https://w3id.org/xapi/profiles/activity-context",
+                "name": {
+                    "en": "Activity with Activity Type"
+                },
+                "description": {
+                    "en": "Activity with Activity Type"
+                },
+                "type": "https://xapinet.org/xapi/yet/activity-type"
+            }
+        },
+        {
+            "id": "https://xapinet.org/xapi/yet/activity-type",
+            "type": "ActivityType",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "prefLabel": {
+                "en": "Activity Type Label"
+            },
+            "definition": {
+                "en": "Activity Type Definition"
+            }
+        }
+    ],
+    "templates": [
+        {
+            "id": "https://xapinet.org/xapi/yet/template/1",
+            "type": "StatementTemplate",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "prefLabel": {
+                "en": "Template 1"
+            },
+            "definition": {
+                "en": "Template to test objectActivityType"
+            },
+            "objectActivityType": "https://xapinet.org/xapi/yet/activity-type"
+        },
+        {
+            "id": "https://xapinet.org/xapi/yet/template/2",
+            "type": "StatementTemplate",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "prefLabel": {
+                "en": "Template 2"
+            },
+            "definition": {
+                "en": "Template to test activity type referenced in activity definition"
+            },
+            "rules": [
+                {
+                    "location": "$.object.definition",
+                    "presence": "included",
+                    "all": [{"type": "https://xapinet.org/xapi/yet/activity-type"}]
+                }
+            ]
+        },
+        {
+            "id": "https://xapinet.org/xapi/yet/template/3",
+            "type": "StatementTemplate",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "prefLabel": {
+                "en": "Template 3"
+            },
+            "definition": {
+                "en": "Template to test activity type referenced by ID"
+            },
+            "rules": [
+                {
+                    "location": "$.object.definition.type",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity-type"]
+                }
+            ]
+        },
+        {
+            "id": "https://xapinet.org/xapi/yet/template/4",
+            "type": "StatementTemplate",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "prefLabel": {
+                "en": "Template 4"
+            },
+            "definition": {
+                "en": "Template to test activity referenced by ID"
+            },
+            "rules": [
+                {
+                    "location": "$.object.id",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity/nontyped"]
+                }
+            ]
+        }
+    ],
+    "patterns": [
+        {
+            "id": "https://xapi.org/xapi/yet/pattern",
+            "type": "Pattern",
+            "inScheme": "https://xapinet.org/xapi/yet/activity-profile/v1",
+            "primary": true,
+            "prefLabel": {
+                "en": "Primary Pattern"
+            },
+            "definition": {
+                "en": "Sequence pattern for templates 1 to 4"
+            },
+            "sequence": [
+                "https://xapinet.org/xapi/yet/template/1",
+                "https://xapinet.org/xapi/yet/template/2",
+                "https://xapinet.org/xapi/yet/template/3",
+                "https://xapinet.org/xapi/yet/template/4"
+            ]
+        }
+    ]
+}

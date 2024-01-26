@@ -22,10 +22,12 @@
   "dev-resources/profiles/acrossx/profile.jsonld")
 (def acrossx-profile-filepath
   "dev-resources/profiles/acrossx/fixed.jsonld")
-(def activity-profile-filepath*
+(def activity-streams-profile-filepath*
   "dev-resources/profiles/activity_streams/profile.jsonld")
-(def activity-profile-filepath
+(def activity-streams-profile-filepath
   "dev-resources/profiles/activity_streams/fixed.jsonld")
+(def activity-profile-filepath
+  "dev-resources/profiles/activity.jsonld")
 (def mom-profile-filepath
   "dev-resources/profiles/tla/mom.jsonld")
 (def referential-profile-filepath
@@ -108,8 +110,11 @@
 (def acrossx-profile
   (input/from-location :profile :json acrossx-profile-filepath))
 
-(def activity-profile*
-  (input/from-location :profile :json activity-profile-filepath*))
+(def activity-streams-profile*
+  (input/from-location :profile :json activity-streams-profile-filepath*))
+
+(def activity-streams-profile
+  (input/from-location :profile :json activity-streams-profile-filepath))
 
 (def activity-profile
   (input/from-location :profile :json activity-profile-filepath))
