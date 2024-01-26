@@ -214,14 +214,27 @@
               {"name"        {"en" "Activity with Activity Type"},
                "description" {"en" "Activity with Activity Type"},
                "type"        "https://xapinet.org/xapi/yet/activity-type"}}
-             (-> result (get 0) (get "object"))
-             (-> result (get 1) (get "object"))
-             (-> result (get 2) (get "object"))))
+             (-> result (get 0) (get-in ["object"]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "category" 0]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 0) (get-in ["context" "contextActivities" "other" 0]))
+             (-> result (get 1) (get-in ["object"]))
+             (-> result (get 1) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 1) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 1) (get-in ["context" "contextActivities" "other" 0]))
+             (-> result (get 2) (get-in ["object"]))
+             (-> result (get 2) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 2) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 2) (get-in ["context" "contextActivities" "other" 0]))))
       (is (= {"id" "https://xapinet.org/xapi/yet/activity/nontyped",
               "definition"
               {"name"        {"en" "Activity without Activity Type"},
                "description" {"en" "Activity without Activity Type"}}}
-             (-> result (get 3) (get "object")))))))
+             (-> result (get 3) (get-in ["object"]))
+             (-> result (get 3) (get-in ["context" "contextActivities" "grouping" 0]))
+             (-> result (get 3) (get-in ["context" "contextActivities" "parent" 0]))
+             (-> result (get 3) (get-in ["context" "contextActivities" "other" 0])))))))
 
 (deftest generate-seq-test
   (testing "Returns statements"

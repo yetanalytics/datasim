@@ -71,9 +71,13 @@
                 "en": "Template 1"
             },
             "definition": {
-                "en": "Template to test objectActivityType"
+                "en": "Template to test Activity Type determining properties"
             },
-            "objectActivityType": "https://xapinet.org/xapi/yet/activity-type"
+            "objectActivityType": "https://xapinet.org/xapi/yet/activity-type",
+            "contextGroupingActivityType": ["https://xapinet.org/xapi/yet/activity-type"],
+            "contextParentActivityType": ["https://xapinet.org/xapi/yet/activity-type"],
+            "contextOtherActivityType": ["https://xapinet.org/xapi/yet/activity-type"],
+            "contextCategoryActivityType": ["https://xapinet.org/xapi/yet/activity-type"]
         },
         {
             "id": "https://xapinet.org/xapi/yet/template/2",
@@ -88,6 +92,21 @@
             "rules": [
                 {
                     "location": "$.object.definition",
+                    "presence": "included",
+                    "all": [{"type": "https://xapinet.org/xapi/yet/activity-type"}]
+                },
+                {
+                    "location": "$.context.contextActivities.grouping[0].definition",
+                    "presence": "included",
+                    "all": [{"type": "https://xapinet.org/xapi/yet/activity-type"}]
+                },
+                {
+                    "location": "$.context.contextActivities.parent[0].definition",
+                    "presence": "included",
+                    "all": [{"type": "https://xapinet.org/xapi/yet/activity-type"}]
+                },
+                {
+                    "location": "$.context.contextActivities.other[0].definition",
                     "presence": "included",
                     "all": [{"type": "https://xapinet.org/xapi/yet/activity-type"}]
                 }
@@ -108,6 +127,21 @@
                     "location": "$.object.definition.type",
                     "presence": "included",
                     "all": ["https://xapinet.org/xapi/yet/activity-type"]
+                },
+                {
+                    "location": "$.context.contextActivities.grouping[0].definition.type",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity-type"]
+                },
+                {
+                    "location": "$.context.contextActivities.parent[0].definition.type",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity-type"]
+                },
+                {
+                    "location": "$.context.contextActivities.other[0].definition.type",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity-type"]
                 }
             ]
         },
@@ -124,6 +158,21 @@
             "rules": [
                 {
                     "location": "$.object.id",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity/nontyped"]
+                },
+                {
+                    "location": "$.context.contextActivities.grouping[0].id",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity/nontyped"]
+                },
+                {
+                    "location": "$.context.contextActivities.parent[0].id",
+                    "presence": "included",
+                    "all": ["https://xapinet.org/xapi/yet/activity/nontyped"]
+                },
+                {
+                    "location": "$.context.contextActivities.other[0].id",
                     "presence": "included",
                     "all": ["https://xapinet.org/xapi/yet/activity/nontyped"]
                 }
