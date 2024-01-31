@@ -1,5 +1,5 @@
 {:paths ["resources" "src/main"]
- :deps {org.clojure/clojure      {:mvn/version "1.8.0" #_"1.11.1"}
+ :deps {org.clojure/clojure      {:mvn/version "1.11.1"}
         org.clojure/core.async   {:mvn/version "1.6.673"}
         org.clojure/core.memoize {:mvn/version "1.0.257"}
         com.yetanalytics/xapi-schema
