@@ -32,8 +32,8 @@
   :run-cli  {:main-opts ["-m" "com.yetanalytics.datasim.cli"]}
   :server   {:extra-paths ["src/server"]
              :extra-deps
-             {io.pedestal/pedestal.jetty   {:mvn/version "0.6.2"}
-              io.pedestal/pedestal.service {:mvn/version "0.6.2"}
+             {io.pedestal/pedestal.jetty   {:mvn/version "0.6.3"}
+              io.pedestal/pedestal.service {:mvn/version "0.6.3"}
               org.slf4j/slf4j-simple       {:mvn/version "1.7.28"}
               clj-http/clj-http            {:mvn/version "3.12.3"}
               environ/environ              {:mvn/version "1.1.0"}
