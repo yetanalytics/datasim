@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.4.2] - 2024-02-29
+- Update Pedestal dependency to 0.6.3.
+- Update Jetty http2-server dependency to 9.4.54 to address CVEs.
+
 ## [0.4.1] - 2024-01-25
 - Fix a number of bugs associated with Statement generation:
   - Fix places where `:definition` was used when `:activityDefinition` was supposed to be used in the code, causing Activities not to be associated with their respective Activity Types.
