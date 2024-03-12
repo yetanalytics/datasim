@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.3] - 2024-03-12
+- Update Clojure dependency to 1.11.2 to address CVE-2024-22871.
+
 ## [0.4.2] - 2024-02-29
 - Update Pedestal dependency to 0.6.3.
 - Update Jetty http2-server dependency to 9.4.54 to address CVEs.
