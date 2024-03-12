@@ -15,7 +15,7 @@ DATASIM is funded by the Advanced Distributed Learning Initiative at US DoD.
 To use the core DATASIM library in your project, use the following dependency in your `deps.edn` file:
 
 ```clojure
-com.yetanalytics/datasim {:mvn/version "0.4.2"}
+com.yetanalytics/datasim {:mvn/version "0.4.3"}
 ```
 
 If you wish to install DATASIM as an application with features such as CLI or the webserver, perform the following steps:
