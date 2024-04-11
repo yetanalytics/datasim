@@ -45,7 +45,7 @@
                                               buddy/buddy-sign]}
               buddy/buddy-sign {:mvn/version "3.5.346"
                                 :exclusions  [org.bouncycastle/bcprov-jdk18on]}
-              org.bouncycastle/bcprov-jdk18on {:mvn/version "1.75"}}}
+              org.bouncycastle/bcprov-jdk18on {:mvn/version "1.78"}}}
   :run-server {:main-opts ["-m" "com.yetanalytics.datasim.server"]}
   :onyx {:extra-paths ["onyx-resources" "src/onyx"]
          :extra-deps {com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.11.899"}
