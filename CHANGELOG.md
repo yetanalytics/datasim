@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.4] - 2024-04-11
+- Update Bouncy Castle to 1.78 to address various CVEs.
+
 ## [0.4.3] - 2024-03-12
 - Update Clojure dependency to 1.11.2 to address CVE-2024-22871.
 
