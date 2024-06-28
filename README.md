@@ -8,7 +8,7 @@ DATASIM is an open source R&D project designed to provide specifications and a r
 
 DATASIM provides DoD distributed learning stakeholders and the broader xAPI community with the ability to simulate learning activities and generate the resulting xAPI statements at scale both in order to benchmark and stress-test the design of applications with the Total Learning Architecture and to provide stakeholders a way to evaluate the implementation of xAPI data design using the xAPI Profile specification. Ultimately, DATASIM can be used to support conformance testing of applications across the future learning ecosystem.
 
-DATASIM is funded by the Advanced Distributed Learning Initiative at US DoD.
+Early work on DATASIM was originally funded by the Advanced Distributed Learning Initiative.
 
 ## Installation
 
