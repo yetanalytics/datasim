@@ -58,30 +58,31 @@ jobs:
         name: datasim-bundle-artifact-${{ github.sha }}
         path: datasim-bundle.zip
 
-  deploy:
-    runs-on: ubuntu-latest
-
-    if: ${{ github.ref_type == 'tag' }}
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Setup CD environment
-      uses: yetanalytics/action-setup-env@v1
-
-    - name: Extract version
-      id: version
-      run: echo version=${GITHUB_REF#refs\/tags\/v} >> $GITHUB_OUTPUT
-
-    - name: Build and deploy to Clojars
-      uses: yetanalytics/action-deploy-clojars@v1
-      with:
-        artifact-id: 'datasim'
-        version: ${{ steps.version.outputs.version }}
-        resource-dirs: '[]'
-        clojars-username: ${{ secrets.CLOJARS_USERNAME }}
-        clojars-deploy-token: ${{ secrets.CLOJARS_PASSWORD }}
+#  Temporarily commenting deploy to test release
+#  deploy:
+#    runs-on: ubuntu-latest
+#
+#    if: ${{ github.ref_type == 'tag' }}
+#
+#    steps:
+#    - name: Checkout repository
+#      uses: actions/checkout@v3
+#
+#    - name: Setup CD environment
+#      uses: yetanalytics/action-setup-env@v1
+#
+#    - name: Extract version
+#      id: version
+#      run: echo version=${GITHUB_REF#refs\/tags\/v} >> $GITHUB_OUTPUT
+#
+#    - name: Build and deploy to Clojars
+#      uses: yetanalytics/action-deploy-clojars@v1
+#      with:
+#        artifact-id: 'datasim'
+#        version: ${{ steps.version.outputs.version }}
+#        resource-dirs: '[]'
+#        clojars-username: ${{ secrets.CLOJARS_USERNAME }}
+#        clojars-deploy-token: ${{ secrets.CLOJARS_PASSWORD }}
   
   release:
     runs-on: ubuntu-latest
