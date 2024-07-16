@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup CI environment
       uses: yetanalytics/actions/setup-env@v0.0.4
@@ -65,7 +65,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup CD environment
       uses: yetanalytics/action-setup-env@v1
@@ -89,15 +89,15 @@ jobs:
     if: ${{ github.ref_type == 'tag' }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Download Bundle Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: datasim-bundle-artifact-${{ github.sha }}
 
     - name: Craft Draft Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         # Defaults:
         # name: [tag name]
