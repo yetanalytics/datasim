@@ -102,6 +102,5 @@ jobs:
         # Defaults:
         # name: [tag name]
         # tag_name: github.ref
-        body: "## Release Notes\nTODO: Create great release notes!"
         draft: true
         files: datasim-bundle.zip
