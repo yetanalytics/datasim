@@ -238,11 +238,11 @@ The `generate-post` subcommand is used to generate statements from an input and 
 The following is an example of a simple run. We first create a combined input file using `validate-input`:
 ```
 bin/run.sh validate-input \
-    -p dev-resources/profile/cmi5/fixed.json \
-    -a dev-resources/personae/simple.json \
-    -m dev-resources/models/simple.json \
-    -o dev-resources/parameters/simple.json \ 
-    -v dev-resources/input/simple.json
+    -p ../../dev-resources/profiles/cmi5/fixed.json \
+    -a ../../dev-resources/personae/simple.json \
+    -m ../../dev-resources/models/simple.json \
+    -o ../../dev-resources/parameters/simple.json \ 
+    -v ../../dev-resources/input/simple.json
 ```
 
 Once we have that sim specification, we can run the simulation using the `generate`:
