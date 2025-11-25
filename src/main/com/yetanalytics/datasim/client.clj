@@ -25,10 +25,11 @@
   (format "%s/statements" endpoint))
 
 (defn- post-options [http-options batch]
-  (merge default-http-options
-         http-options
-         {:body (json/encode batch)
-          :as :stream}))
+  (merge-with merge
+              default-http-options
+              http-options
+              {:body (json/encode batch)
+               :as :stream}))
 
 ;; `http/post` cannot be resolved since it's defined using `http/defreq`
 #_{:clj-kondo/ignore [:unresolved-var]}
@@ -41,21 +42,34 @@
               (post-options http-options batch)
               callback-fn)))
 
+(defn- auth-options
+  [{:keys [username
+           password
+           token
+           cookie]}]
+  (cond
+    (and username password)
+    {:basic-auth [username password]}
+    token
+    {:headers {"Authorization" (format "Bearer %s" token)}}
+    cookie
+    {:headers {"Cookie" token}}
+    :else {}))
+
 (defn post-statements
   "Given LRS options and a `statement-seq`, send them to an LRS in synchronous
    batches. If `print-ids?` is `true`, returned statement IDs will be printed
    to stdout. `username` and `password` in the options map are the Basic Auth
    credentials of the LRS."
   [{:keys [endpoint
-           batch-size
-           username
-           password]
+           batch-size]
+    :as options
     :or {batch-size 25}}
    statement-seq
    & {:keys [print-ids?]
       :or   {print-ids? true}}]
   ;; TODO: Exponential backoff, etc
-  (let [http-options {:basic-auth [username password]}]
+  (let [http-options (auth-options options)]
     (loop [batches (partition-all batch-size statement-seq)
            success 0
            fail    []]
@@ -82,14 +96,14 @@
 (defn post-statements-async
   "Given LRS options and a channel with statements, send them to an LRS in
    asynchronous batches. `username` and `password` in the options map are the
-   Basic Auth credentials of the LRS.
+   Basic Auth credentials of the LRS. Other auth methods are supported via
+   `token` and `cookie`.
 
    Returns a channel that will reciveve `[:success <list of statement ids>]`
    for each batch or `[:fail <failing request>]`. Will stop sending on failure."
   [{:keys [endpoint
-           batch-size
-           username
-           password]
+           batch-size]
+    :as options
     :or {batch-size 25}}
    statement-chan
    & {:keys [concurrency
@@ -98,7 +112,7 @@
       :or {concurrency 4
            buffer-in   100 ; 10x default batch size
            buffer-out  100}}]
-  (let [http-opts {:basic-auth [username password]}
+  (let [http-opts (auth-options options)
         run?      (atom true)
         in-chan   (a/chan buffer-in (partition-all batch-size))
         out-chan  (a/chan buffer-out) ; is this.. backpressure?

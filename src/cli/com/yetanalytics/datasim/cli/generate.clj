@@ -56,6 +56,12 @@
 (def password-desc
   "The Basic Auth password for the LRS.")
 
+(def token-desc
+  "An optional bearer token to use in the Authorization header (overrides username and password if present).")
+
+(def cookie-desc
+  "An optional cookie string to send in the Cookie header.")
+
 (def batch-size-desc
   "The batch size, i.e. how many statements to send at a time, for POSTing.")
 
@@ -76,6 +82,12 @@
    ["-P" "--password URI" "LRS password"
     :id :password
     :desc password-desc]
+   [nil "--token TOKEN" "Bearer Token"
+    :id :token
+    :desc token-desc]
+   [nil "--cookie COOKIE" "Authentication Cookie"
+    :id :cookie
+    :desc cookie-desc]
    ["-B" "--batch-size SIZE" "LRS POST batch size"
     :id       :batch-size
     :default  25
@@ -154,6 +166,8 @@
   (let [{:keys [endpoint
                 username
                 password
+                token
+                cookie
                 batch-size
                 concurrency
                 post-limit
@@ -164,7 +178,9 @@
         {:endpoint   endpoint
          :batch-size batch-size
          :username   username
-         :password   password}]
+         :password   password
+         :token      token
+         :cookie     cookie}]
     (if async
       (post-async! input post-options post-limit select-agents concurrency)
       (post-sync! input post-options post-limit select-agents))))
