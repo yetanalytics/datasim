@@ -62,6 +62,9 @@
 (def cookie-desc
   "An optional cookie string to send in the Cookie header.")
 
+(def credential-id-desc
+  "An optional credentialID parameter to send to the LRS.")
+
 (def batch-size-desc
   "The batch size, i.e. how many statements to send at a time, for POSTing.")
 
@@ -88,6 +91,9 @@
    [nil "--cookie COOKIE" "Authentication Cookie"
     :id :cookie
     :desc cookie-desc]
+   [nil "--credential-id UUID" "Yet LRS Credential ID for use with cookie auth."
+    :id :credential-id
+    :desc credential-id-desc]
    ["-B" "--batch-size SIZE" "LRS POST batch size"
     :id       :batch-size
     :default  25
@@ -168,6 +174,7 @@
                 password
                 token
                 cookie
+                credential-id
                 batch-size
                 concurrency
                 post-limit
@@ -175,12 +182,13 @@
                 async]}
         options
         post-options
-        {:endpoint   endpoint
-         :batch-size batch-size
-         :username   username
-         :password   password
-         :token      token
-         :cookie     cookie}]
+        {:endpoint      endpoint
+         :batch-size    batch-size
+         :username      username
+         :password      password
+         :token         token
+         :cookie        cookie
+         :credential-id credential-id}]
     (if async
       (post-async! input post-options post-limit select-agents concurrency)
       (post-sync! input post-options post-limit select-agents))))

@@ -46,15 +46,20 @@
   [{:keys [username
            password
            token
-           cookie]}]
-  (cond
-    (and username password)
-    {:basic-auth [username password]}
-    token
-    {:headers {"Authorization" (format "Bearer %s" token)}}
-    cookie
-    {:headers {"Cookie" token}}
-    :else {}))
+           cookie
+           credential-id]}]
+  (let [opts (cond
+               (and username password)
+               {:basic-auth [username password]}
+               token
+               {:headers {"Authorization" (format "Bearer %s" token)}}
+               cookie
+               (cond-> {:headers {"Cookie" cookie}}
+                 credential-id
+                 (assoc :query-params {:credentialID credential-id}))
+               :else {})]
+    (println opts)
+    opts))
 
 (defn post-statements
   "Given LRS options and a `statement-seq`, send them to an LRS in synchronous
