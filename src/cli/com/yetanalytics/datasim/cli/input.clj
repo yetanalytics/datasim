@@ -120,7 +120,7 @@
 (defn validate-input*
   "Perform validation on `input` and fail w/ early termination if
    it is not valid.
-   
+
    When this is called, we should have valid individual inputs. However, there
    may be cross-validation that needs to happen, so we compose the
    comprehensive spec from the options and check that."

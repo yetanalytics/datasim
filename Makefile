@@ -49,7 +49,7 @@ test-cli-comprehensive:
 	clojure -A:cli:run-cli validate-input -i dev-resources/input/simple.json -v dev-resources/input/simple.json
 
 test-cli-output:
-	clojure -A:cli:run-cli generate -i dev-resources/input/simple.json 
+	clojure -A:cli:run-cli generate -i dev-resources/input/simple.json
 
 test-bundle-output: bundle
 	cd target/bundle; bin/run.sh generate -i ../../dev-resources/input/simple.json
@@ -64,3 +64,7 @@ ci: test-unit test-unit-onyx test-cli validate-template
 
 server:
 	clojure -A:server:run-server
+
+# For dependabot
+pom.xml:
+	clojure -A:cli:server:test:dev:onyx -Spom

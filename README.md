@@ -230,6 +230,9 @@ The `generate-post` subcommand is used to generate statements from an input and 
 | `-E, --endpoint URI`     | The xAPI endpoint of an LRS to POST to, ex: `https://lrs.example.org/xapi` | N/A
 | `-U, --username URI`     | The Basic Auth username for the LRS. | N/A
 | `-P, --password URI`     | The Basic Auth password for the LRS. | N/A
+| `--token`                | Bearer token to use for LRS auth. | N/A
+| `--cookie`               | Cookie to use for LRS auth. | N/A
+| `--credential-id`        | Credential ID to use for LRS cookie auth. | N/A
 | `-B, --batch-size SIZE`  | The batch size, i.e. how many statements to send at a time, for POSTing. | `25`
 | `-C, --concurrency CONC` | The max concurrency of the LRS POST pipeline. | `4`
 | `-L, --post-limit LIMIT` | The total number of statements that will be sent to the LRS before termination. Overrides sim params. Set to -1 for no limit. | `999`
@@ -241,7 +244,7 @@ bin/run.sh validate-input \
     -p dev-resources/profile/cmi5/fixed.json \
     -a dev-resources/personae/simple.json \
     -m dev-resources/models/simple.json \
-    -o dev-resources/parameters/simple.json \ 
+    -o dev-resources/parameters/simple.json \
     -v dev-resources/input/simple.json
 ```
 
