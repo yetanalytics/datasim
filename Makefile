@@ -9,7 +9,7 @@ clean:
 
 .PHONY: pom.xml
 
-# Match the library, CLI, and server coverage of the NVD scan.
+# Generate the library, CLI, and server manifest for GitHub dependency submission.
 pom.xml:
 	clojure -X:deps mvn-pom :user nil :aliases '[:cli :server]'
 

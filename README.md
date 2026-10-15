@@ -33,12 +33,11 @@ Dependabot alerts enabled, GitHub can report known vulnerabilities in these
 dependencies.
 
 Run `make pom.xml` to generate the same POM locally. It includes the base library
-dependencies plus the `:cli` and `:server` aliases, matching the existing NVD scan.
+dependencies plus the `:cli` and `:server` aliases.
 The generated POM is ignored by Git; `deps.edn` remains the dependency source.
 
 Onyx and development/test aliases, including Git dependencies used by the test
-runners, are excluded from this submission. The existing NVD workflows continue
-to run separately.
+runners, are excluded from this submission.
 
 ## Usage
 
