@@ -7,6 +7,12 @@ VERSION ?= 0.4.4
 clean:
 	rm -rf target
 
+.PHONY: pom.xml
+
+# Match the library, CLI, and server coverage of the NVD scan.
+pom.xml:
+	clojure -X:deps mvn-pom :user nil :aliases '[:cli :server]'
+
 target/bundle/datasim_cli.jar:
 	mkdir -p target/bundle
 	rm -f pom.xml

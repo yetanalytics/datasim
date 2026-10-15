@@ -24,6 +24,22 @@ If you wish to install DATASIM as an application with features such as CLI or th
 
 See [Deployment Models](#deployment-models) for more information about the differences between using DATASIM as a library and as an app.
 
+## Dependency vulnerability tracking
+
+The `Deps` GitHub Actions workflow generates a Maven POM from `deps.edn` and
+submits the resolved Maven dependency tree to GitHub on pushes to `master`.
+It can also be run manually from the Actions tab. With dependency graph and
+Dependabot alerts enabled, GitHub can report known vulnerabilities in these
+dependencies.
+
+Run `make pom.xml` to generate the same POM locally. It includes the base library
+dependencies plus the `:cli` and `:server` aliases, matching the existing NVD scan.
+The generated POM is ignored by Git; `deps.edn` remains the dependency source.
+
+Onyx and development/test aliases, including Git dependencies used by the test
+runners, are excluded from this submission. The existing NVD workflows continue
+to run separately.
+
 ## Usage
 
 ### Simulation Inputs
