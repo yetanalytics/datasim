@@ -7,6 +7,12 @@ VERSION ?= 0.4.4
 clean:
 	rm -rf target
 
+.PHONY: pom.xml
+
+# Generate the library, CLI, and server manifest for GitHub dependency submission.
+pom.xml:
+	clojure -X:deps mvn-pom :user nil :aliases '[:cli :server]'
+
 target/bundle/datasim_cli.jar:
 	mkdir -p target/bundle
 	rm -f pom.xml
