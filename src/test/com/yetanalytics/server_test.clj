@@ -53,6 +53,34 @@
          {:name    "send-to-lrs"
           :content "true"}]))
 
+(deftest server-auth-test
+  (let [running (http/start server)
+        endpoint "http://127.0.0.1:9090/api/v1/generate"]
+    (try
+      (testing "health remains available without credentials"
+        (let [{:keys [status body]}
+              @(httpkit/get "http://127.0.0.1:9090/health")]
+          (is (= 200 status))
+          (is (= "OK" body))))
+      (testing "missing and invalid credentials are rejected"
+        (is (= 401 (:status @(httpkit/post endpoint
+                                         {:multipart multipart-content}))))
+        (is (= 403 (:status @(httpkit/post endpoint
+                                         {:basic-auth ["username" "wrong-password"]
+                                          :multipart multipart-content})))))
+      (testing "invalid multipart simulation input returns a validation response"
+        (let [{:keys [status body]}
+              @(httpkit/post endpoint
+                             {:basic-auth ["username" "password"]
+                              :multipart (mapv #(if (= "parameters" (:name %))
+                                                  (assoc % :content "{\"seed\":\"invalid\"}")
+                                                  %)
+                                               multipart-content)})]
+          (is (= 400 status))
+          (is (seq body))))
+      (finally
+        (http/stop running)))))
+
 (deftest server-test
   (testing "server"
     (let [_       (http/start server)

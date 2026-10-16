@@ -16,7 +16,7 @@
             [com.yetanalytics.datasim.input    :as input]
             [com.yetanalytics.datasim.client   :as client]
             [com.yetanalytics.datasim.util.io  :as dio])
-  (:import [javax.servlet ServletOutputStream])
+  (:import [jakarta.servlet ServletOutputStream])
   (:gen-class))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
