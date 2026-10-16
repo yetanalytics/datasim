@@ -16,6 +16,8 @@ jobs:
 
     - name: Setup CI environment
       uses: yetanalytics/actions/setup-env@v0.0.4
+      with:
+        java-version: ${{ matrix.target == 'test-unit' && '17' || '11' }}
 
     - name: Log into DockerHub
       if: ${{ matrix.target == 'test-unit' }}

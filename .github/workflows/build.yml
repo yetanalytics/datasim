@@ -18,8 +18,18 @@ jobs:
     - name: Setup CI environment
       uses: yetanalytics/actions/setup-env@v0.0.4
 
-    - name: Build Bundle
-      run: make bundle
+    # Keep CLI and Onyx artifacts compatible with their Java 11 deployments.
+    - name: Build CLI and Onyx
+      run: make target/bundle/bin target/bundle/datasim_cli.jar target/bundle/datasim_onyx.jar
+
+    - name: Setup Java for Jetty 12
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Build Server
+      run: make target/bundle/datasim_server.jar
 
     # Build docker for PR, tags
     - name: Extract metadata (tags, labels) for Docker

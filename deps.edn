@@ -14,7 +14,10 @@
         clojure.java-time/clojure.java-time {:mvn/version "1.2.0"}
         org.clojure/test.check {:mvn/version "1.1.1"}
         http-kit/http-kit {:mvn/version "2.7.0"}
-        cheshire/cheshire {:mvn/version "5.12.0"}}
+        cheshire/cheshire {:mvn/version "5.12.0"}
+        com.fasterxml.jackson.core/jackson-core {:mvn/version "2.18.11"}
+        com.fasterxml.jackson.dataformat/jackson-dataformat-smile {:mvn/version "2.18.11"}
+        com.fasterxml.jackson.dataformat/jackson-dataformat-cbor {:mvn/version "2.18.11"}}
  :aliases
  {:dev      {:extra-paths ["dev-resources" "src/dev"]
              :extra-deps {incanter/incanter-core {:mvn/version "1.9.3"}
@@ -32,11 +35,18 @@
   :run-cli  {:main-opts ["-m" "com.yetanalytics.datasim.cli"]}
   :server   {:extra-paths ["src/server"]
              :extra-deps
-             {io.pedestal/pedestal.jetty   {:mvn/version "0.6.3"
-                                            :exclusions  [org.eclipse.jetty.http2/http2-server]}
-              io.pedestal/pedestal.service {:mvn/version "0.6.3"}
-              org.eclipse.jetty.http2/http2-server {:mvn/version "9.4.54.v20240208"}
-              org.slf4j/slf4j-simple       {:mvn/version "1.7.28"}
+             {io.pedestal/pedestal.jetty   {:mvn/version "0.8.2"}
+              io.pedestal/pedestal.service {:mvn/version "0.8.2"}
+              io.pedestal/pedestal.error {:mvn/version "0.8.2"}
+              ;; Align Jetty's entry points so all transitive modules use the same patch.
+              org.eclipse.jetty/jetty-server {:mvn/version "12.0.37"}
+              org.eclipse.jetty/jetty-alpn-java-server {:mvn/version "12.0.37"}
+              org.eclipse.jetty.ee10/jetty-ee10-servlet {:mvn/version "12.0.37"}
+              org.eclipse.jetty.http2/jetty-http2-server {:mvn/version "12.0.37"}
+              org.eclipse.jetty.ee10.websocket/jetty-ee10-websocket-jakarta-server {:mvn/version "12.0.37"}
+              org.slf4j/slf4j-simple       {:mvn/version "2.0.17"}
+              commons-io/commons-io {:mvn/version "2.21.0"}
+              commons-fileupload/commons-fileupload {:mvn/version "1.6.0"}
               clj-http/clj-http            {:mvn/version "3.12.3"}
               environ/environ              {:mvn/version "1.1.0"}
               ;; Buddy/BouncyCastle deps
@@ -45,7 +55,9 @@
                                               buddy/buddy-sign]}
               buddy/buddy-sign {:mvn/version "3.5.346"
                                 :exclusions  [org.bouncycastle/bcprov-jdk18on]}
-              org.bouncycastle/bcprov-jdk18on {:mvn/version "1.78"}}}
+              org.bouncycastle/bcprov-jdk18on {:mvn/version "1.85"}
+              org.bouncycastle/bcpkix-jdk18on {:mvn/version "1.85"}
+              org.bouncycastle/bcutil-jdk18on {:mvn/version "1.85"}}}
   :run-server {:main-opts ["-m" "com.yetanalytics.datasim.server"]}
   :onyx {:extra-paths ["onyx-resources" "src/onyx"]
          :extra-deps {com.amazonaws/aws-java-sdk-s3 {:mvn/version "1.11.899"}
